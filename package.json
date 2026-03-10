@@ -1,0 +1,8 @@
+{
+  "name": "business-suite",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

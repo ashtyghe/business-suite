@@ -1,0 +1,18 @@
+-- Shared users and roles
+CREATE SCHEMA IF NOT EXISTS shared;
+CREATE SCHEMA IF NOT EXISTS jobs;
+CREATE SCHEMA IF NOT EXISTS timesheets;
+CREATE SCHEMA IF NOT EXISTS bills;
+CREATE SCHEMA IF NOT EXISTS scheduling;
+CREATE SCHEMA IF NOT EXISTS kpi;
+CREATE SCHEMA IF NOT EXISTS dam;
+
+CREATE TABLE shared.staff (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  auth_user_id UUID REFERENCES auth.users(id),
+  full_name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  role TEXT NOT NULL DEFAULT 'staff',
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);

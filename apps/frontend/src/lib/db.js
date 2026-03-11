@@ -236,17 +236,17 @@ export async function fetchAll() {
     schedule,
     staff,
   ] = await Promise.all([
-    q(supabase.schema('jobs').from('customers').select('*').order('name')),
-    q(supabase.schema('jobs').from('sites').select('*').order('name')),
-    q(supabase.schema('jobs').from('jobs').select('*').order('created_at', { ascending: false })),
-    q(supabase.schema('jobs').from('quotes').select('*').order('created_at', { ascending: false })),
-    q(supabase.schema('jobs').from('line_items').select('*').not('quote_id', 'is', null)),
-    q(supabase.schema('jobs').from('invoices').select('*').order('created_at', { ascending: false })),
-    q(supabase.schema('jobs').from('line_items').select('*').not('invoice_id', 'is', null)),
-    q(supabase.schema('timesheets').from('entries').select('*').order('entry_date', { ascending: false })),
-    q(supabase.schema('bills').from('captures').select('*').order('created_at', { ascending: false })),
-    q(supabase.schema('scheduling').from('entries').select('*').order('entry_date')),
-    q(supabase.schema('shared').from('staff').select('*').order('full_name')),
+    q(supabase.from('customers').select('*').order('name')),
+    q(supabase.from('sites').select('*').order('name')),
+    q(supabase.from('jobs').select('*').order('created_at', { ascending: false })),
+    q(supabase.from('quotes').select('*').order('created_at', { ascending: false })),
+    q(supabase.from('line_items').select('*').not('quote_id', 'is', null)),
+    q(supabase.from('invoices').select('*').order('created_at', { ascending: false })),
+    q(supabase.from('line_items').select('*').not('invoice_id', 'is', null)),
+    q(supabase.from('time_entries').select('*').order('entry_date', { ascending: false })),
+    q(supabase.from('bills').select('*').order('created_at', { ascending: false })),
+    q(supabase.from('schedule').select('*').order('entry_date')),
+    q(supabase.from('staff').select('*').order('full_name')),
   ]);
 
   const normalizedStaff = staff.map(normalizeStaff);
@@ -286,7 +286,7 @@ export async function fetchAll() {
 
 export async function createCustomer(data) {
   const row = await q(
-    supabase.schema('jobs').from('customers')
+    supabase.from('customers')
       .insert({ name: data.name, email: data.email || null, phone: data.phone || null, address: data.address || null })
       .select().single()
   );
@@ -295,7 +295,7 @@ export async function createCustomer(data) {
 
 export async function updateCustomer(id, data) {
   const row = await q(
-    supabase.schema('jobs').from('customers')
+    supabase.from('customers')
       .update({ name: data.name, email: data.email || null, phone: data.phone || null, address: data.address || null })
       .eq('id', id).select().single()
   );
@@ -303,14 +303,14 @@ export async function updateCustomer(id, data) {
 }
 
 export async function deleteCustomer(id) {
-  return q(supabase.schema('jobs').from('customers').delete().eq('id', id));
+  return q(supabase.from('customers').delete().eq('id', id));
 }
 
 // ── Sites ──────────────────────────────────────────────────────────────────
 
 export async function createSite(clientId, data) {
   const row = await q(
-    supabase.schema('jobs').from('sites')
+    supabase.from('sites')
       .insert({ customer_id: clientId, name: data.name, address: data.address || null, contact_name: data.contactName || null, contact_phone: data.contactPhone || null })
       .select().single()
   );
@@ -319,7 +319,7 @@ export async function createSite(clientId, data) {
 
 export async function updateSite(id, data) {
   const row = await q(
-    supabase.schema('jobs').from('sites')
+    supabase.from('sites')
       .update({ name: data.name, address: data.address || null, contact_name: data.contactName || null, contact_phone: data.contactPhone || null })
       .eq('id', id).select().single()
   );
@@ -327,14 +327,13 @@ export async function updateSite(id, data) {
 }
 
 export async function deleteSite(id) {
-  return q(supabase.schema('jobs').from('sites').delete().eq('id', id));
+  return q(supabase.from('sites').delete().eq('id', id));
 }
 
 // ── Jobs ───────────────────────────────────────────────────────────────────
 
-let _jobCounter = null;
 async function nextJobNumber() {
-  const rows = await q(supabase.schema('jobs').from('jobs').select('job_number').order('created_at', { ascending: false }).limit(1));
+  const rows = await q(supabase.from('jobs').select('job_number').order('created_at', { ascending: false }).limit(1));
   if (!rows.length) return 'J-0001';
   const last = parseInt(rows[0].job_number?.replace(/\D/g, '') || '0', 10);
   return 'J-' + String(last + 1).padStart(4, '0');
@@ -343,7 +342,7 @@ async function nextJobNumber() {
 export async function createJob(data) {
   const jobNumber = data.jobNumber || await nextJobNumber();
   const row = await q(
-    supabase.schema('jobs').from('jobs')
+    supabase.from('jobs')
       .insert({ ...denormalizeJob(data), job_number: jobNumber })
       .select().single()
   );
@@ -352,7 +351,7 @@ export async function createJob(data) {
 
 export async function updateJob(id, data) {
   const row = await q(
-    supabase.schema('jobs').from('jobs')
+    supabase.from('jobs')
       .update({ ...denormalizeJob(data), updated_at: new Date().toISOString() })
       .eq('id', id).select().single()
   );
@@ -360,13 +359,13 @@ export async function updateJob(id, data) {
 }
 
 export async function deleteJob(id) {
-  return q(supabase.schema('jobs').from('jobs').delete().eq('id', id));
+  return q(supabase.from('jobs').delete().eq('id', id));
 }
 
 // ── Quotes ─────────────────────────────────────────────────────────────────
 
 async function nextQuoteNumber() {
-  const rows = await q(supabase.schema('jobs').from('quotes').select('quote_number').order('created_at', { ascending: false }).limit(1));
+  const rows = await q(supabase.from('quotes').select('quote_number').order('created_at', { ascending: false }).limit(1));
   if (!rows.length) return 'Q-0001';
   const last = parseInt(rows[0].quote_number?.replace(/\D/g, '') || '0', 10);
   return 'Q-' + String(last + 1).padStart(4, '0');
@@ -375,32 +374,32 @@ async function nextQuoteNumber() {
 export async function createQuote(data) {
   const quoteNumber = data.number || await nextQuoteNumber();
   const dbData = { ...denormalizeQuote(data), quote_number: quoteNumber };
-  const quote = await q(supabase.schema('jobs').from('quotes').insert(dbData).select().single());
+  const quote = await q(supabase.from('quotes').insert(dbData).select().single());
   if (data.lineItems?.length) {
-    await q(supabase.schema('jobs').from('line_items').insert(denormalizeLineItems(data.lineItems, 'quote_id', quote.id)));
+    await q(supabase.from('line_items').insert(denormalizeLineItems(data.lineItems, 'quote_id', quote.id)));
   }
-  const items = await q(supabase.schema('jobs').from('line_items').select('*').eq('quote_id', quote.id));
+  const items = await q(supabase.from('line_items').select('*').eq('quote_id', quote.id));
   return normalizeQuote({ ...quote, line_items: items });
 }
 
 export async function updateQuote(id, data) {
-  const quote = await q(supabase.schema('jobs').from('quotes').update(denormalizeQuote(data)).eq('id', id).select().single());
-  await q(supabase.schema('jobs').from('line_items').delete().eq('quote_id', id));
+  const quote = await q(supabase.from('quotes').update(denormalizeQuote(data)).eq('id', id).select().single());
+  await q(supabase.from('line_items').delete().eq('quote_id', id));
   if (data.lineItems?.length) {
-    await q(supabase.schema('jobs').from('line_items').insert(denormalizeLineItems(data.lineItems, 'quote_id', id)));
+    await q(supabase.from('line_items').insert(denormalizeLineItems(data.lineItems, 'quote_id', id)));
   }
-  const items = await q(supabase.schema('jobs').from('line_items').select('*').eq('quote_id', id));
+  const items = await q(supabase.from('line_items').select('*').eq('quote_id', id));
   return normalizeQuote({ ...quote, line_items: items });
 }
 
 export async function deleteQuote(id) {
-  return q(supabase.schema('jobs').from('quotes').delete().eq('id', id));
+  return q(supabase.from('quotes').delete().eq('id', id));
 }
 
 // ── Invoices ───────────────────────────────────────────────────────────────
 
 async function nextInvoiceNumber() {
-  const rows = await q(supabase.schema('jobs').from('invoices').select('invoice_number').order('created_at', { ascending: false }).limit(1));
+  const rows = await q(supabase.from('invoices').select('invoice_number').order('created_at', { ascending: false }).limit(1));
   if (!rows.length) return 'INV-0001';
   const last = parseInt(rows[0].invoice_number?.replace(/\D/g, '') || '0', 10);
   return 'INV-' + String(last + 1).padStart(4, '0');
@@ -409,33 +408,33 @@ async function nextInvoiceNumber() {
 export async function createInvoice(data) {
   const invNumber = data.number || await nextInvoiceNumber();
   const dbData = { ...denormalizeInvoice(data), invoice_number: invNumber };
-  const invoice = await q(supabase.schema('jobs').from('invoices').insert(dbData).select().single());
+  const invoice = await q(supabase.from('invoices').insert(dbData).select().single());
   if (data.lineItems?.length) {
-    await q(supabase.schema('jobs').from('line_items').insert(denormalizeLineItems(data.lineItems, 'invoice_id', invoice.id)));
+    await q(supabase.from('line_items').insert(denormalizeLineItems(data.lineItems, 'invoice_id', invoice.id)));
   }
-  const items = await q(supabase.schema('jobs').from('line_items').select('*').eq('invoice_id', invoice.id));
+  const items = await q(supabase.from('line_items').select('*').eq('invoice_id', invoice.id));
   return normalizeInvoice({ ...invoice, line_items: items });
 }
 
 export async function updateInvoice(id, data) {
-  const invoice = await q(supabase.schema('jobs').from('invoices').update(denormalizeInvoice(data)).eq('id', id).select().single());
-  await q(supabase.schema('jobs').from('line_items').delete().eq('invoice_id', id));
+  const invoice = await q(supabase.from('invoices').update(denormalizeInvoice(data)).eq('id', id).select().single());
+  await q(supabase.from('line_items').delete().eq('invoice_id', id));
   if (data.lineItems?.length) {
-    await q(supabase.schema('jobs').from('line_items').insert(denormalizeLineItems(data.lineItems, 'invoice_id', id)));
+    await q(supabase.from('line_items').insert(denormalizeLineItems(data.lineItems, 'invoice_id', id)));
   }
-  const items = await q(supabase.schema('jobs').from('line_items').select('*').eq('invoice_id', id));
+  const items = await q(supabase.from('line_items').select('*').eq('invoice_id', id));
   return normalizeInvoice({ ...invoice, line_items: items });
 }
 
 export async function deleteInvoice(id) {
-  return q(supabase.schema('jobs').from('invoices').delete().eq('id', id));
+  return q(supabase.from('invoices').delete().eq('id', id));
 }
 
 // ── Time entries ───────────────────────────────────────────────────────────
 
 export async function createTimeEntry(data, staffId) {
   const row = await q(
-    supabase.schema('timesheets').from('entries')
+    supabase.from('time_entries')
       .insert({ job_id: data.jobId || null, staff_id: staffId || null, entry_date: data.date, hours: data.hours, notes: data.description || null, billable: data.billable !== false })
       .select().single()
   );
@@ -444,7 +443,7 @@ export async function createTimeEntry(data, staffId) {
 
 export async function updateTimeEntry(id, data, staffId) {
   const row = await q(
-    supabase.schema('timesheets').from('entries')
+    supabase.from('time_entries')
       .update({ job_id: data.jobId || null, staff_id: staffId || null, entry_date: data.date, hours: data.hours, notes: data.description || null, billable: data.billable !== false })
       .eq('id', id).select().single()
   );
@@ -452,37 +451,37 @@ export async function updateTimeEntry(id, data, staffId) {
 }
 
 export async function deleteTimeEntry(id) {
-  return q(supabase.schema('timesheets').from('entries').delete().eq('id', id));
+  return q(supabase.from('time_entries').delete().eq('id', id));
 }
 
 // ── Bills ──────────────────────────────────────────────────────────────────
 
 export async function createBill(data) {
-  const row = await q(supabase.schema('bills').from('captures').insert(denormalizeBill(data)).select().single());
+  const row = await q(supabase.from('bills').insert(denormalizeBill(data)).select().single());
   return normalizeBill(row);
 }
 
 export async function updateBill(id, data) {
-  const row = await q(supabase.schema('bills').from('captures').update(denormalizeBill(data)).eq('id', id).select().single());
+  const row = await q(supabase.from('bills').update(denormalizeBill(data)).eq('id', id).select().single());
   return normalizeBill(row);
 }
 
 export async function deleteBill(id) {
-  return q(supabase.schema('bills').from('captures').delete().eq('id', id));
+  return q(supabase.from('bills').delete().eq('id', id));
 }
 
 // ── Schedule ───────────────────────────────────────────────────────────────
 
 export async function createScheduleEntry(data) {
-  const row = await q(supabase.schema('scheduling').from('entries').insert(denormalizeSchedule(data)).select().single());
+  const row = await q(supabase.from('schedule').insert(denormalizeSchedule(data)).select().single());
   return normalizeSchedule(row);
 }
 
 export async function updateScheduleEntry(id, data) {
-  const row = await q(supabase.schema('scheduling').from('entries').update(denormalizeSchedule(data)).eq('id', id).select().single());
+  const row = await q(supabase.from('schedule').update(denormalizeSchedule(data)).eq('id', id).select().single());
   return normalizeSchedule(row);
 }
 
 export async function deleteScheduleEntry(id) {
-  return q(supabase.schema('scheduling').from('entries').delete().eq('id', id));
+  return q(supabase.from('schedule').delete().eq('id', id));
 }

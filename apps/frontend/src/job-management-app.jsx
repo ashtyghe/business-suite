@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
+import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry } from './lib/db';
 
 // ── Google Font ──────────────────────────────────────────────────────────────
 const fontLink = document.createElement("link");
 fontLink.rel = "stylesheet";
 fontLink.href = "https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap";
 document.head.appendChild(fontLink);
+
+const spinStyle = document.createElement("style");
+spinStyle.textContent = "@keyframes spin { to { transform: rotate(360deg); } }";
+document.head.appendChild(spinStyle);
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
 const SEED_CLIENTS = [
@@ -596,7 +601,7 @@ const SectionLabel = ({ children }) => (
 );
 
 // ── Job Detail Drawer ─────────────────────────────────────────────────────────
-const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, jobs, setJobs, onClose, onEdit }) => {
+const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, jobs, setJobs, staff, onClose, onEdit }) => {
   const [tab, setTab] = useState("overview");
   const client = clients.find(c => c.id === job.clientId);
 
@@ -613,45 +618,86 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   const totalCosts    = jobBills.filter(b => b.status === "approved").reduce((s,b) => s + b.amount, 0);
 
   // Quick-add quote from within job
-  const addQuoteForJob = () => {
-    const nextNum = `Q-${String(quotes.length + 1).padStart(4,"0")}`;
-    const newQ = { id: uid(), jobId: job.id, number: nextNum, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "", createdAt: new Date().toISOString().slice(0,10) };
-    setQuotes(qs => [...qs, newQ]);
+  const addQuoteForJob = async () => {
+    try {
+      const newQ = { jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" };
+      const saved = await createQuote(newQ);
+      setQuotes(qs => [...qs, saved]);
+    } catch (err) {
+      console.error('Failed to create quote:', err);
+    }
   };
 
   // Convert accepted quote → invoice
-  const quoteToInvoice = (q) => {
-    const nextNum = `INV-${String(invoices.length + 1).padStart(4,"0")}`;
-    const newInv = { id: uid(), jobId: job.id, number: nextNum, status: "draft", lineItems: [...q.lineItems], tax: q.tax, dueDate: "", notes: q.notes, createdAt: new Date().toISOString().slice(0,10), fromQuoteId: q.id };
-    setInvoices(is => [...is, newInv]);
-    setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Invoice ${nextNum} created from ${q.number}`) } : j));
+  const quoteToInvoice = async (q) => {
+    try {
+      const newInv = { jobId: job.id, status: "draft", lineItems: [...q.lineItems], tax: q.tax, dueDate: "", notes: q.notes, fromQuoteId: q.id };
+      const saved = await createInvoice(newInv);
+      setInvoices(is => [...is, saved]);
+      setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Invoice ${saved.number} created from ${q.number}`) } : j));
+    } catch (err) {
+      console.error('Failed to create invoice from quote:', err);
+    }
   };
 
   // Quick-add time
   const [showTimeForm, setShowTimeForm] = useState(false);
   const [timeForm, setTimeForm] = useState({ worker: TEAM[0], date: new Date().toISOString().slice(0,10), startTime: "", endTime: "", hours: 1, description: "", billable: true });
   const quickHours = calcHoursFromTimes(timeForm.startTime, timeForm.endTime) || timeForm.hours;
-  const saveTime = () => {
+  const saveTime = async () => {
     const hours = calcHoursFromTimes(timeForm.startTime, timeForm.endTime) || Number(timeForm.hours);
-    setTimeEntries(ts => [...ts, { ...timeForm, id: uid(), jobId: job.id, hours }]);
-    setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `${timeForm.worker} logged ${hours}h`) } : j));
+    try {
+      const staffMember = staff ? staff.find(s => s.name === timeForm.worker) : null;
+      const staffId = staffMember?.id;
+      const saved = await createTimeEntry({ ...timeForm, jobId: job.id, hours }, staffId);
+      setTimeEntries(ts => [...ts, saved]);
+      setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `${timeForm.worker} logged ${hours}h`) } : j));
+    } catch (err) {
+      console.error('Failed to save time entry:', err);
+    }
     setShowTimeForm(false);
-    setTimeForm({ worker: TEAM[0], date: new Date().toISOString().slice(0,10), startTime: "", endTime: "", hours: 1, description: "", billable: true });
+    setTimeForm({ worker: (staff && staff[0]?.name) || TEAM[0], date: new Date().toISOString().slice(0,10), startTime: "", endTime: "", hours: 1, description: "", billable: true });
   };
 
-  const delTime = (id) => setTimeEntries(ts => ts.filter(t => t.id !== id));
-  const delQuote = (id) => setQuotes(qs => qs.filter(q => q.id !== id));
-  const delInvoice = (id) => setInvoices(is => is.filter(i => i.id !== id));
-  const delBill = (id) => setBills(bs => bs.filter(b => b.id !== id));
-  const markInvPaid = (id) => {
-    const inv = invoices.find(i => i.id === id);
-    setInvoices(is => is.map(i => i.id === id ? { ...i, status: "paid" } : i));
-    setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Invoice ${inv?.number} marked paid`) } : j));
+  const delTime = async (id) => {
+    try {
+      await deleteTimeEntry(id);
+      setTimeEntries(ts => ts.filter(t => t.id !== id));
+    } catch (err) { console.error('Failed to delete time entry:', err); }
   };
-  const acceptQuote = (id) => {
+  const delQuote = async (id) => {
+    try {
+      await deleteQuote(id);
+      setQuotes(qs => qs.filter(q => q.id !== id));
+    } catch (err) { console.error('Failed to delete quote:', err); }
+  };
+  const delInvoice = async (id) => {
+    try {
+      await deleteInvoice(id);
+      setInvoices(is => is.filter(i => i.id !== id));
+    } catch (err) { console.error('Failed to delete invoice:', err); }
+  };
+  const delBill = async (id) => {
+    try {
+      await deleteBill(id);
+      setBills(bs => bs.filter(b => b.id !== id));
+    } catch (err) { console.error('Failed to delete bill:', err); }
+  };
+  const markInvPaid = async (id) => {
+    const inv = invoices.find(i => i.id === id);
+    try {
+      const saved = await updateInvoice(id, { ...inv, status: "paid" });
+      setInvoices(is => is.map(i => i.id === saved.id ? saved : i));
+      setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Invoice ${inv?.number} marked paid`) } : j));
+    } catch (err) { console.error('Failed to mark invoice paid:', err); }
+  };
+  const acceptQuote = async (id) => {
     const q = quotes.find(x => x.id === id);
-    setQuotes(qs => qs.map(x => x.id === id ? { ...x, status: "accepted" } : x));
-    setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Quote ${q?.number} accepted`) } : j));
+    try {
+      const saved = await updateQuote(id, { ...q, status: "accepted" });
+      setQuotes(qs => qs.map(x => x.id === saved.id ? saved : x));
+      setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Quote ${q?.number} accepted`) } : j));
+    } catch (err) { console.error('Failed to accept quote:', err); }
   };
 
   // ── Edit state for inline modals ──
@@ -659,24 +705,35 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [editingBill,    setEditingBill]    = useState(null);
 
-  const saveQuote = (data) => {
-    setQuotes(qs => qs.map(q => q.id === data.id ? { ...q, ...data } : q));
-    setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Quote ${data.number} updated`) } : j));
+  const saveQuote = async (data) => {
+    try {
+      const saved = await updateQuote(data.id, data);
+      setQuotes(qs => qs.map(q => q.id === saved.id ? saved : q));
+      setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Quote ${data.number} updated`) } : j));
+    } catch (err) { console.error('Failed to save quote:', err); }
     setEditingQuote(null);
   };
-  const saveInvoice = (data) => {
-    setInvoices(is => is.map(i => i.id === data.id ? { ...i, ...data } : i));
-    setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Invoice ${data.number} updated`) } : j));
+  const saveInvoice = async (data) => {
+    try {
+      const saved = await updateInvoice(data.id, data);
+      setInvoices(is => is.map(i => i.id === saved.id ? saved : i));
+      setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Invoice ${data.number} updated`) } : j));
+    } catch (err) { console.error('Failed to save invoice:', err); }
     setEditingInvoice(null);
   };
-  const saveBillFromJob = (data) => {
-    if (editingBill?.id) {
-      setBills(bs => bs.map(b => b.id === editingBill.id ? data : b));
-      setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Bill from ${data.supplier} updated`) } : j));
-    } else {
-      setBills(bs => [...bs, { ...data, jobId: job.id, status: data.jobId ? "linked" : "inbox" }]);
-      setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Bill captured: ${data.supplier} ${fmt(data.amount)}`) } : j));
-    }
+  const saveBillFromJob = async (data) => {
+    try {
+      if (editingBill?.id) {
+        const saved = await updateBill(editingBill.id, data);
+        setBills(bs => bs.map(b => b.id === editingBill.id ? saved : b));
+        setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Bill from ${data.supplier} updated`) } : j));
+      } else {
+        const billData = { ...data, jobId: job.id, status: "linked" };
+        const saved = await createBill(billData);
+        setBills(bs => [...bs, saved]);
+        setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Bill captured: ${data.supplier} ${fmt(data.amount)}`) } : j));
+      }
+    } catch (err) { console.error('Failed to save bill:', err); }
     setEditingBill(null);
   };
 
@@ -783,11 +840,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           {tab === "quotes" && (
             <div>
               <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-                <button className="btn btn-primary btn-sm" onClick={() => {
-                  const nextNum = `Q-${String(quotes.length + 1).padStart(4,"0")}`;
-                  const newQ = { id: uid(), jobId: job.id, number: nextNum, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "", createdAt: new Date().toISOString().slice(0,10) };
-                  setQuotes(qs => [...qs, newQ]);
-                  setEditingQuote(newQ);
+                <button className="btn btn-primary btn-sm" onClick={async () => {
+                  try {
+                    const newQ = { jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" };
+                    const saved = await createQuote(newQ);
+                    setQuotes(qs => [...qs, saved]);
+                    setEditingQuote(saved);
+                  } catch (err) { console.error('Failed to create quote:', err); }
                 }}><Icon name="plus" size={12} />New Quote</button>
               </div>
               {jobQuotes.length === 0
@@ -849,11 +908,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 <div style={{ fontSize: 13, color: "#888" }}>
                   {jobInvoices.length > 0 && <span><strong style={{ color: "#111" }}>{fmt(totalPaid)}</strong> paid of <strong style={{ color: "#111" }}>{fmt(totalInvoiced)}</strong> invoiced</span>}
                 </div>
-                <button className="btn btn-primary btn-sm" onClick={() => {
-                  const nextNum = `INV-${String(invoices.length + 1).padStart(4,"0")}`;
-                  const newInv = { id: uid(), jobId: job.id, number: nextNum, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "", createdAt: new Date().toISOString().slice(0,10) };
-                  setInvoices(is => [...is, newInv]);
-                  setEditingInvoice(newInv);
+                <button className="btn btn-primary btn-sm" onClick={async () => {
+                  try {
+                    const newInv = { jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" };
+                    const saved = await createInvoice(newInv);
+                    setInvoices(is => [...is, saved]);
+                    setEditingInvoice(saved);
+                  } catch (err) { console.error('Failed to create invoice:', err); }
                 }}><Icon name="plus" size={12} />New Invoice</button>
               </div>
               {jobInvoices.length === 0
@@ -916,7 +977,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label">Worker</label>
                       <select className="form-control" value={timeForm.worker} onChange={e => setTimeForm(f => ({ ...f, worker: e.target.value }))}>
-                        {TEAM.map(t => <option key={t}>{t}</option>)}
+                        {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => <option key={t}>{t}</option>)}
                       </select>
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
@@ -1024,7 +1085,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                               <div style={{ display: "flex", gap: 4 }}>
                                 {b.status === "linked" && (
                                   <button className="btn btn-ghost btn-xs" style={{ color: "#1e7e34" }} title="Approve"
-                                    onClick={() => { setBills(bs => bs.map(x => x.id===b.id ? {...x, status:"approved"} : x)); setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Bill from ${b.supplier} approved`) } : j)); }}>
+                                    onClick={async () => {
+                                      try {
+                                        const saved = await updateBill(b.id, { ...b, status: "approved" });
+                                        setBills(bs => bs.map(x => x.id === saved.id ? saved : x));
+                                        setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Bill from ${b.supplier} approved`) } : j));
+                                      } catch (err) { console.error('Failed to approve bill:', err); }
+                                    }}>
                                     <Icon name="check" size={11} />
                                   </button>
                                 )}
@@ -1194,7 +1261,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 };
 
 // ── Jobs ──────────────────────────────────────────────────────────────────────
-const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule }) => {
+const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff }) => {
   const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -1213,23 +1280,37 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
   const openNew = () => { setEditJob(null); setForm({ title: "", clientId: clients[0]?.id || "", siteId: null, status: "draft", priority: "medium", description: "", startDate: "", dueDate: "", assignedTo: [], tags: "" }); setShowModal(true); };
   const openEdit = (j) => { setEditJob(j); setForm({ ...j, siteId: j.siteId || null, tags: j.tags.join(", ") }); setShowModal(true); };
   const openDetail = (j) => setDetailJob(j);
-  const save = () => {
-    const data = { ...form, clientId: Number(form.clientId), tags: form.tags.split(",").map(t => t.trim()).filter(Boolean) };
-    if (editJob) {
-      const changes = [];
-      if (editJob.title !== data.title) changes.push(`Title changed to "${data.title}"`);
-      if (editJob.status !== data.status) changes.push(`Status → ${data.status.replace("_"," ")}`);
-      if (editJob.priority !== data.priority) changes.push(`Priority → ${data.priority}`);
-      if (editJob.clientId !== data.clientId) changes.push(`Client changed`);
-      if ((editJob.siteId||null) !== (data.siteId||null)) changes.push(`Site changed`);
-      const msg = changes.length ? changes.join(" · ") : "Job updated";
-      setJobs(js => js.map(j => j.id === editJob.id ? { ...j, ...data, activityLog: addLog(j.activityLog, msg) } : j));
-    } else {
-      setJobs(js => [...js, { ...data, id: uid(), createdAt: new Date().toISOString().slice(0, 10), activityLog: [mkLog("Job created")] }]);
+  const save = async () => {
+    const data = { ...form, clientId: form.clientId, tags: form.tags.split(",").map(t => t.trim()).filter(Boolean) };
+    try {
+      if (editJob) {
+        const changes = [];
+        if (editJob.title !== data.title) changes.push(`Title changed to "${data.title}"`);
+        if (editJob.status !== data.status) changes.push(`Status → ${data.status.replace("_"," ")}`);
+        if (editJob.priority !== data.priority) changes.push(`Priority → ${data.priority}`);
+        if (String(editJob.clientId) !== String(data.clientId)) changes.push(`Client changed`);
+        if ((editJob.siteId||null) !== (data.siteId||null)) changes.push(`Site changed`);
+        const msg = changes.length ? changes.join(" · ") : "Job updated";
+        const saved = await updateJob(editJob.id, data);
+        setJobs(js => js.map(j => j.id === editJob.id ? { ...saved, activityLog: addLog(j.activityLog, msg) } : j));
+      } else {
+        const saved = await createJob(data);
+        setJobs(js => [...js, { ...saved, activityLog: [mkLog("Job created")] }]);
+      }
+    } catch (err) {
+      console.error('Failed to save job:', err);
     }
     setShowModal(false);
   };
-  const del = (id) => { setJobs(js => js.filter(j => j.id !== id)); if (detailJob?.id === id) setDetailJob(null); };
+  const del = async (id) => {
+    try {
+      await deleteJob(id);
+      setJobs(js => js.filter(j => j.id !== id));
+      if (detailJob?.id === id) setDetailJob(null);
+    } catch (err) {
+      console.error('Failed to delete job:', err);
+    }
+  };
 
   const STATUSES = ["all","draft","scheduled","quoted","in_progress","completed","cancelled"];
   const kanbanCols = ["draft","scheduled","quoted","in_progress","completed"];
@@ -1357,6 +1438,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
           bills={bills} setBills={setBills}
           schedule={schedule} setSchedule={setSchedule}
           jobs={jobs} setJobs={setJobs}
+          staff={staff}
           onClose={() => setDetailJob(null)}
           onEdit={() => { openEdit(jobs.find(j => j.id === detailJob.id) || detailJob); setDetailJob(null); }}
         />
@@ -1384,9 +1466,9 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                 </div>
                 <div className="form-group">
                   <label className="form-label">Site</label>
-                  <select className="form-control" value={form.siteId || ""} onChange={e => setForm(f => ({ ...f, siteId: e.target.value ? Number(e.target.value) : null }))}>
+                  <select className="form-control" value={form.siteId || ""} onChange={e => setForm(f => ({ ...f, siteId: e.target.value || null }))}>
                     <option value="">— No specific site —</option>
-                    {(clients.find(c => c.id === Number(form.clientId))?.sites || []).map(s => (
+                    {(clients.find(c => String(c.id) === String(form.clientId))?.sites || []).map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
@@ -1423,7 +1505,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
               <div className="form-group">
                 <label className="form-label">Assigned Team Members</label>
                 <div className="multi-select">
-                  {TEAM.map(t => (
+                  {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => (
                     <span key={t} className={`multi-option ${form.assignedTo.includes(t) ? "selected" : ""}`}
                       onClick={() => setForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
                       {t}
@@ -1475,15 +1557,28 @@ const Clients = ({ clients, setClients, jobs }) => {
     setForm({ ...c, sites: c.sites || [] });
     setShowModal(true);
   };
-  const save = () => {
-    if (editClient) {
-      setClients(cs => cs.map(c => c.id === editClient.id ? { ...c, ...form } : c));
-    } else {
-      setClients(cs => [...cs, { ...form, id: uid() }]);
+  const save = async () => {
+    try {
+      if (editClient) {
+        await updateCustomer(editClient.id, form);
+        setClients(cs => cs.map(c => c.id === editClient.id ? { ...c, ...form } : c));
+      } else {
+        const saved = await createCustomer(form);
+        setClients(cs => [...cs, { ...saved, sites: [] }]);
+      }
+    } catch (err) {
+      console.error('Failed to save client:', err);
     }
     setShowModal(false);
   };
-  const del = (id) => setClients(cs => cs.filter(c => c.id !== id));
+  const del = async (id) => {
+    try {
+      await deleteCustomer(id);
+      setClients(cs => cs.filter(c => c.id !== id));
+    } catch (err) {
+      console.error('Failed to delete client:', err);
+    }
+  };
 
   const toggleSites = (id) => setExpandedSites(s => ({ ...s, [id]: !s[id] }));
 
@@ -1500,20 +1595,33 @@ const Clients = ({ clients, setClients, jobs }) => {
     setSiteForm({ ...site });
     setShowSiteModal(true);
   };
-  const saveSite = () => {
-    setClients(cs => cs.map(c => {
-      if (c.id !== siteClientId) return c;
-      const sites = c.sites || [];
+  const saveSite = async () => {
+    try {
       if (editSite) {
-        return { ...c, sites: sites.map(s => s.id === editSite.id ? { ...s, ...siteForm } : s) };
+        const saved = await updateSite(editSite.id, siteForm);
+        setClients(cs => cs.map(c => {
+          if (c.id !== siteClientId) return c;
+          return { ...c, sites: (c.sites || []).map(s => s.id === editSite.id ? saved : s) };
+        }));
       } else {
-        return { ...c, sites: [...sites, { ...siteForm, id: uid() }] };
+        const saved = await createSite(siteClientId, siteForm);
+        setClients(cs => cs.map(c => {
+          if (c.id !== siteClientId) return c;
+          return { ...c, sites: [...(c.sites || []), saved] };
+        }));
       }
-    }));
+    } catch (err) {
+      console.error('Failed to save site:', err);
+    }
     setShowSiteModal(false);
   };
-  const delSite = (clientId, siteId) => {
-    setClients(cs => cs.map(c => c.id === clientId ? { ...c, sites: (c.sites||[]).filter(s => s.id !== siteId) } : c));
+  const delSite = async (clientId, siteId) => {
+    try {
+      await deleteSite(siteId);
+      setClients(cs => cs.map(c => c.id === clientId ? { ...c, sites: (c.sites||[]).filter(s => s.id !== siteId) } : c));
+    } catch (err) {
+      console.error('Failed to delete site:', err);
+    }
   };
 
   return (
@@ -1682,7 +1790,7 @@ const Clients = ({ clients, setClients, jobs }) => {
 };
 
 // ── Schedule ──────────────────────────────────────────────────────────────────
-const Schedule = ({ schedule, setSchedule, jobs, clients }) => {
+const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
   const [showModal, setShowModal] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
   const [form, setForm] = useState({ jobId: "", date: new Date().toISOString().slice(0,10), assignedTo: [], notes: "" });
@@ -1702,16 +1810,25 @@ const Schedule = ({ schedule, setSchedule, jobs, clients }) => {
     setForm({ jobId: s.jobId, date: s.date, assignedTo: s.assignedTo || [], notes: s.notes || "" });
     setShowModal(true);
   };
-  const save = () => {
-    const data = { ...form, jobId: Number(form.jobId) };
-    if (editEntry) {
-      setSchedule(s => s.map(e => e.id === editEntry.id ? { ...e, ...data } : e));
-    } else {
-      setSchedule(s => [...s, { ...data, id: uid() }]);
-    }
+  const save = async () => {
+    const data = { ...form, jobId: form.jobId };
+    try {
+      if (editEntry) {
+        const saved = await updateScheduleEntry(editEntry.id, data);
+        setSchedule(s => s.map(e => e.id === editEntry.id ? saved : e));
+      } else {
+        const saved = await createScheduleEntry(data);
+        setSchedule(s => [...s, saved]);
+      }
+    } catch (err) { console.error('Failed to save schedule entry:', err); }
     setShowModal(false);
   };
-  const del = (id) => setSchedule(s => s.filter(e => e.id !== id));
+  const del = async (id) => {
+    try {
+      await deleteScheduleEntry(id);
+      setSchedule(s => s.filter(e => e.id !== id));
+    } catch (err) { console.error('Failed to delete schedule entry:', err); }
+  };
 
   const grouped = displayed.reduce((acc, e) => { (acc[e.date] = acc[e.date] || []).push(e); return acc; }, {});
 
@@ -1825,7 +1942,7 @@ const Schedule = ({ schedule, setSchedule, jobs, clients }) => {
               <div className="form-group">
                 <label className="form-label">Assigned To</label>
                 <div className="multi-select">
-                  {TEAM.map(t => (
+                  {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => (
                     <span key={t} className={`multi-option ${form.assignedTo.includes(t) ? "selected" : ""}`}
                       onClick={() => setForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
                       {t}
@@ -1855,17 +1972,33 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
   const [editQuote, setEditQuote] = useState(null);
   const [form, setForm] = useState({ jobId: "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" });
 
-  const nextNum = () => `Q-${String(quotes.length + 1).padStart(4, "0")}`;
   const openNew = () => { setEditQuote(null); setForm({ jobId: jobs[0]?.id || "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" }); setShowModal(true); };
   const openEdit = (q) => { setEditQuote(q); setForm(q); setShowModal(true); };
-  const save = () => {
-    const data = { ...form, jobId: Number(form.jobId) };
-    if (editQuote) setQuotes(qs => qs.map(q => q.id === editQuote.id ? { ...q, ...data } : q));
-    else setQuotes(qs => [...qs, { ...data, id: uid(), number: nextNum(), createdAt: new Date().toISOString().slice(0, 10) }]);
+  const save = async () => {
+    const data = { ...form, jobId: form.jobId };
+    try {
+      if (editQuote) {
+        const saved = await updateQuote(editQuote.id, data);
+        setQuotes(qs => qs.map(q => q.id === saved.id ? saved : q));
+      } else {
+        const saved = await createQuote(data);
+        setQuotes(qs => [...qs, saved]);
+      }
+    } catch (err) { console.error('Failed to save quote:', err); }
     setShowModal(false);
   };
-  const del = (id) => setQuotes(qs => qs.filter(q => q.id !== id));
-  const duplicate = (q) => setQuotes(qs => [...qs, { ...q, id: uid(), number: nextNum(), status: "draft", createdAt: new Date().toISOString().slice(0, 10) }]);
+  const del = async (id) => {
+    try {
+      await deleteQuote(id);
+      setQuotes(qs => qs.filter(q => q.id !== id));
+    } catch (err) { console.error('Failed to delete quote:', err); }
+  };
+  const duplicate = async (q) => {
+    try {
+      const saved = await createQuote({ ...q, status: "draft" });
+      setQuotes(qs => [...qs, saved]);
+    } catch (err) { console.error('Failed to duplicate quote:', err); }
+  };
 
   return (
     <div>
@@ -1990,7 +2123,8 @@ function dayColour(hours) {
 }
 
 // ── Log Time Modal ────────────────────────────────────────────────────────────
-const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null }) => {
+const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
+  const staffNames = (staff && staff.length > 0) ? staff.map(s => s.name) : TEAM;
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState(() => {
     if (editEntry) return {
@@ -2002,7 +2136,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null }) => {
       description: editEntry.description,
       billable: editEntry.billable,
     };
-    return { jobId: String(jobs[0]?.id || ""), worker: TEAM[0], date: today, startTime: "", endTime: "", description: "", billable: true };
+    return { jobId: String(jobs[0]?.id || ""), worker: staffNames[0] || "", date: today, startTime: "", endTime: "", description: "", billable: true };
   });
   const [activePreset, setActivePreset] = useState(null);
   const [endTouched, setEndTouched] = useState(!!editEntry);
@@ -2031,7 +2165,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null }) => {
     if (!form.jobId) return;
     onSave({
       ...form,
-      jobId: Number(form.jobId),
+      jobId: form.jobId,
       hours,
     });
   };
@@ -2055,7 +2189,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null }) => {
             <div className="form-group">
               <label className="form-label">Worker</label>
               <select className="form-control" value={form.worker} onChange={e => setForm(f => ({ ...f, worker: e.target.value }))}>
-                {TEAM.map(t => <option key={t}>{t}</option>)}
+                {staffNames.map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
           </div>
@@ -2252,7 +2386,7 @@ const WeekStrip = ({ timeEntries, selectedWorker, weekOffset, setWeekOffset, sel
 };
 
 // ── Main TimeTracking component ───────────────────────────────────────────────
-const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients }) => {
+const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, staff }) => {
   const today = new Date().toISOString().slice(0, 10);
   const [tsTab, setTsTab] = useState("week");           // "week" | "team" | "calendar"
   const [selectedWorker, setSelectedWorker] = useState("all");
@@ -2277,24 +2411,36 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients }) =
     .filter(t => t.date === selectedDay && (selectedWorker === "all" || t.worker === selectedWorker))
     .sort((a,b) => (a.startTime||"").localeCompare(b.startTime||""));
 
-  const saveEntry = (data) => {
-    if (editEntry) {
-      setTimeEntries(ts => ts.map(t => t.id === editEntry.id ? { ...t, ...data, id: editEntry.id } : t));
-      setJobs && setJobs(js => js.map(j => j.id === data.jobId ? { ...j, activityLog: addLog(j.activityLog, `${data.worker} updated time entry (${data.hours}h)`) } : j));
-    } else {
-      setTimeEntries(ts => [...ts, { ...data, id: uid() }]);
-      setJobs && setJobs(js => js.map(j => j.id === data.jobId ? { ...j, activityLog: addLog(j.activityLog, `${data.worker} logged ${data.hours}h`) } : j));
-    }
+  const saveEntry = async (data) => {
+    try {
+      const staffMember = staff ? staff.find(s => s.name === data.worker) : null;
+      const staffId = staffMember?.id;
+      if (editEntry) {
+        const saved = await updateTimeEntry(editEntry.id, data, staffId);
+        setTimeEntries(ts => ts.map(t => t.id === editEntry.id ? saved : t));
+        setJobs && setJobs(js => js.map(j => j.id === data.jobId ? { ...j, activityLog: addLog(j.activityLog, `${data.worker} updated time entry (${data.hours}h)`) } : j));
+      } else {
+        const saved = await createTimeEntry(data, staffId);
+        setTimeEntries(ts => [...ts, saved]);
+        setJobs && setJobs(js => js.map(j => j.id === data.jobId ? { ...j, activityLog: addLog(j.activityLog, `${data.worker} logged ${data.hours}h`) } : j));
+      }
+    } catch (err) { console.error('Failed to save time entry:', err); }
     setShowLogModal(false);
     setEditEntry(null);
   };
 
-  const del = (id) => setTimeEntries(ts => ts.filter(t => t.id !== id));
+  const del = async (id) => {
+    try {
+      await deleteTimeEntry(id);
+      setTimeEntries(ts => ts.filter(t => t.id !== id));
+    } catch (err) { console.error('Failed to delete time entry:', err); }
+  };
   const openEdit = (entry) => { setEditEntry(entry); setShowLogModal(true); };
   const openNew = () => { setEditEntry(null); setShowLogModal(true); };
 
-  // Team summary
-  const byWorker = TEAM.map(w => {
+  // Team summary — derive worker list from staff prop (or fall back to unique names in entries)
+  const staffNames = (staff && staff.length > 0) ? staff.map(s => s.name) : [...new Set(timeEntries.map(t => t.worker).filter(Boolean))];
+  const byWorker = staffNames.map(w => {
     const wEntries = timeEntries.filter(t => t.worker === w);
     return {
       name: w,
@@ -2327,7 +2473,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients }) =
         </div>
         <select className="form-control" style={{ width: "auto" }} value={selectedWorker} onChange={e => setSelectedWorker(e.target.value)}>
           <option value="all">All Team</option>
-          {TEAM.map(t => <option key={t} value={t}>{t}</option>)}
+          {staffNames.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
         <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />Log Time</button>
       </div>
@@ -2519,6 +2665,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients }) =
           editEntry={editEntry}
           onSave={saveEntry}
           onClose={() => { setShowLogModal(false); setEditEntry(null); }}
+          staff={staff}
         />
       )}
     </div>
@@ -2570,11 +2717,11 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
     const exG = form.hasGst ? amt / 1.1 : amt;
     onSave({
       ...form,
-      id: bill?.id || uid(),
+      ...(bill?.id ? { id: bill.id } : {}),
       amount: amt,
       amountExGst: parseFloat(exG.toFixed(2)),
       gstAmount: parseFloat((amt - exG).toFixed(2)),
-      jobId: form.jobId ? Number(form.jobId) : null,
+      jobId: form.jobId || null,
       markup: parseFloat(form.markup) || 0,
       capturedAt: bill?.capturedAt || new Date().toISOString().slice(0,10),
       status: form.jobId && form.status === "inbox" ? "linked" : form.status,
@@ -2761,7 +2908,7 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
         </div>
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={() => onPost(Number(jobId), category, parseFloat(markup)||0)} disabled={!jobId}>
+          <button className="btn btn-primary" onClick={() => onPost(jobId, category, parseFloat(markup)||0)} disabled={!jobId}>
             <Icon name="check" size={13} />Post to Job
           </button>
         </div>
@@ -2809,37 +2956,57 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
   const openNew  = () => { setEditBill(null); setShowBillModal(true); };
   const openEdit = (b) => { setEditBill(b); setShowBillModal(true); };
 
-  const saveBill = (data) => {
-    if (editBill) {
-      setBills(bs => bs.map(b => b.id === editBill.id ? data : b));
-    } else {
-      setBills(bs => [...bs, data]);
-      // If linked to a job, log activity
-      if (data.jobId) {
-        setJobs(js => js.map(j => j.id === data.jobId ? { ...j, activityLog: addLog(j.activityLog, `Bill captured: ${data.supplier} ${fmt(data.amount)}`) } : j));
+  const saveBill = async (data) => {
+    try {
+      if (editBill) {
+        const saved = await updateBill(editBill.id, data);
+        setBills(bs => bs.map(b => b.id === editBill.id ? saved : b));
+      } else {
+        const saved = await createBill(data);
+        setBills(bs => [...bs, saved]);
+        if (data.jobId) {
+          setJobs(js => js.map(j => j.id === data.jobId ? { ...j, activityLog: addLog(j.activityLog, `Bill captured: ${data.supplier} ${fmt(data.amount)}`) } : j));
+        }
       }
-    }
+    } catch (err) { console.error('Failed to save bill:', err); }
     setShowBillModal(false);
   };
 
-  const del = (id) => setBills(bs => bs.filter(b => b.id !== id));
-
-  const setStatus = (id, status) => setBills(bs => bs.map(b => b.id === id ? { ...b, status } : b));
-
-  const approveSelected = () => {
-    setBills(bs => bs.map(b => selectedIds.includes(b.id) && (b.status === "inbox" || b.status === "linked") ? { ...b, status: "approved" } : b));
-    setSelectedIds([]);
+  const del = async (id) => {
+    try {
+      await deleteBill(id);
+      setBills(bs => bs.filter(b => b.id !== id));
+    } catch (err) { console.error('Failed to delete bill:', err); }
   };
 
-  const handlePost = (billId, jobId, category, markup) => {
+  const setStatus = async (id, status) => {
+    const bill = bills.find(b => b.id === id);
+    if (!bill) return;
+    try {
+      const saved = await updateBill(id, { ...bill, status });
+      setBills(bs => bs.map(b => b.id === saved.id ? saved : b));
+    } catch (err) { console.error('Failed to update bill status:', err); }
+  };
+
+  const approveSelected = async () => {
+    try {
+      const toApprove = bills.filter(b => selectedIds.includes(b.id) && (b.status === "inbox" || b.status === "linked"));
+      await Promise.all(toApprove.map(b => updateBill(b.id, { ...b, status: "approved" })));
+      setBills(bs => bs.map(b => selectedIds.includes(b.id) && (b.status === "inbox" || b.status === "linked") ? { ...b, status: "approved" } : b));
+      setSelectedIds([]);
+    } catch (err) { console.error('Failed to approve bills:', err); }
+  };
+
+  const handlePost = async (billId, jobId, category, markup) => {
     const bill = bills.find(b => b.id === billId);
     if (!bill) return;
     const exGst = bill.hasGst ? bill.amount / 1.1 : bill.amount;
     const onCharge = exGst * (1 + markup / 100);
-    // Update bill status to posted
-    setBills(bs => bs.map(b => b.id === billId ? { ...b, status: "posted", jobId, category, markup, postedAt: nowTs() } : b));
-    // Log on job
-    setJobs(js => js.map(j => j.id === jobId ? { ...j, activityLog: addLog(j.activityLog, `Bill posted: ${bill.supplier} ${fmt(onCharge)} (ex-GST + ${markup}% markup)`) } : j));
+    try {
+      const saved = await updateBill(billId, { ...bill, status: "posted", jobId, category, markup });
+      setBills(bs => bs.map(b => b.id === billId ? saved : b));
+      setJobs(js => js.map(j => j.id === jobId ? { ...j, activityLog: addLog(j.activityLog, `Bill posted: ${bill.supplier} ${fmt(onCharge)} (ex-GST + ${markup}% markup)`) } : j));
+    } catch (err) { console.error('Failed to post bill:', err); }
     setPostBill(null);
   };
 
@@ -3073,7 +3240,6 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
   const [editInvoice, setEditInvoice] = useState(null);
   const [form, setForm] = useState({ jobId: "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" });
 
-  const nextNum = () => `INV-${String(invoices.length + 1).padStart(4, "0")}`;
   const openNew = () => { setEditInvoice(null); setForm({ jobId: jobs[0]?.id || "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" }); setShowModal(true); };
   const openEdit = (inv) => { setEditInvoice(inv); setForm(inv); setShowModal(true); };
   const fromQuote = (q) => {
@@ -3081,14 +3247,32 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
     setForm({ jobId: q.jobId, status: "draft", lineItems: [...q.lineItems], tax: q.tax, dueDate: "", notes: q.notes });
     setShowModal(true);
   };
-  const save = () => {
-    const data = { ...form, jobId: Number(form.jobId) };
-    if (editInvoice) setInvoices(is => is.map(i => i.id === editInvoice.id ? { ...i, ...data } : i));
-    else setInvoices(is => [...is, { ...data, id: uid(), number: nextNum(), createdAt: new Date().toISOString().slice(0, 10) }]);
+  const save = async () => {
+    const data = { ...form, jobId: form.jobId };
+    try {
+      if (editInvoice) {
+        const saved = await updateInvoice(editInvoice.id, data);
+        setInvoices(is => is.map(i => i.id === saved.id ? saved : i));
+      } else {
+        const saved = await createInvoice(data);
+        setInvoices(is => [...is, saved]);
+      }
+    } catch (err) { console.error('Failed to save invoice:', err); }
     setShowModal(false);
   };
-  const del = (id) => setInvoices(is => is.filter(i => i.id !== id));
-  const markPaid = (id) => setInvoices(is => is.map(i => i.id === id ? { ...i, status: "paid" } : i));
+  const del = async (id) => {
+    try {
+      await deleteInvoice(id);
+      setInvoices(is => is.filter(i => i.id !== id));
+    } catch (err) { console.error('Failed to delete invoice:', err); }
+  };
+  const markPaid = async (id) => {
+    const inv = invoices.find(i => i.id === id);
+    try {
+      const saved = await updateInvoice(id, { ...inv, status: "paid" });
+      setInvoices(is => is.map(i => i.id === saved.id ? saved : i));
+    } catch (err) { console.error('Failed to mark invoice paid:', err); }
+  };
 
   const totalOwed = invoices.filter(i => i.status !== "paid" && i.status !== "void").reduce((s, inv) => s + calcQuoteTotal(inv), 0);
   const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, inv) => s + calcQuoteTotal(inv), 0);
@@ -3107,7 +3291,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {quotes.filter(q => q.status === "accepted").length > 0 && (
             <div style={{ position: "relative" }}>
-              <select className="form-control" style={{ paddingRight: 32 }} onChange={e => { const q = quotes.find(q => q.id === Number(e.target.value)); if (q) fromQuote(q); e.target.value = ""; }}>
+              <select className="form-control" style={{ paddingRight: 32 }} onChange={e => { const q = quotes.find(q => String(q.id) === e.target.value); if (q) fromQuote(q); e.target.value = ""; }}>
                 <option value="">Invoice from Quote…</option>
                 {quotes.filter(q => q.status === "accepted").map(q => <option key={q.id} value={q.id}>{q.number}</option>)}
               </select>
@@ -3295,13 +3479,36 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [clients, setClients] = useState(SEED_CLIENTS);
-  const [jobs, setJobs] = useState(SEED_JOBS);
-  const [quotes, setQuotes] = useState(SEED_QUOTES);
-  const [schedule, setSchedule] = useState(SEED_SCHEDULE);
-  const [timeEntries, setTimeEntries] = useState(SEED_TIME);
-  const [bills, setBills] = useState(SEED_BILLS);
-  const [invoices, setInvoices] = useState(SEED_INVOICES);
+  const [clients, setClients] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [quotes, setQuotes] = useState([]);
+  const [schedule, setSchedule] = useState([]);
+  const [timeEntries, setTimeEntries] = useState([]);
+  const [bills, setBills] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState(null);
+
+  useEffect(() => {
+    fetchAll()
+      .then(data => {
+        setClients(data.clients);
+        setJobs(data.jobs);
+        setQuotes(data.quotes);
+        setInvoices(data.invoices);
+        setTimeEntries(data.timeEntries);
+        setBills(data.bills);
+        setSchedule(data.schedule);
+        setStaff(data.staff);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load data:', err);
+        setDbError(err.message);
+        setLoading(false);
+      });
+  }, []);
 
   const pendingBillsCount = bills.filter(b => b.status === "inbox" || b.status === "linked" || b.status === "approved").length;
   const unpaidInvCount = invoices.filter(i => i.status !== "paid" && i.status !== "void").length;
@@ -3335,11 +3542,11 @@ export default function App() {
   const renderPage = () => {
     switch (page) {
       case "dashboard": return <Dashboard jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} onNav={navigate} />;
-      case "jobs": return <Jobs jobs={jobs} setJobs={setJobs} clients={clients} quotes={quotes} setQuotes={setQuotes} invoices={invoices} setInvoices={setInvoices} timeEntries={timeEntries} setTimeEntries={setTimeEntries} bills={bills} setBills={setBills} schedule={schedule} setSchedule={setSchedule} />;
+      case "jobs": return <Jobs jobs={jobs} setJobs={setJobs} clients={clients} quotes={quotes} setQuotes={setQuotes} invoices={invoices} setInvoices={setInvoices} timeEntries={timeEntries} setTimeEntries={setTimeEntries} bills={bills} setBills={setBills} schedule={schedule} setSchedule={setSchedule} staff={staff} />;
       case "clients": return <Clients clients={clients} setClients={setClients} jobs={jobs} />;
-      case "schedule": return <Schedule schedule={schedule} setSchedule={setSchedule} jobs={jobs} clients={clients} />;
+      case "schedule": return <Schedule schedule={schedule} setSchedule={setSchedule} jobs={jobs} clients={clients} staff={staff} />;
       case "quotes": return <Quotes quotes={quotes} setQuotes={setQuotes} jobs={jobs} clients={clients} invoices={invoices} />;
-      case "time": return <TimeTracking timeEntries={timeEntries} setTimeEntries={setTimeEntries} jobs={jobs} setJobs={setJobs} clients={clients} />;
+      case "time": return <TimeTracking timeEntries={timeEntries} setTimeEntries={setTimeEntries} jobs={jobs} setJobs={setJobs} clients={clients} staff={staff} />;
       case "bills": return <Bills bills={bills} setBills={setBills} jobs={jobs} setJobs={setJobs} clients={clients} />;
       case "invoices": return <Invoices invoices={invoices} setInvoices={setInvoices} jobs={jobs} clients={clients} quotes={quotes} />;
       case "activity": return <ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />;
@@ -3349,7 +3556,20 @@ export default function App() {
 
   return (
     <div className="jm-root" onClick={() => moreOpen && setMoreOpen(false)}>
-
+      {loading && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 16 }}>
+          <div style={{ width: 32, height: 32, border: "3px solid #e8e8e8", borderTopColor: "#111", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <div style={{ color: "#888", fontSize: 14 }}>Loading…</div>
+        </div>
+      )}
+      {dbError && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 16 }}>
+          <div style={{ color: "#e74c3c", fontWeight: 700 }}>Failed to connect to database</div>
+          <div style={{ color: "#888", fontSize: 13 }}>{dbError}</div>
+        </div>
+      )}
+      {!loading && !dbError && (
+      <>
       {/* Overlay for mobile sidebar */}
       <div className={`jm-sidebar-overlay ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
 
@@ -3465,6 +3685,8 @@ export default function App() {
           </button>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

@@ -691,6 +691,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   ];
 
   return (
+    <>
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal modal-lg" style={{ maxWidth: 860, maxHeight: "92vh" }}>
         {/* Header */}
@@ -1188,6 +1189,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         defaultJobId={job.id}
       />
     )}
+    </>
   );
 };
 

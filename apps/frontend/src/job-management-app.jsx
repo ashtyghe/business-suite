@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry } from './lib/db';
 import { extractBillFromImage } from './lib/supabase';
@@ -106,6 +106,128 @@ const nowTs = () => {
 const mkLog = (action, user = CURRENT_USER) => ({ ts: nowTs(), user, action });
 const addLog = (prev, action, user = CURRENT_USER) => [...(prev || []), mkLog(action, user)];
 
+// ── Orders: Seed Data ────────────────────────────────────────────────────────
+const ORDER_CONTRACTORS = [
+  { id: "c1", name: "Apex Electrical Pty Ltd", contact: "Mark Simmons", email: "mark@apexelec.com.au", phone: "0412 345 678", trade: "Electrical" },
+  { id: "c2", name: "Blue Ridge Plumbing", contact: "Sarah O'Brien", email: "sarah@blueridgeplumbing.com.au", phone: "0421 987 654", trade: "Plumbing" },
+  { id: "c3", name: "Coastal Civil Works", contact: "Tom Fletcher", email: "tom@coastalcivil.com.au", phone: "0433 112 233", trade: "Civil" },
+  { id: "c4", name: "Ironclad Roofing Co.", contact: "Dave Nguyen", email: "dave@ironcladroofing.com.au", phone: "0455 667 788", trade: "Roofing" },
+];
+const ORDER_SUPPLIERS = [
+  { id: "s1", name: "Reece Plumbing & Bathrooms", contact: "Accounts", email: "accounts@reece.com.au", phone: "1300 555 000", abn: "12 345 678 901" },
+  { id: "s2", name: "Bunnings Trade", contact: "Trade Desk", email: "trade@bunnings.com.au", phone: "1300 888 111", abn: "23 456 789 012" },
+  { id: "s3", name: "Middy's Electrical", contact: "Sales", email: "sales@middys.com.au", phone: "03 9412 5555", abn: "34 567 890 123" },
+  { id: "s4", name: "Clark Rubber & Foam", contact: "Warehouse", email: "orders@clarkrubber.com.au", phone: "1800 252 759", abn: "45 678 901 234" },
+];
+const ORDER_UNITS = ["hr", "day", "ea", "m", "m2", "m3", "kg", "t", "L", "lm", "set", "lot"];
+
+// ── Orders: Status Pipeline ──────────────────────────────────────────────────
+const ORDER_STATUSES = ["Draft", "Approved", "Sent", "Viewed", "Accepted", "Completed", "Billed", "Cancelled"];
+const ORDER_TRANSITIONS = {
+  Draft: ["Approved", "Cancelled"], Approved: ["Sent", "Draft", "Cancelled"], Sent: ["Viewed", "Accepted", "Cancelled"],
+  Viewed: ["Accepted", "Cancelled"], Accepted: ["Completed", "Cancelled"], Completed: ["Billed"], Billed: [], Cancelled: ["Draft"],
+};
+const ORDER_STATUS_TRIGGERS = {
+  Sent: "Triggered automatically when document is emailed",
+  Viewed: "Triggered when recipient opens the document link",
+  Billed: "Triggered when matched to a bill in Job Management",
+};
+const ORDER_TERMINAL = ["Billed", "Cancelled"];
+const ORDER_ACTIVE = ["Approved", "Sent", "Viewed", "Accepted", "Completed"];
+const ORDER_STATUS_PROGRESS = { Draft: 0, Approved: 15, Sent: 30, Viewed: 45, Accepted: 60, Completed: 80, Billed: 100, Cancelled: 0 };
+const ORDER_STATUS_COLORS = {
+  Draft: { bg: "#f1f5f9", text: "#475569" }, Approved: { bg: "#e0f2fe", text: "#0369a1" }, Sent: { bg: "#dbeafe", text: "#1d4ed8" },
+  Viewed: { bg: "#ede9fe", text: "#6d28d9" }, Accepted: { bg: "#fef3c7", text: "#b45309" }, Completed: { bg: "#d1fae5", text: "#047857" },
+  Billed: { bg: "#ccfbf1", text: "#0f766e" }, Cancelled: { bg: "#fee2e2", text: "#dc2626" },
+};
+const ORDER_BAR_COLORS = {
+  Draft: "#cbd5e1", Approved: "#38bdf8", Sent: "#60a5fa", Viewed: "#a78bfa", Accepted: "#fbbf24", Completed: "#34d399", Billed: "#2dd4bf", Cancelled: "#fca5a5",
+};
+
+// ── Section Color Palette ────────────────────────────────────────────────────
+const SECTION_COLORS = {
+  dashboard: { accent: "#111111", light: "#f5f5f5" },
+  jobs:      { accent: "#ea580c", light: "#fff7ed" },
+  wo:        { accent: "#2563eb", light: "#eff6ff" },
+  po:        { accent: "#059669", light: "#ecfdf5" },
+  clients:   { accent: "#7c3aed", light: "#f5f3ff" },
+  schedule:  { accent: "#0891b2", light: "#ecfeff" },
+  quotes:    { accent: "#ca8a04", light: "#fefce8" },
+  time:      { accent: "#be185d", light: "#fdf2f8" },
+  bills:     { accent: "#dc2626", light: "#fef2f2" },
+  invoices:  { accent: "#4f46e5", light: "#eef2ff" },
+  activity:  { accent: "#64748b", light: "#f8fafc" },
+  orders:    { accent: "#2563eb", light: "#eff6ff" },
+};
+const hexToRgba = (hex, a) => {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+};
+
+// ── View Field (reusable read-only display for View mode) ─────────────────────
+const ViewField = ({ label, value }) => (
+  <div style={{ marginBottom: 14 }}>
+    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 4 }}>{label}</div>
+    <div style={{ fontSize: 14, color: '#111', fontWeight: 500 }}>{value || '—'}</div>
+  </div>
+);
+
+// ── Orders: Helpers ──────────────────────────────────────────────────────────
+const genId = () => Math.random().toString(36).slice(2, 9).toUpperCase();
+const orderToday = () => new Date().toISOString().slice(0, 10);
+const orderAddDays = (dateStr, n) => { const d = new Date(dateStr); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const orderFmtDate = (d) => { if (!d) return "—"; const [y, m, day] = d.split("-"); return `${day}/${m}/${y}`; };
+const daysUntil = (dateStr) => { if (!dateStr) return null; return Math.ceil((new Date(dateStr) - new Date(orderToday())) / (1000 * 60 * 60 * 24)); };
+const fmtFileSize = (bytes) => { if (bytes < 1024) return bytes + " B"; if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"; return (bytes / (1024 * 1024)).toFixed(1) + " MB"; };
+const orderFmtTs = (ts) => {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  return d.toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) + " " +
+    d.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: true });
+};
+const makeLogEntry = (action, detail = "", auto = false) => ({ id: genId(), ts: new Date().toISOString(), action, detail, auto });
+const orderAddLog = (order, action, detail = "", auto = false) => ({ ...order, auditLog: [...(order.auditLog || []), makeLogEntry(action, detail, auto)] });
+const applyTransition = (order, newStatus, extraDetail = "") => {
+  const old = order.status;
+  const detail = extraDetail || (ORDER_STATUS_TRIGGERS[newStatus] ? ORDER_STATUS_TRIGGERS[newStatus] : "");
+  const auto = !!ORDER_STATUS_TRIGGERS[newStatus];
+  return orderAddLog({ ...order, status: newStatus }, `Status changed: ${old} → ${newStatus}`, detail, auto);
+};
+const orderJobDisplay = (job) => {
+  if (!job) return null;
+  const ref = job.jobNumber || ("J-" + String(job.id).padStart(4, "0"));
+  return { ref, name: job.title, client: job.clientName || "" };
+};
+
+// ── Orders: Seed Work Orders & Purchase Orders ───────────────────────────────
+const SEED_WO = [
+  { id: "WO001", ref: "WO-101", status: "Sent", contractorId: "c1", contractorName: "Apex Electrical Pty Ltd", contractorContact: "Mark Simmons", contractorEmail: "mark@apexelec.com.au", contractorPhone: "0412 345 678", trade: "Electrical", jobId: 2, issueDate: orderAddDays(orderToday(), -10), dueDate: orderAddDays(orderToday(), 2), poLimit: "12000", scopeOfWork: "Supply and install new DB boards and run conduit per electrical plans.\n\nScope includes:\n• Installation of 2x DB boards\n• Run all conduit and cabling per plans\n• Termination and testing of all circuits\n• As-built drawings to be provided on completion", notes: "Payment 14 days from completion.", internalNotes: "", attachments: [], auditLog: [
+    { id: "al1", ts: new Date(Date.now() - 10*86400000).toISOString(), action: "Created", detail: "Work order created", auto: false },
+    { id: "al2", ts: new Date(Date.now() - 10*86400000 + 3600000).toISOString(), action: "Status changed: Draft → Approved", detail: "", auto: false },
+    { id: "al3", ts: new Date(Date.now() - 8*86400000).toISOString(), action: "Status changed: Approved → Sent", detail: "Triggered automatically when document is emailed", auto: true },
+  ]},
+  { id: "WO002", ref: "WO-102", status: "Accepted", contractorId: "c4", contractorName: "Ironclad Roofing Co.", contractorContact: "Dave Nguyen", contractorEmail: "dave@ironcladroofing.com.au", contractorPhone: "0455 667 788", trade: "Roofing", jobId: 2, issueDate: orderAddDays(orderToday(), -5), dueDate: orderAddDays(orderToday(), 9), poLimit: "8500", scopeOfWork: "Repair and reseal damaged roof sections.\n\n• Cut out and replace damaged sheeting\n• Apply new waterproof membrane\n• Inspect and reseal all penetrations", notes: "", internalNotes: "Check scaffolding.", attachments: [], auditLog: [
+    { id: "al4", ts: new Date(Date.now() - 5*86400000).toISOString(), action: "Created", detail: "Work order created", auto: false },
+    { id: "al5", ts: new Date(Date.now() - 4*86400000).toISOString(), action: "Status changed: Draft → Approved", detail: "", auto: false },
+    { id: "al6", ts: new Date(Date.now() - 3*86400000).toISOString(), action: "Status changed: Approved → Sent", detail: "Triggered automatically when document is emailed", auto: true },
+    { id: "al7", ts: new Date(Date.now() - 2*86400000).toISOString(), action: "Status changed: Sent → Accepted", detail: "", auto: false },
+  ]},
+  { id: "WO003", ref: "WO-103", status: "Draft", contractorId: "c2", contractorName: "Blue Ridge Plumbing", contractorContact: "Sarah O'Brien", contractorEmail: "sarah@blueridgeplumbing.com.au", contractorPhone: "0421 987 654", trade: "Plumbing", jobId: 3, issueDate: orderToday(), dueDate: orderAddDays(orderToday(), -3), poLimit: "6000", scopeOfWork: "Rough-in plumbing for 6 bathrooms.", notes: "", internalNotes: "", attachments: [], auditLog: [
+    { id: "al9", ts: new Date(Date.now() - 86400000).toISOString(), action: "Created", detail: "Work order created", auto: false },
+  ]},
+];
+const SEED_PO = [
+  { id: "PO001", ref: "PO-201", status: "Accepted", supplierId: "s1", supplierName: "Reece Plumbing & Bathrooms", supplierContact: "Accounts", supplierEmail: "accounts@reece.com.au", supplierAbn: "12 345 678 901", jobId: 3, issueDate: orderAddDays(orderToday(), -7), dueDate: orderToday(), poLimit: "9500", deliveryAddress: "22 Harbourview Rd, Docklands VIC 3008", lines: [{ id: "f", desc: "Shower mixer — Methven Aio", qty: "6", unit: "ea" }, { id: "g", desc: "Waterproofing membrane", qty: "24", unit: "m2" }], notes: "Please call site 30 mins before delivery.", internalNotes: "", attachments: [], auditLog: [
+    { id: "alp1", ts: new Date(Date.now() - 7*86400000).toISOString(), action: "Created", detail: "Purchase order created", auto: false },
+    { id: "alp2", ts: new Date(Date.now() - 6*86400000).toISOString(), action: "Status changed: Draft → Approved", detail: "", auto: false },
+    { id: "alp3", ts: new Date(Date.now() - 5*86400000).toISOString(), action: "Status changed: Approved → Sent", detail: "Triggered automatically when document is emailed", auto: true },
+    { id: "alp4", ts: new Date(Date.now() - 4*86400000).toISOString(), action: "Status changed: Sent → Accepted", detail: "Supplier confirmed", auto: false },
+  ]},
+  { id: "PO002", ref: "PO-202", status: "Draft", supplierId: "s3", supplierName: "Middy's Electrical", supplierContact: "Sales", supplierEmail: "sales@middys.com.au", supplierAbn: "34 567 890 123", jobId: 2, issueDate: orderToday(), dueDate: orderAddDays(orderToday(), 5), poLimit: "4200", deliveryAddress: "14 Oakwood Ave, Richmond VIC 3121", lines: [{ id: "h", desc: "Cable — 2.5mm TPS", qty: "200", unit: "m" }, { id: "i", desc: "GPO outlets", qty: "40", unit: "ea" }], notes: "", internalNotes: "", attachments: [], auditLog: [
+    { id: "alp6", ts: new Date(Date.now() - 7200000).toISOString(), action: "Created", detail: "Purchase order created", auto: false },
+  ]},
+];
+
 // ActivityLog display component
 const ActivityLog = ({ entries = [] }) => {
   if (!entries.length) return <div style={{ color: "#bbb", fontSize: 13, padding: "20px 0", textAlign: "center" }}>No activity recorded yet.</div>;
@@ -136,19 +258,41 @@ const STATUS_COLORS = {
 };
 const STATUS_BG = {
   draft: "#f0f0f0",
-  scheduled: "#e8e8e8",
-  quoted: "#d8d8d8",
-  in_progress: "#111",
-  completed: "#333",
+  scheduled: "#0891b2",
+  quoted: "#ca8a04",
+  in_progress: "#ea580c",
+  completed: "#059669",
   cancelled: "#f5f5f5",
+  sent: "#2563eb",
+  accepted: "#059669",
+  declined: "#dc2626",
+  paid: "#059669",
+  overdue: "#dc2626",
+  void: "#64748b",
+  inbox: "#f0f0f0",
+  linked: "#2563eb",
+  approved: "#059669",
+  posted: "#111",
+  pending: "#ca8a04",
 };
 const STATUS_TEXT = {
   draft: "#888",
-  scheduled: "#444",
-  quoted: "#222",
+  scheduled: "#fff",
+  quoted: "#fff",
   in_progress: "#fff",
   completed: "#fff",
   cancelled: "#aaa",
+  sent: "#fff",
+  accepted: "#fff",
+  declined: "#fff",
+  paid: "#fff",
+  overdue: "#fff",
+  void: "#fff",
+  inbox: "#888",
+  linked: "#fff",
+  approved: "#fff",
+  posted: "#fff",
+  pending: "#fff",
 };
 
 // ── Global Styles ────────────────────────────────────────────────────────────
@@ -165,7 +309,7 @@ const injectStyles = () => {
     .jm-nav { flex: 1; padding: 16px 0; overflow-y: auto; }
     .jm-nav-section { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #444; padding: 16px 20px 6px; }
     .jm-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 13px; font-weight: 500; cursor: pointer; color: #999; border-left: 3px solid transparent; transition: all 0.15s; }
-    .jm-nav-item:hover { color: #fff; background: #1a1a1a; }
+    .jm-nav-item:hover { color: #fff; }
     .jm-nav-item.active { color: #fff; border-left-color: #fff; background: #1e1e1e; }
     .jm-nav-item .badge { margin-left: auto; background: #fff; color: #111; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 7px; min-width: 20px; text-align: center; }
     .jm-main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; min-width: 0; }
@@ -209,7 +353,7 @@ const injectStyles = () => {
     .form-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #666; margin-bottom: 6px; }
     .form-control { width: 100%; max-width: 100%; padding: 9px 12px; border: 1.5px solid #e0e0e0; border-radius: 6px; font-size: 13px; font-family: 'Open Sans', sans-serif; color: #111; background: #fff; outline: none; transition: border-color 0.15s; box-sizing: border-box; height: 44px; }
     input[type="date"].form-control, input[type="time"].form-control { -webkit-appearance: none; appearance: none; min-width: 0; width: 100%; height: 44px; }
-    .form-control:focus { border-color: #111; }
+    .form-control:focus { border-color: var(--section-accent, #111); }
     textarea.form-control { resize: vertical; min-height: 80px; height: auto; }
     select.form-control { cursor: pointer; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -224,29 +368,30 @@ const injectStyles = () => {
     .tabs { display: flex; gap: 2px; border-bottom: 1px solid #e8e8e8; margin-bottom: 20px; }
     .tab { padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer; color: #999; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
     .tab:hover { color: #333; }
-    .tab.active { color: #111; border-bottom-color: #111; }
+    .tab.active { color: #111; border-bottom-color: var(--section-accent, #111); }
     .empty-state { text-align: center; padding: 48px 20px; color: #999; }
     .empty-state-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
     .empty-state-text { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #666; }
     .empty-state-sub { font-size: 12px; }
     .search-bar { display: flex; align-items: center; gap: 8px; background: #f5f5f5; border: 1.5px solid #e8e8e8; border-radius: 8px; padding: 9px 16px; min-width: 0; flex: 1; max-width: 480px; }
     .search-bar input { border: none; background: transparent; font-size: 13px; font-family: 'Open Sans', sans-serif; outline: none; flex: 1; color: #111; min-width: 0; }
+    .search-bar:focus-within { border-color: var(--section-accent, #111); }
     .line-items-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: fixed; }
     .line-items-table th { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #999; padding: 6px 8px; border-bottom: 1px solid #f0f0f0; text-align: left; }
     .line-items-table td { padding: 6px 8px; vertical-align: middle; }
     .line-items-table input { width: 100%; border: 1.5px solid #e8e8e8; border-radius: 4px; padding: 5px 7px; font-size: 12px; font-family: 'Open Sans', sans-serif; outline: none; box-sizing: border-box; min-width: 0; }
-    .line-items-table input:focus { border-color: #111; }
+    .line-items-table input:focus { border-color: var(--section-accent, #111); }
     .totals-box { background: #fafafa; border: 1px solid #e8e8e8; border-radius: 8px; padding: 14px 16px; min-width: 220px; }
     .totals-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
     .totals-row.total { font-weight: 800; font-size: 15px; border-top: 1px solid #ddd; margin-top: 8px; padding-top: 8px; }
     .job-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.15s; }
-    .job-card:hover { border-color: #111; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+    .job-card:hover { border-color: var(--section-accent, #111); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
     .kanban { display: grid; grid-template-columns: repeat(5, minmax(200px,1fr)); gap: 18px; align-items: start; }
     .bill-pipeline { display: flex; flex-direction: column; gap: 18px; }
     .kanban-col { background: #f5f5f5; border-radius: 10px; padding: 14px; min-height: 200px; }
     .kanban-col-header { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #666; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
     .kanban-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; font-size: 12px; }
-    .kanban-card:hover { border-color: #111; }
+    .kanban-card:hover { border-color: var(--section-accent, #111); }
     .priority-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
     .priority-high { background: #111; }
     .priority-medium { background: #777; }
@@ -256,18 +401,18 @@ const injectStyles = () => {
     .avatar-group { display: flex; }
     .tag { display: inline-flex; padding: 2px 8px; background: #f0f0f0; color: #555; border-radius: 4px; font-size: 11px; font-weight: 600; margin: 2px; }
     .progress-bar { height: 4px; background: #e8e8e8; border-radius: 2px; overflow: hidden; }
-    .progress-fill { height: 100%; background: #111; border-radius: 2px; transition: width 0.3s; }
+    .progress-fill { height: 100%; background: var(--section-accent, #111); border-radius: 2px; transition: width 0.3s; }
     .timeline { position: relative; padding-left: 24px; }
     .timeline::before { content: ''; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 1px; background: #e8e8e8; }
     .timeline-item { position: relative; margin-bottom: 20px; }
-    .timeline-dot { position: absolute; left: -21px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #111; border: 2px solid #fff; box-shadow: 0 0 0 1px #111; }
+    .timeline-dot { position: absolute; left: -21px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--section-accent, #111); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--section-accent, #111); }
     .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
     .alert-info { background: #f5f5f5; border: 1px solid #e0e0e0; color: #444; }
     .alert-success { background: #f5fff5; border: 1px solid #c0e0c0; color: #2a5a2a; }
     .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
     .multi-select { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border: 1.5px solid #e0e0e0; border-radius: 6px; min-height: 44px; }
     .multi-option { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid #e0e0e0; color: #666; transition: all 0.1s; }
-    .multi-option.selected { background: #111; color: #fff; border-color: #111; }
+    .multi-option.selected { background: var(--section-accent, #111); color: #fff; border-color: var(--section-accent, #111); }
     .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #f0f0f0; color: #444; }
 
     /* ── Sidebar transition ── */
@@ -362,6 +507,39 @@ const injectStyles = () => {
       .stat-value { font-size: 32px; }
       .dashboard-grid { grid-template-columns: 1fr 1fr 1fr !important; }
     }
+
+    /* ── Section Drawers ── */
+    .section-drawer-overlay { position: fixed; inset: 0; z-index: 1050; display: flex; }
+    .section-drawer-backdrop { flex: 1; background: rgba(0,0,0,0.4); }
+    .section-drawer { display: flex; flex-direction: column; background: #fff; box-shadow: 0 20px 60px rgba(0,0,0,0.2); width: 100%; max-width: 640px; height: 100%; overflow: hidden; border-left: 1px solid #e8e8e8; }
+    .order-drawer-overlay { position: fixed; inset: 0; z-index: 1050; display: flex; }
+    .order-drawer-backdrop { flex: 1; background: rgba(0,0,0,0.4); }
+    .order-drawer { display: flex; flex-direction: column; background: #fff; box-shadow: 0 20px 60px rgba(0,0,0,0.2); width: 100%; max-width: 640px; height: 100%; overflow: hidden; border-left: 1px solid #e8e8e8; }
+    .order-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .order-progress-track { height: 6px; background: #f1f5f9; border-radius: 999px; overflow: hidden; margin-top: 8px; }
+    .order-progress-fill { height: 100%; border-radius: 999px; transition: width 0.5s; }
+    .order-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; }
+    .order-card:hover { border-color: #93c5fd; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    .order-panel { position: fixed; inset: 0; z-index: 1040; display: flex; }
+    .order-panel-backdrop { flex: 1; background: rgba(0,0,0,0.3); }
+    .order-panel-body { width: 100%; max-width: 480px; background: #fff; box-shadow: 0 20px 60px rgba(0,0,0,0.2); display: flex; flex-direction: column; height: 100%; border-left: 1px solid #e8e8e8; }
+    .order-email-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1060; display: flex; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+    .order-email-modal { background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); width: 100%; max-width: 640px; margin: 24px 0; overflow: hidden; }
+    .order-tabs { display: flex; background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 4px; gap: 4px; }
+    .order-tab { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: #64748b; border: none; background: transparent; font-family: 'Open Sans', sans-serif; white-space: nowrap; transition: all 0.15s; }
+    .order-tab.active-dash { background: #111; color: #fff; }
+    .order-tab.active-wo { background: #2563eb; color: #fff; }
+    .order-tab.active-po { background: #059669; color: #fff; }
+    .order-kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    @media (min-width: 640px) { .order-kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+    .order-kpi-card { border-radius: 12px; border: 1px solid #e8e8e8; padding: 16px; cursor: pointer; transition: all 0.15s; }
+    .order-kpi-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .order-cards-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 640px) { .order-cards-grid { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 1024px) { .order-cards-grid { grid-template-columns: 1fr 1fr 1fr; } }
+    .order-toggle { width: 36px; height: 20px; border-radius: 10px; position: relative; cursor: pointer; transition: background 0.2s; border: none; flex-shrink: 0; }
+    .order-toggle-knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.2s; }
+    .order-toggle.on .order-toggle-knob { transform: translateX(16px); }
   `;
   document.head.appendChild(s);
 };
@@ -395,6 +573,7 @@ const Icon = ({ name, size = 15 }) => {
     list_view: "M4 6h16M4 10h16M4 14h16M4 18h16",
     chart: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
     notification: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9",
+    orders: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h4m-4 4h4m-8-4h.01m-.01 4h.01",
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -481,6 +660,788 @@ const LineItemsEditor = ({ items, onChange }) => {
           <div className="totals-row total"><span>Total</span><span>{fmt(sub * 1.1)}</span></div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ORDERS COMPONENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+const OrderIcon = ({ name, size = 16, cls = "" }) => {
+  const icons = {
+    plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
+    x: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+    edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
+    trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>,
+    send: <><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>,
+    briefcase: <><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>,
+    shopping: <><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></>,
+    search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+    eye: <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>,
+    file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></>,
+    link: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>,
+    clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+    grid: <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></>,
+    bar: <><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>,
+    calendar: <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+    warning: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>,
+    upload: <><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></>,
+    paperclip: <><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></>,
+    mail: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>,
+    chevdown: <polyline points="6 9 12 15 18 9"/>,
+    check: <polyline points="20 6 9 17 4 12"/>,
+    activity: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></>,
+    zap: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cls} style={{ flexShrink: 0 }}>
+      {icons[name]}
+    </svg>
+  );
+};
+
+const OrderStatusBadge = ({ status }) => {
+  const c = ORDER_STATUS_COLORS[status] || { bg: "#f0f0f0", text: "#666" };
+  return <span className="order-badge" style={{ background: c.bg, color: c.text }}>{status}</span>;
+};
+
+const DueDateChip = ({ dateStr, isTerminal }) => {
+  if (!dateStr) return null;
+  const days = daysUntil(dateStr);
+  const base = { display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 12 };
+  if (isTerminal) return <span style={{ ...base, color: "#94a3b8" }}><OrderIcon name="calendar" size={11} /> {orderFmtDate(dateStr)}</span>;
+  if (days < 0) return <span style={{ ...base, color: "#dc2626", background: "#fef2f2" }}><OrderIcon name="warning" size={11} /> {Math.abs(days)}d overdue</span>;
+  if (days === 0) return <span style={{ ...base, color: "#ea580c", background: "#fff7ed" }}><OrderIcon name="clock" size={11} /> Due today</span>;
+  if (days <= 3) return <span style={{ ...base, color: "#d97706", background: "#fffbeb" }}><OrderIcon name="clock" size={11} /> {days}d left</span>;
+  return <span style={{ ...base, color: "#64748b" }}><OrderIcon name="calendar" size={11} /> {orderFmtDate(dateStr)}</span>;
+};
+
+const OrderProgressBar = ({ status }) => {
+  const pct = ORDER_STATUS_PROGRESS[status] ?? 0;
+  const color = ORDER_BAR_COLORS[status] || "#cbd5e1";
+  if (status === "Cancelled") return <div className="order-progress-track" />;
+  return <div className="order-progress-track"><div className="order-progress-fill" style={{ width: pct + "%", background: color }} /></div>;
+};
+
+const FileIconBadge = ({ name }) => {
+  const ext = (name || "").split(".").pop().toLowerCase();
+  let icon = "FILE", color = "#64748b", bg = "#f1f5f9";
+  if (ext === "pdf") { icon = "PDF"; color = "#ef4444"; bg = "#fef2f2"; }
+  else if (["jpg","jpeg","png","gif","webp","heic"].includes(ext)) { icon = "IMG"; color = "#8b5cf6"; bg = "#f5f3ff"; }
+  else if (["doc","docx"].includes(ext)) { icon = "DOC"; color = "#2563eb"; bg = "#eff6ff"; }
+  else if (["xls","xlsx","csv"].includes(ext)) { icon = "XLS"; color = "#059669"; bg = "#ecfdf5"; }
+  return <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 6px", borderRadius: 4, color, background: bg }}>{icon}</span>;
+};
+
+const OrderFileAttachments = ({ files, onChange }) => {
+  const handleFiles = (e) => {
+    const picked = Array.from(e.target.files || []);
+    const mapped = picked.map(f => ({ id: genId(), name: f.name, size: f.size, type: f.type, dataUrl: null, _file: f }));
+    mapped.forEach(m => {
+      if (m.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = ev => { onChange(prev => prev.map(x => x.id === m.id ? { ...x, dataUrl: ev.target.result } : x)); };
+        reader.readAsDataURL(m._file);
+      }
+    });
+    onChange(prev => [...prev, ...mapped]);
+    e.target.value = "";
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {files.length > 0 && files.map(f => (
+        <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 10, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+          {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 40, height: 40, borderRadius: 4, objectFit: "cover", border: "1px solid #e2e8f0" }} />
+            : <div style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}><FileIconBadge name={f.name} /></div>}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div>
+            <div style={{ fontSize: 11, color: "#94a3b8" }}>{fmtFileSize(f.size)}</div>
+          </div>
+          <button onClick={() => onChange(prev => prev.filter(x => x.id !== f.id))} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }}>
+            <OrderIcon name="x" size={14} />
+          </button>
+        </div>
+      ))}
+      <label style={{ display: "flex", alignItems: "center", gap: 8, padding: 10, border: "2px dashed #e2e8f0", borderRadius: 8, cursor: "pointer", color: "#64748b", fontSize: 13, fontWeight: 500 }}>
+        <OrderIcon name="upload" size={16} />
+        {files.length > 0 ? "Add more files" : "Attach files — drawings, specs, photos…"}
+        <input type="file" multiple style={{ display: "none" }} onChange={handleFiles} accept="*/*" />
+      </label>
+    </div>
+  );
+};
+
+const OrderLineItems = ({ lines, onChange }) => {
+  const add = () => onChange([...lines, { id: genId(), desc: "", qty: "1", unit: "ea" }]);
+  const remove = (id) => onChange(lines.filter(l => l.id !== id));
+  const update = (id, field, val) => onChange(lines.map(l => l.id === id ? { ...l, [field]: val } : l));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 30px", gap: 8, fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#94a3b8", padding: "0 4px" }}>
+        <span>Description</span><span>Qty</span><span>Unit</span><span></span>
+      </div>
+      {lines.map(l => (
+        <div key={l.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 30px", gap: 8, alignItems: "center" }}>
+          <input className="form-control" style={{ height: 36, fontSize: 13 }} placeholder="Description" value={l.desc} onChange={e => update(l.id, "desc", e.target.value)} />
+          <input className="form-control" style={{ height: 36, fontSize: 13 }} type="number" min="0" placeholder="Qty" value={l.qty} onChange={e => update(l.id, "qty", e.target.value)} />
+          <select className="form-control" style={{ height: 36, fontSize: 13 }} value={l.unit} onChange={e => update(l.id, "unit", e.target.value)}>
+            {ORDER_UNITS.map(u => <option key={u}>{u}</option>)}
+          </select>
+          <button onClick={() => remove(l.id)} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }}><OrderIcon name="x" size={14} /></button>
+        </div>
+      ))}
+      <button onClick={add} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#2563eb", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}>
+        <OrderIcon name="plus" size={14} /> Add line item
+      </button>
+    </div>
+  );
+};
+
+const OrderAuditLog = ({ log }) => {
+  if (!log || log.length === 0) return <div style={{ fontSize: 13, color: "#94a3b8", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>No activity recorded yet.</div>;
+  const getColor = (action) => {
+    if (action.startsWith("Created")) return { bg: "#f1f5f9", text: "#64748b" };
+    if (action.startsWith("Status")) return { bg: "#dbeafe", text: "#2563eb" };
+    if (action.startsWith("Emailed")) return { bg: "#ede9fe", text: "#7c3aed" };
+    if (action.startsWith("Edited")) return { bg: "#fef3c7", text: "#d97706" };
+    return { bg: "#f1f5f9", text: "#64748b" };
+  };
+  return (
+    <div>
+      {[...log].reverse().map((entry, i) => (
+        <div key={entry.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: i < log.length - 1 ? "1px solid #f1f5f9" : "none" }}>
+          <div style={{ width: 24, height: 24, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: getColor(entry.action).bg, color: getColor(entry.action).text, flexShrink: 0 }}>
+            <OrderIcon name={entry.auto ? "zap" : "activity"} size={10} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{entry.action}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                {entry.auto && <span style={{ fontSize: 10, fontWeight: 600, color: "#d97706", background: "#fffbeb", padding: "1px 6px", borderRadius: 4, border: "1px solid #fcd34d" }}>auto</span>}
+                <span style={{ fontSize: 11, color: "#94a3b8", whiteSpace: "nowrap" }}>{orderFmtTs(entry.ts)}</span>
+              </div>
+            </div>
+            {entry.detail && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{entry.detail}</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ── Orders: PDF + Acceptance Page ─────────────────────────────────────────────
+const buildOrderPdfHtml = (type, order, jobs) => {
+  const isWO = type === "wo";
+  const jd = orderJobDisplay(jobs.find(j => j.id === order.jobId));
+  const partyName = isWO ? order.contractorName : order.supplierName;
+  const partyEmail = isWO ? order.contractorEmail : order.supplierEmail;
+  const partyContact = isWO ? order.contractorContact : order.supplierContact;
+  const accentColor = isWO ? "#2563eb" : "#059669";
+  const title = isWO ? "WORK ORDER" : "PURCHASE ORDER";
+  const linesHtml = (!isWO && order.lines && order.lines.length > 0) ? `<table style="width:100%;border-collapse:collapse;margin-top:16px;font-size:13px;"><thead><tr style="border-bottom:2px solid #e2e8f0;"><th style="text-align:left;padding:8px 4px;color:#94a3b8;font-size:11px;text-transform:uppercase;">Description</th><th style="text-align:center;padding:8px 4px;color:#94a3b8;font-size:11px;text-transform:uppercase;width:60px;">Qty</th><th style="text-align:center;padding:8px 4px;color:#94a3b8;font-size:11px;text-transform:uppercase;width:60px;">Unit</th></tr></thead><tbody>${order.lines.map(l => `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:10px 4px;color:#334155;">${l.desc||"—"}</td><td style="padding:10px 4px;text-align:center;color:#475569;">${l.qty}</td><td style="padding:10px 4px;text-align:center;color:#94a3b8;">${l.unit}</td></tr>`).join("")}</tbody></table>` : "";
+  const poLimitHtml = order.poLimit ? `<div style="display:flex;justify-content:space-between;align-items:center;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px 16px;margin-top:16px;"><span style="font-size:13px;font-weight:600;color:#92400e;">PO Limit</span><span style="font-size:18px;font-weight:800;color:#b45309;">$${parseFloat(order.poLimit).toLocaleString("en-AU",{minimumFractionDigits:2})}</span></div>` : "";
+  const scopeHtml = isWO && order.scopeOfWork ? `<div style="background:#eff6ff;border-radius:8px;padding:16px;margin-top:16px;"><p style="font-size:11px;font-weight:700;color:${accentColor};text-transform:uppercase;margin:0 0 8px;">Scope of Work</p><p style="font-size:13px;color:#334155;white-space:pre-line;line-height:1.6;margin:0;">${order.scopeOfWork}</p></div>` : "";
+  const deliveryHtml = !isWO && order.deliveryAddress ? `<div style="background:#ecfdf5;border-radius:8px;padding:12px 16px;margin-top:16px;"><p style="font-size:11px;font-weight:700;color:${accentColor};text-transform:uppercase;margin:0 0 4px;">Delivery Address</p><p style="font-size:13px;color:#334155;margin:0;">${order.deliveryAddress}</p></div>` : "";
+  const notesHtml = order.notes ? `<div style="border-top:1px solid #e2e8f0;margin-top:20px;padding-top:16px;"><p style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 6px;">Notes / Terms</p><p style="font-size:13px;color:#475569;white-space:pre-line;margin:0;">${order.notes}</p></div>` : "";
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title} ${order.ref}</title><style>*{box-sizing:border-box;}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:32px;color:#1e293b;font-size:14px;}</style></head><body><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:20px;border-bottom:3px solid ${accentColor};"><div><p style="font-size:26px;font-weight:900;color:#0f172a;margin:0;">${title}</p><p style="color:#94a3b8;margin:4px 0 0;font-size:14px;">${order.ref}</p></div><div style="text-align:right;font-size:13px;color:#475569;"><p style="margin:0;"><strong>Issue Date:</strong> ${orderFmtDate(order.issueDate)}</p><p style="margin:4px 0 0;"><strong>${isWO?"Due Date":"Delivery"}:</strong> ${orderFmtDate(order.dueDate)}</p>${jd?`<p style="margin:4px 0 0;"><strong>Job:</strong> ${jd.ref}</p>`:""}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px;"><div><p style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 8px;">${isWO?"Contractor":"Supplier"}</p><p style="font-weight:700;font-size:15px;margin:0 0 4px;">${partyName||"—"}</p><p style="color:#475569;margin:0 0 2px;font-size:13px;">${partyContact||""}</p><p style="color:#475569;margin:0;font-size:13px;">${partyEmail||""}</p></div>${jd?`<div><p style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 8px;">Linked Job</p><p style="font-weight:700;font-size:14px;margin:0 0 2px;">${jd.ref}</p><p style="color:#475569;font-size:13px;margin:0;">${jd.name}</p></div>`:""}</div>${scopeHtml}${deliveryHtml}${linesHtml}${poLimitHtml}${notesHtml}<div style="margin-top:40px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:center;">Generated ${new Date().toLocaleDateString("en-AU")} · FieldOps Order Management</div></body></html>`;
+};
+const printOrderPdf = (type, order, jobs) => {
+  const html = buildOrderPdfHtml(type, order, jobs);
+  const win = window.open("", "_blank", "width=900,height=700");
+  if (!win) { alert("Please allow pop-ups to generate PDF."); return; }
+  win.document.write(html); win.document.close(); win.focus();
+  setTimeout(() => win.print(), 400);
+};
+
+// ── Orders: Email Modal ───────────────────────────────────────────────────────
+const OrderEmailModal = ({ type, order, jobs, onClose, onSent }) => {
+  const isWO = type === "wo";
+  const partyEmail = isWO ? order.contractorEmail : order.supplierEmail;
+  const partyName = isWO ? order.contractorName : order.supplierName;
+  const partyContact = isWO ? order.contractorContact : order.supplierContact;
+  const jd = orderJobDisplay(jobs.find(j => j.id === order.jobId));
+  const acceptUrl = `${window.location.origin}${window.location.pathname}#accept/${order.ref}`;
+  const viewUrl = `${window.location.origin}${window.location.pathname}#view/${order.ref}`;
+  const [includeAcceptLink, setIncludeAcceptLink] = useState(true);
+  const [includeViewLink, setIncludeViewLink] = useState(true);
+  const buildBody = (wa, wv) => {
+    const greeting = `Hi ${partyContact || partyName || "there"},`;
+    const intro = isWO ? `Please find attached Work Order ${order.ref}${jd ? " for " + jd.name : ""}.` : `Please find attached Purchase Order ${order.ref}${jd ? " for " + jd.name : ""}.`;
+    const viewBlock = wv ? `\n\n📄 View document online:\n${viewUrl}` : "";
+    const acceptBlock = wa ? `\n\n✅ To accept this ${isWO ? "work order" : "purchase order"}, click below:\n${acceptUrl}` : "";
+    return `${greeting}\n\n${intro}${viewBlock}${acceptBlock}\n\nKind regards`;
+  };
+  const defaultSubject = `${isWO?"Work Order":"Purchase Order"} ${order.ref}${jd?" — "+jd.ref:""}`;
+  const [to, setTo] = useState(partyEmail || "");
+  const [cc, setCc] = useState("");
+  const [subject, setSubject] = useState(defaultSubject);
+  const [body, setBody] = useState(() => buildBody(true, true));
+  const [includePdf, setIncludePdf] = useState(true);
+  const [selectedAttachments, setSelectedAttachments] = useState((order.attachments || []).map(a => a.id));
+  const [sent, setSent] = useState(false);
+  const attachments = order.attachments || [];
+  const toggleAtt = (id) => setSelectedAttachments(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+  const handleToggleAccept = (val) => { setIncludeAcceptLink(val); setBody(buildBody(val, includeViewLink)); };
+  const handleToggleView = (val) => { setIncludeViewLink(val); setBody(buildBody(includeAcceptLink, val)); };
+  const handleSend = () => {
+    const mailtoBody = encodeURIComponent(body);
+    window.location.href = `mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${mailtoBody}`;
+    if (onSent) onSent(`Emailed to ${to}${cc ? ", cc: " + cc : ""}${includeAcceptLink ? " · acceptance link included" : ""}`);
+    setSent(true);
+  };
+  const accent = isWO ? "#2563eb" : "#059669";
+  const ToggleBtn = ({ on, onChange, accentCol }) => (
+    <button className={`order-toggle ${on ? "on" : ""}`} style={{ background: on ? (accentCol || accent) : "#e2e8f0" }} onClick={() => onChange(!on)}>
+      <div className="order-toggle-knob" />
+    </button>
+  );
+  if (sent) return (
+    <div className="order-email-overlay">
+      <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxWidth: 400, width: "100%", padding: 32, textAlign: "center" }}>
+        <div style={{ width: 56, height: 56, background: "#d1fae5", borderRadius: 28, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}><OrderIcon name="check" size={24} cls="" /></div>
+        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Email Client Opened</h3>
+        <p style={{ fontSize: 13, color: "#64748b", marginBottom: 24 }}>Your email client has been opened with the draft pre-filled.</p>
+        <button className="btn btn-primary" style={{ background: accent }} onClick={onClose}>Done</button>
+      </div>
+    </div>
+  );
+  return (
+    <div className="order-email-overlay">
+      <div className="order-email-modal">
+        <div style={{ padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#fff", background: accent }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <OrderIcon name="mail" size={18} />
+            <div><div style={{ fontSize: 11, fontWeight: 500, opacity: 0.75 }}>Send via Email</div><div style={{ fontWeight: 700 }}>{order.ref}</div></div>
+          </div>
+          <button onClick={onClose} style={{ padding: 6, background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, cursor: "pointer", color: "#fff" }}><OrderIcon name="x" size={16} /></button>
+        </div>
+        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="grid-2">
+            <div className="form-group"><label className="form-label">To</label><input className="form-control" type="email" placeholder="recipient@example.com" value={to} onChange={e => setTo(e.target.value)} />{partyName && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>{partyName}</div>}</div>
+            <div className="form-group"><label className="form-label">CC <span style={{ fontWeight: 400, color: "#cbd5e1", textTransform: "none" }}>optional</span></label><input className="form-control" type="text" placeholder="cc@example.com" value={cc} onChange={e => setCc(e.target.value)} /></div>
+          </div>
+          <div className="form-group"><label className="form-label">Subject</label><input className="form-control" value={subject} onChange={e => setSubject(e.target.value)} /></div>
+          <div style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
+            <div style={{ padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#475569" }}>Include in Email</div>
+            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <ToggleBtn on={includeViewLink} onChange={handleToggleView} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 13, fontWeight: 500 }}>📄 View Document Link</span><button onClick={() => printOrderPdf(type, order, jobs)} style={{ fontSize: 11, color: "#2563eb", background: "none", border: "none", cursor: "pointer" }}>Preview PDF</button></div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{viewUrl}</div>
+                </div>
+              </div>
+              <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16, display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <ToggleBtn on={includeAcceptLink} onChange={handleToggleAccept} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>✅ Acceptance Link</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>Recipient clicks to accept — logs acceptance automatically</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="form-group"><label className="form-label">Message</label><textarea className="form-control" rows={8} style={{ fontFamily: "monospace", fontSize: 12, color: "#475569", height: "auto" }} value={body} onChange={e => setBody(e.target.value)} /></div>
+          <div style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
+            <div style={{ padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#475569", display: "flex", alignItems: "center", gap: 6 }}><OrderIcon name="paperclip" size={12} /> File Attachments</div>
+            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <ToggleBtn on={includePdf} onChange={v => setIncludePdf(v)} />
+                <span style={{ fontSize: 10, fontWeight: 800, color: "#ef4444", background: "#fef2f2", padding: "2px 6px", borderRadius: 4 }}>PDF</span>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>{order.ref}.pdf</span>
+              </div>
+              {attachments.map(f => (
+                <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <ToggleBtn on={selectedAttachments.includes(f.id)} onChange={() => toggleAtt(f.id)} />
+                  {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 24, height: 24, borderRadius: 4, objectFit: "cover" }} /> : <FileIconBadge name={f.name} />}
+                  <span style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
+                  <span style={{ fontSize: 11, color: "#94a3b8", flexShrink: 0 }}>{fmtFileSize(f.size)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div style={{ padding: "16px 24px", borderTop: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" style={{ background: accent }} disabled={!to} onClick={handleSend}>
+            <OrderIcon name="send" size={14} /> Send {isWO ? "to Contractor" : "to Supplier"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Section Drawer (reusable shell) ──────────────────────────────────────────
+const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mode, setMode, showToggle = true, isNew, statusStrip, children, footer, onClose, zIndex = 1050 }) => (
+  <div className="section-drawer-overlay" style={{ zIndex }}>
+    <div className="section-drawer-backdrop" onClick={onClose} />
+    <div className="section-drawer">
+      {/* Header */}
+      <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#fff", background: accent, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+          {icon && <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>}
+          <div style={{ minWidth: 0 }}>
+            {typeLabel && <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.7, letterSpacing: "0.05em", textTransform: "uppercase" }}>{typeLabel}</div>}
+            <div style={{ fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
+          </div>
+          {statusBadge}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {showToggle && !isNew && (
+            <div style={{ display: "flex", background: "rgba(255,255,255,0.15)", borderRadius: 8, padding: 2, gap: 2 }}>
+              <button style={{ padding: "4px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: mode === "view" ? "#fff" : "transparent", color: mode === "view" ? "#1e293b" : "rgba(255,255,255,0.8)" }} onClick={() => setMode("view")}>View</button>
+              <button style={{ padding: "4px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: mode === "edit" ? "#fff" : "transparent", color: mode === "edit" ? "#1e293b" : "rgba(255,255,255,0.8)" }} onClick={() => setMode("edit")}>Edit</button>
+            </div>
+          )}
+          <button style={{ padding: 6, borderRadius: 8, background: "rgba(255,255,255,0.2)", border: "none", cursor: "pointer", color: "#fff", display: "flex" }} onClick={onClose}>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+      {/* Status strip */}
+      {statusStrip}
+      {/* Body */}
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>{children}</div>
+      {/* Footer */}
+      {footer && <div style={{ padding: "16px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0 }}>{footer}</div>}
+    </div>
+  </div>
+);
+
+// ── Orders: Order Drawer ──────────────────────────────────────────────────────
+const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTransition, jobs, presetJobId }) => {
+  const isWO = type === "wo";
+  const parties = isWO ? ORDER_CONTRACTORS : ORDER_SUPPLIERS;
+  const isNew = !order;
+  const baseForm = {
+    id: genId(), ref: (isWO ? "WO-" : "PO-") + String(Math.floor(Math.random() * 900) + 100), status: "Draft",
+    jobId: presetJobId || "", issueDate: orderToday(), dueDate: orderAddDays(orderToday(), 14), poLimit: "", notes: "", internalNotes: "",
+    attachments: [], auditLog: [makeLogEntry("Created", isWO ? "Work order created" : "Purchase order created")],
+  };
+  const woFields = { contractorId: "", contractorName: "", contractorContact: "", contractorEmail: "", contractorPhone: "", trade: "", scopeOfWork: "" };
+  const poFields = { supplierId: "", supplierName: "", supplierContact: "", supplierEmail: "", supplierAbn: "", deliveryAddress: "", lines: [{ id: genId(), desc: "", qty: "1", unit: "ea" }] };
+  const [form, setForm] = useState(() => order ? { ...order } : { ...baseForm, ...(isWO ? woFields : poFields) });
+  const [mode, setMode] = useState(isNew ? "edit" : initialMode);
+  const [dirty, setDirty] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
+  const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setDirty(true); };
+  const selectParty = (id) => {
+    const p = parties.find(x => x.id === id);
+    if (!p) { set(isWO ? "contractorId" : "supplierId", ""); return; }
+    if (isWO) setForm(f => ({ ...f, contractorId: p.id, contractorName: p.name, contractorContact: p.contact, contractorEmail: p.email, contractorPhone: p.phone, trade: p.trade }));
+    else setForm(f => ({ ...f, supplierId: p.id, supplierName: p.name, supplierContact: p.contact, supplierEmail: p.email, supplierAbn: p.abn }));
+    setDirty(true);
+  };
+  const handleTransition = (newStatus) => { const updated = applyTransition(form, newStatus); setForm(updated); setDirty(true); if (onTransition) onTransition(updated); };
+  const handleSave = () => { const toSave = dirty ? orderAddLog(form, "Edited", "Order details updated") : form; onSave(toSave); setDirty(false); setMode("view"); };
+  const availableTransitions = ORDER_TRANSITIONS[form.status] || [];
+  const isTerminal = ORDER_TERMINAL.includes(form.status);
+  const jd = orderJobDisplay(jobs.find(j => j.id === form.jobId));
+  const partyId = isWO ? form.contractorId : form.supplierId;
+  const partyName = isWO ? form.contractorName : form.supplierName;
+  const accent = isWO ? SECTION_COLORS.wo.accent : SECTION_COLORS.po.accent;
+  const lightTint = isWO ? SECTION_COLORS.wo.light : SECTION_COLORS.po.light;
+
+  if (showEmail) return <OrderEmailModal type={type} order={form} jobs={jobs} onClose={() => setShowEmail(false)}
+    onSent={(detail) => {
+      let u = orderAddLog(form, "Emailed", detail, false);
+      if (form.status === "Approved") u = applyTransition(u, "Sent");
+      setForm(u); setDirty(false); if (onSave) onSave(u); setShowEmail(false);
+    }} />;
+
+  const statusStripEl = (
+    <div style={{ padding: "12px 20px", background: lightTint, flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          {availableTransitions.map(s => (
+            <button key={s} onClick={() => handleTransition(s)} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 8, border: ORDER_STATUS_TRIGGERS[s] ? "1px solid #fcd34d" : "1px solid #cbd5e1", background: ORDER_STATUS_TRIGGERS[s] ? "#fef3c7" : "#fff", color: ORDER_STATUS_TRIGGERS[s] ? "#92400e" : "#475569", cursor: "pointer" }}>
+              {ORDER_STATUS_TRIGGERS[s] && <OrderIcon name="zap" size={10} />}{s}
+            </button>
+          ))}
+          {availableTransitions.length === 0 && isTerminal && <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic" }}>No further transitions</span>}
+        </div>
+        <DueDateChip dateStr={form.dueDate} isTerminal={isTerminal} />
+      </div>
+      <OrderProgressBar status={form.status} />
+      <div style={{ display: "flex", gap: 8, marginTop: 6, overflowX: "auto" }}>
+        {ORDER_STATUSES.filter(s => s !== "Cancelled").map(s => (
+          <span key={s} style={{ fontSize: 11, whiteSpace: "nowrap", fontWeight: form.status === s ? 700 : 400, color: form.status === s ? "#334155" : "#cbd5e1" }}>{s}</span>
+        ))}
+      </div>
+    </div>
+  );
+
+  const footerEl = <>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+      <button className="btn btn-secondary btn-sm" onClick={() => printOrderPdf(type, form, jobs)}><OrderIcon name="file" size={14} /> PDF</button>
+    </div>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {mode === "edit" && dirty && <button className="btn btn-primary" style={{ background: accent }} onClick={handleSave}>Save</button>}
+      {mode === "edit" && !isNew && !dirty && <button className="btn btn-secondary" onClick={() => setMode("view")}>Done editing</button>}
+      {mode === "view" && <button className="btn btn-primary" style={{ background: accent }} onClick={() => setShowEmail(true)}><OrderIcon name="mail" size={14} /> Send {isWO ? "to Contractor" : "to Supplier"}</button>}
+      {isNew && <button className="btn btn-primary" style={{ background: accent }} onClick={handleSave}>Create {isWO ? "Work Order" : "Purchase Order"}</button>}
+    </div>
+  </>;
+
+  return (
+    <SectionDrawer
+      accent={accent}
+      icon={<OrderIcon name={isWO ? "briefcase" : "shopping"} size={16} />}
+      typeLabel={isWO ? "Work Order" : "Purchase Order"}
+      title={form.ref}
+      statusBadge={<OrderStatusBadge status={form.status} />}
+      mode={mode} setMode={setMode} isNew={isNew}
+      statusStrip={statusStripEl}
+      footer={footerEl}
+      onClose={() => { if (!dirty) onClose(); }}
+    >
+      {mode === "view" ? (
+        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+          <div className="grid-2">
+            <div>
+              <div className="form-label">{isWO ? "Contractor" : "Supplier"}</div>
+              <div style={{ fontWeight: 600, color: "#1e293b" }}>{partyName || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>None selected</span>}</div>
+              {isWO ? <><div style={{ fontSize: 13, color: "#64748b" }}>{form.contractorContact}</div><div style={{ fontSize: 13, color: "#64748b" }}>{form.contractorEmail}</div><div style={{ fontSize: 13, color: "#64748b" }}>{form.contractorPhone}</div></> :
+                <><div style={{ fontSize: 13, color: "#64748b" }}>{form.supplierContact}</div><div style={{ fontSize: 13, color: "#64748b" }}>{form.supplierEmail}</div><div style={{ fontSize: 11, color: "#94a3b8" }}>ABN: {form.supplierAbn}</div></>}
+            </div>
+            <div style={{ fontSize: 13, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div><span style={{ fontSize: 11, color: "#94a3b8" }}>Issue Date</span><div style={{ fontWeight: 500 }}>{orderFmtDate(form.issueDate)}</div></div>
+              <div><span style={{ fontSize: 11, color: "#94a3b8" }}>{isWO ? "Due Date" : "Delivery Date"}</span><div style={{ fontWeight: 500 }}>{orderFmtDate(form.dueDate)}</div></div>
+              {jd && <div><span style={{ fontSize: 11, color: "#94a3b8" }}>Linked Job</span><div style={{ fontWeight: 500 }}>{jd.ref} · {jd.name}</div></div>}
+              {form.poLimit && <div><span style={{ fontSize: 11, color: "#94a3b8" }}>PO Limit</span><div style={{ fontWeight: 700, color: "#b45309" }}>${parseFloat(form.poLimit).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</div></div>}
+            </div>
+          </div>
+          {isWO && form.scopeOfWork && <div style={{ background: lightTint, borderRadius: 12, padding: 16 }}><div className="form-label" style={{ color: accent }}>Scope of Work</div><div style={{ fontSize: 13, color: "#334155", whiteSpace: "pre-line", lineHeight: 1.6 }}>{form.scopeOfWork}</div></div>}
+          {!isWO && form.deliveryAddress && <div style={{ background: lightTint, borderRadius: 12, padding: 16 }}><div className="form-label" style={{ color: accent }}>Delivery Address</div><div style={{ fontSize: 13 }}>{form.deliveryAddress}</div></div>}
+          {!isWO && form.lines && form.lines.length > 0 && (
+            <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+              <thead><tr style={{ borderBottom: "2px solid #e2e8f0" }}><th style={{ textAlign: "left", padding: "8px 4px", fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#94a3b8" }}>Description</th><th style={{ textAlign: "center", padding: "8px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#94a3b8", width: 60 }}>Qty</th><th style={{ textAlign: "center", padding: "8px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#94a3b8", width: 60 }}>Unit</th></tr></thead>
+              <tbody>{form.lines.map(l => <tr key={l.id} style={{ borderBottom: "1px solid #f1f5f9" }}><td style={{ padding: "10px 4px" }}>{l.desc || "—"}</td><td style={{ padding: "10px 4px", textAlign: "center", color: "#475569" }}>{l.qty}</td><td style={{ padding: "10px 4px", textAlign: "center", color: "#94a3b8" }}>{l.unit}</td></tr>)}</tbody>
+            </table>
+          )}
+          {form.notes && <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16 }}><div className="form-label">Notes / Terms</div><div style={{ fontSize: 13, color: "#475569", whiteSpace: "pre-line" }}>{form.notes}</div></div>}
+          {form.internalNotes && <div style={{ background: "#fffbeb", borderRadius: 8, padding: 10 }}><div style={{ fontSize: 11, fontWeight: 700, color: "#b45309", marginBottom: 4 }}>Internal Notes</div><div style={{ fontSize: 13, color: "#92400e" }}>{form.internalNotes}</div></div>}
+          {form.attachments && form.attachments.length > 0 && (
+            <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16 }}>
+              <div className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}><OrderIcon name="paperclip" size={11} /> Attachments ({form.attachments.length})</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                {form.attachments.map(f => (
+                  <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                    {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: "cover" }} /> : <FileIconBadge name={f.name} />}
+                    <div style={{ minWidth: 0 }}><div style={{ fontSize: 11, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div><div style={{ fontSize: 10, color: "#94a3b8" }}>{fmtFileSize(f.size)}</div></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16 }}>
+            <div className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}><OrderIcon name="activity" size={11} /> Activity Log</div>
+            <OrderAuditLog log={form.auditLog} />
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="grid-2">
+            <div className="form-group"><label className="form-label">{isWO ? "Contractor" : "Supplier"}</label><select className="form-control" value={partyId} onChange={e => selectParty(e.target.value)}><option value="">{"— Select " + (isWO ? "contractor" : "supplier") + " —"}</option>{parties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+            <div className="form-group"><label className="form-label">Linked Job</label><select className="form-control" value={form.jobId} onChange={e => set("jobId", e.target.value ? Number(e.target.value) : "")}><option value="">— No linked job —</option>{jobs.map(j => { const d = orderJobDisplay(j); return <option key={j.id} value={j.id}>{d.ref + " · " + d.name}</option>; })}</select></div>
+          </div>
+          <div className="grid-2">
+            <div className="form-group"><label className="form-label">Issue Date</label><input type="date" className="form-control" value={form.issueDate} onChange={e => set("issueDate", e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">{isWO ? "Due Date" : "Delivery Date"}</label><input type="date" className="form-control" value={form.dueDate} onChange={e => set("dueDate", e.target.value)} /></div>
+          </div>
+          {isWO && <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div style={{ position: "relative" }}><span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 13 }}>$</span><input type="number" min="0" step="0.01" className="form-control" style={{ paddingLeft: 28 }} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>}
+          {isWO ? (
+            <div className="form-group"><label className="form-label">Scope of Work</label><textarea rows={6} className="form-control" style={{ height: "auto" }} placeholder="Describe the full scope of work..." value={form.scopeOfWork} onChange={e => set("scopeOfWork", e.target.value)} /></div>
+          ) : (
+            <>
+              <div className="form-group"><label className="form-label">Delivery Address</label><input type="text" className="form-control" placeholder="Site or warehouse delivery address" value={form.deliveryAddress} onChange={e => set("deliveryAddress", e.target.value)} /></div>
+              <div className="form-group"><label className="form-label">Items to Order</label><OrderLineItems lines={form.lines} onChange={v => set("lines", v)} /></div>
+              <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div style={{ position: "relative" }}><span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 13 }}>$</span><input type="number" min="0" step="0.01" className="form-control" style={{ paddingLeft: 28 }} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>
+            </>
+          )}
+          <div className="grid-2">
+            <div className="form-group"><label className="form-label">{isWO ? "Terms & Notes (visible to contractor)" : "Notes (visible to supplier)"}</label><textarea rows={3} className="form-control" style={{ height: "auto" }} placeholder="Payment terms, special instructions..." value={form.notes} onChange={e => set("notes", e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Internal Notes</label><textarea rows={3} className="form-control" style={{ height: "auto" }} placeholder="Not shown on document" value={form.internalNotes} onChange={e => set("internalNotes", e.target.value)} /></div>
+          </div>
+          <div className="form-group"><label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}><OrderIcon name="paperclip" size={12} /> Attachments</label>
+            <OrderFileAttachments files={form.attachments} onChange={updater => { setForm(f => ({ ...f, attachments: typeof updater === "function" ? updater(f.attachments) : updater })); setDirty(true); }} />
+          </div>
+        </div>
+      )}
+    </SectionDrawer>
+  );
+};
+
+// ── Orders: Order Card ────────────────────────────────────────────────────────
+const OrderCard = ({ type, order, onOpen, onDelete, jobs }) => {
+  const isWO = type === "wo";
+  const jd = orderJobDisplay(jobs.find(j => j.id === order.jobId));
+  const partyName = isWO ? order.contractorName : order.supplierName;
+  const isTerminal = ORDER_TERMINAL.includes(order.status);
+  const attachCount = (order.attachments || []).length;
+  const hasPoLimit = order.poLimit && parseFloat(order.poLimit) > 0;
+  return (
+    <div className="order-card" onClick={() => onOpen(order)}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669" }}>
+            <OrderIcon name={isWO ? "briefcase" : "shopping"} size={15} />
+          </div>
+          <div><div style={{ fontWeight: 600, fontSize: 13 }}>{order.ref}</div><div style={{ fontSize: 11, color: "#94a3b8" }}>{orderFmtDate(order.issueDate)}</div></div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <OrderStatusBadge status={order.status} />
+          {onDelete && <button onClick={e => { e.stopPropagation(); onDelete(order.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }} title="Delete"><OrderIcon name="trash" size={13} /></button>}
+        </div>
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {partyName || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>{"No " + (isWO ? "contractor" : "supplier")}</span>}
+      </div>
+      {jd && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}><OrderIcon name="link" size={10} /> {jd.ref + " · " + jd.name}</div>}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+        {hasPoLimit && <span style={{ fontSize: 11, fontWeight: 600, color: "#b45309", background: "#fffbeb", padding: "2px 8px", borderRadius: 12, border: "1px solid #fcd34d" }}>${parseFloat(order.poLimit).toLocaleString("en-AU")} limit</span>}
+        {attachCount > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12, display: "flex", alignItems: "center", gap: 4 }}><OrderIcon name="paperclip" size={10} /> {attachCount}</span>}
+      </div>
+      <OrderProgressBar status={order.status} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+        <DueDateChip dateStr={order.dueDate} isTerminal={isTerminal} />
+        <span style={{ fontSize: 11, color: "#cbd5e1", display: "flex", alignItems: "center", gap: 4 }}><OrderIcon name="eye" size={11} /> Open</span>
+      </div>
+    </div>
+  );
+};
+
+// ── Orders: Dashboard ─────────────────────────────────────────────────────────
+const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusChange, jobs }) => {
+  const [panel, setPanel] = useState(null);
+  const [localWO, setLocalWO] = useState(workOrders);
+  const [localPO, setLocalPO] = useState(purchaseOrders);
+  if (localWO !== workOrders && JSON.stringify(localWO.map(o=>o.id+o.status)) !== JSON.stringify(workOrders.map(o=>o.id+o.status))) setLocalWO(workOrders);
+  if (localPO !== purchaseOrders && JSON.stringify(localPO.map(o=>o.id+o.status)) !== JSON.stringify(purchaseOrders.map(o=>o.id+o.status))) setLocalPO(purchaseOrders);
+  const allOrders = [...localWO.map(o => ({ ...o, _type: "wo" })), ...localPO.map(o => ({ ...o, _type: "po" }))];
+  const now = orderToday();
+  const overdue = allOrders.filter(o => !ORDER_TERMINAL.includes(o.status) && o.dueDate && o.dueDate < now).sort((a,b) => a.dueDate.localeCompare(b.dueDate));
+  const dueSoon = allOrders.filter(o => !ORDER_TERMINAL.includes(o.status) && o.dueDate && o.dueDate >= now && daysUntil(o.dueDate) <= 7).sort((a,b) => a.dueDate.localeCompare(b.dueDate));
+  const active = allOrders.filter(o => ORDER_ACTIVE.includes(o.status)).sort((a,b) => (a.dueDate||"").localeCompare(b.dueDate||""));
+  const openList = allOrders.filter(o => !ORDER_TERMINAL.includes(o.status)).sort((a,b) => (a.dueDate||"9999").localeCompare(b.dueDate||"9999"));
+  const openPanel = (label, orders) => setPanel({ label, orders });
+  const handleDashTransition = (order, newStatus) => {
+    const updated = applyTransition(order, newStatus);
+    if (order._type === "wo") setLocalWO(prev => prev.map(o => o.id === updated.id ? updated : o));
+    else setLocalPO(prev => prev.map(o => o.id === updated.id ? updated : o));
+    onStatusChange(order._type, updated);
+    setPanel(p => p ? { ...p, orders: p.orders.map(o => o.id === updated.id ? { ...updated, _type: order._type } : o) } : null);
+  };
+  const PanelRow = ({ order }) => {
+    const isWO = order._type === "wo"; const jd = orderJobDisplay(jobs.find(j => j.id === order.jobId));
+    const isTerminal = ORDER_TERMINAL.includes(order.status); const transitions = ORDER_TRANSITIONS[order.status] || [];
+    const pName = isWO ? order.contractorName : order.supplierName;
+    return (
+      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e8e8" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 16, cursor: "pointer" }} onClick={() => onView(order._type, order)}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669", flexShrink: 0 }}>
+            <OrderIcon name={isWO ? "briefcase" : "shopping"} size={14} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 13, fontWeight: 700 }}>{order.ref}</span><OrderStatusBadge status={order.status} /></div>
+            <div style={{ fontSize: 12, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{pName || <span style={{ fontStyle: "italic" }}>No party</span>}</div>
+            {jd && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}><OrderIcon name="link" size={9} />{jd.ref} · {jd.name}</div>}
+          </div>
+          <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+            <DueDateChip dateStr={order.dueDate} isTerminal={isTerminal} />
+            {order.poLimit && <span style={{ fontSize: 11, fontWeight: 600, color: "#b45309", background: "#fffbeb", padding: "1px 6px", borderRadius: 4, border: "1px solid #fcd34d" }}>${parseFloat(order.poLimit).toLocaleString("en-AU")}</span>}
+          </div>
+        </div>
+        {!isTerminal && transitions.length > 0 && (
+          <div style={{ padding: "0 16px 12px", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", borderTop: "1px solid #f1f5f9", paddingTop: 10 }}>
+            <span style={{ fontSize: 11, color: "#94a3b8", marginRight: 4 }}>Move to:</span>
+            {transitions.map(s => (
+              <button key={s} onClick={e => { e.stopPropagation(); handleDashTransition(order, s); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 8, border: ORDER_STATUS_TRIGGERS[s] ? "1px solid #fcd34d" : "1px solid #e2e8f0", background: ORDER_STATUS_TRIGGERS[s] ? "#fffbeb" : "#f8fafc", color: ORDER_STATUS_TRIGGERS[s] ? "#b45309" : "#475569", cursor: "pointer" }}>
+                {ORDER_STATUS_TRIGGERS[s] && <OrderIcon name="zap" size={9} />}{s}
+              </button>
+            ))}
+            <button onClick={e => { e.stopPropagation(); onEdit(order._type, order); }} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#94a3b8", background: "none", border: "none", cursor: "pointer" }}><OrderIcon name="edit" size={11} /> Edit</button>
+          </div>
+        )}
+      </div>
+    );
+  };
+  const DashRow = ({ order }) => {
+    const isWO = order._type === "wo"; const jd = orderJobDisplay(jobs.find(j => j.id === order.jobId));
+    const isTerminal = ORDER_TERMINAL.includes(order.status);
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", borderRadius: 8, cursor: "pointer" }} onClick={() => onView(order._type, order)}>
+        <div style={{ width: 24, height: 24, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669", flexShrink: 0 }}><OrderIcon name={isWO ? "briefcase" : "shopping"} size={12} /></div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 13, fontWeight: 600 }}>{order.ref}</span><OrderStatusBadge status={order.status} /></div>
+          <div style={{ fontSize: 11, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(isWO ? order.contractorName : order.supplierName) || "—"}{jd ? " · " + jd.ref : ""}</div>
+        </div>
+        <DueDateChip dateStr={order.dueDate} isTerminal={isTerminal} />
+      </div>
+    );
+  };
+  const StatusPipeline = ({ title, pipelineOrders, pType }) => {
+    const isWO = pType === "wo";
+    return (
+      <div className="card"><div className="card-body">
+        <h3 style={{ fontWeight: 700, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 20, height: 20, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5" }}><OrderIcon name={isWO ? "briefcase" : "shopping"} size={11} cls="" /></div>
+          {title}
+        </h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {ORDER_STATUSES.filter(s => s !== "Cancelled").map(s => {
+            const matched = pipelineOrders.filter(o => o.status === s);
+            const count = matched.length; const pct = pipelineOrders.length > 0 ? (count / pipelineOrders.length) * 100 : 0;
+            return (
+              <div key={s} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 8px", borderRadius: 8, opacity: count > 0 ? 1 : 0.4, cursor: count > 0 ? "pointer" : "default" }} onClick={() => count > 0 && openPanel(s + " — " + title, matched.map(o => ({ ...o, _type: pType })))}>
+                <span style={{ fontSize: 11, color: "#64748b", width: 80, flexShrink: 0 }}>{s}</span>
+                <div style={{ flex: 1, height: 8, background: "#f1f5f9", borderRadius: 999, overflow: "hidden" }}><div style={{ height: "100%", borderRadius: 999, background: ORDER_BAR_COLORS[s], width: pct + "%" }} /></div>
+                <span style={{ fontSize: 12, fontWeight: 700, width: 16, textAlign: "right", color: count > 0 ? "#334155" : "#cbd5e1" }}>{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div></div>
+    );
+  };
+  const kpis = [
+    { label: "Overdue", value: overdue.length, sub: "need attention", highlight: overdue.length > 0, borderColor: overdue.length > 0 ? "#fecaca" : "#e8e8e8", bg: overdue.length > 0 ? "#fef2f2" : "#fff", textColor: overdue.length > 0 ? "#dc2626" : "#111", orders: overdue },
+    { label: "Due This Week", value: dueSoon.length, sub: "upcoming", highlight: dueSoon.length > 0, borderColor: dueSoon.length > 0 ? "#fed7aa" : "#e8e8e8", bg: dueSoon.length > 0 ? "#fff7ed" : "#fff", textColor: dueSoon.length > 0 ? "#ea580c" : "#111", orders: dueSoon },
+    { label: "Active", value: active.length, sub: "in progress", highlight: false, borderColor: "#e8e8e8", bg: "#fff", textColor: "#2563eb", orders: active },
+    { label: "All Open", value: openList.length, sub: localWO.length + " WO · " + localPO.length + " PO", highlight: false, borderColor: "#e8e8e8", bg: "#fff", textColor: "#111", orders: openList },
+  ];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div className="order-kpi-grid">
+        {kpis.map(k => (
+          <div key={k.label} className="order-kpi-card" style={{ border: `1px solid ${k.borderColor}`, background: k.bg, cursor: "pointer" }} onClick={() => openPanel(k.label, k.orders)}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8" }}>{k.label}</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: k.textColor, marginTop: 4 }}>{k.value}</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{k.sub}</div>
+          </div>
+        ))}
+      </div>
+      <div className="grid-2">
+        <StatusPipeline title="Work Orders" pipelineOrders={localWO} pType="wo" />
+        <StatusPipeline title="Purchase Orders" pipelineOrders={localPO} pType="po" />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+        {[
+          { title: "Overdue", icon: "warning", iconBg: "#fef2f2", iconColor: "#dc2626", borderColor: "#fecaca", orders: overdue, empty: "No overdue orders" },
+          { title: "Due This Week", icon: "clock", iconBg: "#fff7ed", iconColor: "#ea580c", borderColor: "#fed7aa", orders: dueSoon, empty: "Nothing due in 7 days" },
+          { title: "Active Orders", icon: "bar", iconBg: "#eff6ff", iconColor: "#2563eb", borderColor: "#e8e8e8", orders: active, empty: "No active orders" },
+        ].map(({ title, icon, iconBg, iconColor, borderColor, orders, empty }) => (
+          <div key={title} className="card" style={{ borderColor }}>
+            <div className="card-header" style={{ cursor: orders.length > 0 ? "pointer" : "default" }} onClick={() => orders.length > 0 && openPanel(title, orders)}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 24, height: 24, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: iconBg }}><OrderIcon name={icon} size={13} cls="" style={{ color: iconColor }} /></div>
+                <span className="card-title">{title}</span>
+                {orders.length > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: iconColor, padding: "1px 6px", borderRadius: 10 }}>{orders.length}</span>}
+              </div>
+            </div>
+            <div className="card-body">
+              {orders.length === 0 ? <div style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", padding: 24 }}>{empty}</div>
+                : <>{orders.slice(0, 5).map(o => <DashRow key={o.id} order={o} />)}{orders.length > 5 && <div style={{ fontSize: 12, color: "#94a3b8", textAlign: "center", cursor: "pointer", paddingTop: 8 }} onClick={() => openPanel(title, orders)}>+{orders.length - 5} more</div>}</>}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Side Panel */}
+      {panel && (
+        <div className="order-panel">
+          <div className="order-panel-backdrop" onClick={() => setPanel(null)} />
+          <div className="order-panel-body">
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8e8e8", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", flexShrink: 0 }}>
+              <div><div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8" }}>Dashboard</div><div style={{ fontWeight: 700, fontSize: 15 }}>{panel.label}</div><div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{panel.orders.length} order{panel.orders.length !== 1 ? "s" : ""}</div></div>
+              <button onClick={() => setPanel(null)} style={{ padding: 8, borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}><OrderIcon name="x" size={16} /></button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {panel.orders.length === 0 ? <div style={{ fontSize: 13, color: "#94a3b8", fontStyle: "italic", textAlign: "center", padding: 48 }}>No orders in this view</div>
+                : panel.orders.map(o => <PanelRow key={o.id + o.status} order={o} />)}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Orders: Orders Page ───────────────────────────────────────────────────────
+const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs }) => {
+  const [tab, setTab] = useState("dashboard");
+  const [modal, setModal] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const isWO = tab === "wo";
+  const orders = isWO ? workOrders : purchaseOrders;
+  const setOrders = isWO ? setWorkOrders : setPurchaseOrders;
+  const filtered = useMemo(() => {
+    if (tab === "dashboard") return [];
+    return orders.filter(o => {
+      const partyName = isWO ? o.contractorName : o.supplierName;
+      const matchSearch = !search || o.ref.toLowerCase().includes(search.toLowerCase()) || (partyName || "").toLowerCase().includes(search.toLowerCase());
+      const matchStatus = filterStatus === "All" || o.status === filterStatus;
+      return matchSearch && matchStatus;
+    });
+  }, [orders, search, filterStatus, isWO, tab]);
+  const openNew = (t) => setModal({ type: t || (tab === "dashboard" ? "wo" : tab), order: null });
+  const openOrder = (t, order, mode = "view") => setModal({ type: t, order, mode });
+  const handleSave = (order) => {
+    const target = modal.type === "wo" ? setWorkOrders : setPurchaseOrders;
+    target(prev => { const exists = prev.find(o => o.id === order.id); return exists ? prev.map(o => o.id === order.id ? order : o) : [...prev, order]; });
+    setModal(m => m ? { ...m, order } : null);
+  };
+  const handleDelete = (id) => { if (!window.confirm("Delete this order?")) return; setOrders(prev => prev.filter(o => o.id !== id)); };
+  const woOverdue = workOrders.filter(o => !ORDER_TERMINAL.includes(o.status) && o.dueDate && o.dueDate < orderToday()).length;
+  const poOverdue = purchaseOrders.filter(o => !ORDER_TERMINAL.includes(o.status) && o.dueDate && o.dueDate < orderToday()).length;
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+        <div className="order-tabs" style={{ overflowX: "auto" }}>
+          <button className={`order-tab ${tab === "dashboard" ? "active-dash" : ""}`} onClick={() => setTab("dashboard")}><OrderIcon name="grid" size={14} /> Dashboard</button>
+          <button className={`order-tab ${tab === "wo" ? "active-wo" : ""}`} onClick={() => { setTab("wo"); setFilterStatus("All"); }}>
+            <OrderIcon name="briefcase" size={14} /> Work Orders
+            <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: tab === "wo" ? "rgba(255,255,255,0.3)" : "#f1f5f9", color: tab === "wo" ? "#fff" : "#64748b" }}>{workOrders.length}</span>
+            {woOverdue > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: "#ef4444", color: "#fff" }}>{woOverdue}</span>}
+          </button>
+          <button className={`order-tab ${tab === "po" ? "active-po" : ""}`} onClick={() => { setTab("po"); setFilterStatus("All"); }}>
+            <OrderIcon name="shopping" size={14} /> Purchase Orders
+            <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: tab === "po" ? "rgba(255,255,255,0.3)" : "#f1f5f9", color: tab === "po" ? "#fff" : "#64748b" }}>{purchaseOrders.length}</span>
+            {poOverdue > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: "#ef4444", color: "#fff" }}>{poOverdue}</span>}
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn btn-primary btn-sm" style={{ background: "#2563eb" }} onClick={() => openNew("wo")}><OrderIcon name="plus" size={14} /> WO</button>
+          <button className="btn btn-primary btn-sm" style={{ background: "#059669" }} onClick={() => openNew("po")}><OrderIcon name="plus" size={14} /> PO</button>
+        </div>
+      </div>
+      {tab === "dashboard" && <OrdersDashboard workOrders={workOrders} purchaseOrders={purchaseOrders} jobs={jobs} onView={(t, o) => openOrder(t, o, "view")} onEdit={(t, o) => openOrder(t, o, "edit")} onStatusChange={(type, updated) => { (type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.map(o => o.id === updated.id ? updated : o)); }} />}
+      {tab !== "dashboard" && (
+        <>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginBottom: 20 }}>
+            <div className="search-bar" style={{ maxWidth: 320 }}>
+              <Icon name="search" size={14} />
+              <input placeholder={"Search " + (isWO ? "work orders" : "purchase orders") + "..."} value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <select className="form-control" style={{ width: "auto", minWidth: 160 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+              <option value="All">All Statuses</option>
+              {ORDER_STATUSES.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          {filtered.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">{isWO ? "📋" : "📦"}</div>
+              <div className="empty-state-text">{"No " + (isWO ? "work orders" : "purchase orders") + " found"}</div>
+              <div className="empty-state-sub">Try adjusting your filters or create a new order</div>
+            </div>
+          ) : (
+            <div className="order-cards-grid">{filtered.map(o => <OrderCard key={o.id} type={tab} order={o} jobs={jobs} onOpen={o => openOrder(tab, o, "view")} onDelete={handleDelete} />)}</div>
+          )}
+        </>
+      )}
+      {modal && <OrderDrawer type={modal.type} order={modal.order} initialMode={modal.order ? (modal.mode || "view") : "edit"} onSave={handleSave} onClose={() => setModal(null)} jobs={jobs} onTransition={(updated) => { (modal.type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.map(o => o.id === updated.id ? updated : o)); setModal(m => m ? { ...m, order: updated } : null); }} />}
     </div>
   );
 };
@@ -639,8 +1600,10 @@ const SectionLabel = ({ children }) => (
 );
 
 // ── Job Detail Drawer ─────────────────────────────────────────────────────────
-const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, jobs, setJobs, staff, onClose, onEdit }) => {
+const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, jobs, setJobs, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, onClose, onEdit }) => {
   const [tab, setTab] = useState("overview");
+  const [detailMode, setDetailMode] = useState("view");
+  const [detailForm, setDetailForm] = useState({ title: job.title, clientId: job.clientId, siteId: job.siteId || null, status: job.status, priority: job.priority, description: job.description || "", startDate: job.startDate || "", dueDate: job.dueDate || "", assignedTo: job.assignedTo || [], tags: (job.tags || []).join(", ") });
   const client = clients.find(c => c.id === job.clientId);
 
   const jobQuotes    = quotes.filter(q => q.jobId === job.id);
@@ -648,6 +1611,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   const jobTime      = timeEntries.filter(t => t.jobId === job.id);
   const jobBills     = bills.filter(b => b.jobId === job.id);
   const jobSchedule  = schedule.filter(s => s.jobId === job.id).sort((a,b) => a.date > b.date ? 1 : -1);
+  const jobWOs = (workOrders || []).filter(o => o.jobId === job.id);
+  const jobPOs = (purchaseOrders || []).filter(o => o.jobId === job.id);
 
   const totalQuoted   = jobQuotes.filter(q => q.status === "accepted").reduce((s,q) => s + calcQuoteTotal(q), 0);
   const totalInvoiced = jobInvoices.reduce((s,i) => s + calcQuoteTotal(i), 0);
@@ -740,24 +1705,28 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
   // ── Edit state for inline modals ──
   const [editingQuote,   setEditingQuote]   = useState(null);
+  const [inlineQuoteMode, setInlineQuoteMode] = useState("edit");
   const [editingInvoice, setEditingInvoice] = useState(null);
+  const [inlineInvMode, setInlineInvMode] = useState("edit");
   const [editingBill,    setEditingBill]    = useState(null);
 
   const saveQuote = async (data) => {
     try {
       const saved = await updateQuote(data.id, data);
       setQuotes(qs => qs.map(q => q.id === saved.id ? saved : q));
+      setEditingQuote(saved);
+      setInlineQuoteMode("view");
       setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Quote ${data.number} updated`) } : j));
     } catch (err) { console.error('Failed to save quote:', err); }
-    setEditingQuote(null);
   };
   const saveInvoice = async (data) => {
     try {
       const saved = await updateInvoice(data.id, data);
       setInvoices(is => is.map(i => i.id === saved.id ? saved : i));
+      setEditingInvoice(saved);
+      setInlineInvMode("view");
       setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Invoice ${data.number} updated`) } : j));
     } catch (err) { console.error('Failed to save invoice:', err); }
-    setEditingInvoice(null);
   };
   const saveBillFromJob = async (data) => {
     try {
@@ -775,6 +1744,20 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
     setEditingBill(null);
   };
 
+  const saveDetailForm = async () => {
+    const data = { ...detailForm, tags: detailForm.tags.split(",").map(t => t.trim()).filter(Boolean) };
+    try {
+      const changes = [];
+      if (job.title !== data.title) changes.push(`Title changed to "${data.title}"`);
+      if (job.status !== data.status) changes.push(`Status → ${data.status.replace("_"," ")}`);
+      if (job.priority !== data.priority) changes.push(`Priority → ${data.priority}`);
+      const msg = changes.length ? changes.join(" · ") : "Job updated";
+      const saved = await updateJob(job.id, data);
+      setJobs(js => js.map(j => j.id === job.id ? { ...saved, activityLog: addLog(j.activityLog, msg) } : j));
+      setDetailMode("view");
+    } catch (err) { console.error('Failed to save job:', err); }
+  };
+
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "quotes", label: `Quotes (${jobQuotes.length})` },
@@ -782,39 +1765,125 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
     { id: "time", label: `Time (${totalHours}h)` },
     { id: "costs", label: `Costs (${jobBills.length})` },
     { id: "schedule", label: `Schedule (${jobSchedule.length})` },
+    { id: "orders", label: `Orders (${jobWOs.length + jobPOs.length})` },
     { id: "activity", label: `Activity (${(job.activityLog||[]).length})` },
   ];
 
+  const jobAccent = SECTION_COLORS.jobs.accent;
+  const jobLight = SECTION_COLORS.jobs.light;
+
+  const jobStatusStrip = detailMode === "view" ? (
+    <div style={{ flexShrink: 0 }}>
+      <div style={{ padding: "10px 20px", background: jobLight, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+        {["draft","scheduled","in_progress","completed","cancelled"].filter(s => s !== job.status).map(s => (
+          <button key={s} className="btn btn-xs" style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#475569", borderRadius: 8 }} onClick={() => {
+            const updated = { ...job, status: s, activityLog: addLog(job.activityLog, `Status → ${s.replace("_"," ")}`) };
+            setJobs(js => js.map(j => j.id === job.id ? updated : j));
+          }}>{s.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</button>
+        ))}
+      </div>
+      {/* Tabs */}
+      <div className="tabs" style={{ marginBottom: 0, padding: "0 20px", overflowX: "auto", flexShrink: 0 }}>
+        {tabs.map(t => <div key={t.id} className={`tab ${tab === t.id ? "active" : ""}`} onClick={() => setTab(t.id)} style={{ whiteSpace: "nowrap", borderBottomColor: tab === t.id ? jobAccent : "transparent" }}>{t.label}</div>)}
+      </div>
+    </div>
+  ) : null;
+
+  const jobFooter = detailMode === "view" ? <>
+    <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setDetailForm({ title: job.title, clientId: job.clientId, siteId: job.siteId || null, status: job.status, priority: job.priority, description: job.description || "", startDate: job.startDate || "", dueDate: job.dueDate || "", assignedTo: job.assignedTo || [], tags: (job.tags || []).join(", ") }); setDetailMode("edit"); }}>
+      <Icon name="edit" size={13} /> Edit
+    </button>
+  </> : <>
+    <button className="btn btn-ghost btn-sm" onClick={() => setDetailMode("view")}>Cancel</button>
+    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={saveDetailForm} disabled={!detailForm.title}>
+      <Icon name="check" size={13} /> Save Changes
+    </button>
+  </>;
+
   return (
     <>
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal modal-lg" style={{ maxWidth: 860, maxHeight: "92vh" }}>
-        {/* Header */}
-        <div className="modal-header" style={{ flexDirection: "column", alignItems: "flex-start", gap: 12 }}>
-          <div style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                <span className={`priority-dot priority-${job.priority}`} />
-                <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>{job.title}</span>
-              </div>
-              <div style={{ fontSize: 12, color: "#888" }}>
-                {client?.name}
-                {job.dueDate && <span> · Due {job.dueDate}</span>}
-              </div>
+    <SectionDrawer
+      accent={jobAccent}
+      icon={<Icon name="jobs" size={16} />}
+      typeLabel="Job"
+      title={job.title}
+      statusBadge={<StatusBadge status={job.status} />}
+      mode={detailMode} setMode={setDetailMode}
+      showToggle={true}
+      statusStrip={jobStatusStrip}
+      footer={jobFooter}
+      onClose={onClose}
+    >
+        {detailMode === "edit" ? (
+        <div style={{ padding: "20px 24px" }}>
+          <div className="form-group">
+            <label className="form-label">Job Title *</label>
+            <input className="form-control" value={detailForm.title} onChange={e => setDetailForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
+          </div>
+          <div className="grid-3">
+            <div className="form-group">
+              <label className="form-label">Client *</label>
+              <select className="form-control" value={detailForm.clientId} onChange={e => setDetailForm(f => ({ ...f, clientId: e.target.value, siteId: "" }))}>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
             </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <StatusBadge status={job.status} />
-              <button className="btn btn-secondary btn-sm" onClick={onEdit}><Icon name="edit" size={12} />Edit</button>
-              <CloseBtn onClick={onClose} />
+            <div className="form-group">
+              <label className="form-label">Site</label>
+              <select className="form-control" value={detailForm.siteId || ""} onChange={e => setDetailForm(f => ({ ...f, siteId: e.target.value || null }))}>
+                <option value="">— No specific site —</option>
+                {(clients.find(c => String(c.id) === String(detailForm.clientId))?.sites || []).map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Status</label>
+              <select className="form-control" value={detailForm.status} onChange={e => setDetailForm(f => ({ ...f, status: e.target.value }))}>
+                {["draft","scheduled","quoted","in_progress","completed","cancelled"].map(s => <option key={s} value={s}>{s.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
+              </select>
             </div>
           </div>
-          {/* Tabs */}
-          <div className="tabs" style={{ marginBottom: 0, width: "100%", overflowX: "auto", flexShrink: 0 }}>
-            {tabs.map(t => <div key={t.id} className={`tab ${tab === t.id ? "active" : ""}`} onClick={() => setTab(t.id)} style={{ whiteSpace: "nowrap" }}>{t.label}</div>)}
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Priority</label>
+              <select className="form-control" value={detailForm.priority} onChange={e => setDetailForm(f => ({ ...f, priority: e.target.value }))}>
+                {["high","medium","low"].map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Tags (comma separated)</label>
+              <input className="form-control" value={detailForm.tags} onChange={e => setDetailForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
+            </div>
+          </div>
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Start Date</label>
+              <input type="date" className="form-control" value={detailForm.startDate} onChange={e => setDetailForm(f => ({ ...f, startDate: e.target.value }))} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Due Date</label>
+              <input type="date" className="form-control" value={detailForm.dueDate} onChange={e => setDetailForm(f => ({ ...f, dueDate: e.target.value }))} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Assigned Team Members</label>
+            <div className="multi-select">
+              {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => (
+                <span key={t} className={`multi-option ${detailForm.assignedTo.includes(t) ? "selected" : ""}`}
+                  onClick={() => setDetailForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Description</label>
+            <textarea className="form-control" value={detailForm.description} onChange={e => setDetailForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
           </div>
         </div>
-
-        <div className="modal-body" style={{ padding: "20px 24px" }}>
+        ) : (
+        <div style={{ padding: "20px 24px" }}>
 
           {/* ── Overview ── */}
           {tab === "overview" && (
@@ -878,12 +1947,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           {tab === "quotes" && (
             <div>
               <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-                <button className="btn btn-primary btn-sm" onClick={async () => {
+                <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.quotes.accent }} onClick={async () => {
                   try {
                     const newQ = { jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" };
                     const saved = await createQuote(newQ);
                     setQuotes(qs => [...qs, saved]);
                     setEditingQuote(saved);
+                    setInlineQuoteMode("edit");
                   } catch (err) { console.error('Failed to create quote:', err); }
                 }}><Icon name="plus" size={12} />New Quote</button>
               </div>
@@ -903,12 +1973,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                           <StatusBadge status={q.status} />
                           {q.status !== "accepted" && <button className="btn btn-secondary btn-xs" onClick={() => acceptQuote(q.id)}>Accept</button>}
                           {q.status === "accepted" && !alreadyInvoiced && (
-                            <button className="btn btn-primary btn-xs" onClick={() => { quoteToInvoice(q); setTab("invoices"); }}>
+                            <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.invoices.accent }} onClick={() => { quoteToInvoice(q); setTab("invoices"); }}>
                               <Icon name="invoices" size={11} />→ Invoice
                             </button>
                           )}
                           {alreadyInvoiced && <span style={{ fontSize: 11, color: "#aaa" }}>Invoiced ✓</span>}
-                          <button className="btn btn-ghost btn-xs" onClick={() => setEditingQuote(q)}><Icon name="edit" size={11} /></button>
+                          <button className="btn btn-ghost btn-xs" onClick={() => { setEditingQuote(q); setInlineQuoteMode("view"); }}><Icon name="edit" size={11} /></button>
                           <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => delQuote(q.id)}><Icon name="trash" size={11} /></button>
                         </div>
                       </div>
@@ -946,12 +2016,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 <div style={{ fontSize: 13, color: "#888" }}>
                   {jobInvoices.length > 0 && <span><strong style={{ color: "#111" }}>{fmt(totalPaid)}</strong> paid of <strong style={{ color: "#111" }}>{fmt(totalInvoiced)}</strong> invoiced</span>}
                 </div>
-                <button className="btn btn-primary btn-sm" onClick={async () => {
+                <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.invoices.accent }} onClick={async () => {
                   try {
                     const newInv = { jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" };
                     const saved = await createInvoice(newInv);
                     setInvoices(is => [...is, saved]);
                     setEditingInvoice(saved);
+                    setInlineInvMode("edit");
                   } catch (err) { console.error('Failed to create invoice:', err); }
                 }}><Icon name="plus" size={12} />New Invoice</button>
               </div>
@@ -974,9 +2045,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                           <StatusBadge status={inv.status} />
                           {inv.status !== "paid" && inv.status !== "void" && (
-                            <button className="btn btn-primary btn-xs" onClick={() => markInvPaid(inv.id)}>Mark Paid</button>
+                            <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.invoices.accent }} onClick={() => markInvPaid(inv.id)}>Mark Paid</button>
                           )}
-                          <button className="btn btn-ghost btn-xs" onClick={() => setEditingInvoice(inv)}><Icon name="edit" size={11} /></button>
+                          <button className="btn btn-ghost btn-xs" onClick={() => { setEditingInvoice(inv); setInlineInvMode("view"); }}><Icon name="edit" size={11} /></button>
                           <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => delInvoice(inv.id)}><Icon name="trash" size={11} /></button>
                         </div>
                       </div>
@@ -1007,7 +2078,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 <div style={{ fontSize: 13, color: "#888" }}>
                   {totalHours > 0 && <span><strong style={{ color: "#111" }}>{jobTime.filter(t=>t.billable).reduce((s,t)=>s+t.hours,0)}h</strong> billable · <strong style={{ color: "#111" }}>{totalHours}h</strong> total</span>}
                 </div>
-                <button className="btn btn-primary btn-sm" onClick={() => setShowTimeForm(v => !v)}><Icon name="plus" size={12} />Log Time</button>
+                <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.time.accent }} onClick={() => setShowTimeForm(v => !v)}><Icon name="plus" size={12} />Log Time</button>
               </div>
               {showTimeForm && (
                 <div style={{ background: "#f8f8f8", borderRadius: 10, padding: 16, marginBottom: 16, border: "1px solid #e8e8e8" }}>
@@ -1049,7 +2120,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     <label className="checkbox-label"><input type="checkbox" checked={timeForm.billable} onChange={e => setTimeForm(f => ({ ...f, billable: e.target.checked }))} /><span>Billable</span></label>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => setShowTimeForm(false)}>Cancel</button>
-                      <button className="btn btn-primary btn-sm" onClick={saveTime} disabled={quickHours <= 0}><Icon name="check" size={12} />Save</button>
+                      <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.time.accent }} onClick={saveTime} disabled={quickHours <= 0}><Icon name="check" size={12} />Save</button>
                     </div>
                   </div>
                 </div>
@@ -1091,7 +2162,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     </span>
                   )}
                 </div>
-                <button className="btn btn-primary btn-sm" onClick={() => setEditingBill({})}><Icon name="plus" size={12} />Capture Bill</button>
+                <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setEditingBill({})}><Icon name="plus" size={12} />Capture Bill</button>
               </div>
               {jobBills.length === 0
                 ? <div className="empty-state"><div className="empty-state-icon">🧾</div><div className="empty-state-text">No bills captured for this job</div><div className="empty-state-sub">Capture receipts and supplier invoices here</div></div>
@@ -1176,6 +2247,39 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           )}
 
           {/* ── Activity ── */}
+          {tab === "orders" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ fontSize: 13, color: "#888" }}>
+                  {jobWOs.length + jobPOs.length > 0
+                    ? <span><strong style={{ color: "#111" }}>{jobWOs.length}</strong> WO{jobWOs.length !== 1 ? "s" : ""} · <strong style={{ color: "#111" }}>{jobPOs.length}</strong> PO{jobPOs.length !== 1 ? "s" : ""}</span>
+                    : "No orders yet"}
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button className="btn btn-primary btn-sm" style={{ background: "#2563eb" }} onClick={() => {
+                    const newWo = { id: genId(), ref: "WO-" + String((workOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", contractorId: "", contractorName: "", contractorContact: "", contractorEmail: "", contractorPhone: "", trade: "", scopeOfWork: "", notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Work order created")] };
+                    setWorkOrders(prev => [...prev, newWo]);
+                  }}><Icon name="plus" size={12} />New WO</button>
+                  <button className="btn btn-primary btn-sm" style={{ background: "#16a34a" }} onClick={() => {
+                    const newPo = { id: genId(), ref: "PO-" + String((purchaseOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", supplierId: "", supplierName: "", supplierContact: "", supplierEmail: "", supplierAbn: "", deliveryAddress: "", lines: [{ id: genId(), desc: "", qty: 1, unit: "ea" }], notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Purchase order created")] };
+                    setPurchaseOrders(prev => [...prev, newPo]);
+                  }}><Icon name="plus" size={12} />New PO</button>
+                </div>
+              </div>
+              {jobWOs.length + jobPOs.length === 0
+                ? <div style={{ textAlign: "center", padding: "40px 0", color: "#999", fontSize: 13 }}>No work orders or purchase orders linked to this job yet.</div>
+                : <div className="order-cards-grid">
+                    {[...jobWOs.map(o => ({ ...o, _type: "wo" })), ...jobPOs.map(o => ({ ...o, _type: "po" }))].sort((a,b) => b.id - a.id).map(o => (
+                      <OrderCard key={o.id} type={o._type} order={o} jobs={jobs} onOpen={() => {}} onDelete={() => {
+                        if (o._type === "wo") setWorkOrders(prev => prev.filter(x => x.id !== o.id));
+                        else setPurchaseOrders(prev => prev.filter(x => x.id !== o.id));
+                      }} />
+                    ))}
+                  </div>
+              }
+            </div>
+          )}
+
           {tab === "activity" && (
             <div>
               <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1186,103 +2290,236 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           )}
 
         </div>
-      </div>
-    </div>
+        )}
+    </SectionDrawer>
 
-    {/* ── Inline Quote Edit Modal ─────────────────────────────────────────── */}
-    {editingQuote && (
-      <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={e => e.target === e.currentTarget && setEditingQuote(null)}>
-        <div className="modal modal-lg" style={{ maxWidth: 720 }}>
-          <div className="modal-header">
-            <span className="modal-title">Edit Quote – {editingQuote.number}</span>
-            <CloseBtn onClick={() => setEditingQuote(null)} />
+    {/* ── Inline Quote Drawer ─────────────────────────────────────────── */}
+    {editingQuote && (() => {
+      const qTotal = calcQuoteTotal(editingQuote);
+      const qSub = (editingQuote.lineItems||[]).reduce((s,li) => s + (li.qty||0)*(li.rate||0), 0);
+      const qGst = qSub * ((editingQuote.tax||0)/100);
+      const qAccent = SECTION_COLORS.quotes.accent;
+      return (
+      <SectionDrawer
+        accent={qAccent}
+        icon={<Icon name="quotes" size={16} />}
+        typeLabel="Quote"
+        title={editingQuote.number || "New Quote"}
+        statusBadge={<StatusBadge status={editingQuote.status} />}
+        mode={inlineQuoteMode} setMode={setInlineQuoteMode}
+        showToggle={true}
+        statusStrip={inlineQuoteMode === "edit" ?
+          <div style={{ padding: "8px 20px", background: SECTION_COLORS.quotes.light, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            {["draft","sent","accepted","declined"].filter(s => s !== editingQuote.status).map(s => (
+              <button key={s} className="btn btn-xs" style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#475569", borderRadius: 8 }}
+                onClick={() => setEditingQuote(q => ({ ...q, status: s }))}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>
+            ))}
           </div>
-          <div className="modal-body">
-            <div className="grid-2" style={{ marginBottom: 16 }}>
-              <div className="form-group">
-                <label className="form-label">Status</label>
-                <select className="form-control" value={editingQuote.status}
-                  onChange={e => setEditingQuote(q => ({ ...q, status: e.target.value }))}>
-                  {["draft","sent","accepted","declined"].map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">GST %</label>
-                <input type="number" className="form-control" value={editingQuote.tax}
-                  onChange={e => setEditingQuote(q => ({ ...q, tax: parseFloat(e.target.value)||0 }))} min="0" max="100" />
-              </div>
+        : null}
+        footer={inlineQuoteMode === "view" ? <>
+          <button className="btn btn-ghost btn-sm" onClick={() => setEditingQuote(null)}>Close</button>
+          <button className="btn btn-sm" style={{ background: qAccent, color: "#fff", border: "none" }} onClick={() => setInlineQuoteMode("edit")}>
+            <Icon name="edit" size={13} /> Edit
+          </button>
+        </> : <>
+          <button className="btn btn-ghost btn-sm" onClick={() => setInlineQuoteMode("view")}>Cancel</button>
+          <button className="btn btn-sm" style={{ background: qAccent, color: "#fff", border: "none" }} onClick={() => saveQuote(editingQuote)}>
+            <Icon name="check" size={13} /> Save Quote
+          </button>
+        </>}
+        onClose={() => setEditingQuote(null)}
+        zIndex={1060}
+      >
+        {inlineQuoteMode === "view" ? (
+        <div style={{ padding: "20px 24px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+            <ViewField label="Status" value={editingQuote.status?.charAt(0).toUpperCase() + editingQuote.status?.slice(1)} />
+            <ViewField label="GST" value={`${editingQuote.tax}%`} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>Line Items</div>
+            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+              <thead><tr style={{ borderBottom: '2px solid #eee' }}>
+                <th style={{ textAlign: 'left', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Description</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Qty</th>
+                <th style={{ textAlign: 'left', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Unit</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Rate</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Amount</th>
+              </tr></thead>
+              <tbody>
+                {(editingQuote.lineItems||[]).map((li, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                    <td style={{ padding: '8px 8px', fontWeight: 500 }}>{li.desc || '—'}</td>
+                    <td style={{ padding: '8px 8px', textAlign: 'right' }}>{li.qty}</td>
+                    <td style={{ padding: '8px 8px' }}>{li.unit}</td>
+                    <td style={{ padding: '8px 8px', textAlign: 'right' }}>{fmt(li.rate)}</td>
+                    <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 600 }}>{fmt(li.qty * li.rate)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ background: '#f9fafb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>Subtotal</span><span style={{ fontWeight: 600 }}>{fmt(qSub)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>GST ({editingQuote.tax}%)</span><span style={{ fontWeight: 600 }}>{fmt(qGst)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span style={{ fontWeight: 700 }}>Total</span><span style={{ fontWeight: 800, color: qAccent }}>{fmt(qTotal)}</span></div>
+          </div>
+          {editingQuote.notes && <ViewField label="Notes / Terms" value={editingQuote.notes} />}
+        </div>
+        ) : (
+        <div style={{ padding: "20px 24px" }}>
+          <div className="grid-2" style={{ marginBottom: 16 }}>
+            <div className="form-group">
+              <label className="form-label">Status</label>
+              <select className="form-control" value={editingQuote.status}
+                onChange={e => setEditingQuote(q => ({ ...q, status: e.target.value }))}>
+                {["draft","sent","accepted","declined"].map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}
+              </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Line Items</label>
-              <LineItemsEditor items={editingQuote.lineItems}
-                onChange={items => setEditingQuote(q => ({ ...q, lineItems: items }))} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Notes / Terms</label>
-              <textarea className="form-control" value={editingQuote.notes||""}
-                onChange={e => setEditingQuote(q => ({ ...q, notes: e.target.value }))}
-                placeholder="Payment terms, inclusions/exclusions, validity period…" />
+              <label className="form-label">GST %</label>
+              <input type="number" className="form-control" value={editingQuote.tax}
+                onChange={e => setEditingQuote(q => ({ ...q, tax: parseFloat(e.target.value)||0 }))} min="0" max="100" />
             </div>
           </div>
-          <div className="modal-footer">
-            <button className="btn btn-secondary" onClick={() => setEditingQuote(null)}>Cancel</button>
-            <button className="btn btn-primary" onClick={() => saveQuote(editingQuote)}>
-              <Icon name="check" size={13} />Save Quote
-            </button>
+          <div className="form-group">
+            <label className="form-label">Line Items</label>
+            <LineItemsEditor items={editingQuote.lineItems}
+              onChange={items => setEditingQuote(q => ({ ...q, lineItems: items }))} />
+          </div>
+          <div style={{ marginTop: 12, padding: "12px 16px", background: "#f8f8f8", borderRadius: 8, display: "flex", justifyContent: "flex-end", gap: 16 }}>
+            <span style={{ fontSize: 12, color: "#888" }}>Subtotal <strong>{fmt(qSub)}</strong></span>
+            <span style={{ fontSize: 12, color: "#888" }}>GST <strong>{fmt(qGst)}</strong></span>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>Total {fmt(qTotal)}</span>
+          </div>
+          <div className="form-group" style={{ marginTop: 16 }}>
+            <label className="form-label">Notes / Terms</label>
+            <textarea className="form-control" value={editingQuote.notes||""}
+              onChange={e => setEditingQuote(q => ({ ...q, notes: e.target.value }))}
+              placeholder="Payment terms, inclusions/exclusions, validity period…" />
           </div>
         </div>
-      </div>
-    )}
+        )}
+      </SectionDrawer>
+      );
+    })()}
 
-    {/* ── Inline Invoice Edit Modal ───────────────────────────────────────── */}
-    {editingInvoice && (
-      <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={e => e.target === e.currentTarget && setEditingInvoice(null)}>
-        <div className="modal modal-lg" style={{ maxWidth: 720 }}>
-          <div className="modal-header">
-            <span className="modal-title">Edit Invoice – {editingInvoice.number}</span>
-            <CloseBtn onClick={() => setEditingInvoice(null)} />
+    {/* ── Inline Invoice Drawer ───────────────────────────────────────── */}
+    {editingInvoice && (() => {
+      const iSub = (editingInvoice.lineItems||[]).reduce((s,li) => s + (li.qty||0)*(li.rate||0), 0);
+      const iGst = iSub * ((editingInvoice.tax||0)/100);
+      const iTotal = iSub + iGst;
+      const iAccent = SECTION_COLORS.invoices.accent;
+      return (
+      <SectionDrawer
+        accent={iAccent}
+        icon={<Icon name="invoices" size={16} />}
+        typeLabel="Invoice"
+        title={editingInvoice.number || "New Invoice"}
+        statusBadge={<StatusBadge status={editingInvoice.status} />}
+        mode={inlineInvMode} setMode={setInlineInvMode}
+        showToggle={true}
+        statusStrip={inlineInvMode === "edit" ?
+          <div style={{ padding: "8px 20px", background: SECTION_COLORS.invoices.light, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            {["draft","sent","paid","overdue","void"].filter(s => s !== editingInvoice.status).map(s => (
+              <button key={s} className="btn btn-xs" style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#475569", borderRadius: 8 }}
+                onClick={() => setEditingInvoice(i => ({ ...i, status: s }))}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>
+            ))}
           </div>
-          <div className="modal-body">
-            <div className="grid-3" style={{ marginBottom: 16 }}>
-              <div className="form-group">
-                <label className="form-label">Status</label>
-                <select className="form-control" value={editingInvoice.status}
-                  onChange={e => setEditingInvoice(i => ({ ...i, status: e.target.value }))}>
-                  {["draft","sent","paid","overdue","void"].map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Due Date</label>
-                <input type="date" className="form-control" value={editingInvoice.dueDate||""}
-                  onChange={e => setEditingInvoice(i => ({ ...i, dueDate: e.target.value }))} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">GST %</label>
-                <input type="number" className="form-control" value={editingInvoice.tax}
-                  onChange={e => setEditingInvoice(i => ({ ...i, tax: parseFloat(e.target.value)||0 }))} min="0" max="100" />
-              </div>
+        : null}
+        footer={inlineInvMode === "view" ? <>
+          <button className="btn btn-ghost btn-sm" onClick={() => setEditingInvoice(null)}>Close</button>
+          <button className="btn btn-sm" style={{ background: iAccent, color: "#fff", border: "none" }} onClick={() => setInlineInvMode("edit")}>
+            <Icon name="edit" size={13} /> Edit
+          </button>
+        </> : <>
+          <button className="btn btn-ghost btn-sm" onClick={() => setInlineInvMode("view")}>Cancel</button>
+          <button className="btn btn-sm" style={{ background: iAccent, color: "#fff", border: "none" }} onClick={() => saveInvoice(editingInvoice)}>
+            <Icon name="check" size={13} /> Save Invoice
+          </button>
+        </>}
+        onClose={() => setEditingInvoice(null)}
+        zIndex={1060}
+      >
+        {inlineInvMode === "view" ? (
+        <div style={{ padding: "20px 24px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
+            <ViewField label="Status" value={editingInvoice.status?.charAt(0).toUpperCase() + editingInvoice.status?.slice(1)} />
+            <ViewField label="Due Date" value={editingInvoice.dueDate || "—"} />
+            <ViewField label="GST" value={`${editingInvoice.tax}%`} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>Line Items</div>
+            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+              <thead><tr style={{ borderBottom: '2px solid #eee' }}>
+                <th style={{ textAlign: 'left', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Description</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Qty</th>
+                <th style={{ textAlign: 'left', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Unit</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Rate</th>
+                <th style={{ textAlign: 'right', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Amount</th>
+              </tr></thead>
+              <tbody>
+                {(editingInvoice.lineItems||[]).map((li, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                    <td style={{ padding: '8px 8px', fontWeight: 500 }}>{li.desc || '—'}</td>
+                    <td style={{ padding: '8px 8px', textAlign: 'right' }}>{li.qty}</td>
+                    <td style={{ padding: '8px 8px' }}>{li.unit}</td>
+                    <td style={{ padding: '8px 8px', textAlign: 'right' }}>{fmt(li.rate)}</td>
+                    <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 600 }}>{fmt(li.qty * li.rate)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ background: '#f9fafb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>Subtotal</span><span style={{ fontWeight: 600 }}>{fmt(iSub)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>GST ({editingInvoice.tax}%)</span><span style={{ fontWeight: 600 }}>{fmt(iGst)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span style={{ fontWeight: 700 }}>Total</span><span style={{ fontWeight: 800, color: iAccent }}>{fmt(iTotal)}</span></div>
+          </div>
+          {editingInvoice.notes && <ViewField label="Notes" value={editingInvoice.notes} />}
+        </div>
+        ) : (
+        <div style={{ padding: "20px 24px" }}>
+          <div className="grid-3" style={{ marginBottom: 16 }}>
+            <div className="form-group">
+              <label className="form-label">Status</label>
+              <select className="form-control" value={editingInvoice.status}
+                onChange={e => setEditingInvoice(i => ({ ...i, status: e.target.value }))}>
+                {["draft","sent","paid","overdue","void"].map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}
+              </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Line Items</label>
-              <LineItemsEditor items={editingInvoice.lineItems}
-                onChange={items => setEditingInvoice(i => ({ ...i, lineItems: items }))} />
+              <label className="form-label">Due Date</label>
+              <input type="date" className="form-control" value={editingInvoice.dueDate||""}
+                onChange={e => setEditingInvoice(i => ({ ...i, dueDate: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label className="form-label">Notes</label>
-              <textarea className="form-control" value={editingInvoice.notes||""}
-                onChange={e => setEditingInvoice(i => ({ ...i, notes: e.target.value }))}
-                placeholder="Payment instructions, bank details, thank you note…" />
+              <label className="form-label">GST %</label>
+              <input type="number" className="form-control" value={editingInvoice.tax}
+                onChange={e => setEditingInvoice(i => ({ ...i, tax: parseFloat(e.target.value)||0 }))} min="0" max="100" />
             </div>
           </div>
-          <div className="modal-footer">
-            <button className="btn btn-secondary" onClick={() => setEditingInvoice(null)}>Cancel</button>
-            <button className="btn btn-primary" onClick={() => saveInvoice(editingInvoice)}>
-              <Icon name="check" size={13} />Save Invoice
-            </button>
+          <div className="form-group">
+            <label className="form-label">Line Items</label>
+            <LineItemsEditor items={editingInvoice.lineItems}
+              onChange={items => setEditingInvoice(i => ({ ...i, lineItems: items }))} />
+          </div>
+          <div style={{ marginTop: 12, padding: "12px 16px", background: "#f8f8f8", borderRadius: 8, display: "flex", justifyContent: "flex-end", gap: 16 }}>
+            <span style={{ fontSize: 12, color: "#888" }}>Subtotal <strong>{fmt(iSub)}</strong></span>
+            <span style={{ fontSize: 12, color: "#888" }}>GST <strong>{fmt(iGst)}</strong></span>
+            <span style={{ fontSize: 14, fontWeight: 700 }}>Total {fmt(iTotal)}</span>
+          </div>
+          <div className="form-group" style={{ marginTop: 16 }}>
+            <label className="form-label">Notes</label>
+            <textarea className="form-control" value={editingInvoice.notes||""}
+              onChange={e => setEditingInvoice(i => ({ ...i, notes: e.target.value }))}
+              placeholder="Payment instructions, bank details, thank you note…" />
           </div>
         </div>
-      </div>
-    )}
+        )}
+      </SectionDrawer>
+      );
+    })()}
 
     {/* ── Inline Bill Capture / Edit Modal ───────────────────────────────── */}
     {editingBill !== null && (
@@ -1299,12 +2536,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 };
 
 // ── Jobs ──────────────────────────────────────────────────────────────────────
-const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff }) => {
+const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders }) => {
   const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [showModal, setShowModal] = useState(false);
   const [editJob, setEditJob] = useState(null);
+  const [jobMode, setJobMode] = useState("edit");
   const [detailJob, setDetailJob] = useState(null);
   const [form, setForm] = useState({ title: "", clientId: "", status: "draft", priority: "medium", description: "", startDate: "", dueDate: "", assignedTo: [], tags: "" });
 
@@ -1315,8 +2553,8 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
       (j.title.toLowerCase().includes(q) || client?.name.toLowerCase().includes(q));
   });
 
-  const openNew = () => { setEditJob(null); setForm({ title: "", clientId: clients[0]?.id || "", siteId: null, status: "draft", priority: "medium", description: "", startDate: "", dueDate: "", assignedTo: [], tags: "" }); setShowModal(true); };
-  const openEdit = (j) => { setEditJob(j); setForm({ ...j, siteId: j.siteId || null, tags: j.tags.join(", ") }); setShowModal(true); };
+  const openNew = () => { setEditJob(null); setJobMode("edit"); setForm({ title: "", clientId: clients[0]?.id || "", siteId: null, status: "draft", priority: "medium", description: "", startDate: "", dueDate: "", assignedTo: [], tags: "" }); setShowModal(true); };
+  const openEdit = (j) => { setEditJob(j); setJobMode("view"); setForm({ ...j, siteId: j.siteId || null, tags: j.tags.join(", ") }); setShowModal(true); };
   const openDetail = (j) => setDetailJob(j);
   const save = async () => {
     const data = { ...form, clientId: form.clientId, tags: form.tags.split(",").map(t => t.trim()).filter(Boolean) };
@@ -1370,10 +2608,10 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
           {STATUSES.map(s => <option key={s} value={s}>{s === "all" ? "All Statuses" : s.replace("_", " ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
         </select>
         <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
-          <button className={`btn btn-xs ${view === "list" ? "btn-primary" : "btn-ghost"}`} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
-          <button className={`btn btn-xs ${view === "kanban" ? "btn-primary" : "btn-ghost"}`} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
         </div>
-        <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />New Job</button>
+        <button className="btn btn-primary" style={{ background: SECTION_COLORS.jobs.accent }} onClick={openNew}><Icon name="plus" size={14} />New Job</button>
       </div>
 
       {view === "list" ? (
@@ -1477,92 +2715,138 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
           schedule={schedule} setSchedule={setSchedule}
           jobs={jobs} setJobs={setJobs}
           staff={staff}
+          workOrders={workOrders} setWorkOrders={setWorkOrders}
+          purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders}
           onClose={() => setDetailJob(null)}
           onEdit={() => { openEdit(jobs.find(j => j.id === detailJob.id) || detailJob); setDetailJob(null); }}
         />
       )}
 
-      {/* Edit / New modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal">
-            <div className="modal-header">
-              <span className="modal-title">{editJob ? "Edit Job" : "New Job"}</span>
-              <CloseBtn onClick={() => setShowModal(false)} />
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label className="form-label">Job Title *</label>
-                <input className="form-control" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
+      {/* Edit / New Job drawer */}
+      {showModal && (() => {
+        const isNewJob = !editJob;
+        const jobClient = clients.find(c => String(c.id) === String(form.clientId));
+        const jobSite = jobClient?.sites?.find(s => String(s.id) === String(form.siteId));
+        return (
+        <SectionDrawer
+          accent={SECTION_COLORS.jobs.accent}
+          icon={<Icon name="jobs" size={16} />}
+          typeLabel="Job"
+          title={editJob ? editJob.title : "New Job"}
+          statusBadge={editJob ? <StatusBadge status={form.status} /> : null}
+          mode={jobMode} setMode={setJobMode}
+          showToggle={!isNewJob}
+          isNew={isNewJob}
+          footer={jobMode === "view" ? <>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.jobs.accent, color: "#fff", border: "none" }} onClick={() => setJobMode("edit")}>
+              <Icon name="edit" size={13} /> Edit
+            </button>
+          </> : <>
+            <button className="btn btn-ghost btn-sm" onClick={() => editJob ? setJobMode("view") : setShowModal(false)}>{editJob ? "Cancel" : "Cancel"}</button>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.jobs.accent, color: "#fff", border: "none" }} onClick={() => { save(); if (editJob) setJobMode("view"); }} disabled={!form.title}>
+              <Icon name="check" size={13} /> {isNewJob ? "Create Job" : "Save Changes"}
+            </button>
+          </>}
+          onClose={() => setShowModal(false)}
+        >
+          {jobMode === "view" ? (
+            <div style={{ padding: "20px 24px" }}>
+              <ViewField label="Job Title" value={form.title} />
+              <div className="grid-2">
+                <ViewField label="Client" value={jobClient?.name} />
+                <ViewField label="Site" value={jobSite?.name || "No specific site"} />
               </div>
               <div className="grid-3">
-                <div className="form-group">
-                  <label className="form-label">Client *</label>
-                  <select className="form-control" value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value, siteId: "" }))}>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Site</label>
-                  <select className="form-control" value={form.siteId || ""} onChange={e => setForm(f => ({ ...f, siteId: e.target.value || null }))}>
-                    <option value="">— No specific site —</option>
-                    {(clients.find(c => String(c.id) === String(form.clientId))?.sites || []).map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Status</label>
-                  <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-                    {["draft","scheduled","quoted","in_progress","completed","cancelled"].map(s => <option key={s} value={s}>{s.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
-                  </select>
-                </div>
+                <ViewField label="Status" value={form.status?.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())} />
+                <ViewField label="Priority" value={form.priority?.charAt(0).toUpperCase() + form.priority?.slice(1)} />
+                <ViewField label="Tags" value={form.tags || "—"} />
               </div>
               <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Priority</label>
-                  <select className="form-control" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
-                    {["high","medium","low"].map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Tags (comma separated)</label>
-                  <input className="form-control" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
-                </div>
+                <ViewField label="Start Date" value={form.startDate || "—"} />
+                <ViewField label="Due Date" value={form.dueDate || "—"} />
               </div>
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Start Date</label>
-                  <input type="date" className="form-control" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
+              {(form.assignedTo || []).length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 6 }}>Assigned Team</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {form.assignedTo.map(t => <span key={t} className="chip">{t}</span>)}
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Due Date</label>
-                  <input type="date" className="form-control" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
-                </div>
+              )}
+              {form.description && <ViewField label="Description" value={form.description} />}
+            </div>
+          ) : (
+          <div style={{ padding: "20px 24px" }}>
+            <div className="form-group">
+              <label className="form-label">Job Title *</label>
+              <input className="form-control" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
+            </div>
+            <div className="grid-3">
+              <div className="form-group">
+                <label className="form-label">Client *</label>
+                <select className="form-control" value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value, siteId: "" }))}>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Assigned Team Members</label>
-                <div className="multi-select">
-                  {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => (
-                    <span key={t} className={`multi-option ${form.assignedTo.includes(t) ? "selected" : ""}`}
-                      onClick={() => setForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
-                      {t}
-                    </span>
+                <label className="form-label">Site</label>
+                <select className="form-control" value={form.siteId || ""} onChange={e => setForm(f => ({ ...f, siteId: e.target.value || null }))}>
+                  <option value="">— No specific site —</option>
+                  {(clients.find(c => String(c.id) === String(form.clientId))?.sites || []).map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
-                </div>
+                </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Description</label>
-                <textarea className="form-control" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
+                <label className="form-label">Status</label>
+                <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+                  {["draft","scheduled","quoted","in_progress","completed","cancelled"].map(s => <option key={s} value={s}>{s.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
+                </select>
               </div>
             </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={save} disabled={!form.title}><Icon name="check" size={13} />{editJob ? "Save Changes" : "Create Job"}</button>
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Priority</label>
+                <select className="form-control" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
+                  {["high","medium","low"].map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Tags (comma separated)</label>
+                <input className="form-control" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
+              </div>
+            </div>
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Start Date</label>
+                <input type="date" className="form-control" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Due Date</label>
+                <input type="date" className="form-control" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Assigned Team Members</label>
+              <div className="multi-select">
+                {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => (
+                  <span key={t} className={`multi-option ${form.assignedTo.includes(t) ? "selected" : ""}`}
+                    onClick={() => setForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Description</label>
+              <textarea className="form-control" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
             </div>
           </div>
-        </div>
-      )}
+          )}
+        </SectionDrawer>
+        );
+      })()}
     </div>
   );
 };
@@ -1571,6 +2855,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
 const Clients = ({ clients, setClients, jobs }) => {
   const [showModal, setShowModal] = useState(false);
   const [editClient, setEditClient] = useState(null);
+  const [clientMode, setClientMode] = useState("edit");
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", sites: [] });
   const [search, setSearch] = useState("");
   const [expandedSites, setExpandedSites] = useState({});
@@ -1587,11 +2872,13 @@ const Clients = ({ clients, setClients, jobs }) => {
 
   const openNew = () => {
     setEditClient(null);
+    setClientMode("edit");
     setForm({ name: "", email: "", phone: "", address: "", sites: [] });
     setShowModal(true);
   };
   const openEdit = (c) => {
     setEditClient(c);
+    setClientMode("view");
     setForm({ ...c, sites: c.sites || [] });
     setShowModal(true);
   };
@@ -1668,7 +2955,7 @@ const Clients = ({ clients, setClients, jobs }) => {
         <div className="search-bar" style={{ flex: 1 }}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." />
         </div>
-        <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />New Client</button>
+        <button className="btn btn-primary" style={{ background: SECTION_COLORS.clients.accent }} onClick={openNew}><Icon name="plus" size={14} />New Client</button>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -1772,55 +3059,104 @@ const Clients = ({ clients, setClients, jobs }) => {
         })}
       </div>
 
-      {/* Client edit/new modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal">
-            <div className="modal-header">
-              <span className="modal-title">{editClient ? "Edit Client" : "New Client"}</span>
-              <CloseBtn onClick={() => setShowModal(false)} />
-            </div>
-            <div className="modal-body">
-              <div className="form-group"><label className="form-label">Company / Client Name *</label><input className="form-control" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+      {/* Client edit/new drawer */}
+      {showModal && (() => {
+        const isNewClient = !editClient;
+        const clientSites = editClient ? (clients.find(c => c.id === editClient.id)?.sites || []) : [];
+        const clientJobCount = editClient ? jobs.filter(j => j.clientId === editClient.id).length : 0;
+        return (
+        <SectionDrawer
+          accent={SECTION_COLORS.clients.accent}
+          icon={<Icon name="clients" size={16} />}
+          typeLabel="Client"
+          title={editClient ? editClient.name : "New Client"}
+          mode={clientMode} setMode={setClientMode}
+          showToggle={!isNewClient}
+          isNew={isNewClient}
+          footer={clientMode === "view" ? <>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.clients.accent, color: "#fff", border: "none" }} onClick={() => setClientMode("edit")}>
+              <Icon name="edit" size={13} /> Edit
+            </button>
+          </> : <>
+            <button className="btn btn-ghost btn-sm" onClick={() => editClient ? setClientMode("view") : setShowModal(false)}>{editClient ? "Cancel" : "Cancel"}</button>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.clients.accent, color: "#fff", border: "none" }} onClick={() => { save(); if (editClient) setClientMode("view"); }} disabled={!form.name}>
+              <Icon name="check" size={13} /> {isNewClient ? "Add Client" : "Save Changes"}
+            </button>
+          </>}
+          onClose={() => setShowModal(false)}
+        >
+          {clientMode === "view" ? (
+            <div style={{ padding: "20px 24px" }}>
+              <ViewField label="Company / Client Name" value={form.name} />
               <div className="grid-2">
-                <div className="form-group"><label className="form-label">Email</label><input type="email" className="form-control" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
-                <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+                <ViewField label="Email" value={form.email} />
+                <ViewField label="Phone" value={form.phone} />
               </div>
-              <div className="form-group"><label className="form-label">Address</label><input className="form-control" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={save} disabled={!form.name}><Icon name="check" size={13} />{editClient ? "Save Changes" : "Add Client"}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Site add/edit modal */}
-      {showSiteModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowSiteModal(false)}>
-          <div className="modal" style={{ maxWidth: 480 }}>
-            <div className="modal-header">
-              <span className="modal-title">{editSite ? "Edit Site" : "Add Site"}</span>
-              <CloseBtn onClick={() => setShowSiteModal(false)} />
-            </div>
-            <div className="modal-body">
-              <div className="form-group"><label className="form-label">Site Name *</label><input className="form-control" value={siteForm.name} onChange={e => setSiteForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Head Office, Warehouse, Site A" /></div>
-              <div className="form-group"><label className="form-label">Address</label><input className="form-control" value={siteForm.address} onChange={e => setSiteForm(f => ({ ...f, address: e.target.value }))} placeholder="Physical address" /></div>
-              <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4, marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Site Contact</div>
-                <div className="grid-2">
-                  <div className="form-group"><label className="form-label">Contact Name</label><input className="form-control" value={siteForm.contactName} onChange={e => setSiteForm(f => ({ ...f, contactName: e.target.value }))} placeholder="Full name" /></div>
-                  <div className="form-group"><label className="form-label">Contact Phone</label><input className="form-control" value={siteForm.contactPhone} onChange={e => setSiteForm(f => ({ ...f, contactPhone: e.target.value }))} placeholder="04xx xxx xxx" /></div>
+              <ViewField label="Address" value={form.address} />
+              <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <span className="chip">{clientJobCount} jobs</span>
+                  <span className="chip">🏢 {clientSites.length} site{clientSites.length !== 1 ? "s" : ""}</span>
                 </div>
               </div>
+              {clientSites.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>Sites</div>
+                  {clientSites.map(s => (
+                    <div key={s.id} style={{ padding: "10px 14px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
+                      {s.address && <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{s.address}</div>}
+                      {s.contactName && <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>👤 {s.contactName}{s.contactPhone ? ` · ${s.contactPhone}` : ""}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowSiteModal(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={saveSite} disabled={!siteForm.name}><Icon name="check" size={13} />{editSite ? "Save Changes" : "Add Site"}</button>
+          ) : (
+          <div style={{ padding: "20px 24px" }}>
+            <div className="form-group"><label className="form-label">Company / Client Name *</label><input className="form-control" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+            <div className="grid-2">
+              <div className="form-group"><label className="form-label">Email</label><input type="email" className="form-control" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+              <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+            </div>
+            <div className="form-group"><label className="form-label">Address</label><input className="form-control" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
+          </div>
+          )}
+        </SectionDrawer>
+        );
+      })()}
+
+      {/* Site add/edit drawer */}
+      {showSiteModal && (
+        <SectionDrawer
+          accent={SECTION_COLORS.clients.accent}
+          icon={<span style={{ fontSize: 16 }}>🏢</span>}
+          typeLabel="Site"
+          title={editSite ? editSite.name : "Add Site"}
+          mode="edit" setMode={() => {}}
+          showToggle={false}
+          footer={<>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowSiteModal(false)}>Cancel</button>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.clients.accent, color: "#fff", border: "none" }} onClick={saveSite} disabled={!siteForm.name}>
+              <Icon name="check" size={13} /> {editSite ? "Save Changes" : "Add Site"}
+            </button>
+          </>}
+          onClose={() => setShowSiteModal(false)}
+          zIndex={1060}
+        >
+          <div style={{ padding: "20px 24px" }}>
+            <div className="form-group"><label className="form-label">Site Name *</label><input className="form-control" value={siteForm.name} onChange={e => setSiteForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Head Office, Warehouse, Site A" /></div>
+            <div className="form-group"><label className="form-label">Address</label><input className="form-control" value={siteForm.address} onChange={e => setSiteForm(f => ({ ...f, address: e.target.value }))} placeholder="Physical address" /></div>
+            <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4, marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Site Contact</div>
+              <div className="grid-2">
+                <div className="form-group"><label className="form-label">Contact Name</label><input className="form-control" value={siteForm.contactName} onChange={e => setSiteForm(f => ({ ...f, contactName: e.target.value }))} placeholder="Full name" /></div>
+                <div className="form-group"><label className="form-label">Contact Phone</label><input className="form-control" value={siteForm.contactPhone} onChange={e => setSiteForm(f => ({ ...f, contactPhone: e.target.value }))} placeholder="04xx xxx xxx" /></div>
+              </div>
             </div>
           </div>
-        </div>
+        </SectionDrawer>
       )}
     </div>
   );
@@ -1830,6 +3166,7 @@ const Clients = ({ clients, setClients, jobs }) => {
 const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
   const [showModal, setShowModal] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
+  const [schedMode, setSchedMode] = useState("edit");
   const [form, setForm] = useState({ jobId: "", date: new Date().toISOString().slice(0,10), assignedTo: [], notes: "" });
   const [filterDate, setFilterDate] = useState("");
 
@@ -1839,11 +3176,13 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
 
   const openNew = () => {
     setEditEntry(null);
+    setSchedMode("edit");
     setForm({ jobId: jobs[0]?.id || "", date: today, assignedTo: [], notes: "" });
     setShowModal(true);
   };
   const openEdit = (s) => {
     setEditEntry(s);
+    setSchedMode("view");
     setForm({ jobId: s.jobId, date: s.date, assignedTo: s.assignedTo || [], notes: s.notes || "" });
     setShowModal(true);
   };
@@ -1875,7 +3214,7 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
         <input type="date" className="form-control" style={{ width: "auto" }} value={filterDate} onChange={e => setFilterDate(e.target.value)} />
         {filterDate && <button className="btn btn-ghost btn-sm" onClick={() => setFilterDate("")} style={{ fontSize: 12 }}>Clear</button>}
         <div style={{ flex: 1 }} />
-        <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />Schedule Job</button>
+        <button className="btn btn-primary" style={{ background: SECTION_COLORS.schedule.accent }} onClick={openNew}><Icon name="plus" size={14} />Schedule Job</button>
       </div>
 
       {Object.keys(grouped).length === 0 && (
@@ -1953,49 +3292,79 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
         );
       })}
 
-      {showModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal">
-            <div className="modal-header">
-              <span className="modal-title">{editEntry ? "Edit Schedule Entry" : "Schedule a Job"}</span>
-              <CloseBtn onClick={() => setShowModal(false)} />
+      {showModal && (() => {
+        const schedJobName = jobs.find(j => String(j.id) === String(form.jobId))?.title || "Unknown Job";
+        const isNewSched = !editEntry;
+        return (
+        <SectionDrawer
+          accent={SECTION_COLORS.schedule.accent}
+          icon={<Icon name="schedule" size={16} />}
+          typeLabel="Schedule"
+          title={editEntry ? `${form.date} · ${schedJobName}` : "Schedule a Job"}
+          mode={schedMode} setMode={setSchedMode}
+          showToggle={!isNewSched}
+          isNew={isNewSched}
+          footer={schedMode === "view" ? <>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.schedule.accent, color: "#fff", border: "none" }} onClick={() => setSchedMode("edit")}>
+              <Icon name="edit" size={13} /> Edit
+            </button>
+          </> : <>
+            <button className="btn btn-ghost btn-sm" onClick={() => editEntry ? setSchedMode("view") : setShowModal(false)}>{editEntry ? "Cancel" : "Cancel"}</button>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.schedule.accent, color: "#fff", border: "none" }} onClick={() => { save(); if (editEntry) setSchedMode("view"); }} disabled={!form.jobId || !form.date}>
+              <Icon name="check" size={13} /> {isNewSched ? "Add to Schedule" : "Save Changes"}
+            </button>
+          </>}
+          onClose={() => setShowModal(false)}
+        >
+          {schedMode === "view" ? (
+            <div style={{ padding: "20px 24px" }}>
+              <ViewField label="Job" value={schedJobName} />
+              <ViewField label="Date" value={form.date} />
+              {(form.assignedTo || []).length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 6 }}>Assigned To</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {form.assignedTo.map(t => <span key={t} className="chip">{t}</span>)}
+                  </div>
+                </div>
+              )}
+              {form.notes && <ViewField label="Notes" value={form.notes} />}
             </div>
-            <div className="modal-body">
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Job *</label>
-                  <select className="form-control" value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value }))}>
-                    {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Date *</label>
-                  <input type="date" className="form-control" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
-                </div>
+          ) : (
+          <div style={{ padding: "20px 24px" }}>
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Job *</label>
+                <select className="form-control" value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value }))}>
+                  {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
+                </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Assigned To</label>
-                <div className="multi-select">
-                  {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => (
-                    <span key={t} className={`multi-option ${form.assignedTo.includes(t) ? "selected" : ""}`}
-                      onClick={() => setForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Notes</label>
-                <textarea className="form-control" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Access instructions, special requirements..." />
+                <label className="form-label">Date *</label>
+                <input type="date" className="form-control" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
               </div>
             </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={save} disabled={!form.jobId || !form.date}><Icon name="check" size={13} />{editEntry ? "Save Changes" : "Add to Schedule"}</button>
+            <div className="form-group">
+              <label className="form-label">Assigned To</label>
+              <div className="multi-select">
+                {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => (
+                  <span key={t} className={`multi-option ${form.assignedTo.includes(t) ? "selected" : ""}`}
+                    onClick={() => setForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Notes</label>
+              <textarea className="form-control" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Access instructions, special requirements..." />
             </div>
           </div>
-        </div>
-      )}
+          )}
+        </SectionDrawer>
+        );
+      })()}
     </div>
   );
 };
@@ -2004,10 +3373,11 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
 const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
   const [showModal, setShowModal] = useState(false);
   const [editQuote, setEditQuote] = useState(null);
+  const [quoteMode, setQuoteMode] = useState("edit");
   const [form, setForm] = useState({ jobId: "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" });
 
-  const openNew = () => { setEditQuote(null); setForm({ jobId: jobs[0]?.id || "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" }); setShowModal(true); };
-  const openEdit = (q) => { setEditQuote(q); setForm(q); setShowModal(true); };
+  const openNew = () => { setEditQuote(null); setQuoteMode("edit"); setForm({ jobId: jobs[0]?.id || "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" }); setShowModal(true); };
+  const openEdit = (q) => { setEditQuote(q); setQuoteMode("view"); setForm(q); setShowModal(true); };
   const save = async () => {
     const data = { ...form, jobId: form.jobId };
     try {
@@ -2038,7 +3408,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
     <div>
       <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ flex: 1 }} />
-        <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />New Quote</button>
+        <button className="btn btn-primary" style={{ background: SECTION_COLORS.quotes.accent }} onClick={openNew}><Icon name="plus" size={14} />New Quote</button>
       </div>
       <div className="card">
         <div className="table-wrap">
@@ -2078,44 +3448,90 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
         </div>
       </div>
 
-      {showModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal modal-lg">
-            <div className="modal-header">
-              <span className="modal-title">{editQuote ? `Edit ${editQuote.number}` : "New Quote"}</span>
-              <CloseBtn onClick={() => setShowModal(false)} />
+      {showModal && (() => {
+        const isNewQ = !editQuote;
+        const qJob = jobs.find(j => String(j.id) === String(form.jobId));
+        const qClient = clients.find(c => c.id === qJob?.clientId);
+        const qSub = (form.lineItems || []).reduce((s, l) => s + l.qty * l.rate, 0);
+        const qTax = qSub * (form.tax || 10) / 100;
+        const qTotal = qSub + qTax;
+        return (
+        <SectionDrawer
+          accent={SECTION_COLORS.quotes.accent}
+          icon={<Icon name="quotes" size={16} />}
+          typeLabel="Quote"
+          title={editQuote ? editQuote.number : "New Quote"}
+          statusBadge={editQuote ? <StatusBadge status={form.status} /> : null}
+          mode={quoteMode} setMode={setQuoteMode}
+          showToggle={!isNewQ}
+          isNew={isNewQ}
+          footer={quoteMode === "view" ? <>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.quotes.accent, color: "#fff", border: "none" }} onClick={() => setQuoteMode("edit")}>
+              <Icon name="edit" size={13} /> Edit
+            </button>
+          </> : <>
+            <button className="btn btn-ghost btn-sm" onClick={() => editQuote ? setQuoteMode("view") : setShowModal(false)}>{editQuote ? "Cancel" : "Cancel"}</button>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.quotes.accent, color: "#fff", border: "none" }} onClick={() => { save(); if (editQuote) setQuoteMode("view"); }}>
+              <Icon name="check" size={13} /> {isNewQ ? "Create Quote" : "Save Changes"}
+            </button>
+          </>}
+          onClose={() => setShowModal(false)}
+        >
+          {quoteMode === "view" ? (
+            <div style={{ padding: "20px 24px" }}>
+              <div className="grid-2">
+                <ViewField label="Job" value={qJob?.title} />
+                <ViewField label="Client" value={qClient?.name} />
+              </div>
+              <ViewField label="Status" value={form.status?.charAt(0).toUpperCase() + form.status?.slice(1)} />
+              <div style={{ borderTop: "1px solid #f0f0f0", marginTop: 4, paddingTop: 16, marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>Line Items</div>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead><tr><th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", borderBottom: "1px solid #f0f0f0" }}>Description</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Qty</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Rate</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Total</th></tr></thead>
+                  <tbody>
+                    {(form.lineItems || []).map((l, i) => (
+                      <tr key={i}><td style={{ padding: "8px" }}>{l.desc || "—"}</td><td style={{ textAlign: "right", padding: "8px" }}>{l.qty} {l.unit}</td><td style={{ textAlign: "right", padding: "8px" }}>{fmt(l.rate)}</td><td style={{ textAlign: "right", padding: "8px", fontWeight: 600 }}>{fmt(l.qty * l.rate)}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="totals-box" style={{ marginLeft: "auto", maxWidth: 260 }}>
+                <div className="totals-row"><span>Subtotal</span><span>{fmt(qSub)}</span></div>
+                <div className="totals-row"><span>GST ({form.tax}%)</span><span>{fmt(qTax)}</span></div>
+                <div className="totals-row total"><span>Total</span><span>{fmt(qTotal)}</span></div>
+              </div>
+              {form.notes && <div style={{ marginTop: 16 }}><ViewField label="Notes / Terms" value={form.notes} /></div>}
             </div>
-            <div className="modal-body">
-              <div className="grid-2" style={{ marginBottom: 16 }}>
-                <div className="form-group">
-                  <label className="form-label">Job</label>
-                  <select className="form-control" value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value }))}>
-                    {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Status</label>
-                  <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-                    {["draft","sent","accepted","declined"].map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                  </select>
-                </div>
+          ) : (
+          <div style={{ padding: "20px 24px" }}>
+            <div className="grid-2" style={{ marginBottom: 16 }}>
+              <div className="form-group">
+                <label className="form-label">Job</label>
+                <select className="form-control" value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value }))}>
+                  {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
+                </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Line Items</label>
-                <LineItemsEditor items={form.lineItems} onChange={items => setForm(f => ({ ...f, lineItems: items }))} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Notes / Terms</label>
-                <textarea className="form-control" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Payment terms, inclusions/exclusions, validity period..." />
+                <label className="form-label">Status</label>
+                <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+                  {["draft","sent","accepted","declined"].map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                </select>
               </div>
             </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={save}><Icon name="check" size={13} />{editQuote ? "Save Changes" : "Create Quote"}</button>
+            <div className="form-group">
+              <label className="form-label">Line Items</label>
+              <LineItemsEditor items={form.lineItems} onChange={items => setForm(f => ({ ...f, lineItems: items }))} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Notes / Terms</label>
+              <textarea className="form-control" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Payment terms, inclusions/exclusions, validity period..." />
             </div>
           </div>
-        </div>
-      )}
+          )}
+        </SectionDrawer>
+        );
+      })()}
     </div>
   );
 };
@@ -2172,6 +3588,8 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
     };
     return { jobId: String(jobs[0]?.id || ""), worker: staffNames[0] || "", date: today, startTime: "", endTime: "", description: "", billable: true };
   });
+  const isNewTime = !editEntry;
+  const [mode, setMode] = useState(isNewTime ? "edit" : "view");
   const [activePreset, setActivePreset] = useState(null);
   const [endTouched, setEndTouched] = useState(!!editEntry);
 
@@ -2202,100 +3620,135 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
       jobId: form.jobId,
       hours,
     });
+    if (!isNewTime) setMode("view");
   };
 
+  const jobName = jobs.find(j => String(j.id) === String(form.jobId))?.title || "Time Entry";
+
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <div className="modal-header">
-          <span className="modal-title">{editEntry ? "Edit Time Entry" : "Log Time"}</span>
-          <CloseBtn onClick={onClose} />
-        </div>
-        <div className="modal-body">
-          {/* Job + Worker */}
+    <SectionDrawer
+      accent={SECTION_COLORS.time.accent}
+      icon={<Icon name="time" size={16} />}
+      typeLabel="Time Entry"
+      title={editEntry ? `${form.date} · ${jobName}` : "Log Time"}
+      mode={mode} setMode={setMode}
+      showToggle={!isNewTime}
+      isNew={isNewTime}
+      footer={mode === "view" ? <>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+        <button className="btn btn-sm" style={{ background: SECTION_COLORS.time.accent, color: "#fff", border: "none" }} onClick={() => setMode("edit")}>
+          <Icon name="edit" size={13} /> Edit
+        </button>
+      </> : <>
+        <button className="btn btn-ghost btn-sm" onClick={() => editEntry ? setMode("view") : onClose()}>{editEntry ? "Cancel" : "Cancel"}</button>
+        <button className="btn btn-sm" style={{ background: SECTION_COLORS.time.accent, color: "#fff", border: "none" }} onClick={save} disabled={hours <= 0 || !form.jobId}>
+          <Icon name="check" size={13} /> {isNewTime ? "Log Time" : "Save Changes"}
+        </button>
+      </>}
+      onClose={onClose}
+    >
+      {mode === "view" ? (
+        <div style={{ padding: "20px 24px" }}>
           <div className="grid-2">
-            <div className="form-group">
-              <label className="form-label">Job</label>
-              <select className="form-control" value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value }))}>
-                {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Worker</label>
-              <select className="form-control" value={form.worker} onChange={e => setForm(f => ({ ...f, worker: e.target.value }))}>
-                {staffNames.map(t => <option key={t}>{t}</option>)}
-              </select>
-            </div>
+            <ViewField label="Job" value={jobName} />
+            <ViewField label="Worker" value={form.worker} />
           </div>
-
-          {/* Date */}
-          <div className="form-group">
-            <label className="form-label">Date</label>
-            <input type="date" className="form-control" value={form.date} max={today} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
-          </div>
-
-          {/* Start / End */}
+          <ViewField label="Date" value={form.date} />
           <div className="grid-2">
-            <div className="form-group">
-              <label className="form-label">Start Time</label>
-              <input type="time" className="form-control" value={form.startTime}
-                onChange={e => onStartChange(e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">End Time</label>
-              <input type="time" className="form-control" value={form.endTime}
-                onChange={e => { setEndTouched(true); setForm(f => ({ ...f, endTime: e.target.value })); setActivePreset(null); }} />
-            </div>
+            <ViewField label="Start Time" value={form.startTime} />
+            <ViewField label="End Time" value={form.endTime} />
           </div>
-
-          {/* Hours display */}
-          <div style={{ textAlign: "center", padding: "12px 16px", background: "#f8f8f8", borderRadius: 8, marginBottom: 16 }}>
-            <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.04em", color: hours > 0 ? "#111" : "#ccc", lineHeight: 1 }}>
+          <div style={{ textAlign: "center", padding: "12px 16px", background: SECTION_COLORS.time.light, borderRadius: 8, marginBottom: 16 }}>
+            <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.04em", color: SECTION_COLORS.time.accent, lineHeight: 1 }}>
               {hours > 0 ? `${hours.toFixed(1)}h` : "0.0h"}
             </div>
             <div style={{ fontSize: 11, color: "#999", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4 }}>hours logged</div>
           </div>
-
-          {/* Quick-select presets */}
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Quick Select</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 16 }}>
-            {TIME_PRESETS.map(p => (
-              <button key={p.label}
-                onClick={() => applyPreset(p.mins, p.label)}
-                style={{
-                  padding: "7px 4px", borderRadius: 20, fontSize: 12, fontWeight: 600, textAlign: "center",
-                  border: activePreset === p.label ? "2px solid #111" : "2px solid #e0e0e0",
-                  background: activePreset === p.label ? "#111" : "#f5f5f5",
-                  color: activePreset === p.label ? "#fff" : "#555",
-                  cursor: "pointer", fontFamily: "inherit", transition: "all 0.12s",
-                }}>
-                {p.label}
-              </button>
-            ))}
+          {form.description && <ViewField label="Description" value={form.description} />}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: form.billable ? "#ecfdf5" : "#f5f5f5", color: form.billable ? "#059669" : "#888" }}>
+            {form.billable ? "Billable" : "Non-billable"}
           </div>
-
-          {/* Description */}
+        </div>
+      ) : (
+      <div style={{ padding: "20px 24px" }}>
+        {/* Job + Worker */}
+        <div className="grid-2">
           <div className="form-group">
-            <label className="form-label">Description</label>
-            <textarea className="form-control" value={form.description}
-              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              placeholder="What was done on this job?" />
+            <label className="form-label">Job</label>
+            <select className="form-control" value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value }))}>
+              {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
+            </select>
           </div>
+          <div className="form-group">
+            <label className="form-label">Worker</label>
+            <select className="form-control" value={form.worker} onChange={e => setForm(f => ({ ...f, worker: e.target.value }))}>
+              {staffNames.map(t => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+        </div>
 
-          {/* Billable */}
-          <label className="checkbox-label">
-            <input type="checkbox" checked={form.billable} onChange={e => setForm(f => ({ ...f, billable: e.target.checked }))} />
-            <span>Billable to client</span>
-          </label>
+        {/* Date */}
+        <div className="form-group">
+          <label className="form-label">Date</label>
+          <input type="date" className="form-control" value={form.date} max={today} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
         </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={save} disabled={hours <= 0 || !form.jobId}>
-            <Icon name="check" size={13} />{editEntry ? "Save Changes" : "Log Time"}
-          </button>
+
+        {/* Start / End */}
+        <div className="grid-2">
+          <div className="form-group">
+            <label className="form-label">Start Time</label>
+            <input type="time" className="form-control" value={form.startTime}
+              onChange={e => onStartChange(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">End Time</label>
+            <input type="time" className="form-control" value={form.endTime}
+              onChange={e => { setEndTouched(true); setForm(f => ({ ...f, endTime: e.target.value })); setActivePreset(null); }} />
+          </div>
         </div>
+
+        {/* Hours display */}
+        <div style={{ textAlign: "center", padding: "12px 16px", background: SECTION_COLORS.time.light, borderRadius: 8, marginBottom: 16 }}>
+          <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.04em", color: hours > 0 ? SECTION_COLORS.time.accent : "#ccc", lineHeight: 1 }}>
+            {hours > 0 ? `${hours.toFixed(1)}h` : "0.0h"}
+          </div>
+          <div style={{ fontSize: 11, color: "#999", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4 }}>hours logged</div>
+        </div>
+
+        {/* Quick-select presets */}
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Quick Select</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 16 }}>
+          {TIME_PRESETS.map(p => (
+            <button key={p.label}
+              onClick={() => applyPreset(p.mins, p.label)}
+              style={{
+                padding: "7px 4px", borderRadius: 20, fontSize: 12, fontWeight: 600, textAlign: "center",
+                border: activePreset === p.label ? `2px solid ${SECTION_COLORS.time.accent}` : "2px solid #e0e0e0",
+                background: activePreset === p.label ? SECTION_COLORS.time.accent : "#f5f5f5",
+                color: activePreset === p.label ? "#fff" : "#555",
+                cursor: "pointer", fontFamily: "inherit", transition: "all 0.12s",
+              }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Description */}
+        <div className="form-group">
+          <label className="form-label">Description</label>
+          <textarea className="form-control" value={form.description}
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+            placeholder="What was done on this job?" />
+        </div>
+
+        {/* Billable */}
+        <label className="checkbox-label">
+          <input type="checkbox" checked={form.billable} onChange={e => setForm(f => ({ ...f, billable: e.target.checked }))} />
+          <span>Billable to client</span>
+        </label>
       </div>
-    </div>
+      )}
+    </SectionDrawer>
   );
 };
 
@@ -2509,7 +3962,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
           <option value="all">All Team</option>
           {staffNames.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <button className="btn btn-primary" onClick={openNew} style={{ whiteSpace: "nowrap" }}><Icon name="plus" size={14} />Log Time</button>
+        <button className="btn btn-primary" onClick={openNew} style={{ whiteSpace: "nowrap", background: SECTION_COLORS.time.accent }}><Icon name="plus" size={14} />Log Time</button>
       </div>
 
       {/* Sub-tabs */}
@@ -2739,7 +4192,9 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
     jobId: defaultJobId || null, category: "Materials", description: "", notes: "", status: "inbox",
     capturedAt: new Date().toISOString().slice(0,10),
   };
+  const isNew = !bill;
   const [form, setForm] = useState(bill ? { ...bill } : blank);
+  const [mode, setMode] = useState(isNew ? "edit" : "view");
   const [imagePreview, setImagePreview] = useState(null);
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState(null);
@@ -2815,17 +4270,75 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
     });
   };
 
+  const handleSaveAndView = () => { handleSave(); setMode("view"); };
+  const linkedJob = jobs.find(j => String(j.id) === String(form.jobId));
+
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal modal-lg" style={{ maxWidth: 700 }}>
-        <div className="modal-header">
-          <span className="modal-title">{bill ? `Edit Bill – ${bill.invoiceNo || bill.supplier}` : "Capture Receipt / Bill"}</span>
-          <CloseBtn onClick={onClose} />
+    <SectionDrawer
+      accent={SECTION_COLORS.bills.accent}
+      icon={<Icon name="bills" size={16} />}
+      typeLabel="Bill"
+      title={bill ? (bill.invoiceNo || bill.supplier || "Edit Bill") : "Capture Receipt"}
+      statusBadge={bill ? <StatusBadge status={form.status} /> : null}
+      mode={mode} setMode={setMode}
+      showToggle={!isNew}
+      isNew={isNew}
+      footer={mode === "view" ? <>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+        <button className="btn btn-sm" style={{ background: SECTION_COLORS.bills.accent, color: "#fff", border: "none" }} onClick={() => setMode("edit")}>
+          <Icon name="edit" size={13} /> Edit
+        </button>
+      </> : <>
+        <button className="btn btn-ghost btn-sm" onClick={() => bill ? setMode("view") : onClose()}>{bill ? "Cancel" : "Cancel"}</button>
+        <button className="btn btn-sm" style={{ background: SECTION_COLORS.bills.accent, color: "#fff", border: "none" }} onClick={isNew ? handleSave : handleSaveAndView} disabled={!form.supplier || !form.amount}>
+          <Icon name="check" size={13} /> {isNew ? "Capture Bill" : "Save Changes"}
+        </button>
+      </>}
+      onClose={onClose}
+      zIndex={1060}
+    >
+      {mode === "view" ? (
+        <div style={{ padding: "20px 24px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Supplier Details</div>
+          <div className="grid-2">
+            <ViewField label="Supplier" value={form.supplier} />
+            <ViewField label="Invoice / Receipt #" value={form.invoiceNo} />
+          </div>
+          <div className="grid-2">
+            <ViewField label="Date" value={form.date} />
+            <ViewField label="Category" value={form.category} />
+          </div>
+          <ViewField label="Description" value={form.description} />
+
+          <div style={{ borderTop: "1px solid #f0f0f0", marginTop: 4, paddingTop: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Amount & Tax</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: SECTION_COLORS.bills.accent, marginBottom: 8 }}>{fmt(parseFloat(form.amount) || 0)}</div>
+            {parseFloat(form.amount) > 0 && (
+              <div style={{ background: SECTION_COLORS.bills.light, borderRadius: 8, padding: "12px 16px", display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 16, fontSize: 13 }}>
+                <div><span style={{ color: "#999" }}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
+                <div><span style={{ color: "#999" }}>GST </span><strong>{fmt(gst)}</strong></div>
+                <div style={{ marginLeft: "auto" }}><span style={{ color: "#999" }}>Total </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Job Allocation</div>
+            <ViewField label="Linked Job" value={linkedJob?.title || "Unallocated"} />
+            {parseFloat(form.markup) > 0 && <ViewField label="Markup" value={`${form.markup}% → ${fmt(withMarkup)} ex-GST`} />}
+          </div>
+
+          {form.notes && (
+            <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16 }}>
+              <ViewField label="Internal Notes" value={form.notes} />
+            </div>
+          )}
         </div>
-        <div className="modal-body">
+      ) : (
+      <div style={{ padding: "20px 24px" }}>
 
           {/* AI Image Upload — only for new bills */}
-          {!bill && (
+          {isNew && (
             <div style={{ marginBottom: 20 }}>
               {!imagePreview ? (
                 <div
@@ -2995,15 +4508,9 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
             </div>
           </div>
 
-        </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={!form.supplier || !form.amount}>
-            <Icon name="check" size={13} />{bill ? "Save Changes" : "Capture Bill"}
-          </button>
-        </div>
       </div>
-    </div>
+      )}
+    </SectionDrawer>
   );
 };
 
@@ -3017,67 +4524,70 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
   const withMarkup = exGst * (1 + (parseFloat(markup) || 0) / 100);
 
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 480 }}>
-        <div className="modal-header">
-          <span className="modal-title">Post to Job as Cost</span>
-          <CloseBtn onClick={onClose} />
+    <SectionDrawer
+      accent={SECTION_COLORS.bills.accent}
+      icon={<Icon name="bills" size={16} />}
+      typeLabel="Post to Job"
+      title={bill.supplier}
+      mode="edit" setMode={() => {}}
+      showToggle={false}
+      footer={<>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+        <button className="btn btn-sm" style={{ background: SECTION_COLORS.bills.accent, color: "#fff", border: "none" }} onClick={() => onPost(jobId, category, parseFloat(markup)||0)} disabled={!jobId}>
+          <Icon name="check" size={13} /> Post to Job
+        </button>
+      </>}
+      onClose={onClose}
+      zIndex={1060}
+    >
+      <div style={{ padding: "20px 24px" }}>
+        <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "12px 14px", marginBottom: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: 13 }}>{bill.supplier}</div>
+          <div style={{ fontSize: 12, color: "#888" }}>{bill.invoiceNo && `${bill.invoiceNo} · `}{bill.description}</div>
+          <div style={{ fontSize: 15, fontWeight: 800, marginTop: 6 }}>{fmt(bill.amount)} <span style={{ fontSize: 11, fontWeight: 400, color: "#aaa" }}>inc. GST</span></div>
         </div>
-        <div className="modal-body">
-          <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "12px 14px", marginBottom: 16 }}>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>{bill.supplier}</div>
-            <div style={{ fontSize: 12, color: "#888" }}>{bill.invoiceNo && `${bill.invoiceNo} · `}{bill.description}</div>
-            <div style={{ fontSize: 15, fontWeight: 800, marginTop: 6 }}>{fmt(bill.amount)} <span style={{ fontSize: 11, fontWeight: 400, color: "#aaa" }}>inc. GST</span></div>
-          </div>
 
-          <div className="form-group">
-            <label className="form-label">Post to Job *</label>
-            <select className="form-control" value={jobId} onChange={e => setJobId(e.target.value)}>
-              <option value="">— Select a job —</option>
-              {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
-            </select>
+        <div className="form-group">
+          <label className="form-label">Post to Job *</label>
+          <select className="form-control" value={jobId} onChange={e => setJobId(e.target.value)}>
+            <option value="">— Select a job —</option>
+            {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
+          </select>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Cost Category</label>
+          <select className="form-control" value={category} onChange={e => setCategory(e.target.value)}>
+            {BILL_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Markup %</label>
+          <div style={{ position: "relative" }}>
+            <input type="number" className="form-control" style={{ paddingRight: 32 }} value={markup}
+              onChange={e => setMarkup(e.target.value)} min="0" max="200" placeholder="0" />
+            <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 13 }}>%</span>
           </div>
-          <div className="form-group">
-            <label className="form-label">Cost Category</label>
-            <select className="form-control" value={category} onChange={e => setCategory(e.target.value)}>
-              {BILL_CATEGORIES.map(c => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Markup %</label>
-            <div style={{ position: "relative" }}>
-              <input type="number" className="form-control" style={{ paddingRight: 32 }} value={markup}
-                onChange={e => setMarkup(e.target.value)} min="0" max="200" placeholder="0" />
-              <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 13 }}>%</span>
+        </div>
+
+        {/* Cost summary */}
+        <div style={{ background: "#111", color: "#fff", borderRadius: 8, padding: "14px 16px", marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 10 }}>Cost Summary</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "#888" }}>Ex-GST cost</span><span>{fmt(exGst)}</span>
             </div>
-          </div>
-
-          {/* Cost summary */}
-          <div style={{ background: "#111", color: "#fff", borderRadius: 8, padding: "14px 16px", marginTop: 4 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 10 }}>Cost Summary</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>
+            {parseFloat(markup) > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#888" }}>Ex-GST cost</span><span>{fmt(exGst)}</span>
+                <span style={{ color: "#888" }}>Markup ({markup}%)</span><span>+ {fmt(exGst * (parseFloat(markup)||0) / 100)}</span>
               </div>
-              {parseFloat(markup) > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "#888" }}>Markup ({markup}%)</span><span>+ {fmt(exGst * (parseFloat(markup)||0) / 100)}</span>
-                </div>
-              )}
-              <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #2a2a2a", paddingTop: 6, marginTop: 2, fontWeight: 800, fontSize: 15 }}>
-                <span>On-charge to client</span><span>{fmt(withMarkup)}</span>
-              </div>
+            )}
+            <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #2a2a2a", paddingTop: 6, marginTop: 2, fontWeight: 800, fontSize: 15 }}>
+              <span>On-charge to client</span><span>{fmt(withMarkup)}</span>
             </div>
           </div>
-        </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={() => onPost(jobId, category, parseFloat(markup)||0)} disabled={!jobId}>
-            <Icon name="check" size={13} />Post to Job
-          </button>
         </div>
       </div>
-    </div>
+    </SectionDrawer>
   );
 };
 
@@ -3208,7 +4718,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
               <Icon name="check" size={12} />Approve {selectedIds.length} selected
             </button>
           )}
-          <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />Capture Bill</button>
+          <button className="btn btn-primary" style={{ background: SECTION_COLORS.bills.accent }} onClick={openNew}><Icon name="plus" size={14} />Capture Bill</button>
         </div>
       </div>
 
@@ -3266,7 +4776,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                             </button>
                           )}
                           {status === "approved" && (
-                            <button className="btn btn-primary btn-xs" onClick={() => setPostBill(b)}>
+                            <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>
                               Post →
                             </button>
                           )}
@@ -3364,7 +4874,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                           <div style={{ display: "flex", gap: 4, flexWrap: "nowrap" }}>
                             {b.status === "inbox"    && <button className="btn btn-ghost btn-xs" title="Link" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}><Icon name="arrow_right" size={11} /></button>}
                             {b.status === "linked"   && <button className="btn btn-ghost btn-xs" style={{ color: "#1e7e34" }} title="Approve" onClick={() => setStatus(b.id, "approved")}><Icon name="check" size={11} /></button>}
-                            {b.status === "approved" && <button className="btn btn-primary btn-xs" title="Post to Job" onClick={() => setPostBill(b)}>Post →</button>}
+                            {b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} title="Post to Job" onClick={() => setPostBill(b)}>Post →</button>}
                             <button className="btn btn-ghost btn-xs" onClick={() => openEdit(b)}><Icon name="edit" size={11} /></button>
                             <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={11} /></button>
                           </div>
@@ -3399,10 +4909,11 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
 const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
   const [showModal, setShowModal] = useState(false);
   const [editInvoice, setEditInvoice] = useState(null);
+  const [invMode, setInvMode] = useState("edit");
   const [form, setForm] = useState({ jobId: "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" });
 
-  const openNew = () => { setEditInvoice(null); setForm({ jobId: jobs[0]?.id || "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" }); setShowModal(true); };
-  const openEdit = (inv) => { setEditInvoice(inv); setForm(inv); setShowModal(true); };
+  const openNew = () => { setEditInvoice(null); setInvMode("edit"); setForm({ jobId: jobs[0]?.id || "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" }); setShowModal(true); };
+  const openEdit = (inv) => { setEditInvoice(inv); setInvMode("view"); setForm(inv); setShowModal(true); };
   const fromQuote = (q) => {
     setEditInvoice(null);
     setForm({ jobId: q.jobId, status: "draft", lineItems: [...q.lineItems], tax: q.tax, dueDate: "", notes: q.notes });
@@ -3414,12 +4925,15 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
       if (editInvoice) {
         const saved = await updateInvoice(editInvoice.id, data);
         setInvoices(is => is.map(i => i.id === saved.id ? saved : i));
+        setEditInvoice(saved);
+        setForm(saved);
+        setInvMode("view");
       } else {
         const saved = await createInvoice(data);
         setInvoices(is => [...is, saved]);
+        setShowModal(false);
       }
     } catch (err) { console.error('Failed to save invoice:', err); }
-    setShowModal(false);
   };
   const del = async (id) => {
     try {
@@ -3441,7 +4955,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
   return (
     <div>
       <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-        <div className="stat-card dark" style={{ flex: 1, padding: "14px 18px", minWidth: 180 }}>
+        <div className="stat-card dark" style={{ flex: 1, padding: "14px 18px", minWidth: 180, background: SECTION_COLORS.invoices.accent }}>
           <div className="stat-label">Outstanding</div>
           <div className="stat-value" style={{ fontSize: 20 }}>{fmt(totalOwed)}</div>
         </div>
@@ -3458,7 +4972,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
           </select>
         )}
         <div style={{ flex: 1 }} />
-        <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />New Invoice</button>
+        <button className="btn btn-primary" style={{ background: SECTION_COLORS.invoices.accent }} onClick={openNew}><Icon name="plus" size={14} />New Invoice</button>
       </div>
 
       <div className="card">
@@ -3496,42 +5010,102 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
         </div>
       </div>
 
-      {showModal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="modal modal-lg">
-            <div className="modal-header">
-              <span className="modal-title">{editInvoice ? `Edit ${editInvoice.number}` : "New Invoice"}</span>
-              <CloseBtn onClick={() => setShowModal(false)} />
+      {showModal && (() => {
+        const isNewInv = !editInvoice;
+        const iJob = jobs.find(j => j.id === form.jobId);
+        const iClient = clients.find(c => c.id === iJob?.clientId);
+        const iSub = form.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
+        const iTax = iSub * (form.tax || 0) / 100;
+        const iTotal = iSub + iTax;
+        const accent = SECTION_COLORS.invoices.accent;
+        return (
+        <SectionDrawer
+          accent={accent}
+          icon={<Icon name="invoices" size={16} />}
+          typeLabel="Invoice"
+          title={editInvoice ? editInvoice.number : "New Invoice"}
+          statusBadge={editInvoice ? <StatusBadge status={editInvoice.status} /> : null}
+          mode={invMode} setMode={setInvMode}
+          showToggle={!isNewInv}
+          isNew={isNewInv}
+          footer={invMode === "view" && !isNewInv ? <>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
+            <button className="btn btn-sm" style={{ background: accent, color: "#fff", border: "none" }} onClick={() => setInvMode("edit")}>
+              <Icon name="edit" size={13} /> Edit
+            </button>
+          </> : <>
+            <button className="btn btn-ghost btn-sm" onClick={() => { if (isNewInv) setShowModal(false); else { setForm(editInvoice); setInvMode("view"); } }}>Cancel</button>
+            <button className="btn btn-sm" style={{ background: accent, color: "#fff", border: "none" }} onClick={save}>
+              <Icon name="check" size={13} /> {isNewInv ? "Create Invoice" : "Save Changes"}
+            </button>
+          </>}
+          onClose={() => setShowModal(false)}
+        >
+          {invMode === "view" && !isNewInv ? (
+          <div style={{ padding: "20px 24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+              <ViewField label="Job" value={iJob?.title} />
+              <ViewField label="Client" value={iClient?.name} />
+              <ViewField label="Status" value={form.status?.charAt(0).toUpperCase() + form.status?.slice(1)} />
+              <ViewField label="Due Date" value={form.dueDate || "—"} />
             </div>
-            <div className="modal-body">
-              <div className="grid-3" style={{ marginBottom: 16 }}>
-                <div className="form-group">
-                  <label className="form-label">Job</label>
-                  <select className="form-control" value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value }))}>
-                    {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Status</label>
-                  <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-                    {["draft","sent","paid","overdue","void"].map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                  </select>
-                </div>
-                <div className="form-group"><label className="form-label">Due Date</label><input type="date" className="form-control" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} /></div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>Line Items</div>
+              <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+                <thead><tr style={{ borderBottom: '2px solid #eee' }}>
+                  <th style={{ textAlign: 'left', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Description</th>
+                  <th style={{ textAlign: 'right', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Qty</th>
+                  <th style={{ textAlign: 'left', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Unit</th>
+                  <th style={{ textAlign: 'right', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Rate</th>
+                  <th style={{ textAlign: 'right', padding: '6px 8px', color: '#888', fontWeight: 600, fontSize: 11 }}>Amount</th>
+                </tr></thead>
+                <tbody>
+                  {form.lineItems.map((li, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '8px 8px', fontWeight: 500 }}>{li.desc || '—'}</td>
+                      <td style={{ padding: '8px 8px', textAlign: 'right' }}>{li.qty}</td>
+                      <td style={{ padding: '8px 8px' }}>{li.unit}</td>
+                      <td style={{ padding: '8px 8px', textAlign: 'right' }}>{fmt(li.rate)}</td>
+                      <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 600 }}>{fmt(li.qty * li.rate)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ background: '#f9fafb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>Subtotal</span><span style={{ fontWeight: 600 }}>{fmt(iSub)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>GST ({form.tax}%)</span><span style={{ fontWeight: 600 }}>{fmt(iTax)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span style={{ fontWeight: 700 }}>Total</span><span style={{ fontWeight: 800, color: accent }}>{fmt(iTotal)}</span></div>
+            </div>
+            {form.notes && <ViewField label="Notes" value={form.notes} />}
+          </div>
+          ) : (
+          <div style={{ padding: "20px 24px" }}>
+            <div className="grid-3" style={{ marginBottom: 16 }}>
+              <div className="form-group">
+                <label className="form-label">Job</label>
+                <select className="form-control" value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value }))}>
+                  {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
+                </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Line Items</label>
-                <LineItemsEditor items={form.lineItems} onChange={items => setForm(f => ({ ...f, lineItems: items }))} />
+                <label className="form-label">Status</label>
+                <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+                  {["draft","sent","paid","overdue","void"].map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                </select>
               </div>
-              <div className="form-group"><label className="form-label">Notes</label><textarea className="form-control" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Payment instructions, bank details, thank you note..." /></div>
+              <div className="form-group"><label className="form-label">Due Date</label><input type="date" className="form-control" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} /></div>
             </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={save}><Icon name="check" size={13} />{editInvoice ? "Save Changes" : "Create Invoice"}</button>
+            <div className="form-group">
+              <label className="form-label">Line Items</label>
+              <LineItemsEditor items={form.lineItems} onChange={items => setForm(f => ({ ...f, lineItems: items }))} />
             </div>
+            <div className="form-group"><label className="form-label">Notes</label><textarea className="form-control" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Payment instructions, bank details, thank you note..." /></div>
           </div>
-        </div>
-      )}
+          )}
+        </SectionDrawer>
+        );
+      })()}
     </div>
   );
 };
@@ -3563,8 +5137,8 @@ const ActivityPage = ({ jobs, clients, quotes, invoices, bills, timeEntries, sch
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
           {["all","job"].map(t => (
-            <button key={t} className={`btn btn-sm ${filterType === t ? "btn-primary" : "btn-secondary"}`}
-              onClick={() => setFilterType(t)} style={{ textTransform: "capitalize" }}>
+            <button key={t} className={`btn btn-sm ${filterType === t ? "" : "btn-secondary"}`}
+              onClick={() => setFilterType(t)} style={filterType === t ? { background: SECTION_COLORS.activity.accent, color: '#fff', textTransform: "capitalize" } : { textTransform: "capitalize" }}>
               {t === "all" ? "All Events" : `Jobs`}
             </button>
           ))}
@@ -3637,6 +5211,7 @@ const HamburgerIcon = ({ open }) => (
 const ROUTE_MAP = {
   dashboard: "/",
   jobs: "/jobs",
+  orders: "/orders",
   clients: "/clients",
   schedule: "/schedule",
   quotes: "/quotes",
@@ -3655,6 +5230,7 @@ export default function App() {
   const page = PATH_TO_ID[location.pathname] || "dashboard";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [hoverNav, setHoverNav] = useState(null);
   const [clients, setClients] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [quotes, setQuotes] = useState([]);
@@ -3663,6 +5239,8 @@ export default function App() {
   const [bills, setBills] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [staff, setStaff] = useState([]);
+  const [workOrders, setWorkOrders] = useState(SEED_WO);
+  const [purchaseOrders, setPurchaseOrders] = useState(SEED_PO);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState(null);
 
@@ -3704,10 +5282,12 @@ export default function App() {
   const pendingBillsCount = bills.filter(b => b.status === "inbox" || b.status === "linked" || b.status === "approved").length;
   const unpaidInvCount = invoices.filter(i => i.status !== "paid" && i.status !== "void").length;
   const activeJobsCount = jobs.filter(j => j.status === "in_progress").length;
+  const ordersOverdueCount = [...workOrders, ...purchaseOrders].filter(o => !ORDER_TERMINAL.includes(o.status) && daysUntil(o.dueDate) < 0).length;
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "dashboard" },
     { id: "jobs", label: "Jobs", icon: "jobs", badge: activeJobsCount || null },
+    { id: "orders", label: "Orders", icon: "orders", badge: ordersOverdueCount || null },
     { id: "clients", label: "Clients", icon: "clients" },
     { id: "schedule", label: "Schedule", icon: "schedule" },
     { id: "quotes", label: "Quotes", icon: "quotes" },
@@ -3717,12 +5297,12 @@ export default function App() {
     { id: "activity", label: "Activity", icon: "notification" },
   ];
 
-  // Bottom nav shows first 4; rest in "More"
-  const bottomNavItems = navItems.slice(0, 4);
-  const moreNavItems = navItems.slice(4);
+  // Bottom nav shows first 5; rest in "More"
+  const bottomNavItems = navItems.slice(0, 5);
+  const moreNavItems = navItems.slice(5);
   const moreIsActive = moreNavItems.some(n => n.id === page);
 
-  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", clients: "Clients", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log" };
+  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
@@ -3733,7 +5313,8 @@ export default function App() {
   const routeElements = (
     <Routes>
       <Route path="/" element={<Dashboard jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} onNav={navigate} />} />
-      <Route path="/jobs" element={<Jobs jobs={jobs} setJobs={setJobs} clients={clients} quotes={quotes} setQuotes={setQuotes} invoices={invoices} setInvoices={setInvoices} timeEntries={timeEntries} setTimeEntries={setTimeEntries} bills={bills} setBills={setBills} schedule={schedule} setSchedule={setSchedule} staff={staff} />} />
+      <Route path="/jobs" element={<Jobs jobs={jobs} setJobs={setJobs} clients={clients} quotes={quotes} setQuotes={setQuotes} invoices={invoices} setInvoices={setInvoices} timeEntries={timeEntries} setTimeEntries={setTimeEntries} bills={bills} setBills={setBills} schedule={schedule} setSchedule={setSchedule} staff={staff} workOrders={workOrders} setWorkOrders={setWorkOrders} purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders} />} />
+      <Route path="/orders" element={<OrdersPage workOrders={workOrders} setWorkOrders={setWorkOrders} purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders} jobs={jobs} />} />
       <Route path="/clients" element={<Clients clients={clients} setClients={setClients} jobs={jobs} />} />
       <Route path="/schedule" element={<Schedule schedule={schedule} setSchedule={setSchedule} jobs={jobs} clients={clients} staff={staff} />} />
       <Route path="/quotes" element={<Quotes quotes={quotes} setQuotes={setQuotes} jobs={jobs} clients={clients} invoices={invoices} />} />
@@ -3784,25 +5365,40 @@ export default function App() {
         </div>
         <div className="jm-nav">
           <div className="jm-nav-section">Main</div>
-          {navItems.slice(0, 4).map(n => (
-            <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}>
+          {navItems.slice(0, 5).map(n => {
+            const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
+            return (
+            <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
+              onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
+              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
               <Icon name={n.icon} size={15} />{n.label}
               {n.badge ? <span className="badge">{n.badge}</span> : null}
             </div>
-          ))}
+            );
+          })}
           <div className="jm-nav-section">Finance</div>
-          {navItems.slice(4, 8).map(n => (
-            <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}>
+          {navItems.slice(5, 9).map(n => {
+            const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
+            return (
+            <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
+              onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
+              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
               <Icon name={n.icon} size={15} />{n.label}
               {n.badge ? <span className="badge">{n.badge}</span> : null}
             </div>
-          ))}
+            );
+          })}
           <div className="jm-nav-section">System</div>
-          {navItems.slice(8).map(n => (
-            <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}>
+          {navItems.slice(9).map(n => {
+            const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.activity)?.accent;
+            return (
+            <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
+              onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
+              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
               <Icon name={n.icon} size={15} />{n.label}
             </div>
-          ))}
+            );
+          })}
         </div>
         <div style={{ padding: "16px 20px", borderTop: "1px solid #1e1e1e" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -3833,7 +5429,7 @@ export default function App() {
         </div>
 
         {/* Page content */}
-        <div className="jm-content">
+        <div className="jm-content" style={{ '--section-accent': (SECTION_COLORS[page] || SECTION_COLORS.dashboard).accent }}>
           {routeElements}
         </div>
       </div>
@@ -3841,26 +5437,36 @@ export default function App() {
       {/* More menu (slides up from bottom nav) */}
       {moreOpen && (
         <div className="jm-more-menu" onClick={e => e.stopPropagation()}>
-          {moreNavItems.map(n => (
-            <button key={n.id} className={`jm-more-menu-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}>
+          {moreNavItems.map(n => {
+            const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.activity)?.accent;
+            return (
+            <button key={n.id} className={`jm-more-menu-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
+              onMouseEnter={e => { e.currentTarget.style.background = hexToRgba(accent, 0.12); e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = ''; }}
+              style={page === n.id ? { color: '#fff', background: hexToRgba(accent, 0.15) } : undefined}>
               <Icon name={n.icon} size={16} />
               {n.id === "time" ? "Time Tracking" : n.id === "bills" ? "Bills & Costs" : n.label}
               {n.badge ? <span className="jm-more-badge">{n.badge}</span> : null}
             </button>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Bottom navigation (mobile only) */}
       <div className="jm-bottom-nav">
         <div className="jm-bottom-nav-inner">
-          {bottomNavItems.map(n => (
-            <button key={n.id} className={`jm-bottom-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}>
+          {bottomNavItems.map(n => {
+            const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.dashboard)?.accent;
+            return (
+            <button key={n.id} className={`jm-bottom-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
+              style={page === n.id ? { color: accent, boxShadow: `inset 0 2px 0 ${accent}` } : undefined}>
               {n.badge ? <span className="bnav-badge">{n.badge}</span> : null}
               <Icon name={n.icon} size={20} />
               <span>{n.label}</span>
             </button>
-          ))}
+            );
+          })}
           {/* More button */}
           <button
             className={`jm-bottom-nav-item ${moreIsActive ? "active" : ""}`}

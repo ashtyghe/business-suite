@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry } from './lib/db';
 
 // ── Google Font ──────────────────────────────────────────────────────────────
@@ -167,10 +168,10 @@ const injectStyles = () => {
     .jm-nav-item.active { color: #fff; border-left-color: #fff; background: #1e1e1e; }
     .jm-nav-item .badge { margin-left: auto; background: #fff; color: #111; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 7px; min-width: 20px; text-align: center; }
     .jm-main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-    .jm-topbar { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0 28px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+    .jm-topbar { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0 36px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
     .jm-page-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
     .jm-topbar-actions { display: flex; gap: 10px; align-items: center; }
-    .jm-content { padding: 28px; flex: 1; }
+    .jm-content { padding: 28px 36px; flex: 1; }
     .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; font-size: 13px; font-weight: 600; font-family: 'Open Sans', sans-serif; border: none; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
     .btn-primary { background: #111; color: #fff; }
     .btn-primary:hover { background: #333; }
@@ -182,12 +183,12 @@ const injectStyles = () => {
     .btn-danger:hover { background: #fff0f0; }
     .btn-sm { padding: 6px 12px; font-size: 12px; }
     .btn-xs { padding: 4px 9px; font-size: 11px; }
-    .card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; }
+    .card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; overflow: hidden; }
     .card-header { padding: 18px 20px 14px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
     .card-title { font-size: 13px; font-weight: 700; letter-spacing: -0.01em; }
     .card-body { padding: 20px; }
-    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 20px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 22px; }
     .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
     .stat-value { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; color: #111; }
     .stat-sub { font-size: 12px; color: #999; margin-top: 4px; }
@@ -197,8 +198,8 @@ const injectStyles = () => {
     .stat-card.dark .stat-sub { color: #555; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #999; padding: 10px 14px; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
-    td { padding: 12px 14px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+    th { text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #999; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
+    td { padding: 14px 16px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: #fafafa; }
     .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
@@ -226,7 +227,7 @@ const injectStyles = () => {
     .empty-state-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
     .empty-state-text { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #666; }
     .empty-state-sub { font-size: 12px; }
-    .search-bar { display: flex; align-items: center; gap: 8px; background: #f5f5f5; border: 1.5px solid #e8e8e8; border-radius: 8px; padding: 8px 14px; min-width: 0; flex: 1; }
+    .search-bar { display: flex; align-items: center; gap: 8px; background: #f5f5f5; border: 1.5px solid #e8e8e8; border-radius: 8px; padding: 9px 16px; min-width: 0; flex: 1; max-width: 480px; }
     .search-bar input { border: none; background: transparent; font-size: 13px; font-family: 'Open Sans', sans-serif; outline: none; flex: 1; color: #111; min-width: 0; }
     .line-items-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
     .line-items-table th { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #999; padding: 6px 8px; border-bottom: 1px solid #f0f0f0; text-align: left; }
@@ -238,9 +239,9 @@ const injectStyles = () => {
     .totals-row.total { font-weight: 800; font-size: 15px; border-top: 1px solid #ddd; margin-top: 8px; padding-top: 8px; }
     .job-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.15s; }
     .job-card:hover { border-color: #111; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
-    .kanban { display: grid; grid-template-columns: repeat(5, minmax(180px,1fr)); gap: 16px; align-items: start; }
-    .bill-pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: start; }
-    .kanban-col { background: #f5f5f5; border-radius: 10px; padding: 12px; min-height: 200px; }
+    .kanban { display: grid; grid-template-columns: repeat(5, minmax(200px,1fr)); gap: 18px; align-items: start; }
+    .bill-pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; align-items: start; }
+    .kanban-col { background: #f5f5f5; border-radius: 10px; padding: 14px; min-height: 200px; }
     .kanban-col-header { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #666; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
     .kanban-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; font-size: 12px; }
     .kanban-card:hover { border-color: #111; }
@@ -323,6 +324,24 @@ const injectStyles = () => {
     }
     @media (min-width: 1025px) {
       .dashboard-grid { grid-template-columns: 1fr 1fr !important; }
+    }
+    @media (min-width: 1440px) {
+      .jm-content { padding: 32px 48px; }
+      .jm-topbar { padding: 0 48px; }
+      .stat-grid { grid-template-columns: repeat(6, 1fr); gap: 18px; }
+      .dashboard-grid { grid-template-columns: 1fr 1fr !important; gap: 24px !important; }
+      .kanban { gap: 20px; }
+      .kanban-card { padding: 14px; }
+      .card-body { padding: 24px; }
+      .card-header { padding: 20px 24px 16px; }
+      .modal-lg { max-width: 900px; }
+    }
+    @media (min-width: 1800px) {
+      .jm-content { padding: 36px 56px; }
+      .jm-topbar { padding: 0 56px; }
+      .stat-grid { grid-template-columns: repeat(6, 1fr); gap: 20px; }
+      .stat-value { font-size: 32px; }
+      .dashboard-grid { grid-template-columns: 1fr 1fr 1fr !important; }
     }
   `;
   document.head.appendChild(s);
@@ -3279,26 +3298,26 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
-        <div className="stat-card dark" style={{ flex: 1, padding: "14px 18px" }}>
+      <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+        <div className="stat-card dark" style={{ flex: 1, padding: "14px 18px", minWidth: 180 }}>
           <div className="stat-label">Outstanding</div>
           <div className="stat-value" style={{ fontSize: 20 }}>{fmt(totalOwed)}</div>
         </div>
-        <div className="stat-card" style={{ flex: 1, padding: "14px 18px" }}>
+        <div className="stat-card" style={{ flex: 1, padding: "14px 18px", minWidth: 180 }}>
           <div className="stat-label">Collected</div>
           <div className="stat-value" style={{ fontSize: 20 }}>{fmt(totalPaid)}</div>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          {quotes.filter(q => q.status === "accepted").length > 0 && (
-            <div style={{ position: "relative" }}>
-              <select className="form-control" style={{ paddingRight: 32 }} onChange={e => { const q = quotes.find(q => String(q.id) === e.target.value); if (q) fromQuote(q); e.target.value = ""; }}>
-                <option value="">Invoice from Quote…</option>
-                {quotes.filter(q => q.status === "accepted").map(q => <option key={q.id} value={q.id}>{q.number}</option>)}
-              </select>
-            </div>
-          )}
-          <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />New Invoice</button>
-        </div>
+      </div>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 20, justifyContent: "flex-end" }}>
+        {quotes.filter(q => q.status === "accepted").length > 0 && (
+          <div style={{ position: "relative" }}>
+            <select className="form-control" style={{ paddingRight: 32 }} onChange={e => { const q = quotes.find(q => String(q.id) === e.target.value); if (q) fromQuote(q); e.target.value = ""; }}>
+              <option value="">Invoice from Quote…</option>
+              {quotes.filter(q => q.status === "accepted").map(q => <option key={q.id} value={q.id}>{q.number}</option>)}
+            </select>
+          </div>
+        )}
+        <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />New Invoice</button>
       </div>
 
       <div className="card">
@@ -3475,8 +3494,25 @@ const HamburgerIcon = ({ open }) => (
   </svg>
 );
 
+const ROUTE_MAP = {
+  dashboard: "/",
+  jobs: "/jobs",
+  clients: "/clients",
+  schedule: "/schedule",
+  quotes: "/quotes",
+  time: "/time",
+  bills: "/bills",
+  invoices: "/invoices",
+  activity: "/activity",
+};
+const PATH_TO_ID = Object.fromEntries(
+  Object.entries(ROUTE_MAP).map(([id, path]) => [path, id])
+);
+
 export default function App() {
-  const [page, setPage] = useState("dashboard");
+  const location = useLocation();
+  const routerNavigate = useNavigate();
+  const page = PATH_TO_ID[location.pathname] || "dashboard";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [clients, setClients] = useState([]);
@@ -3491,6 +3527,21 @@ export default function App() {
   const [dbError, setDbError] = useState(null);
 
   useEffect(() => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+      // No Supabase config — use seed data for local preview
+      setClients(SEED_CLIENTS);
+      setJobs(SEED_JOBS);
+      setQuotes(SEED_QUOTES);
+      setInvoices(SEED_INVOICES);
+      setTimeEntries(SEED_TIME);
+      setBills(SEED_BILLS);
+      setSchedule(SEED_SCHEDULE);
+      setStaff(TEAM.map((name, i) => ({ id: i + 1, name })));
+      setLoading(false);
+      return;
+    }
     fetchAll()
       .then(data => {
         setClients(data.clients);
@@ -3534,25 +3585,25 @@ export default function App() {
   const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", clients: "Clients", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log" };
 
   const navigate = (id) => {
-    setPage(id);
+    routerNavigate(ROUTE_MAP[id] || "/");
     setSidebarOpen(false);
     setMoreOpen(false);
   };
 
-  const renderPage = () => {
-    switch (page) {
-      case "dashboard": return <Dashboard jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} onNav={navigate} />;
-      case "jobs": return <Jobs jobs={jobs} setJobs={setJobs} clients={clients} quotes={quotes} setQuotes={setQuotes} invoices={invoices} setInvoices={setInvoices} timeEntries={timeEntries} setTimeEntries={setTimeEntries} bills={bills} setBills={setBills} schedule={schedule} setSchedule={setSchedule} staff={staff} />;
-      case "clients": return <Clients clients={clients} setClients={setClients} jobs={jobs} />;
-      case "schedule": return <Schedule schedule={schedule} setSchedule={setSchedule} jobs={jobs} clients={clients} staff={staff} />;
-      case "quotes": return <Quotes quotes={quotes} setQuotes={setQuotes} jobs={jobs} clients={clients} invoices={invoices} />;
-      case "time": return <TimeTracking timeEntries={timeEntries} setTimeEntries={setTimeEntries} jobs={jobs} setJobs={setJobs} clients={clients} staff={staff} />;
-      case "bills": return <Bills bills={bills} setBills={setBills} jobs={jobs} setJobs={setJobs} clients={clients} />;
-      case "invoices": return <Invoices invoices={invoices} setInvoices={setInvoices} jobs={jobs} clients={clients} quotes={quotes} />;
-      case "activity": return <ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />;
-      default: return null;
-    }
-  };
+  const routeElements = (
+    <Routes>
+      <Route path="/" element={<Dashboard jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} onNav={navigate} />} />
+      <Route path="/jobs" element={<Jobs jobs={jobs} setJobs={setJobs} clients={clients} quotes={quotes} setQuotes={setQuotes} invoices={invoices} setInvoices={setInvoices} timeEntries={timeEntries} setTimeEntries={setTimeEntries} bills={bills} setBills={setBills} schedule={schedule} setSchedule={setSchedule} staff={staff} />} />
+      <Route path="/clients" element={<Clients clients={clients} setClients={setClients} jobs={jobs} />} />
+      <Route path="/schedule" element={<Schedule schedule={schedule} setSchedule={setSchedule} jobs={jobs} clients={clients} staff={staff} />} />
+      <Route path="/quotes" element={<Quotes quotes={quotes} setQuotes={setQuotes} jobs={jobs} clients={clients} invoices={invoices} />} />
+      <Route path="/time" element={<TimeTracking timeEntries={timeEntries} setTimeEntries={setTimeEntries} jobs={jobs} setJobs={setJobs} clients={clients} staff={staff} />} />
+      <Route path="/bills" element={<Bills bills={bills} setBills={setBills} jobs={jobs} setJobs={setJobs} clients={clients} />} />
+      <Route path="/invoices" element={<Invoices invoices={invoices} setInvoices={setInvoices} jobs={jobs} clients={clients} quotes={quotes} />} />
+      <Route path="/activity" element={<ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 
   return (
     <div className="jm-root" onClick={() => moreOpen && setMoreOpen(false)}>
@@ -3643,7 +3694,7 @@ export default function App() {
 
         {/* Page content */}
         <div className="jm-content">
-          {renderPage()}
+          {routeElements}
         </div>
       </div>
 

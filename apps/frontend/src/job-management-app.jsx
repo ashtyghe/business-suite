@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry } from './lib/db';
+import { extractBillFromImage } from './lib/supabase';
 
 // ── Google Font ──────────────────────────────────────────────────────────────
 const fontLink = document.createElement("link");
@@ -156,8 +157,8 @@ const injectStyles = () => {
   s.textContent = `
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Open Sans', sans-serif !important; }
-    .jm-root { font-family: 'Open Sans', sans-serif; background: #fafafa; color: #111; min-height: 100vh; display: flex; }
-    .jm-sidebar { width: 220px; min-width: 220px; background: #111; color: #fff; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
+    .jm-root { font-family: 'Open Sans', sans-serif; background: #fafafa; color: #111; min-height: 100vh; min-height: 100dvh; display: flex; overflow-x: hidden; }
+    .jm-sidebar { width: 220px; min-width: 220px; background: #111; color: #fff; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; height: 100dvh; z-index: 100; }
     .jm-logo { padding: 24px 20px 20px; border-bottom: 1px solid #2a2a2a; }
     .jm-logo-mark { font-size: 11px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #fff; }
     .jm-logo-sub { font-size: 9px; color: #666; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 3px; }
@@ -167,8 +168,8 @@ const injectStyles = () => {
     .jm-nav-item:hover { color: #fff; background: #1a1a1a; }
     .jm-nav-item.active { color: #fff; border-left-color: #fff; background: #1e1e1e; }
     .jm-nav-item .badge { margin-left: auto; background: #fff; color: #111; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 7px; min-width: 20px; text-align: center; }
-    .jm-main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-    .jm-topbar { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0 36px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+    .jm-main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; min-width: 0; }
+    .jm-topbar { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 0 36px; padding-top: env(safe-area-inset-top, 0px); height: calc(60px + env(safe-area-inset-top, 0px)); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
     .jm-page-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
     .jm-topbar-actions { display: flex; gap: 10px; align-items: center; }
     .jm-content { padding: 28px 36px; flex: 1; }
@@ -206,17 +207,18 @@ const injectStyles = () => {
     .pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #f0f0f0; color: #555; }
     .form-group { margin-bottom: 16px; }
     .form-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #666; margin-bottom: 6px; }
-    .form-control { width: 100%; padding: 9px 12px; border: 1.5px solid #e0e0e0; border-radius: 6px; font-size: 13px; font-family: 'Open Sans', sans-serif; color: #111; background: #fff; outline: none; transition: border-color 0.15s; }
+    .form-control { width: 100%; max-width: 100%; padding: 9px 12px; border: 1.5px solid #e0e0e0; border-radius: 6px; font-size: 13px; font-family: 'Open Sans', sans-serif; color: #111; background: #fff; outline: none; transition: border-color 0.15s; box-sizing: border-box; height: 44px; }
+    input[type="date"].form-control, input[type="time"].form-control { -webkit-appearance: none; appearance: none; min-width: 0; width: 100%; height: 44px; }
     .form-control:focus { border-color: #111; }
-    textarea.form-control { resize: vertical; min-height: 80px; }
+    textarea.form-control { resize: vertical; min-height: 80px; height: auto; }
     select.form-control { cursor: pointer; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .modal { background: #fff; border-radius: 12px; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .modal { background: #fff; border-radius: 12px; width: 100%; max-width: 640px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
     .modal-lg { max-width: 800px; }
-    .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff; z-index: 1; }
+    .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .modal-title { font-size: 16px; font-weight: 700; }
-    .modal-body { padding: 24px; }
-    .modal-footer { padding: 16px 24px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; background: #fff; }
+    .modal-body { padding: 24px; overflow-y: auto; overflow-x: hidden; flex: 1; min-height: 0; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
     .tabs { display: flex; gap: 2px; border-bottom: 1px solid #e8e8e8; margin-bottom: 20px; }
@@ -229,10 +231,10 @@ const injectStyles = () => {
     .empty-state-sub { font-size: 12px; }
     .search-bar { display: flex; align-items: center; gap: 8px; background: #f5f5f5; border: 1.5px solid #e8e8e8; border-radius: 8px; padding: 9px 16px; min-width: 0; flex: 1; max-width: 480px; }
     .search-bar input { border: none; background: transparent; font-size: 13px; font-family: 'Open Sans', sans-serif; outline: none; flex: 1; color: #111; min-width: 0; }
-    .line-items-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    .line-items-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: fixed; }
     .line-items-table th { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #999; padding: 6px 8px; border-bottom: 1px solid #f0f0f0; text-align: left; }
     .line-items-table td { padding: 6px 8px; vertical-align: middle; }
-    .line-items-table input { width: 100%; border: 1.5px solid #e8e8e8; border-radius: 4px; padding: 5px 7px; font-size: 12px; font-family: 'Open Sans', sans-serif; outline: none; }
+    .line-items-table input { width: 100%; border: 1.5px solid #e8e8e8; border-radius: 4px; padding: 5px 7px; font-size: 12px; font-family: 'Open Sans', sans-serif; outline: none; box-sizing: border-box; min-width: 0; }
     .line-items-table input:focus { border-color: #111; }
     .totals-box { background: #fafafa; border: 1px solid #e8e8e8; border-radius: 8px; padding: 14px 16px; min-width: 220px; }
     .totals-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
@@ -240,7 +242,7 @@ const injectStyles = () => {
     .job-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.15s; }
     .job-card:hover { border-color: #111; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
     .kanban { display: grid; grid-template-columns: repeat(5, minmax(200px,1fr)); gap: 18px; align-items: start; }
-    .bill-pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; align-items: start; }
+    .bill-pipeline { display: flex; flex-direction: column; gap: 18px; }
     .kanban-col { background: #f5f5f5; border-radius: 10px; padding: 14px; min-height: 200px; }
     .kanban-col-header { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #666; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
     .kanban-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; font-size: 12px; }
@@ -277,7 +279,7 @@ const injectStyles = () => {
     .jm-hamburger:hover { background: #f0f0f0; }
 
     /* ── Bottom mobile nav ── */
-    .jm-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #111; z-index: 90; padding: 0; border-top: 1px solid #222; }
+    .jm-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #111; z-index: 90; padding: 0; padding-bottom: env(safe-area-inset-bottom, 0px); border-top: 1px solid #222; }
     .jm-bottom-nav-inner { display: flex; align-items: stretch; }
     .jm-bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px 10px; cursor: pointer; color: #666; gap: 3px; position: relative; min-width: 0; border: none; background: transparent; font-family: 'Open Sans', sans-serif; transition: color 0.15s; }
     .jm-bottom-nav-item.active { color: #fff; }
@@ -289,6 +291,9 @@ const injectStyles = () => {
     .jm-more-menu-item:hover { color: #fff; background: #1a1a1a; }
     .jm-more-badge { margin-left: auto; background: #fff; color: #111; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 7px; }
 
+    .time-team-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    input, select, textarea { max-width: 100%; box-sizing: border-box; }
+
     /* ── Responsive breakpoints ── */
     @media (max-width: 1024px) {
       .jm-sidebar { transform: translateX(-100%); }
@@ -299,10 +304,10 @@ const injectStyles = () => {
       .jm-sidebar-close { display: flex !important; }
     }
     @media (max-width: 767px) {
-      .bill-pipeline { grid-template-columns: repeat(2, 1fr); overflow-x: auto; }
+      .bill-pipeline { gap: 12px; }
       .jm-bottom-nav { display: flex; flex-direction: column; }
-      .jm-content { padding: 16px; padding-bottom: 80px; }
-      .jm-topbar { padding: 0 14px; height: 54px; }
+      .jm-content { padding: 16px; padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+      .jm-topbar { padding: 0 14px; padding-top: env(safe-area-inset-top, 0px); height: calc(54px + env(safe-area-inset-top, 0px)); }
       .jm-topbar-date { display: none; }
       .stat-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
       .stat-card { padding: 14px; }
@@ -310,18 +315,32 @@ const injectStyles = () => {
       .grid-2, .grid-3 { grid-template-columns: 1fr; }
       .kanban { grid-template-columns: repeat(2, minmax(160px,1fr)); overflow-x: auto; }
       .dashboard-grid { grid-template-columns: 1fr !important; }
-      .modal { border-radius: 16px 16px 0 0; max-height: 92vh; }
+      .modal { border-radius: 16px 16px 0 0; max-height: 92vh; max-height: 92dvh; height: 92vh; height: 92dvh; }
+      .modal-footer { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
       .modal-overlay { align-items: flex-end; padding: 0; }
       .modal-lg { max-width: 100%; }
       .topbar-actions-hide { display: none; }
       .line-items-table th:nth-child(3), .line-items-table td:nth-child(3) { display: none; }
+      .time-team-stats { grid-template-columns: repeat(2, 1fr); }
+      .form-control, input, select, textarea { font-size: 16px !important; }
+      .line-items-table input, .line-items-table select { font-size: 14px !important; }
     }
     @media (min-width: 768px) and (max-width: 1024px) {
       .jm-content { padding: 20px; }
       .stat-grid { grid-template-columns: repeat(3, 1fr); }
       .kanban { grid-template-columns: repeat(3, minmax(160px,1fr)); overflow-x: auto; }
       .dashboard-grid { grid-template-columns: 1fr 1fr !important; }
+      .modal .grid-2, .modal .grid-3 { grid-template-columns: 1fr; }
     }
+    .bill-upload-zone { border: 2px dashed #d0d0d0; border-radius: 12px; padding: 32px 24px; text-align: center; cursor: pointer; transition: all 0.2s; color: #888; }
+    .bill-upload-zone:hover { border-color: #999; background: #fafafa; }
+    .bill-upload-zone.dragging { border-color: #111; background: #f5f5f5; color: #111; }
+    .bill-preview-wrap { display: flex; gap: 16px; align-items: flex-start; background: #f8f8f8; border-radius: 10px; padding: 14px; }
+    .bill-preview-img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #e0e0e0; flex-shrink: 0; }
+    .bill-preview-info { flex: 1; min-width: 0; }
+    .bill-extracting { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #555; }
+    .bill-spinner { width: 18px; height: 18px; border: 2.5px solid #e0e0e0; border-top-color: #111; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     @media (min-width: 1025px) {
       .dashboard-grid { grid-template-columns: 1fr 1fr !important; }
     }
@@ -992,7 +1011,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               </div>
               {showTimeForm && (
                 <div style={{ background: "#f8f8f8", borderRadius: 10, padding: 16, marginBottom: 16, border: "1px solid #e8e8e8" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 10 }}>
+                  <div className="grid-3" style={{ marginBottom: 10 }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label">Worker</label>
                       <select className="form-control" value={timeForm.worker} onChange={e => setTimeForm(f => ({ ...f, worker: e.target.value }))}>
@@ -1010,7 +1029,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 }}>
+                  <div className="grid-2" style={{ marginBottom: 10 }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label">Start Time</label>
                       <input type="time" className="form-control" value={timeForm.startTime}
@@ -1661,7 +1680,7 @@ const Clients = ({ clients, setClients, jobs }) => {
           return (
             <div key={client.id} className="card">
               {/* Client header */}
-              <div style={{ padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div onClick={() => openEdit(client)} style={{ padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", cursor: "pointer", transition: "background 0.15s" }}>
                 <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
                   <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#111", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, flexShrink: 0 }}>
                     {client.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
@@ -1680,8 +1699,7 @@ const Clients = ({ clients, setClients, jobs }) => {
                     </div>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 4, flexShrink: 0, marginLeft: 12 }}>
-                  <button className="btn btn-ghost btn-xs" onClick={() => openEdit(client)}><Icon name="edit" size={12} /></button>
+                <div style={{ display: "flex", gap: 4, flexShrink: 0, marginLeft: 12 }} onClick={e => e.stopPropagation()}>
                   <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(client.id)}><Icon name="trash" size={12} /></button>
                 </div>
               </div>
@@ -1853,12 +1871,10 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <label style={{ fontSize: 12, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.08em" }}>Filter Date</label>
-          <input type="date" className="form-control" style={{ width: "auto" }} value={filterDate} onChange={e => setFilterDate(e.target.value)} />
-          {filterDate && <button className="btn btn-ghost btn-sm" onClick={() => setFilterDate("")} style={{ fontSize: 12 }}>Clear</button>}
-        </div>
+      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
+        <input type="date" className="form-control" style={{ width: "auto" }} value={filterDate} onChange={e => setFilterDate(e.target.value)} />
+        {filterDate && <button className="btn btn-ghost btn-sm" onClick={() => setFilterDate("")} style={{ fontSize: 12 }}>Clear</button>}
+        <div style={{ flex: 1 }} />
         <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />Schedule Job</button>
       </div>
 
@@ -1899,7 +1915,7 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
                 const client = clients.find(c => c.id === job?.clientId);
                 const site = client?.sites?.find(s => s.id === job?.siteId);
                 return (
-                  <div key={entry.id} className="card" style={{ padding: "14px 18px", borderLeft: `4px solid ${isPast ? "#ddd" : "#111"}` }}>
+                  <div key={entry.id} className="card" onClick={() => openEdit(entry)} style={{ padding: "14px 18px", borderLeft: `4px solid ${isPast ? "#ddd" : "#111"}`, cursor: "pointer", transition: "border-color 0.15s" }}>
                     <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
@@ -1925,8 +1941,7 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
                           <div style={{ marginTop: 8 }}><AvatarGroup names={entry.assignedTo} max={5} /></div>
                         )}
                       </div>
-                      <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                        <button className="btn btn-ghost btn-xs" onClick={() => openEdit(entry)}><Icon name="edit" size={12} /></button>
+                      <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                         <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>
                       </div>
                     </div>
@@ -2021,7 +2036,8 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ flex: 1 }} />
         <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />New Quote</button>
       </div>
       <div className="card">
@@ -2036,7 +2052,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
                 const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
                 const linkedInv = invoices.filter(i => i.fromQuoteId === q.id);
                 return (
-                  <tr key={q.id}>
+                  <tr key={q.id} style={{ cursor: "pointer" }} onClick={() => openEdit(q)}>
                     <td><span style={{ fontWeight: 700, fontFamily: "monospace", fontSize: 13 }}>{q.number}</span></td>
                     <td>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{job?.title}</div>
@@ -2048,9 +2064,8 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
                     <td>{fmt(sub * q.tax / 100)}</td>
                     <td style={{ fontWeight: 700 }}>{fmt(sub * (1 + q.tax / 100))}</td>
                     <td style={{ fontSize: 12, color: "#999" }}>{q.createdAt}</td>
-                    <td>
+                    <td onClick={e => e.stopPropagation()}>
                       <div style={{ display: "flex", gap: 4 }}>
-                        <button className="btn btn-ghost btn-xs" onClick={() => openEdit(q)}><Icon name="edit" size={12} /></button>
                         <button className="btn btn-ghost btn-xs" onClick={() => duplicate(q)} title="Duplicate"><Icon name="copy" size={12} /></button>
                         <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(q.id)}><Icon name="trash" size={12} /></button>
                       </div>
@@ -2475,26 +2490,26 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
 
   return (
     <div>
-      {/* Top toolbar */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
-        {/* Stat pills */}
-        <div style={{ display: "flex", gap: 8, flex: 1, flexWrap: "wrap" }}>
-          {[
-            { label: "Today", val: todayHrs, o: DAY_THR.orange, g: DAY_THR.green },
-            { label: "This Week", val: weekHrs, o: DAY_THR.orange * 5, g: DAY_THR.green * 5 },
-            { label: "This Month", val: monthHrs, o: DAY_THR.orange * 20, g: DAY_THR.green * 20 },
-          ].map(s => (
-            <div key={s.label} className="stat-card" style={{ flex: 1, padding: "12px 16px", minWidth: 80 }}>
-              <div className="stat-label">{s.label}</div>
-              <div className="stat-value" style={{ fontSize: 20, color: statClr(s.val, s.o, s.g) }}>{s.val.toFixed(1)}h</div>
-            </div>
-          ))}
-        </div>
-        <select className="form-control" style={{ width: "auto" }} value={selectedWorker} onChange={e => setSelectedWorker(e.target.value)}>
+      {/* Stat pills row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+        {[
+          { label: "Today", val: todayHrs, o: DAY_THR.orange, g: DAY_THR.green },
+          { label: "This Week", val: weekHrs, o: DAY_THR.orange * 5, g: DAY_THR.green * 5 },
+          { label: "This Month", val: monthHrs, o: DAY_THR.orange * 20, g: DAY_THR.green * 20 },
+        ].map(s => (
+          <div key={s.label} className="stat-card" style={{ padding: "12px 16px" }}>
+            <div className="stat-label">{s.label}</div>
+            <div className="stat-value" style={{ fontSize: 20, color: statClr(s.val, s.o, s.g) }}>{s.val.toFixed(1)}h</div>
+          </div>
+        ))}
+      </div>
+      {/* Controls row */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
+        <select className="form-control" style={{ width: "auto", flex: 1 }} value={selectedWorker} onChange={e => setSelectedWorker(e.target.value)}>
           <option value="all">All Team</option>
           {staffNames.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />Log Time</button>
+        <button className="btn btn-primary" onClick={openNew} style={{ whiteSpace: "nowrap" }}><Icon name="plus" size={14} />Log Time</button>
       </div>
 
       {/* Sub-tabs */}
@@ -2531,10 +2546,10 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                 const job = jobs.find(j => j.id === entry.jobId);
                 const clr = dayColour(entry.hours);
                 return (
-                  <div key={entry.id} style={{
+                  <div key={entry.id} onClick={() => openEdit(entry)} style={{
                     background: "#fff", borderRadius: 10, padding: 14, marginBottom: 10,
                     border: "1px solid #e8e8e8", borderLeft: `4px solid ${clr}`,
-                    display: "flex", gap: 14, alignItems: "flex-start",
+                    display: "flex", gap: 14, alignItems: "flex-start", cursor: "pointer", transition: "border-color 0.15s",
                   }}>
                     <div style={{ minWidth: 56, textAlign: "center" }}>
                       <div style={{ fontSize: 22, fontWeight: 800, color: clr, lineHeight: 1 }}>{entry.hours.toFixed(1)}h</div>
@@ -2553,8 +2568,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                       {job && <div style={{ fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 3 }}>{job.title}</div>}
                       {entry.description && <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>{entry.description}</div>}
                     </div>
-                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                      <button className="btn btn-ghost btn-xs" onClick={() => openEdit(entry)}><Icon name="edit" size={12} /></button>
+                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                       <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>
                     </div>
                   </div>
@@ -2586,7 +2600,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                     <div style={{ fontSize: 11, color: "#aaa" }}>all time</div>
                   </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+                <div className="time-team-stats">
                   {[
                     { label: "Today", val: w.today, clr: dayColour(w.today) },
                     { label: "This Week", val: w.week, clr: dayColour(w.week / 5) },
@@ -2726,10 +2740,64 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
     capturedAt: new Date().toISOString().slice(0,10),
   };
   const [form, setForm] = useState(bill ? { ...bill } : blank);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState(null);
+  const [extracted, setExtracted] = useState(false);
+  const [lineItems, setLineItems] = useState([]);
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef(null);
 
   const exGst = form.hasGst ? (parseFloat(form.amount) || 0) / 1.1 : (parseFloat(form.amount) || 0);
   const gst   = form.hasGst ? (parseFloat(form.amount) || 0) - exGst : 0;
   const withMarkup = exGst * (1 + (parseFloat(form.markup) || 0) / 100);
+
+  const handleFile = async (file) => {
+    if (!file) return;
+    setExtractError(null);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target.result;
+      setImagePreview(dataUrl);
+      const base64 = dataUrl.split(",")[1];
+      const mimeType = file.type || "image/jpeg";
+      setExtracting(true);
+      try {
+        const data = await extractBillFromImage(base64, mimeType);
+        if (data) {
+          setForm(f => ({
+            ...f,
+            supplier: data.supplier || f.supplier,
+            invoiceNo: data.invoiceNo || f.invoiceNo,
+            date: data.date || f.date,
+            amount: data.amount != null ? data.amount : f.amount,
+            hasGst: data.hasGst != null ? data.hasGst : f.hasGst,
+            category: data.category || f.category,
+            description: data.description || f.description,
+            notes: data.notes || f.notes,
+          }));
+          if (Array.isArray(data.lineItems) && data.lineItems.length > 0) {
+            setLineItems(data.lineItems);
+          }
+          setExtracted(true);
+        } else {
+          setExtractError("AI extraction not available — fill in manually.");
+        }
+      } catch (err) {
+        setExtractError(err.message || "Extraction failed — fill in manually.");
+      } finally {
+        setExtracting(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) handleFile(file);
+  };
 
   const handleSave = () => {
     const amt = parseFloat(form.amount) || 0;
@@ -2755,6 +2823,83 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           <CloseBtn onClick={onClose} />
         </div>
         <div className="modal-body">
+
+          {/* AI Image Upload — only for new bills */}
+          {!bill && (
+            <div style={{ marginBottom: 20 }}>
+              {!imagePreview ? (
+                <div
+                  className={`bill-upload-zone${dragging ? " dragging" : ""}`}
+                  onClick={() => fileRef.current?.click()}
+                  onDragOver={e => { e.preventDefault(); setDragging(true); }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
+                    capture="environment"
+                    style={{ display: "none" }}
+                    onChange={e => handleFile(e.target.files?.[0])}
+                  />
+                  <Icon name="camera" size={28} />
+                  <div style={{ fontWeight: 700, fontSize: 14, marginTop: 8 }}>Upload receipt or invoice</div>
+                  <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>Take a photo or drag & drop an image — AI will extract the details</div>
+                </div>
+              ) : (
+                <div className="bill-preview-wrap">
+                  <img src={imagePreview} alt="Receipt preview" className="bill-preview-img" />
+                  <div className="bill-preview-info">
+                    {extracting && (
+                      <div className="bill-extracting">
+                        <div className="bill-spinner" />
+                        <span>Analysing receipt with AI...</span>
+                      </div>
+                    )}
+                    {extracted && !extracting && (
+                      <div style={{ color: "#1e7e34", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                        <Icon name="check" size={14} /> Data extracted — review below
+                      </div>
+                    )}
+                    {extractError && !extracting && (
+                      <div style={{ color: "#c0392b", fontSize: 13 }}>{extractError}</div>
+                    )}
+                    <button className="btn btn-secondary btn-sm" style={{ marginTop: 8 }} onClick={() => { setImagePreview(null); setExtracted(false); setExtractError(null); setLineItems([]); }}>
+                      Remove image
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Extracted Line Items */}
+          {lineItems.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 8 }}>Extracted Line Items</div>
+              <table className="line-items-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "50%" }}>Item</th>
+                    <th style={{ textAlign: "right" }}>Qty</th>
+                    <th style={{ textAlign: "right" }}>Unit Price</th>
+                    <th style={{ textAlign: "right" }}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lineItems.map((item, i) => (
+                    <tr key={i}>
+                      <td>{item.description}</td>
+                      <td style={{ textAlign: "right" }}>{item.qty ?? "—"}</td>
+                      <td style={{ textAlign: "right" }}>{item.unitPrice != null ? fmt(item.unitPrice) : "—"}</td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>{item.total != null ? fmt(item.total) : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Supplier & Reference */}
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Supplier Details</div>
@@ -3069,68 +3214,65 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
 
       {/* ══ PIPELINE VIEW ══ */}
       {tab === "pipeline" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, alignItems: "start" }}>
+        <div className="bill-pipeline">
           {BILL_STATUSES.map(status => {
             const stageBills = bills.filter(b => b.status === status);
             const sc = BILL_STATUS_COLORS[status];
             return (
-              <div key={status} style={{ background: "#f7f7f7", borderRadius: 10, padding: 12, minHeight: 200 }}>
-                {/* Column header */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: "#666" }}>{BILL_STATUS_LABELS[status]}</div>
-                    <div style={{ fontSize: 11, color: "#aaa", marginTop: 1 }}>{stageBills.length} bill{stageBills.length !== 1 ? "s" : ""} · {fmt(stageBills.reduce((s,b)=>s+b.amount,0))}</div>
+              <div key={status} style={{ background: "#f7f7f7", borderRadius: 10, padding: "14px 16px" }}>
+                {/* Row header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: stageBills.length ? 10 : 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span className="badge" style={{ background: sc.bg, color: sc.text, fontSize: 10 }}>{stageBills.length}</span>
+                    <div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#333" }}>{BILL_STATUS_LABELS[status]}</span>
+                      <span style={{ fontSize: 12, color: "#aaa", marginLeft: 8 }}>{fmt(stageBills.reduce((s,b)=>s+b.amount,0))}</span>
+                    </div>
                   </div>
-                  <span className="badge" style={{ background: sc.bg, color: sc.text, fontSize: 10 }}>{stageBills.length}</span>
                 </div>
 
-                {/* Cards */}
-                {stageBills.length === 0 && (
-                  <div style={{ textAlign: "center", padding: "24px 0", color: "#ccc", fontSize: 12 }}>Empty</div>
-                )}
+                {/* Bill cards */}
                 {stageBills.map(b => {
                   const job = jobs.find(j => j.id === b.jobId);
                   const exGst = b.hasGst ? b.amount / 1.1 : b.amount;
                   return (
-                    <div key={b.id} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 8, padding: "12px", marginBottom: 8, fontSize: 12 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 3, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
-                        <span style={{ flex: 1 }}>{b.supplier}</span>
-                        <span style={{ fontWeight: 800, color: "#111", whiteSpace: "nowrap" }}>{fmt(b.amount)}</span>
+                    <div key={b.id} onClick={() => openEdit(b)} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 8, padding: "12px 14px", marginBottom: 8, fontSize: 12, cursor: "pointer" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2 }}>{b.supplier}</div>
+                          {b.invoiceNo && <span style={{ color: "#aaa", fontFamily: "monospace", fontSize: 11 }}>{b.invoiceNo}</span>}
+                          {b.description && <div style={{ color: "#777", marginTop: 3, fontSize: 11, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.description}</div>}
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                          <div style={{ fontWeight: 800, color: "#111", fontSize: 14 }}>{fmt(b.amount)}</div>
+                          {b.markup > 0 && <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>+{b.markup}%</div>}
+                        </div>
                       </div>
-                      {b.invoiceNo && <div style={{ color: "#aaa", fontFamily: "monospace", fontSize: 11, marginBottom: 3 }}>{b.invoiceNo}</div>}
-                      {b.description && <div style={{ color: "#777", marginBottom: 6, fontSize: 11, lineHeight: 1.4 }}>{b.description.slice(0,60)}{b.description.length>60?"…":""}</div>}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                        <span className="chip" style={{ fontSize: 10 }}>{b.category}</span>
-                        {job ? <span style={{ fontSize: 11, color: "#888", flex: 1, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{job.title}</span>
-                          : <span style={{ fontSize: 10, color: "#ccc", marginLeft: "auto" }}>Unlinked</span>}
-                      </div>
-                      {b.markup > 0 && <div style={{ fontSize: 10, color: "#888", marginTop: 4 }}>Markup {b.markup}% → {fmt(exGst*(1+b.markup/100))}</div>}
-                      {b.notes && <div style={{ fontSize: 10, color: "#aaa", marginTop: 4, fontStyle: "italic", borderTop: "1px solid #f5f5f5", paddingTop: 4 }}>{b.notes}</div>}
-
-                      {/* Stage actions */}
-                      <div style={{ display: "flex", gap: 4, marginTop: 8, paddingTop: 8, borderTop: "1px solid #f5f5f5", flexWrap: "wrap" }}>
-                        {status === "inbox" && (
-                          <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId} title={!b.jobId ? "Link to a job first" : "Mark as Linked"}>
-                            Link →
-                          </button>
-                        )}
-                        {status === "linked" && (
-                          <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34", borderColor: "#c0e0c0" }} onClick={() => setStatus(b.id, "approved")}>
-                            ✓ Approve
-                          </button>
-                        )}
-                        {status === "approved" && (
-                          <button className="btn btn-primary btn-xs" onClick={() => setPostBill(b)}>
-                            Post to Job →
-                          </button>
-                        )}
-                        {status === "posted" && (
-                          <span style={{ fontSize: 10, color: "#aaa", fontStyle: "italic" }}>
-                            ✓ Posted{b.postedAt ? ` ${b.postedAt}` : ""}
-                          </span>
-                        )}
-                        <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
-                          <button className="btn btn-ghost btn-xs" onClick={() => openEdit(b)}><Icon name="edit" size={10} /></button>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                          <span className="chip" style={{ fontSize: 10 }}>{b.category}</span>
+                          {job ? <span style={{ fontSize: 11, color: "#888" }}>{job.title}</span>
+                            : <span style={{ fontSize: 10, color: "#ccc" }}>Unlinked</span>}
+                        </div>
+                        <div style={{ display: "flex", gap: 4, alignItems: "center" }} onClick={e => e.stopPropagation()}>
+                          {status === "inbox" && (
+                            <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId} title={!b.jobId ? "Link to a job first" : "Mark as Linked"}>
+                              Link →
+                            </button>
+                          )}
+                          {status === "linked" && (
+                            <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34", borderColor: "#c0e0c0" }} onClick={() => setStatus(b.id, "approved")}>
+                              ✓ Approve
+                            </button>
+                          )}
+                          {status === "approved" && (
+                            <button className="btn btn-primary btn-xs" onClick={() => setPostBill(b)}>
+                              Post →
+                            </button>
+                          )}
+                          {status === "posted" && (
+                            <span style={{ fontSize: 10, color: "#aaa", fontStyle: "italic" }}>✓ Posted</span>
+                          )}
                           <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={10} /></button>
                         </div>
                       </div>
@@ -3308,15 +3450,14 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
           <div className="stat-value" style={{ fontSize: 20 }}>{fmt(totalPaid)}</div>
         </div>
       </div>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 20, justifyContent: "flex-end" }}>
+      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
         {quotes.filter(q => q.status === "accepted").length > 0 && (
-          <div style={{ position: "relative" }}>
-            <select className="form-control" style={{ paddingRight: 32 }} onChange={e => { const q = quotes.find(q => String(q.id) === e.target.value); if (q) fromQuote(q); e.target.value = ""; }}>
-              <option value="">Invoice from Quote…</option>
-              {quotes.filter(q => q.status === "accepted").map(q => <option key={q.id} value={q.id}>{q.number}</option>)}
-            </select>
-          </div>
+          <select className="form-control" style={{ width: "auto" }} onChange={e => { const q = quotes.find(q => String(q.id) === e.target.value); if (q) fromQuote(q); e.target.value = ""; }}>
+            <option value="">Invoice from Quote…</option>
+            {quotes.filter(q => q.status === "accepted").map(q => <option key={q.id} value={q.id}>{q.number}</option>)}
+          </select>
         )}
+        <div style={{ flex: 1 }} />
         <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={14} />New Invoice</button>
       </div>
 
@@ -3332,7 +3473,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                 const sub = inv.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
                 const fromQuote = inv.fromQuoteId ? quotes.find(q => q.id === inv.fromQuoteId) : null;
                 return (
-                  <tr key={inv.id}>
+                  <tr key={inv.id} style={{ cursor: "pointer" }} onClick={() => openEdit(inv)}>
                     <td><span style={{ fontWeight: 700, fontFamily: "monospace", fontSize: 13 }}>{inv.number}</span>{fromQuote && <div style={{ fontSize: 10, color: "#bbb", marginTop: 2 }}>from {fromQuote.number}</div>}</td>
                     <td style={{ fontWeight: 600, fontSize: 13 }}>{job?.title}</td>
                     <td style={{ fontSize: 13, color: "#666" }}>{client?.name}</td>
@@ -3341,10 +3482,9 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                     <td>{fmt(sub * inv.tax / 100)}</td>
                     <td style={{ fontWeight: 700 }}>{fmt(sub * (1 + inv.tax / 100))}</td>
                     <td style={{ fontSize: 12, color: inv.dueDate ? "#111" : "#ccc" }}>{inv.dueDate || "—"}</td>
-                    <td>
+                    <td onClick={e => e.stopPropagation()}>
                       <div style={{ display: "flex", gap: 4 }}>
                         {inv.status !== "paid" && inv.status !== "void" && <button className="btn btn-ghost btn-xs" style={{ color: "#2a7" }} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>}
-                        <button className="btn btn-ghost btn-xs" onClick={() => openEdit(inv)}><Icon name="edit" size={12} /></button>
                         <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(inv.id)}><Icon name="trash" size={12} /></button>
                       </div>
                     </td>
@@ -3608,13 +3748,13 @@ export default function App() {
   return (
     <div className="jm-root" onClick={() => moreOpen && setMoreOpen(false)}>
       {loading && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 16 }}>
+        <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, background: "#fafafa", zIndex: 9999 }}>
           <div style={{ width: 32, height: 32, border: "3px solid #e8e8e8", borderTopColor: "#111", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
           <div style={{ color: "#888", fontSize: 14 }}>Loading…</div>
         </div>
       )}
       {dbError && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: 16 }}>
+        <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, background: "#fafafa", zIndex: 9999 }}>
           <div style={{ color: "#e74c3c", fontWeight: 700 }}>Failed to connect to database</div>
           <div style={{ color: "#888", fontSize: 13 }}>{dbError}</div>
         </div>

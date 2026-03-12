@@ -97,7 +97,7 @@ function normalizeTimeEntry(row) {
     date: row.entry_date,
     hours: Number(row.hours),
     description: row.notes || '',
-    billable: row.billable !== false,
+    billable: true,
   };
 }
 
@@ -160,7 +160,6 @@ function denormalizeLineItems(lineItems, parentKey, parentId) {
     description: li.desc,
     quantity: li.qty,
     unit_price: li.rate,
-    unit: li.unit || 'ea',
     [parentKey]: parentId,
   }));
 }
@@ -216,7 +215,6 @@ function denormalizeSchedule(data) {
     entry_date: data.date,
     notes: data.notes || null,
     assigned_staff_ids: data.assignedTo || [],
-    title: data.title || null,
   };
 }
 
@@ -399,10 +397,13 @@ export async function deleteQuote(id) {
 // ── Invoices ───────────────────────────────────────────────────────────────
 
 async function nextInvoiceNumber() {
-  const rows = await q(supabase.from('invoices').select('invoice_number').order('created_at', { ascending: false }).limit(1));
+  const rows = await q(supabase.from('invoices').select('invoice_number'));
   if (!rows.length) return 'INV-0001';
-  const last = parseInt(rows[0].invoice_number?.replace(/\D/g, '') || '0', 10);
-  return 'INV-' + String(last + 1).padStart(4, '0');
+  const maxNum = rows.reduce((max, r) => {
+    const n = parseInt((r.invoice_number || '').replace(/\D/g, '') || '0', 10);
+    return n > max ? n : max;
+  }, 0);
+  return 'INV-' + String(maxNum + 1).padStart(4, '0');
 }
 
 export async function createInvoice(data) {
@@ -435,7 +436,7 @@ export async function deleteInvoice(id) {
 export async function createTimeEntry(data, staffId) {
   const row = await q(
     supabase.from('time_entries')
-      .insert({ job_id: data.jobId || null, staff_id: staffId || null, entry_date: data.date, hours: data.hours, notes: data.description || null, billable: data.billable !== false })
+      .insert({ job_id: data.jobId || null, staff_id: staffId || null, entry_date: data.date, hours: data.hours, notes: data.description || null })
       .select().single()
   );
   return { ...normalizeTimeEntry(row), worker: data.worker || '' };
@@ -444,7 +445,7 @@ export async function createTimeEntry(data, staffId) {
 export async function updateTimeEntry(id, data, staffId) {
   const row = await q(
     supabase.from('time_entries')
-      .update({ job_id: data.jobId || null, staff_id: staffId || null, entry_date: data.date, hours: data.hours, notes: data.description || null, billable: data.billable !== false })
+      .update({ job_id: data.jobId || null, staff_id: staffId || null, entry_date: data.date, hours: data.hours, notes: data.description || null })
       .eq('id', id).select().single()
   );
   return { ...normalizeTimeEntry(row), worker: data.worker || '' };

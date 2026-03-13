@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, Fragment } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry } from './lib/db';
 import { extractBillFromImage } from './lib/supabase';
@@ -42,11 +42,11 @@ const SEED_CLIENTS = [
 ];
 
 const SEED_JOBS = [
-  { id: 1, title: "Office Fitout – Level 3", clientId: 1, siteId: 101, status: "in_progress", priority: "high", description: "Full office refurbishment including partition walls, electrical and plumbing.", startDate: "2026-02-10", dueDate: "2026-03-25", assignedTo: ["Tom Baker", "Sarah Lee"], tags: ["fitout", "commercial"], createdAt: "2026-02-01", activityLog: [{ ts: "2026-02-01 09:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-10 08:30", user: "Alex Jones", action: "Status changed to In Progress" }] },
-  { id: 2, title: "Roof Repair & Waterproofing", clientId: 2, siteId: 201, status: "quoted", priority: "medium", description: "Replace damaged roof sheets and apply waterproof membrane to flat section.", startDate: "2026-03-15", dueDate: "2026-03-30", assignedTo: ["Mike Chen"], tags: ["roofing", "maintenance"], createdAt: "2026-02-15", activityLog: [{ ts: "2026-02-15 10:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-16 14:00", user: "Alex Jones", action: "Quote Q-0002 added" }] },
-  { id: 3, title: "Kitchen Renovation", clientId: 3, siteId: 301, status: "scheduled", priority: "medium", description: "Full kitchen demo and rebuild with new cabinetry, benchtops and appliances.", startDate: "2026-03-20", dueDate: "2026-04-20", assignedTo: ["Sarah Lee", "Dan Wright"], tags: ["renovation", "residential"], createdAt: "2026-02-20", activityLog: [{ ts: "2026-02-20 11:00", user: "Alex Jones", action: "Job created" }] },
-  { id: 4, title: "HVAC Maintenance – Q1", clientId: 4, siteId: 401, status: "completed", priority: "low", description: "Quarterly service and filter replacement across all HVAC units.", startDate: "2026-01-15", dueDate: "2026-01-20", assignedTo: ["Tom Baker"], tags: ["hvac", "maintenance"], createdAt: "2026-01-10", activityLog: [{ ts: "2026-01-10 08:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-01-20 16:00", user: "Tom Baker", action: "Status changed to Completed" }] },
-  { id: 5, title: "Bathroom Tiling & Fixtures", clientId: 1, siteId: null, status: "draft", priority: "low", description: "Re-tile master bathroom and replace all fixtures.", startDate: "", dueDate: "", assignedTo: [], tags: ["tiling", "plumbing"], createdAt: "2026-02-28", activityLog: [{ ts: "2026-02-28 15:00", user: "Alex Jones", action: "Job created" }] },
+  { id: 1, title: "Office Fitout – Level 3", clientId: 1, siteId: 101, status: "in_progress", priority: "high", description: "Full office refurbishment including partition walls, electrical and plumbing.", startDate: "2026-02-10", dueDate: "2026-03-25", assignedTo: ["Tom Baker", "Sarah Lee"], tags: ["fitout", "commercial"], createdAt: "2026-02-01", notes: [{ id: 1, text: "Site access confirmed via loading dock. Security pass required — collect from reception.", category: "general", attachments: [], createdAt: "2026-03-08T09:00:00Z", createdBy: "Alex Jones" }, { id: 2, text: "Found damaged plasterboard on Level 3 east wall. Needs replacement before painting.", category: "issue", attachments: [], createdAt: "2026-03-10T14:30:00Z", createdBy: "Tom Baker" }, { id: 3, text: "Electrical rough-in inspection passed. Certificate filed.", category: "inspection", attachments: [], createdAt: "2026-03-11T16:00:00Z", createdBy: "Alex Jones" }], activityLog: [{ ts: "2026-02-01 09:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-10 08:30", user: "Alex Jones", action: "Status changed to In Progress" }] },
+  { id: 2, title: "Roof Repair & Waterproofing", clientId: 2, siteId: 201, status: "quoted", priority: "medium", description: "Replace damaged roof sheets and apply waterproof membrane to flat section.", startDate: "2026-03-15", dueDate: "2026-03-30", assignedTo: ["Mike Chen"], tags: ["roofing", "maintenance"], createdAt: "2026-02-15", notes: [], activityLog: [{ ts: "2026-02-15 10:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-16 14:00", user: "Alex Jones", action: "Quote Q-0002 added" }] },
+  { id: 3, title: "Kitchen Renovation", clientId: 3, siteId: 301, status: "scheduled", priority: "medium", description: "Full kitchen demo and rebuild with new cabinetry, benchtops and appliances.", startDate: "2026-03-20", dueDate: "2026-04-20", assignedTo: ["Sarah Lee", "Dan Wright"], tags: ["renovation", "residential"], createdAt: "2026-02-20", notes: [], activityLog: [{ ts: "2026-02-20 11:00", user: "Alex Jones", action: "Job created" }] },
+  { id: 4, title: "HVAC Maintenance – Q1", clientId: 4, siteId: 401, status: "completed", priority: "low", description: "Quarterly service and filter replacement across all HVAC units.", startDate: "2026-01-15", dueDate: "2026-01-20", assignedTo: ["Tom Baker"], tags: ["hvac", "maintenance"], createdAt: "2026-01-10", notes: [], activityLog: [{ ts: "2026-01-10 08:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-01-20 16:00", user: "Tom Baker", action: "Status changed to Completed" }] },
+  { id: 5, title: "Bathroom Tiling & Fixtures", clientId: 1, siteId: null, status: "draft", priority: "low", description: "Re-tile master bathroom and replace all fixtures.", startDate: "", dueDate: "", assignedTo: [], tags: ["tiling", "plumbing"], createdAt: "2026-02-28", notes: [], activityLog: [{ ts: "2026-02-28 15:00", user: "Alex Jones", action: "Job created" }] },
 ];
 
 const SEED_QUOTES = [
@@ -56,10 +56,17 @@ const SEED_QUOTES = [
 ];
 
 const SEED_SCHEDULE = [
-  { id: 1, jobId: 1, title: "Demo Day", date: "2026-03-10", startTime: "07:00", endTime: "15:00", assignedTo: ["Tom Baker", "Sarah Lee"], notes: "Bring PPE. Access via loading dock." },
-  { id: 2, jobId: 1, title: "Partition Install", date: "2026-03-11", startTime: "07:00", endTime: "16:00", assignedTo: ["Tom Baker"], notes: "" },
-  { id: 3, jobId: 3, title: "Kitchen Demo", date: "2026-03-20", startTime: "08:00", endTime: "14:00", assignedTo: ["Sarah Lee", "Dan Wright"], notes: "Client will not be home – key under mat." },
-  { id: 4, jobId: 4, title: "HVAC Service", date: "2026-01-17", startTime: "09:00", endTime: "12:00", assignedTo: ["Tom Baker"], notes: "All 6 units on level 2." },
+  { id: 1, jobId: 1, title: "Demo Day", date: "2026-03-09", startTime: "07:00", endTime: "15:00", assignedTo: ["Tom Baker", "Sarah Lee"], notes: "Bring PPE. Access via loading dock." },
+  { id: 2, jobId: 1, title: "Partition Install", date: "2026-03-10", startTime: "07:00", endTime: "16:00", assignedTo: ["Tom Baker"], notes: "" },
+  { id: 3, jobId: 1, title: "Electrical Rough-in", date: "2026-03-11", startTime: "07:00", endTime: "15:00", assignedTo: ["Mike Chen"], notes: "Coordinate with Apex Electrical." },
+  { id: 4, jobId: 2, title: "Roof Measure", date: "2026-03-12", startTime: "08:00", endTime: "12:00", assignedTo: ["Dan Wright"], notes: "Take drone photos." },
+  { id: 5, jobId: 1, title: "Plasterboard", date: "2026-03-13", startTime: "07:00", endTime: "16:00", assignedTo: ["Tom Baker", "Dan Wright"], notes: "Level 3 ceiling sheets." },
+  { id: 6, jobId: 4, title: "HVAC Service", date: "2026-03-13", startTime: "09:00", endTime: "12:00", assignedTo: ["Priya Sharma"], notes: "All 6 units on level 2." },
+  { id: 7, jobId: 3, title: "Kitchen Demo", date: "2026-03-16", startTime: "08:00", endTime: "14:00", assignedTo: ["Sarah Lee", "Dan Wright"], notes: "Client will not be home – key under mat." },
+  { id: 8, jobId: 1, title: "Painting Prep", date: "2026-03-17", startTime: "07:00", endTime: "15:00", assignedTo: ["Tom Baker"], notes: "Sand and prime all walls." },
+  { id: 9, jobId: 2, title: "Roof Sheet Delivery", date: "2026-03-18", startTime: "06:00", endTime: "08:00", assignedTo: ["Dan Wright", "Mike Chen"], notes: "Crane on site 6:30am." },
+  { id: 10, jobId: 3, title: "Cabinet Install", date: "2026-03-19", startTime: "08:00", endTime: "16:00", assignedTo: ["Sarah Lee"], notes: "" },
+  { id: 11, jobId: 1, title: "Final Inspection", date: "2026-03-20", startTime: "10:00", endTime: "12:00", assignedTo: ["Tom Baker", "Priya Sharma"], notes: "Client attending." },
 ];
 
 const SEED_TIME = [
@@ -80,6 +87,10 @@ const SEED_BILLS = [
   { id: 5, jobId: null, supplier: "Bunnings Trade", invoiceNo: "BT-00412", date: "2026-03-07", amount: 387.50, amountExGst: 387.50, gstAmount: 0, hasGst: false, category: "Materials", description: "Paint, brushes, drop sheets", status: "inbox", markup: 0, notes: "Receipt photographed – check GST treatment", capturedAt: "2026-03-07" },
   { id: 6, jobId: 2, supplier: "Roofmaster Supplies", invoiceNo: "RM-8801", date: "2026-03-14", amount: 3200.00, amountExGst: 2909.09, gstAmount: 290.91, hasGst: true, category: "Materials", description: "Roof sheets x24, waterproof membrane", status: "linked", markup: 12, notes: "", capturedAt: "2026-03-14" },
   { id: 7, jobId: 3, supplier: "Cabinet Kings", invoiceNo: "CK-3310", date: "2026-03-02", amount: 9240.00, amountExGst: 8400.00, gstAmount: 840.00, hasGst: true, category: "Subcontractor", description: "Kitchen cabinetry fabrication & delivery", status: "approved", markup: 0, notes: "", capturedAt: "2026-03-02" },
+  { id: 8, jobId: 1, supplier: "Apex Electrical Pty Ltd", invoiceNo: "AE-1150", date: "2026-03-10", amount: 4620.00, amountExGst: 4200.00, gstAmount: 420.00, hasGst: true, category: "Subcontractor", description: "Electrical rough-in – ground floor", status: "approved", markup: 0, notes: "", capturedAt: "2026-03-10" },
+  { id: 9, jobId: 2, supplier: "Ironclad Roofing Co.", invoiceNo: "IR-0087", date: "2026-03-11", amount: 7150.00, amountExGst: 6500.00, gstAmount: 650.00, hasGst: true, category: "Subcontractor", description: "Metal roof installation – stage 1", status: "posted", markup: 0, notes: "", capturedAt: "2026-03-11" },
+  { id: 10, jobId: 1, supplier: "Blue Ridge Plumbing", invoiceNo: "BRP-442", date: "2026-03-05", amount: 3300.00, amountExGst: 3000.00, gstAmount: 300.00, hasGst: true, category: "Subcontractor", description: "Plumbing rough-in & hot water connection", status: "linked", markup: 0, notes: "", capturedAt: "2026-03-05" },
+  { id: 11, jobId: 3, supplier: "Precision Carpentry", invoiceNo: "PC-2201", date: "2026-02-28", amount: 5500.00, amountExGst: 5000.00, gstAmount: 500.00, hasGst: true, category: "Subcontractor", description: "Custom joinery – master bedroom wardrobe", status: "posted", markup: 0, notes: "", capturedAt: "2026-02-28" },
 ];
 
 const SEED_INVOICES = [
@@ -105,6 +116,16 @@ const nowTs = () => {
 };
 const mkLog = (action, user = CURRENT_USER) => ({ ts: nowTs(), user, action });
 const addLog = (prev, action, user = CURRENT_USER) => [...(prev || []), mkLog(action, user)];
+
+// ── Note Categories ─────────────────────────────────────────────────────────
+const NOTE_CATEGORIES = [
+  { id: "general", label: "General", color: "#64748b" },
+  { id: "site_update", label: "Site Update", color: "#0891b2" },
+  { id: "issue", label: "Issue", color: "#dc2626" },
+  { id: "inspection", label: "Inspection", color: "#7c3aed" },
+  { id: "delivery", label: "Delivery", color: "#d97706" },
+  { id: "safety", label: "Safety", color: "#059669" },
+];
 
 // ── Orders: Seed Data ────────────────────────────────────────────────────────
 const ORDER_CONTRACTORS = [
@@ -158,6 +179,8 @@ const SECTION_COLORS = {
   invoices:  { accent: "#4f46e5", light: "#eef2ff" },
   activity:  { accent: "#64748b", light: "#f8fafc" },
   orders:    { accent: "#2563eb", light: "#eff6ff" },
+  contractors: { accent: "#0d9488", light: "#f0fdfa" },
+  suppliers: { accent: "#d97706", light: "#fffbeb" },
 };
 const hexToRgba = (hex, a) => {
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
@@ -226,6 +249,22 @@ const SEED_PO = [
   { id: "PO002", ref: "PO-202", status: "Draft", supplierId: "s3", supplierName: "Middy's Electrical", supplierContact: "Sales", supplierEmail: "sales@middys.com.au", supplierAbn: "34 567 890 123", jobId: 2, issueDate: orderToday(), dueDate: orderAddDays(orderToday(), 5), poLimit: "4200", deliveryAddress: "14 Oakwood Ave, Richmond VIC 3121", lines: [{ id: "h", desc: "Cable — 2.5mm TPS", qty: "200", unit: "m" }, { id: "i", desc: "GPO outlets", qty: "40", unit: "ea" }], notes: "", internalNotes: "", attachments: [], auditLog: [
     { id: "alp6", ts: new Date(Date.now() - 7200000).toISOString(), action: "Created", detail: "Purchase order created", auto: false },
   ]},
+];
+
+const CONTRACTOR_TRADES = ["Electrical", "Plumbing", "Roofing", "Carpentry", "Painting", "Tiling", "HVAC", "Landscaping", "Other"];
+const SEED_CONTRACTORS = [
+  { id: "c1", name: "Apex Electrical Pty Ltd", contact: "Mark Simmons", email: "mark@apexelec.com.au", phone: "0412 345 678", trade: "Electrical", abn: "11 222 333 444", notes: "Preferred electrical contractor. Licensed for commercial." },
+  { id: "c2", name: "Blue Ridge Plumbing", contact: "Sarah O'Brien", email: "sarah@blueridgeplumbing.com.au", phone: "0421 987 654", trade: "Plumbing", abn: "22 333 444 555", notes: "Handles rough-in and fit-off." },
+  { id: "c3", name: "Ironclad Roofing Co.", contact: "Dave Nguyen", email: "dave@ironcladroofing.com.au", phone: "0455 667 788", trade: "Roofing", abn: "33 444 555 666", notes: "Specialises in metal and tile roofing." },
+  { id: "c4", name: "Precision Carpentry", contact: "James Ward", email: "james@precisioncarpentry.com.au", phone: "0433 112 233", trade: "Carpentry", abn: "44 555 666 777", notes: "Custom cabinetry and structural framing." },
+];
+const SEED_SUPPLIERS = [
+  { id: "s1", name: "Reece Plumbing & Bathrooms", contact: "Accounts", email: "accounts@reece.com.au", phone: "03 9123 4567", abn: "12 345 678 901", notes: "Trade account — 30-day terms." },
+  { id: "s2", name: "Middy's Electrical", contact: "Sales", email: "sales@middys.com.au", phone: "03 9876 5432", abn: "34 567 890 123", notes: "Trade pricing on cable & accessories." },
+  { id: "s3", name: "BuildRight Supplies", contact: "Orders Desk", email: "orders@buildright.com.au", phone: "03 9111 2222", abn: "45 678 901 234", notes: "General building materials. Free delivery over $500." },
+  { id: "s4", name: "ElecPro", contact: "Accounts", email: "accounts@elecpro.com.au", phone: "03 9333 4444", abn: "56 789 012 345", notes: "" },
+  { id: "s5", name: "Metro Hire Co", contact: "Bookings", email: "bookings@metrohire.com.au", phone: "03 9555 6666", abn: "67 890 123 456", notes: "Plant & equipment hire." },
+  { id: "s6", name: "CoolAir Parts", contact: "Sales", email: "sales@coolairparts.com.au", phone: "03 9777 8888", abn: "78 901 234 567", notes: "HVAC parts supplier." },
 ];
 
 // ActivityLog display component
@@ -392,6 +431,17 @@ const injectStyles = () => {
     .kanban-col-header { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #666; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
     .kanban-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; font-size: 12px; }
     .kanban-card:hover { border-color: var(--section-accent, #111); }
+
+    /* ── Schedule week grid ── */
+    .schedule-week-grid { display: grid; grid-template-columns: repeat(5, 1fr) minmax(0, 1fr); gap: 8px; }
+    .schedule-weekend-stack { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+    .schedule-day-col { border: 1px solid #e5e5e5; border-radius: 8px; min-height: 120px; display: flex; flex-direction: column; overflow: hidden; }
+    .schedule-day-col.schedule-day-compact { min-height: 0; flex: 1; }
+    .schedule-day-header { padding: 6px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+    .schedule-day-body { padding: 6px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .schedule-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 6px; padding: 8px 10px; cursor: pointer; transition: all 0.15s; }
+    .schedule-card:hover { border-color: var(--section-accent, #0891b2); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
     .priority-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
     .priority-high { background: #111; }
     .priority-medium { background: #777; }
@@ -459,6 +509,14 @@ const injectStyles = () => {
       .stat-value { font-size: 20px; }
       .grid-2, .grid-3 { grid-template-columns: 1fr; }
       .kanban { grid-template-columns: repeat(2, minmax(160px,1fr)); overflow-x: auto; }
+      .schedule-week-grid { grid-template-columns: 1fr; gap: 6px; }
+      .schedule-weekend-stack { flex-direction: row; gap: 6px; }
+      .schedule-weekend-stack .schedule-day-col { flex: 1; }
+      .schedule-day-col { min-height: auto; flex-direction: row; align-items: stretch; }
+      .schedule-day-col.schedule-day-compact { min-height: auto; }
+      .schedule-day-header { padding: 8px 12px; min-width: 52px; justify-content: center; }
+      .schedule-day-body { flex-direction: row; flex-wrap: wrap; padding: 8px; gap: 6px; align-items: center; }
+      .schedule-card { min-width: 0; flex: 1 1 auto; }
       .dashboard-grid { grid-template-columns: 1fr !important; }
       .modal { border-radius: 16px 16px 0 0; max-height: 92vh; max-height: 92dvh; height: 92vh; height: 92dvh; }
       .modal-footer { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
@@ -571,9 +629,12 @@ const Icon = ({ name, size = 15 }) => {
     activity: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
     kanban: "M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v10m0 4v4M9 17H5a2 2 0 01-2-2v-4m6 6h10a2 2 0 002-2v-4",
     list_view: "M4 6h16M4 10h16M4 14h16M4 18h16",
+    grid_view: "M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z",
     chart: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
     notification: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9",
     orders: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h4m-4 4h4m-8-4h.01m-.01 4h.01",
+    contractors: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+    suppliers: "M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0",
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -721,6 +782,25 @@ const OrderProgressBar = ({ status }) => {
   const pct = ORDER_STATUS_PROGRESS[status] ?? 0;
   const color = ORDER_BAR_COLORS[status] || "#cbd5e1";
   if (status === "Cancelled") return <div className="order-progress-track" />;
+  return <div className="order-progress-track"><div className="order-progress-fill" style={{ width: pct + "%", background: color }} /></div>;
+};
+
+const SectionProgressBar = ({ status, section }) => {
+  const configs = {
+    jobs: { draft: 0, scheduled: 20, quoted: 40, in_progress: 60, completed: 100, cancelled: 0 },
+    quotes: { draft: 0, sent: 50, accepted: 100, declined: 0 },
+    invoices: { draft: 0, sent: 33, paid: 100, overdue: 66, void: 0 },
+    bills: { inbox: 0, linked: 33, approved: 66, posted: 100 },
+  };
+  const colors = {
+    jobs: { draft: "#cbd5e1", scheduled: "#0891b2", quoted: "#ca8a04", in_progress: "#ea580c", completed: "#059669", cancelled: "#e2e8f0" },
+    quotes: { draft: "#cbd5e1", sent: "#2563eb", accepted: "#059669", declined: "#dc2626" },
+    invoices: { draft: "#cbd5e1", sent: "#2563eb", paid: "#059669", overdue: "#dc2626", void: "#64748b" },
+    bills: { inbox: "#cbd5e1", linked: "#2563eb", approved: "#059669", posted: "#111" },
+  };
+  const pct = configs[section]?.[status] ?? 0;
+  const color = colors[section]?.[status] || "#cbd5e1";
+  if (pct === 0 && (status === "cancelled" || status === "declined" || status === "void")) return <div className="order-progress-track" />;
   return <div className="order-progress-track"><div className="order-progress-fill" style={{ width: pct + "%", background: color }} /></div>;
 };
 
@@ -1370,76 +1450,149 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
 
 // ── Orders: Orders Page ───────────────────────────────────────────────────────
 const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs }) => {
-  const [tab, setTab] = useState("dashboard");
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
-  const isWO = tab === "wo";
-  const orders = isWO ? workOrders : purchaseOrders;
-  const setOrders = isWO ? setWorkOrders : setPurchaseOrders;
+  const [filterType, setFilterType] = useState("all");
+  const [view, setView] = useState("grid");
+  const allOrders = useMemo(() => [
+    ...workOrders.map(o => ({ ...o, _type: "wo" })),
+    ...purchaseOrders.map(o => ({ ...o, _type: "po" }))
+  ], [workOrders, purchaseOrders]);
   const filtered = useMemo(() => {
-    if (tab === "dashboard") return [];
-    return orders.filter(o => {
-      const partyName = isWO ? o.contractorName : o.supplierName;
-      const matchSearch = !search || o.ref.toLowerCase().includes(search.toLowerCase()) || (partyName || "").toLowerCase().includes(search.toLowerCase());
+    return allOrders.filter(o => {
+      const partyName = o._type === "wo" ? o.contractorName : o.supplierName;
+      const jd = orderJobDisplay(jobs.find(j => j.id === o.jobId));
+      const q = search.toLowerCase();
+      const matchSearch = !search || o.ref.toLowerCase().includes(q) || (partyName || "").toLowerCase().includes(q) || (jd?.name || "").toLowerCase().includes(q);
       const matchStatus = filterStatus === "All" || o.status === filterStatus;
-      return matchSearch && matchStatus;
+      const matchType = filterType === "all" || o._type === filterType;
+      return matchSearch && matchStatus && matchType;
     });
-  }, [orders, search, filterStatus, isWO, tab]);
-  const openNew = (t) => setModal({ type: t || (tab === "dashboard" ? "wo" : tab), order: null });
-  const openOrder = (t, order, mode = "view") => setModal({ type: t, order, mode });
+  }, [allOrders, search, filterStatus, filterType, jobs]);
+  const openNew = (t) => setModal({ type: t, order: null });
+  const openOrder = (type, order, mode = "view") => setModal({ type, order, mode });
   const handleSave = (order) => {
     const target = modal.type === "wo" ? setWorkOrders : setPurchaseOrders;
     target(prev => { const exists = prev.find(o => o.id === order.id); return exists ? prev.map(o => o.id === order.id ? order : o) : [...prev, order]; });
     setModal(m => m ? { ...m, order } : null);
   };
-  const handleDelete = (id) => { if (!window.confirm("Delete this order?")) return; setOrders(prev => prev.filter(o => o.id !== id)); };
-  const woOverdue = workOrders.filter(o => !ORDER_TERMINAL.includes(o.status) && o.dueDate && o.dueDate < orderToday()).length;
-  const poOverdue = purchaseOrders.filter(o => !ORDER_TERMINAL.includes(o.status) && o.dueDate && o.dueDate < orderToday()).length;
+  const handleDelete = (type, id) => { if (!window.confirm("Delete this order?")) return; (type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.filter(o => o.id !== id)); };
+  const accentColor = "#2563eb";
+  const orderStatusColors = { Draft: "#888", Approved: "#7c3aed", Sent: "#2563eb", Viewed: "#0891b2", Accepted: "#16a34a", Completed: "#111", Billed: "#059669", Cancelled: "#dc2626" };
+  const summaryStatuses = ORDER_STATUSES.filter(s => s !== "Cancelled");
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
-        <div className="order-tabs" style={{ overflowX: "auto" }}>
-          <button className={`order-tab ${tab === "dashboard" ? "active-dash" : ""}`} onClick={() => setTab("dashboard")}><OrderIcon name="grid" size={14} /> Dashboard</button>
-          <button className={`order-tab ${tab === "wo" ? "active-wo" : ""}`} onClick={() => { setTab("wo"); setFilterStatus("All"); }}>
-            <OrderIcon name="briefcase" size={14} /> Work Orders
-            <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: tab === "wo" ? "rgba(255,255,255,0.3)" : "#f1f5f9", color: tab === "wo" ? "#fff" : "#64748b" }}>{workOrders.length}</span>
-            {woOverdue > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: "#ef4444", color: "#fff" }}>{woOverdue}</span>}
-          </button>
-          <button className={`order-tab ${tab === "po" ? "active-po" : ""}`} onClick={() => { setTab("po"); setFilterStatus("All"); }}>
-            <OrderIcon name="shopping" size={14} /> Purchase Orders
-            <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: tab === "po" ? "rgba(255,255,255,0.3)" : "#f1f5f9", color: tab === "po" ? "#fff" : "#64748b" }}>{purchaseOrders.length}</span>
-            {poOverdue > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: "#ef4444", color: "#fff" }}>{poOverdue}</span>}
-          </button>
+      {/* ── Summary strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px,1fr))", gap: 12, marginBottom: 24 }}>
+        {summaryStatuses.map(status => {
+          const count = allOrders.filter(o => o.status === status).length;
+          const woCount = allOrders.filter(o => o.status === status && o._type === "wo").length;
+          const poCount = allOrders.filter(o => o.status === status && o._type === "po").length;
+          const color = orderStatusColors[status];
+          return (
+            <div key={status} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
+              onClick={() => { setFilterStatus(status); setView("list"); }}>
+              <div className="stat-label">{status}</div>
+              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
+              <div className="stat-sub">{woCount} WO · {poCount} PO</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="section-toolbar">
+        <div className="search-bar" style={{ flex: 1, minWidth: 120, maxWidth: 320 }}>
+          <Icon name="search" size={14} />
+          <input placeholder="Search orders, jobs, contractors..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn btn-primary btn-sm" style={{ background: "#2563eb" }} onClick={() => openNew("wo")}><OrderIcon name="plus" size={14} /> WO</button>
-          <button className="btn btn-primary btn-sm" style={{ background: "#059669" }} onClick={() => openNew("po")}><OrderIcon name="plus" size={14} /> PO</button>
+        <select className="form-control" style={{ width: "auto", minWidth: 120 }} value={filterType} onChange={e => setFilterType(e.target.value)}>
+          <option value="all">All Types</option>
+          <option value="wo">Work Orders</option>
+          <option value="po">Purchase Orders</option>
+        </select>
+        <select className="form-control" style={{ width: "auto", minWidth: 140 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <option value="All">All Statuses</option>
+          {ORDER_STATUSES.map(s => <option key={s}>{s}</option>)}
+        </select>
+        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accentColor, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accentColor, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: accentColor, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
+        </div>
+        <div className="section-action-btns">
+          <button className="btn btn-primary" style={{ background: "#2563eb" }} onClick={() => openNew("wo")}><OrderIcon name="plus" size={14} /> New WO</button>
+          <button className="btn btn-primary" style={{ background: "#059669" }} onClick={() => openNew("po")}><OrderIcon name="plus" size={14} /> New PO</button>
         </div>
       </div>
-      {tab === "dashboard" && <OrdersDashboard workOrders={workOrders} purchaseOrders={purchaseOrders} jobs={jobs} onView={(t, o) => openOrder(t, o, "view")} onEdit={(t, o) => openOrder(t, o, "edit")} onStatusChange={(type, updated) => { (type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.map(o => o.id === updated.id ? updated : o)); }} />}
-      {tab !== "dashboard" && (
-        <>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginBottom: 20 }}>
-            <div className="search-bar" style={{ maxWidth: 320 }}>
-              <Icon name="search" size={14} />
-              <input placeholder={"Search " + (isWO ? "work orders" : "purchase orders") + "..."} value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
-            <select className="form-control" style={{ width: "auto", minWidth: 160 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-              <option value="All">All Statuses</option>
-              {ORDER_STATUSES.map(s => <option key={s}>{s}</option>)}
-            </select>
-          </div>
-          {filtered.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">{isWO ? "📋" : "📦"}</div>
-              <div className="empty-state-text">{"No " + (isWO ? "work orders" : "purchase orders") + " found"}</div>
-              <div className="empty-state-sub">Try adjusting your filters or create a new order</div>
-            </div>
-          ) : (
-            <div className="order-cards-grid">{filtered.map(o => <OrderCard key={o.id} type={tab} order={o} jobs={jobs} onOpen={o => openOrder(tab, o, "view")} onDelete={handleDelete} />)}</div>
-          )}
-        </>
+      {filtered.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">📋</div>
+          <div className="empty-state-text">No orders found</div>
+          <div className="empty-state-sub">Try adjusting your filters or create a new order</div>
+        </div>
+      ) : view === "kanban" ? (
+        <div className="kanban" style={{ gridTemplateColumns: `repeat(${ORDER_STATUSES.filter(s => s !== "Cancelled").length}, minmax(200px,1fr))` }}>
+          {ORDER_STATUSES.filter(s => s !== "Cancelled").map(col => {
+            const colOrders = filtered.filter(o => o.status === col);
+            return (
+              <div key={col} className="kanban-col">
+                <div className="kanban-col-header">
+                  <span>{col}</span>
+                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colOrders.length}</span>
+                </div>
+                {colOrders.map(o => {
+                  const jd = orderJobDisplay(jobs.find(j => j.id === o.jobId));
+                  const partyName = o._type === "wo" ? o.contractorName : o.supplierName;
+                  return (
+                    <div key={o._type + o.id} className="kanban-card" onClick={() => openOrder(o._type, o, "view")}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: o._type === "wo" ? "#dbeafe" : "#d1fae5", color: o._type === "wo" ? "#2563eb" : "#059669" }}>{o._type === "wo" ? "WO" : "PO"}</span>
+                        <span style={{ fontWeight: 700, fontSize: 12, flex: 1 }}>{o.ref}</span>
+                      </div>
+                      {partyName && <div style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>{partyName}</div>}
+                      {jd && <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>{jd.ref} · {jd.name}</div>}
+                      {o.dueDate && <div style={{ fontSize: 11, marginBottom: 4 }}><DueDateChip dateStr={o.dueDate} isTerminal={ORDER_TERMINAL.includes(o.status)} /></div>}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      ) : view === "grid" ? (
+        <div className="order-cards-grid">{filtered.map(o => <OrderCard key={o._type + o.id} type={o._type} order={o} jobs={jobs} onOpen={o => openOrder(o._type || (workOrders.find(w => w.id === o.id) ? "wo" : "po"), o, "view")} onDelete={(id) => handleDelete(o._type, id)} />)}</div>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="data-table">
+            <thead><tr>
+              <th>TYPE</th>
+              <th>REF</th>
+              <th>CONTRACTOR / SUPPLIER</th>
+              <th>JOB</th>
+              <th>STATUS</th>
+              <th>ISSUE DATE</th>
+              <th>DUE DATE</th>
+              <th></th>
+            </tr></thead>
+            <tbody>{filtered.map(o => {
+              const jd = orderJobDisplay(jobs.find(j => j.id === o.jobId));
+              const partyName = o._type === "wo" ? o.contractorName : o.supplierName;
+              return (
+                <tr key={o._type + o.id} style={{ cursor: "pointer" }} onClick={() => openOrder(o._type, o, "view")}>
+                  <td><span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: o._type === "wo" ? "#dbeafe" : "#d1fae5", color: o._type === "wo" ? "#2563eb" : "#059669" }}>{o._type === "wo" ? "WO" : "PO"}</span></td>
+                  <td style={{ fontWeight: 600 }}>{o.ref}</td>
+                  <td>{partyName || <span style={{ color: "#94a3b8", fontStyle: "italic" }}>—</span>}</td>
+                  <td>{jd ? jd.ref + " · " + jd.name : "—"}</td>
+                  <td><OrderStatusBadge status={o.status} /></td>
+                  <td>{orderFmtDate(o.issueDate)}</td>
+                  <td><DueDateChip dateStr={o.dueDate} isTerminal={ORDER_TERMINAL.includes(o.status)} /></td>
+                  <td><button onClick={e => { e.stopPropagation(); handleDelete(o._type, o.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }} title="Delete"><Icon name="delete" size={14} /></button></td>
+                </tr>
+              );
+            })}</tbody>
+          </table>
+        </div>
       )}
       {modal && <OrderDrawer type={modal.type} order={modal.order} initialMode={modal.order ? (modal.mode || "view") : "edit"} onSave={handleSave} onClose={() => setModal(null)} jobs={jobs} onTransition={(updated) => { (modal.type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.map(o => o.id === updated.id ? updated : o)); setModal(m => m ? { ...m, order: updated } : null); }} />}
     </div>
@@ -1451,144 +1604,526 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedule, onNav }) => {
-  const active = jobs.filter(j => j.status === "in_progress").length;
-  const totalRevenue = invoices.filter(i => i.status === "paid").reduce((s, inv) => s + calcQuoteTotal(inv), 0);
-  const pendingInvoices = invoices.filter(i => i.status !== "paid").reduce((s, inv) => s + calcQuoteTotal(inv), 0);
-  const totalHours = timeEntries.reduce((s, t) => s + t.hours, 0);
-  const pendingBills = bills.filter(b => b.status === "pending").reduce((s, b) => s + b.amount, 0);
+const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedule, workOrders = [], purchaseOrders = [], contractors = [], suppliers = [], onNav }) => {
+  // ── Financial KPIs ──
+  const totalQuoted = quotes.filter(q => q.status !== "declined").reduce((s, q) => s + calcQuoteTotal(q), 0);
+  const revenueCollected = invoices.filter(i => i.status === "paid").reduce((s, inv) => s + calcQuoteTotal(inv), 0);
+  const outstandingInv = invoices.filter(i => ["sent", "overdue"].includes(i.status)).reduce((s, inv) => s + calcQuoteTotal(inv), 0);
+  const outstandingInvCount = invoices.filter(i => ["sent", "overdue"].includes(i.status)).length;
+  const unpostedBills = bills.filter(b => ["inbox", "linked", "approved"].includes(b.status));
+  const unpostedBillsTotal = unpostedBills.reduce((s, b) => s + b.amount, 0);
 
-  const recentJobs = [...jobs].sort((a, b) => b.id - a.id).slice(0, 5);
+  // ── Section counts & metrics ──
+  const activeJobs = jobs.filter(j => j.status === "in_progress").length;
+  const completedJobs = jobs.filter(j => j.status === "completed").length;
+  const overdueJobs = jobs.filter(j => j.dueDate && daysUntil(j.dueDate) < 0 && j.status !== "completed" && j.status !== "cancelled").length;
+  const activeWOs = workOrders.filter(wo => !["Cancelled", "Billed", "Completed"].includes(wo.status)).length;
+  const overdueWOs = workOrders.filter(wo => wo.dueDate && daysUntil(wo.dueDate) < 0 && !["Cancelled", "Billed", "Completed"].includes(wo.status)).length;
+  const woAwaitingAcceptance = workOrders.filter(wo => wo.status === "Sent").length;
+  const activePOs = purchaseOrders.filter(po => !["Cancelled", "Billed", "Completed"].includes(po.status)).length;
+  const overduePOs = purchaseOrders.filter(po => po.dueDate && daysUntil(po.dueDate) < 0 && !["Cancelled", "Billed", "Completed"].includes(po.status)).length;
+  const totalHours = timeEntries.reduce((s, t) => s + t.hours, 0);
+  const billableHours = timeEntries.filter(t => t.billable).reduce((s, t) => s + t.hours, 0);
+  const billableRatio = totalHours > 0 ? Math.round((billableHours / totalHours) * 100) : 0;
+  const pipelineQuotes = quotes.filter(q => ["draft", "sent"].includes(q.status));
+  const pipelineTotal = pipelineQuotes.reduce((s, q) => s + calcQuoteTotal(q), 0);
+  const quoteDrafts = quotes.filter(q => q.status === "draft").length;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const startOfWeek = (() => { const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.toISOString().slice(0, 10); })();
+  const endOfWeek = (() => { const d = new Date(startOfWeek); d.setDate(d.getDate() + 6); return d.toISOString().slice(0, 10); })();
+
+  // ── Profit margin ──
+  const totalBillsCost = bills.reduce((s, b) => s + b.amount, 0);
+  const totalInvoiced = invoices.reduce((s, inv) => s + calcQuoteTotal(inv), 0);
+  const margin = totalInvoiced > 0 ? Math.round(((totalInvoiced - totalBillsCost) / totalInvoiced) * 100) : 0;
+
+  // ── Lists ──
+  const upcomingSchedule = [...schedule].filter(s => s.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 7);
+  const todaySchedule = schedule.filter(s => s.date === todayStr);
+  const recentBills = [...bills].sort((a, b) => (b.date || "").localeCompare(a.date || "")).slice(0, 5);
+  const recentTime = [...timeEntries].sort((a, b) => (b.date || "").localeCompare(a.date || "")).slice(0, 4);
+  const workerHours = Object.entries(
+    timeEntries.reduce((acc, t) => {
+      if (!acc[t.worker]) acc[t.worker] = { total: 0, billable: 0 };
+      acc[t.worker].total += t.hours;
+      if (t.billable) acc[t.worker].billable += t.hours;
+      return acc;
+    }, {})
+  ).sort((a, b) => b[1].total - a[1].total);
+
+  // ── Action items (things needing attention) ──
+  const actionItems = [];
+  if (overdueJobs > 0) actionItems.push({ label: `${overdueJobs} overdue job${overdueJobs > 1 ? "s" : ""}`, color: "#dc2626", section: "jobs", icon: "jobs" });
+  if (quoteDrafts > 0) actionItems.push({ label: `${quoteDrafts} draft quote${quoteDrafts > 1 ? "s" : ""} to send`, color: SECTION_COLORS.quotes.accent, section: "quotes", icon: "quotes" });
+  if (overdueWOs > 0) actionItems.push({ label: `${overdueWOs} overdue work order${overdueWOs > 1 ? "s" : ""}`, color: "#dc2626", section: "orders", icon: "orders" });
+  if (woAwaitingAcceptance > 0) actionItems.push({ label: `${woAwaitingAcceptance} WO${woAwaitingAcceptance > 1 ? "s" : ""} awaiting acceptance`, color: SECTION_COLORS.wo.accent, section: "orders", icon: "orders" });
+  const inboxBills = bills.filter(b => b.status === "inbox").length;
+  if (inboxBills > 0) actionItems.push({ label: `${inboxBills} bill${inboxBills > 1 ? "s" : ""} in inbox to link`, color: SECTION_COLORS.bills.accent, section: "bills", icon: "bills" });
+  if (outstandingInvCount > 0) actionItems.push({ label: `${outstandingInvCount} outstanding invoice${outstandingInvCount > 1 ? "s" : ""}`, color: "#dc2626", section: "invoices", icon: "invoices" });
+
+  const jobStatusLabels = { draft: "Draft", scheduled: "Scheduled", quoted: "Quoted", in_progress: "In Progress", completed: "Completed" };
+  const jobStatusColors = { draft: "#888", scheduled: "#0891b2", quoted: "#7c3aed", in_progress: "#ea580c", completed: "#16a34a" };
+  const billStatusColors = { inbox: "#888", linked: "#2563eb", approved: "#059669", posted: "#111" };
+  const billStatusLabels = { inbox: "Inbox", linked: "Linked", approved: "Approved", posted: "Posted" };
 
   return (
     <div>
-      <div className="stat-grid">
-        <div className="stat-card dark">
-          <div className="stat-label">Active Jobs</div>
-          <div className="stat-value">{active}</div>
-          <div className="stat-sub">{jobs.length} total jobs</div>
+      {/* ── ROW 1: Financial Hero Strip (full width) ── */}
+      <div className="stat-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 24 }}>
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.quotes.accent}`, cursor: "pointer" }} onClick={() => onNav("quotes")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="quotes" size={13} /><div className="stat-label">Total Quoted</div></div>
+          <div className="stat-value">{fmt(totalQuoted)}</div>
+          <div className="stat-sub">{quotes.filter(q => q.status !== "declined").length} quotes in pipeline</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Revenue Collected</div>
-          <div className="stat-value">{fmt(totalRevenue)}</div>
-          <div className="stat-sub">from paid invoices</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Outstanding Invoices</div>
-          <div className="stat-value">{fmt(pendingInvoices)}</div>
-          <div className="stat-sub">{invoices.filter(i => i.status !== "paid").length} unpaid</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Hours Logged</div>
-          <div className="stat-value">{totalHours}</div>
-          <div className="stat-sub">across all jobs</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Pending Bills</div>
-          <div className="stat-value">{fmt(pendingBills)}</div>
-          <div className="stat-sub">{bills.filter(b => b.status === "pending").length} awaiting approval</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Clients</div>
-          <div className="stat-value">{clients.length}</div>
-          <div className="stat-sub">active accounts</div>
-        </div>
-      </div>
-
-      <div className="dashboard-grid" style={{ display: "grid", gap: 20 }}>
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Recent Jobs</span>
-            <button className="btn btn-ghost btn-sm" onClick={() => onNav("jobs")}>View all <Icon name="arrow_right" size={12} /></button>
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.invoices.accent}`, cursor: "pointer" }} onClick={() => onNav("invoices")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="invoices" size={13} /><div className="stat-label">Revenue Collected</div></div>
+          <div className="stat-value">{fmt(revenueCollected)}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+            <div style={{ flex: 1, height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: totalQuoted > 0 ? `${Math.min(100, Math.round((revenueCollected / totalQuoted) * 100))}%` : "0%", background: SECTION_COLORS.invoices.accent, borderRadius: 2 }} />
+            </div>
+            <span style={{ fontSize: 11, color: "#999", fontWeight: 600 }}>{totalQuoted > 0 ? Math.round((revenueCollected / totalQuoted) * 100) : 0}%</span>
           </div>
-          <div style={{ overflow: "hidden" }}>
-            {recentJobs.map(job => {
-              const client = clients.find(c => c.id === job.clientId);
-              return (
-                <div key={job.id} style={{ padding: "12px 20px", borderBottom: "1px solid #f5f5f5", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => onNav("jobs")}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{job.title}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{client?.name}</div>
-                  </div>
-                  <StatusBadge status={job.status} />
-                </div>
-              );
+        </div>
+        <div className="stat-card" style={{ borderTop: `3px solid ${outstandingInvCount > 0 ? "#dc2626" : "#e5e5e5"}`, cursor: "pointer" }} onClick={() => onNav("invoices")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="invoices" size={13} /><div className="stat-label">Outstanding</div></div>
+          <div className="stat-value" style={{ color: outstandingInvCount > 0 ? "#dc2626" : undefined }}>{fmt(outstandingInv)}</div>
+          <div className="stat-sub">{outstandingInvCount > 0 ? `${outstandingInvCount} unpaid — action needed` : "All invoices paid ✓"}</div>
+        </div>
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.bills.accent}`, cursor: "pointer" }} onClick={() => onNav("bills")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="bills" size={13} /><div className="stat-label">Costs to Process</div></div>
+          <div className="stat-value">{fmt(unpostedBillsTotal)}</div>
+          <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
+            {["inbox", "linked", "approved"].map(st => {
+              const c = bills.filter(b => b.status === st).length;
+              return c > 0 ? <span key={st} style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: billStatusColors[st], color: "#fff" }}>{c} {billStatusLabels[st]}</span> : null;
             })}
           </div>
         </div>
+      </div>
 
+      {/* ── ROW 2: Operational KPI Cards (5 cards with progress/actions) ── */}
+      <SectionLabel>Operations</SectionLabel>
+      <div className="stat-grid" style={{ gridTemplateColumns: "repeat(5, 1fr)", marginBottom: 24 }}>
+        {/* Active Jobs */}
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.jobs.accent}`, cursor: "pointer" }} onClick={() => onNav("jobs")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="jobs" size={13} /><div className="stat-label">Active Jobs</div></div>
+          <div className="stat-value">{activeJobs}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+            <div style={{ flex: 1, height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: jobs.length > 0 ? `${Math.round((completedJobs / jobs.length) * 100)}%` : "0%", background: "#16a34a", borderRadius: 2 }} />
+            </div>
+            <span style={{ fontSize: 11, color: "#999", fontWeight: 600 }}>{completedJobs}/{jobs.length}</span>
+          </div>
+          {overdueJobs > 0 && <div style={{ fontSize: 11, color: "#dc2626", fontWeight: 600, marginTop: 4 }}>⚠ {overdueJobs} overdue</div>}
+        </div>
+
+        {/* Work Orders */}
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.wo.accent}`, cursor: "pointer" }} onClick={() => onNav("orders")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="orders" size={13} /><div className="stat-label">Work Orders</div></div>
+          <div className="stat-value">{activeWOs}</div>
+          <div className="stat-sub">{workOrders.length} total · {fmt(workOrders.reduce((s, wo) => s + (parseFloat(wo.poLimit) || 0), 0))}</div>
+          {woAwaitingAcceptance > 0 && <div style={{ fontSize: 11, color: SECTION_COLORS.wo.accent, fontWeight: 600, marginTop: 2 }}>{woAwaitingAcceptance} awaiting acceptance</div>}
+          {overdueWOs > 0 && <div style={{ fontSize: 11, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>⚠ {overdueWOs} overdue</div>}
+        </div>
+
+        {/* Purchase Orders */}
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.po.accent}`, cursor: "pointer" }} onClick={() => onNav("orders")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="orders" size={13} /><div className="stat-label">Purchase Orders</div></div>
+          <div className="stat-value">{activePOs}</div>
+          <div className="stat-sub">{purchaseOrders.length} total</div>
+          {overduePOs > 0 && <div style={{ fontSize: 11, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>⚠ {overduePOs} overdue</div>}
+        </div>
+
+        {/* Hours Logged */}
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.time.accent}`, cursor: "pointer" }} onClick={() => onNav("time")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="time" size={13} /><div className="stat-label">Hours Logged</div></div>
+          <div className="stat-value">{totalHours}h</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+            <div style={{ flex: 1, height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${billableRatio}%`, background: SECTION_COLORS.time.accent, borderRadius: 2 }} />
+            </div>
+            <span style={{ fontSize: 11, color: "#999", fontWeight: 600 }}>{billableRatio}%</span>
+          </div>
+          <div className="stat-sub">{billableHours}h billable</div>
+        </div>
+
+        {/* Open Quotes */}
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.quotes.accent}`, cursor: "pointer" }} onClick={() => onNav("quotes")}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="quotes" size={13} /><div className="stat-label">Open Quotes</div></div>
+          <div className="stat-value">{pipelineQuotes.length}</div>
+          <div className="stat-sub">{fmt(pipelineTotal)} pending</div>
+          {quoteDrafts > 0 && <div style={{ fontSize: 11, color: SECTION_COLORS.quotes.accent, fontWeight: 600, marginTop: 2 }}>{quoteDrafts} draft{quoteDrafts > 1 ? "s" : ""} to send</div>}
+        </div>
+      </div>
+
+      {/* ── ROW 3: This Week Schedule (full width, week grid) ── */}
+      {(() => {
+        const schAccent = SECTION_COLORS.schedule.accent;
+        const getMonday = (d) => { const dt = new Date(d + "T12:00:00"); const day = dt.getDay(); const diff = day === 0 ? -6 : 1 - day; dt.setDate(dt.getDate() + diff); return dt.toISOString().slice(0, 10); };
+        const mon = getMonday(todayStr);
+        const weekDays = Array.from({ length: 7 }, (_, i) => { const d = new Date(mon + "T12:00:00"); d.setDate(d.getDate() + i); return d.toISOString().slice(0, 10); });
+        const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const weekdays = weekDays.slice(0, 5);
+        const weekend = weekDays.slice(5);
+        const weekEntries = schedule.filter(s => s.date >= weekDays[0] && s.date <= weekDays[6]);
+        const thisWeekTotal = weekEntries.length;
+
+        const DashDayCol = ({ dateStr, dayName, isCompact }) => {
+          const d = new Date(dateStr + "T12:00:00");
+          const isToday = dateStr === todayStr;
+          const isPast = dateStr < todayStr;
+          const isWeekend = dayName === "Sat" || dayName === "Sun";
+          const dayEntries = weekEntries.filter(e => e.date === dateStr);
+          return (
+            <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`} style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? schAccent : "#e5e5e5", cursor: "pointer" }} onClick={() => onNav("schedule")}>
+              <div className="schedule-day-header" style={{ background: isToday ? schAccent : isPast ? "#e0e0e0" : "#f5f5f5", color: isToday ? "#fff" : isPast ? "#999" : "#333" }}>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>{dayName}</span>
+                <span style={{ fontSize: isCompact ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</span>
+              </div>
+              <div className="schedule-day-body">
+                {dayEntries.length === 0 && <div style={{ fontSize: 11, color: "#ccc", textAlign: "center", padding: isCompact ? "6px 0" : "12px 0" }}>—</div>}
+                {dayEntries.map(entry => {
+                  const job = jobs.find(j => j.id === entry.jobId);
+                  return (
+                    <div key={entry.id} className="schedule-card" style={{ borderLeft: `3px solid ${isPast ? "#ddd" : schAccent}` }}>
+                      <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 2, lineHeight: 1.3 }}>{entry.title}</div>
+                      {entry.startTime && <div style={{ fontSize: 10, color: "#aaa" }}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}
+                      {(entry.assignedTo || []).length > 0 && (
+                        <div style={{ marginTop: 4 }}><AvatarGroup names={entry.assignedTo} max={2} /></div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        };
+
+        return (
+          <div className="card" style={{ marginBottom: 20 }}>
+            <div className="card-header">
+              <span className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon name="schedule" size={16} /> This Week
+                {todaySchedule.length > 0 && <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: schAccent, color: "#fff" }}>{todaySchedule.length} today</span>}
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#999" }}>{thisWeekTotal} task{thisWeekTotal !== 1 ? "s" : ""}</span>
+              </span>
+              <button className="btn btn-ghost btn-sm" onClick={() => onNav("schedule")}>View all <Icon name="arrow_right" size={12} /></button>
+            </div>
+            <div style={{ padding: "12px 16px" }}>
+              <div className="schedule-week-grid">
+                {weekdays.map((dateStr, i) => (
+                  <DashDayCol key={dateStr} dateStr={dateStr} dayName={dayNames[i]} />
+                ))}
+                <div className="schedule-weekend-stack">
+                  {weekend.map((dateStr, i) => (
+                    <DashDayCol key={dateStr} dateStr={dateStr} dayName={dayNames[5 + i]} isCompact />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Action Items Banner (if any) ── */}
+      {actionItems.length > 0 && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+          {actionItems.map((item, i) => (
+            <div key={i} onClick={() => onNav(item.section)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 8, background: "#fff", border: `1px solid ${item.color}30`, cursor: "pointer", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = item.color + "10"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
+              <Icon name={item.icon} size={12} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: item.color }}>{item.label}</span>
+              <Icon name="arrow_right" size={10} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── ROW 4: Detail Panels (2-col grid) ── */}
+      <div className="dashboard-grid" style={{ display: "grid", gap: 20 }}>
+
+        {/* Panel 1: Jobs by Status */}
         <div className="card">
           <div className="card-header">
             <span className="card-title">Jobs by Status</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNav("jobs")}>View all <Icon name="arrow_right" size={12} /></button>
           </div>
           <div className="card-body">
             {["draft","scheduled","quoted","in_progress","completed"].map(s => {
               const count = jobs.filter(j => j.status === s).length;
               const pct = jobs.length ? (count / jobs.length) * 100 : 0;
-              const labels = { draft: "Draft", scheduled: "Scheduled", quoted: "Quoted", in_progress: "In Progress", completed: "Completed" };
               return (
                 <div key={s} style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 5 }}>
-                    <span style={{ fontWeight: 600 }}>{labels[s]}</span>
-                    <span style={{ color: "#999" }}>{count} jobs</span>
+                    <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: jobStatusColors[s], display: "inline-block" }} />
+                      {jobStatusLabels[s]}
+                    </span>
+                    <span style={{ color: "#999" }}>{count} job{count !== 1 ? "s" : ""}</span>
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${pct}%`, background: s === "in_progress" ? "#111" : s === "completed" ? "#555" : "#ccc" }} />
+                    <div className="progress-fill" style={{ width: `${pct}%`, background: jobStatusColors[s] }} />
                   </div>
                 </div>
               );
             })}
+            {/* Job completion rate */}
+            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Completion Rate</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: jobs.length > 0 ? "#16a34a" : "#999" }}>{jobs.length > 0 ? Math.round((completedJobs / jobs.length) * 100) : 0}%</span>
+            </div>
           </div>
         </div>
 
+        {/* Panel 2: Quote & Invoice Pipeline */}
         <div className="card">
           <div className="card-header">
-            <span className="card-title">Upcoming Schedule</span>
-            <button className="btn btn-ghost btn-sm" onClick={() => onNav("schedule")}>View all <Icon name="arrow_right" size={12} /></button>
-          </div>
-          <div style={{ overflow: "hidden" }}>
-            {[...schedule].sort((a,b) => a.date > b.date ? 1 : -1).slice(0, 4).map(s => {
-              const job = jobs.find(j => j.id === s.jobId);
-              return (
-                <div key={s.id} style={{ padding: "11px 20px", borderBottom: "1px solid #f5f5f5", display: "flex", gap: 12, alignItems: "center" }}>
-                  <div style={{ background: "#111", color: "#fff", borderRadius: 6, padding: "6px 10px", textAlign: "center", minWidth: 44 }}>
-                    <div style={{ fontSize: 14, fontWeight: 800 }}>{new Date(s.date).getDate()}</div>
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>{new Date(s.date).toLocaleString("en", { month: "short" })}</div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{s.title}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{job?.title}</div>
-                  </div>
-                  <AvatarGroup names={s.assignedTo} max={2} />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Quote Pipeline</span>
-            <button className="btn btn-ghost btn-sm" onClick={() => onNav("quotes")}>View all <Icon name="arrow_right" size={12} /></button>
+            <span className="card-title">Quote & Invoice Pipeline</span>
           </div>
           <div className="card-body">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <SectionLabel>Quotes</SectionLabel>
+              <button className="btn btn-ghost btn-sm" onClick={() => onNav("quotes")} style={{ marginTop: -4 }}>View all <Icon name="arrow_right" size={12} /></button>
+            </div>
             {quotes.map(q => {
               const job = jobs.find(j => j.id === q.jobId);
               return (
-                <div key={q.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div>
+                <div key={q.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: 13 }}>{q.number}</div>
                     <div style={{ fontSize: 12, color: "#999" }}>{job?.title}</div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{ fontWeight: 700, fontSize: 13 }}>{fmt(calcQuoteTotal(q))}</div>
                     <StatusBadge status={q.status} />
                   </div>
                 </div>
               );
             })}
+            {/* Quote conversion rate */}
+            {quotes.length > 0 && (
+              <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Conversion Rate</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: "#16a34a" }}>{Math.round((quotes.filter(q => q.status === "accepted").length / quotes.length) * 100)}%</span>
+              </div>
+            )}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, marginBottom: 8 }}>
+              <SectionLabel>Invoices</SectionLabel>
+              <button className="btn btn-ghost btn-sm" onClick={() => onNav("invoices")} style={{ marginTop: -4 }}>View all <Icon name="arrow_right" size={12} /></button>
+            </div>
+            {invoices.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No invoices yet</div>}
+            {invoices.map(inv => {
+              const job = jobs.find(j => j.id === inv.jobId);
+              const overdue = inv.dueDate && daysUntil(inv.dueDate) < 0 && inv.status !== "paid";
+              return (
+                <div key={inv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{inv.number}</div>
+                    <div style={{ fontSize: 12, color: overdue ? "#dc2626" : "#999" }}>{job?.title}{inv.dueDate ? ` · Due ${inv.dueDate}` : ""}{overdue ? " — OVERDUE" : ""}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>{fmt(calcQuoteTotal(inv))}</div>
+                    <StatusBadge status={inv.status} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
+
+        {/* Panel 3: Bills & Cost Tracking */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Bills & Cost Tracking</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNav("bills")}>View all <Icon name="arrow_right" size={12} /></button>
+          </div>
+          <div className="card-body">
+            {/* Bill workflow pipeline */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 14 }}>
+              {["inbox", "linked", "approved", "posted"].map((st, i) => {
+                const count = bills.filter(b => b.status === st).length;
+                return (
+                  <Fragment key={st}>
+                    <div style={{ flex: 1, textAlign: "center", padding: "6px 4px", borderRadius: 6, background: count > 0 ? billStatusColors[st] + "15" : "#f5f5f5", border: `1px solid ${count > 0 ? billStatusColors[st] + "40" : "#e5e5e5"}` }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: count > 0 ? billStatusColors[st] : "#ccc" }}>{count}</div>
+                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", color: count > 0 ? billStatusColors[st] : "#bbb", letterSpacing: "0.04em" }}>{billStatusLabels[st]}</div>
+                    </div>
+                    {i < 3 && <span style={{ color: "#ccc", fontSize: 12 }}>→</span>}
+                  </Fragment>
+                );
+              })}
+            </div>
+            {recentBills.map(b => {
+              const job = jobs.find(j => j.id === b.jobId);
+              return (
+                <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{b.supplier}</div>
+                    <div style={{ fontSize: 12, color: "#999" }}>{b.invoiceNo}{job ? ` · ${job.title}` : ""}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>{fmt(b.amount)}</div>
+                    <StatusBadge status={b.status} />
+                  </div>
+                </div>
+              );
+            })}
+            {/* Margin indicator */}
+            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Gross Margin</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Panel 4: Orders Snapshot */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Orders</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNav("orders")}>View all <Icon name="arrow_right" size={12} /></button>
+          </div>
+          <div className="card-body">
+            <SectionLabel>Work Orders</SectionLabel>
+            {workOrders.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No work orders</div>}
+            {workOrders.map(wo => {
+              const overdue = wo.dueDate && daysUntil(wo.dueDate) < 0 && !["Cancelled", "Billed", "Completed"].includes(wo.status);
+              const dueSoon = wo.dueDate && daysUntil(wo.dueDate) >= 0 && daysUntil(wo.dueDate) <= 3 && !["Cancelled", "Billed", "Completed"].includes(wo.status);
+              return (
+                <div key={wo.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{wo.ref}</div>
+                    <div style={{ fontSize: 12, color: "#999" }}>{wo.contractorName}{wo.trade ? ` · ${wo.trade}` : ""}{wo.dueDate ? ` · Due ${wo.dueDate}` : ""}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#dc2626" }}>OVERDUE</span>}
+                    {dueSoon && !overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#d97706" }}>DUE SOON</span>}
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: (ORDER_STATUS_COLORS[wo.status] || {}).bg || "#f0f0f0", color: (ORDER_STATUS_COLORS[wo.status] || {}).text || "#666" }}>{wo.status}</span>
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{ marginTop: 14 }}><SectionLabel>Purchase Orders</SectionLabel></div>
+            {purchaseOrders.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No purchase orders</div>}
+            {purchaseOrders.map(po => {
+              const overdue = po.dueDate && daysUntil(po.dueDate) < 0 && !["Cancelled", "Billed", "Completed"].includes(po.status);
+              const dueSoon = po.dueDate && daysUntil(po.dueDate) >= 0 && daysUntil(po.dueDate) <= 3 && !["Cancelled", "Billed", "Completed"].includes(po.status);
+              return (
+                <div key={po.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{po.ref}</div>
+                    <div style={{ fontSize: 12, color: "#999" }}>{po.supplierName}{po.dueDate ? ` · Due ${po.dueDate}` : ""}</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#dc2626" }}>OVERDUE</span>}
+                    {dueSoon && !overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#d97706" }}>DUE SOON</span>}
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: (ORDER_STATUS_COLORS[po.status] || {}).bg || "#f0f0f0", color: (ORDER_STATUS_COLORS[po.status] || {}).text || "#666" }}>{po.status}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {/* Order value summary */}
+            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Total Committed</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "#333" }}>{fmt(workOrders.reduce((s, wo) => s + (parseFloat(wo.poLimit) || 0), 0) + purchaseOrders.reduce((s, po) => s + ((po.lines || []).reduce((ls, l) => ls + (l.qty || 0) * (l.rate || 0), 0)), 0))}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Panel 5: Team & Time */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Team & Time</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNav("time")}>View all <Icon name="arrow_right" size={12} /></button>
+          </div>
+          <div className="card-body">
+            <SectionLabel>Team Utilisation</SectionLabel>
+            {workerHours.map(([name, hrs]) => {
+              const ratio = hrs.total > 0 ? (hrs.billable / hrs.total) * 100 : 0;
+              return (
+                <div key={name} style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                    <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 22, height: 22, borderRadius: "50%", background: "#111", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700 }}>{name.split(" ").map(n => n[0]).join("")}</span>
+                      {name}
+                    </span>
+                    <span style={{ color: "#999" }}>{hrs.total}h <span style={{ color: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : "#dc2626", fontWeight: 700 }}>({Math.round(ratio)}%)</span></span>
+                  </div>
+                  <div style={{ height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${ratio}%`, background: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : SECTION_COLORS.time.accent, borderRadius: 2 }} />
+                  </div>
+                </div>
+              );
+            })}
+            {workerHours.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No time entries</div>}
+            <div style={{ marginTop: 14 }}><SectionLabel>Recent Entries</SectionLabel></div>
+            {recentTime.map(t => {
+              const job = jobs.find(j => j.id === t.jobId);
+              return (
+                <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{t.worker}</div>
+                    <div style={{ fontSize: 12, color: "#999" }}>{job?.title} · {t.date}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>{t.hours}h</div>
+                    {t.billable && <span style={{ fontSize: 10, color: "#16a34a", fontWeight: 600 }}>BILLABLE</span>}
+                    {!t.billable && <span style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>NON-BILL</span>}
+                  </div>
+                </div>
+              );
+            })}
+            {/* Overall billable rate */}
+            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Billable Rate</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: billableRatio >= 80 ? "#16a34a" : billableRatio >= 50 ? "#d97706" : "#dc2626" }}>{billableRatio}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Panel 6: Profitability by Job */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Job Profitability</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNav("jobs")}>View all <Icon name="arrow_right" size={12} /></button>
+          </div>
+          <div className="card-body">
+            {jobs.map(job => {
+              const jobQuotes = quotes.filter(q => q.jobId === job.id);
+              const jobInvoices = invoices.filter(inv => inv.jobId === job.id);
+              const jobBills = bills.filter(b => b.jobId === job.id);
+              const quoted = jobQuotes.reduce((s, q) => s + calcQuoteTotal(q), 0);
+              const invoiced = jobInvoices.reduce((s, inv) => s + calcQuoteTotal(inv), 0);
+              const costs = jobBills.reduce((s, b) => s + b.amount, 0);
+              const jobMargin = invoiced > 0 ? Math.round(((invoiced - costs) / invoiced) * 100) : (quoted > 0 ? Math.round(((quoted - costs) / quoted) * 100) : null);
+              const costPct = quoted > 0 ? Math.min(100, Math.round((costs / quoted) * 100)) : 0;
+              return (
+                <div key={job.id} style={{ marginBottom: 14 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                    <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                      {job.title}
+                      <StatusBadge status={job.status} />
+                    </span>
+                    {jobMargin !== null && <span style={{ fontWeight: 700, color: jobMargin >= 20 ? "#16a34a" : jobMargin >= 0 ? "#d97706" : "#dc2626" }}>{jobMargin}% margin</span>}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ flex: 1, height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden", position: "relative" }}>
+                      <div style={{ position: "absolute", height: "100%", width: `${costPct}%`, background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#16a34a", borderRadius: 3, transition: "width 0.3s" }} />
+                    </div>
+                    <span style={{ fontSize: 11, color: "#999", minWidth: 80, textAlign: "right" }}>{fmt(costs)} / {fmt(quoted || invoiced)}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {/* Total margin */}
+            <div style={{ marginTop: 4, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Overall Margin</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
@@ -1660,6 +2195,72 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
     }
     setShowTimeForm(false);
     setTimeForm({ worker: (staff && staff[0]?.name) || TEAM[0], date: new Date().toISOString().slice(0,10), startTime: "", endTime: "", hours: 1, description: "", billable: true });
+  };
+
+  // ── Notes state & CRUD ──
+  const [showNoteForm, setShowNoteForm] = useState(false);
+  const [noteForm, setNoteForm] = useState({ text: "", category: "general", attachments: [] });
+  const [noteFilter, setNoteFilter] = useState("all");
+  const [lightboxImg, setLightboxImg] = useState(null);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editNoteForm, setEditNoteForm] = useState({ text: "", category: "general", attachments: [] });
+
+  const addNote = () => {
+    if (!noteForm.text.trim() && noteForm.attachments.length === 0) return;
+    const note = { id: Date.now(), text: noteForm.text, category: noteForm.category, attachments: noteForm.attachments.map(a => ({ id: a.id, name: a.name, size: a.size, type: a.type, dataUrl: a.dataUrl })), createdAt: new Date().toISOString(), createdBy: CURRENT_USER };
+    const catLabel = NOTE_CATEGORIES.find(c => c.id === noteForm.category)?.label || noteForm.category;
+    setJobs(js => js.map(j => j.id === job.id ? { ...j, notes: [...(j.notes || []), note], activityLog: addLog(j.activityLog, `Added note (${catLabel})`) } : j));
+    setNoteForm({ text: "", category: "general", attachments: [] });
+    setShowNoteForm(false);
+  };
+
+  const startEditNote = (note) => {
+    setEditingNoteId(note.id);
+    setEditNoteForm({ text: note.text, category: note.category, attachments: [...(note.attachments || [])] });
+  };
+
+  const saveEditNote = () => {
+    if (!editNoteForm.text.trim() && editNoteForm.attachments.length === 0) return;
+    const catLabel = NOTE_CATEGORIES.find(c => c.id === editNoteForm.category)?.label || editNoteForm.category;
+    setJobs(js => js.map(j => j.id === job.id ? { ...j, notes: (j.notes || []).map(n => n.id === editingNoteId ? { ...n, text: editNoteForm.text, category: editNoteForm.category, attachments: editNoteForm.attachments.map(a => ({ id: a.id, name: a.name, size: a.size, type: a.type, dataUrl: a.dataUrl })) } : n), activityLog: addLog(j.activityLog, `Edited note (${catLabel})`) } : j));
+    setEditingNoteId(null);
+  };
+
+  const cancelEditNote = () => {
+    setEditingNoteId(null);
+    setEditNoteForm({ text: "", category: "general", attachments: [] });
+  };
+
+  const handleEditNoteFiles = (e) => {
+    const picked = Array.from(e.target.files || []);
+    const mapped = picked.map(f => ({ id: genId(), name: f.name, size: f.size, type: f.type, dataUrl: null, _file: f }));
+    mapped.forEach(m => {
+      if (m.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = ev => { setEditNoteForm(prev => ({ ...prev, attachments: prev.attachments.map(x => x.id === m.id ? { ...x, dataUrl: ev.target.result } : x) })); };
+        reader.readAsDataURL(m._file);
+      }
+    });
+    setEditNoteForm(prev => ({ ...prev, attachments: [...prev.attachments, ...mapped] }));
+    e.target.value = "";
+  };
+
+  const deleteNote = (noteId) => {
+    setJobs(js => js.map(j => j.id === job.id ? { ...j, notes: (j.notes || []).filter(n => n.id !== noteId), activityLog: addLog(j.activityLog, "Deleted a note") } : j));
+  };
+
+  const handleNoteFiles = (e) => {
+    const picked = Array.from(e.target.files || []);
+    const mapped = picked.map(f => ({ id: genId(), name: f.name, size: f.size, type: f.type, dataUrl: null, _file: f }));
+    mapped.forEach(m => {
+      if (m.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = ev => { setNoteForm(prev => ({ ...prev, attachments: prev.attachments.map(x => x.id === m.id ? { ...x, dataUrl: ev.target.result } : x) })); };
+        reader.readAsDataURL(m._file);
+      }
+    });
+    setNoteForm(prev => ({ ...prev, attachments: [...prev.attachments, ...mapped] }));
+    e.target.value = "";
   };
 
   const delTime = async (id) => {
@@ -1758,8 +2359,10 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
     } catch (err) { console.error('Failed to save job:', err); }
   };
 
+  const jobNotes = job.notes || [];
   const tabs = [
     { id: "overview", label: "Overview" },
+    { id: "notes", label: `Notes (${jobNotes.length})` },
     { id: "quotes", label: `Quotes (${jobQuotes.length})` },
     { id: "invoices", label: `Invoices (${jobInvoices.length})` },
     { id: "time", label: `Time (${totalHours}h)` },
@@ -2280,6 +2883,141 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
             </div>
           )}
 
+          {tab === "notes" && (
+            <div>
+              {/* Toolbar */}
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+                <select value={noteFilter} onChange={e => setNoteFilter(e.target.value)} style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13, color: "#334155", background: "#fff" }}>
+                  <option value="all">All Categories</option>
+                  {NOTE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+                <div style={{ flex: 1 }} />
+                <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => setShowNoteForm(true)}>
+                  + Add Note
+                </button>
+              </div>
+
+              {/* New note form */}
+              {showNoteForm && (
+                <div style={{ padding: 16, background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 16 }}>
+                  <textarea value={noteForm.text} onChange={e => setNoteForm(prev => ({ ...prev, text: e.target.value }))} placeholder="Write a note…" rows={3} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+                  {/* Category pills */}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
+                    {NOTE_CATEGORIES.map(c => (
+                      <button key={c.id} onClick={() => setNoteForm(prev => ({ ...prev, category: c.id }))} style={{ padding: "4px 12px", borderRadius: 20, border: noteForm.category === c.id ? `2px solid ${c.color}` : "1px solid #e2e8f0", background: noteForm.category === c.id ? c.color + "18" : "#fff", color: noteForm.category === c.id ? c.color : "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{c.label}</button>
+                    ))}
+                  </div>
+                  {/* File attachments */}
+                  <div style={{ marginTop: 12 }}>
+                    {noteForm.attachments.length > 0 && (
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                        {noteForm.attachments.map(f => (
+                          <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}>
+                            {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }} /> : <FileIconBadge name={f.name} />}
+                            <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#334155" }}>{f.name}</span>
+                            <span style={{ color: "#94a3b8", fontSize: 11 }}>{fmtFileSize(f.size)}</span>
+                            <button onClick={() => setNoteForm(prev => ({ ...prev, attachments: prev.attachments.filter(x => x.id !== f.id) }))} style={{ padding: 2, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer", lineHeight: 1 }}>✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <label style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", border: "2px dashed #e2e8f0", borderRadius: 8, cursor: "pointer", color: "#64748b", fontSize: 12, fontWeight: 500 }}>
+                      <OrderIcon name="upload" size={14} />
+                      Attach photos / files
+                      <input type="file" multiple style={{ display: "none" }} onChange={handleNoteFiles} accept="*/*" />
+                    </label>
+                  </div>
+                  {/* Actions */}
+                  <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setShowNoteForm(false); setNoteForm({ text: "", category: "general", attachments: [] }); }}>Cancel</button>
+                    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={addNote} disabled={!noteForm.text.trim() && noteForm.attachments.length === 0}>Save Note</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Notes list */}
+              {(() => {
+                const filtered = [...jobNotes].filter(n => noteFilter === "all" || n.category === noteFilter).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                if (filtered.length === 0) return (
+                  <div style={{ textAlign: "center", padding: "40px 20px", color: "#94a3b8" }}>
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>📝</div>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{jobNotes.length === 0 ? "No notes yet" : "No notes match this filter"}</div>
+                    <div style={{ fontSize: 12, marginTop: 4 }}>Click "+ Add Note" to get started</div>
+                  </div>
+                );
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {filtered.map(note => {
+                      const cat = NOTE_CATEGORIES.find(c => c.id === note.category) || NOTE_CATEGORIES[0];
+                      const isEditing = editingNoteId === note.id;
+                      if (isEditing) {
+                        const eCat = NOTE_CATEGORIES.find(c => c.id === editNoteForm.category) || NOTE_CATEGORIES[0];
+                        return (
+                          <div key={note.id} style={{ padding: 14, background: "#f8fafc", borderRadius: 10, border: `2px solid ${eCat.color}`, borderLeft: `3px solid ${eCat.color}` }}>
+                            <textarea value={editNoteForm.text} onChange={e => setEditNoteForm(prev => ({ ...prev, text: e.target.value }))} rows={3} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
+                              {NOTE_CATEGORIES.map(c => (
+                                <button key={c.id} onClick={() => setEditNoteForm(prev => ({ ...prev, category: c.id }))} style={{ padding: "4px 12px", borderRadius: 20, border: editNoteForm.category === c.id ? `2px solid ${c.color}` : "1px solid #e2e8f0", background: editNoteForm.category === c.id ? c.color + "18" : "#fff", color: editNoteForm.category === c.id ? c.color : "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{c.label}</button>
+                              ))}
+                            </div>
+                            <div style={{ marginTop: 12 }}>
+                              {editNoteForm.attachments.length > 0 && (
+                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                                  {editNoteForm.attachments.map(f => (
+                                    <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}>
+                                      {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }} /> : <FileIconBadge name={f.name} />}
+                                      <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#334155" }}>{f.name}</span>
+                                      <button onClick={() => setEditNoteForm(prev => ({ ...prev, attachments: prev.attachments.filter(x => x.id !== f.id) }))} style={{ padding: 2, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer", lineHeight: 1 }}>✕</button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <label style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", border: "2px dashed #e2e8f0", borderRadius: 8, cursor: "pointer", color: "#64748b", fontSize: 12, fontWeight: 500 }}>
+                                <OrderIcon name="upload" size={14} />
+                                Attach photos / files
+                                <input type="file" multiple style={{ display: "none" }} onChange={handleEditNoteFiles} accept="*/*" />
+                              </label>
+                            </div>
+                            <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
+                              <button className="btn btn-ghost btn-sm" onClick={cancelEditNote}>Cancel</button>
+                              <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={saveEditNote} disabled={!editNoteForm.text.trim() && editNoteForm.attachments.length === 0}>Save</button>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={note.id} onClick={() => startEditNote(note)} style={{ padding: 14, background: "#fff", borderRadius: 10, border: "1px solid #e2e8f0", borderLeft: `3px solid ${cat.color}`, cursor: "pointer", transition: "box-shadow 0.15s" }} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                            <span style={{ padding: "2px 10px", borderRadius: 20, background: cat.color + "18", color: cat.color, fontSize: 11, fontWeight: 700 }}>{cat.label}</span>
+                            <span style={{ fontSize: 11, color: "#94a3b8" }}>{new Date(note.createdAt).toLocaleString()}</span>
+                            <span style={{ fontSize: 11, color: "#64748b", fontWeight: 500 }}>{note.createdBy}</span>
+                            <div style={{ flex: 1 }} />
+                            <button onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer", lineHeight: 1 }} title="Delete note">🗑</button>
+                          </div>
+                          {note.text && <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{note.text}</div>}
+                          {note.attachments && note.attachments.length > 0 && (
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                              {note.attachments.map(att => (
+                                att.type && att.type.startsWith("image/") && att.dataUrl ? (
+                                  <img key={att.id} src={att.dataUrl} alt={att.name} onClick={(e) => { e.stopPropagation(); setLightboxImg(att.dataUrl); }} style={{ width: 64, height: 64, borderRadius: 6, objectFit: "cover", border: "1px solid #e2e8f0", cursor: "pointer" }} />
+                                ) : (
+                                  <div key={att.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0", fontSize: 12 }}>
+                                    <FileIconBadge name={att.name} />
+                                    <span style={{ color: "#334155", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{att.name}</span>
+                                  </div>
+                                )
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           {tab === "activity" && (
             <div>
               <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2292,6 +3030,14 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         </div>
         )}
     </SectionDrawer>
+
+    {/* ── Image Lightbox ────────────────────────────────────────────── */}
+    {lightboxImg && (
+      <div onClick={() => setLightboxImg(null)} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+        <img src={lightboxImg} alt="Attachment" style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: 8, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }} />
+        <button onClick={() => setLightboxImg(null)} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 20, width: 36, height: 36, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+      </div>
+    )}
 
     {/* ── Inline Quote Drawer ─────────────────────────────────────────── */}
     {editingQuote && (() => {
@@ -2598,10 +3344,29 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
     hours: timeEntries.filter(t => t.jobId === jobId).reduce((s,t) => s + t.hours, 0),
   });
 
+  const jobStatusColors = { draft: "#888", scheduled: "#0891b2", quoted: "#7c3aed", in_progress: "#d97706", completed: "#16a34a", cancelled: "#dc2626" };
+  const jobStatusLabels = { draft: "Draft", scheduled: "Scheduled", quoted: "Quoted", in_progress: "In Progress", completed: "Completed" };
+
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
-        <div className="search-bar" style={{ flex: 1 }}>
+      {/* ── Summary strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12, marginBottom: 24 }}>
+        {Object.entries(jobStatusLabels).map(([key, label]) => {
+          const count = jobs.filter(j => j.status === key).length;
+          const color = jobStatusColors[key];
+          return (
+            <div key={key} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
+              onClick={() => { setFilterStatus(key); setView("list"); }}>
+              <div className="stat-label">{label}</div>
+              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
+              <div className="stat-sub">{count === 1 ? "job" : "jobs"}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="section-toolbar">
+        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search jobs, clients..." />
         </div>
         <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
@@ -2609,12 +3374,64 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
         </select>
         <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
         </div>
-        <button className="btn btn-primary" style={{ background: SECTION_COLORS.jobs.accent }} onClick={openNew}><Icon name="plus" size={14} />New Job</button>
+        <div className="section-action-btns">
+          <button className="btn btn-primary" style={{ background: SECTION_COLORS.jobs.accent }} onClick={openNew}><Icon name="plus" size={14} />New Job</button>
+        </div>
       </div>
 
-      {view === "list" ? (
+      {view === "grid" ? (
+        <div className="order-cards-grid">
+          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">🔧</div><div className="empty-state-text">No jobs found</div></div>}
+          {filtered.map(job => {
+            const client = clients.find(c => c.id === job.clientId);
+            const site = client?.sites?.find(s => s.id === job.siteId);
+            const stats = jobStats(job.id);
+            const priorityColors = { high: "#111", medium: "#777", low: "#ccc" };
+            return (
+              <div key={job.id} className="order-card" onClick={() => openDetail(job)}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.jobs.light, color: SECTION_COLORS.jobs.accent }}>
+                      <Icon name="jobs" size={15} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{job.title}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{job.startDate || "No start date"}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <StatusBadge status={job.status} />
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {client?.name || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No client</span>}
+                </div>
+                {site && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>📍 {site.name}</div>}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: priorityColors[job.priority], background: "#f5f5f5", padding: "2px 8px", borderRadius: 12 }}>
+                    <span className={`priority-dot priority-${job.priority}`} /> {job.priority}
+                  </span>
+                  {stats.quotes > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{stats.quotes} quote{stats.quotes !== 1 ? "s" : ""}</span>}
+                  {stats.invoices > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{stats.invoices} inv</span>}
+                  {stats.hours > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{stats.hours}h</span>}
+                </div>
+                {(job.assignedTo || []).length > 0 && <div style={{ marginBottom: 4 }}><AvatarGroup names={job.assignedTo} max={4} /></div>}
+                <SectionProgressBar status={job.status} section="jobs" />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: job.dueDate ? "#334155" : "#ccc" }}>{job.dueDate ? `Due ${job.dueDate}` : "No due date"}</span>
+                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                    <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>
+                    <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : view === "list" ? (
         <div className="card">
           <div className="table-wrap">
             <table>
@@ -2858,6 +3675,8 @@ const Clients = ({ clients, setClients, jobs }) => {
   const [clientMode, setClientMode] = useState("edit");
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", sites: [] });
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [view, setView] = useState("grid");
   const [expandedSites, setExpandedSites] = useState({});
   // Site sub-modal
   const [showSiteModal, setShowSiteModal] = useState(false);
@@ -2865,10 +3684,14 @@ const Clients = ({ clients, setClients, jobs }) => {
   const [siteClientId, setSiteClientId] = useState(null);
   const [siteForm, setSiteForm] = useState({ name: "", address: "", contactName: "", contactPhone: "" });
 
-  const filtered = clients.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    (c.email || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = clients.filter(c => {
+    const q = search.toLowerCase();
+    const matchSearch = c.name.toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q);
+    const clientJobs = jobs.filter(j => j.clientId === c.id);
+    const isActive = clientJobs.some(j => ["in_progress", "scheduled", "quoted", "draft"].includes(j.status));
+    const matchStatus = filterStatus === "all" || (filterStatus === "active" ? isActive : !isActive);
+    return matchSearch && matchStatus;
+  });
 
   const openNew = () => {
     setEditClient(null);
@@ -2951,14 +3774,51 @@ const Clients = ({ clients, setClients, jobs }) => {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-        <div className="search-bar" style={{ flex: 1 }}>
+      <div className="section-toolbar">
+        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." />
         </div>
-        <button className="btn btn-primary" style={{ background: SECTION_COLORS.clients.accent }} onClick={openNew}><Icon name="plus" size={14} />New Client</button>
+        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <option value="all">All Clients</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.clients.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.clients.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
+        </div>
+        <div className="section-action-btns"><button className="btn btn-primary" style={{ background: SECTION_COLORS.clients.accent }} onClick={openNew}><Icon name="plus" size={14} />New Client</button></div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {view === "list" && (
+        <div className="card">
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Sites</th><th>Jobs</th><th>Active</th><th></th></tr></thead>
+              <tbody>
+                {filtered.length === 0 && <tr><td colSpan={7}><div className="empty-state"><div className="empty-state-icon">👥</div><div className="empty-state-text">No clients found</div></div></td></tr>}
+                {filtered.map(client => {
+                  const clientJobs = jobs.filter(j => j.clientId === client.id);
+                  const active = clientJobs.filter(j => j.status === "in_progress").length;
+                  return (
+                    <tr key={client.id} onClick={() => openEdit(client)} style={{ cursor: "pointer" }}>
+                      <td style={{ fontWeight: 600 }}>{client.name}</td>
+                      <td style={{ fontSize: 12, color: "#666" }}>{client.email || "—"}</td>
+                      <td style={{ fontSize: 12, color: "#666" }}>{client.phone || "—"}</td>
+                      <td>{(client.sites || []).length}</td>
+                      <td>{clientJobs.length}</td>
+                      <td>{active > 0 ? <span className="chip" style={{ background: "#111", color: "#fff" }}>{active}</span> : "—"}</td>
+                      <td onClick={e => e.stopPropagation()}><button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(client.id)}><Icon name="trash" size={12} /></button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {view === "grid" && <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {filtered.map(client => {
           const clientJobs = jobs.filter(j => j.clientId === client.id);
           const active = clientJobs.filter(j => j.status === "in_progress").length;
@@ -3057,7 +3917,7 @@ const Clients = ({ clients, setClients, jobs }) => {
             </div>
           );
         })}
-      </div>
+      </div>}
 
       {/* Client edit/new drawer */}
       {showModal && (() => {
@@ -3162,6 +4022,439 @@ const Clients = ({ clients, setClients, jobs }) => {
   );
 };
 
+// ── Contractors ───────────────────────────────────────────────────────────────
+const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [mode, setMode] = useState("edit");
+  const [form, setForm] = useState({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" });
+  const [search, setSearch] = useState("");
+  const [filterTrade, setFilterTrade] = useState("all");
+  const [view, setView] = useState("list");
+
+  const filtered = contractors.filter(c => {
+    const q = search.toLowerCase();
+    const matchSearch = !search || c.name.toLowerCase().includes(q) || (c.contact || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q) || (c.trade || "").toLowerCase().includes(q);
+    const matchTrade = filterTrade === "all" || c.trade === filterTrade;
+    return matchSearch && matchTrade;
+  });
+  const trades = [...new Set(contractors.map(c => c.trade).filter(Boolean))].sort();
+
+  const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" }); setShowModal(true); };
+  const openEdit = (c) => { setEditItem(c); setMode("view"); setForm(c); setShowModal(true); };
+  const save = () => {
+    if (editItem) {
+      setContractors(cs => cs.map(c => c.id === editItem.id ? { ...c, ...form } : c));
+    } else {
+      setContractors(cs => [...cs, { ...form, id: "c" + Date.now() }]);
+    }
+    setShowModal(false);
+  };
+  const del = (id) => { if (window.confirm("Delete this contractor?")) setContractors(cs => cs.filter(c => c.id !== id)); };
+  const accent = SECTION_COLORS.contractors.accent;
+
+  const getWOCount = (c) => workOrders.filter(wo => wo.contractorName === c.name || wo.contractorId === c.id).length;
+  const getActiveWOs = (c) => workOrders.filter(wo => (wo.contractorName === c.name || wo.contractorId === c.id) && !ORDER_TERMINAL.includes(wo.status));
+  const getContractorBills = (c) => bills.filter(b => b.supplier === c.name);
+  const getBillTotal = (c) => getContractorBills(c).reduce((s, b) => s + (b.amount || 0), 0);
+
+  return (
+    <div>
+      <div className="section-toolbar">
+        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+          <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search contractors..." />
+        </div>
+        <select className="form-control" style={{ width: "auto" }} value={filterTrade} onChange={e => setFilterTrade(e.target.value)}>
+          <option value="all">All Trades</option>
+          {CONTRACTOR_TRADES.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
+        </div>
+        <div className="section-action-btns"><button className="btn btn-primary" style={{ background: accent }} onClick={openNew}><Icon name="plus" size={14} />New Contractor</button></div>
+      </div>
+
+      {view === "list" && (
+        <div className="card">
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Contact</th><th>Email</th><th>Phone</th><th>Trade</th><th>Active WOs</th><th>Bills</th><th>Bill Total</th><th></th></tr></thead>
+              <tbody>
+                {filtered.length === 0 && <tr><td colSpan={9}><div className="empty-state"><div className="empty-state-icon">🏗️</div><div className="empty-state-text">No contractors found</div></div></td></tr>}
+                {filtered.map(c => {
+                  const billCount = getContractorBills(c).length;
+                  const billTotal = getBillTotal(c);
+                  return (
+                  <tr key={c.id} style={{ cursor: "pointer" }} onClick={() => openEdit(c)}>
+                    <td style={{ fontWeight: 700 }}>{c.name}</td>
+                    <td>{c.contact || "—"}</td>
+                    <td style={{ color: "#666" }}>{c.email || "—"}</td>
+                    <td style={{ color: "#666" }}>{c.phone || "—"}</td>
+                    <td><span className="chip" style={{ fontSize: 10 }}>{c.trade}</span></td>
+                    <td><span style={{ fontWeight: 600, color: getActiveWOs(c).length > 0 ? accent : "#ccc" }}>{getActiveWOs(c).length}</span></td>
+                    <td><span style={{ fontWeight: 600, color: billCount > 0 ? SECTION_COLORS.bills.accent : "#ccc" }}>{billCount}</span></td>
+                    <td style={{ fontWeight: billTotal > 0 ? 600 : 400, color: billTotal > 0 ? "#111" : "#ccc" }}>{billTotal > 0 ? fmt(billTotal) : "—"}</td>
+                    <td onClick={e => e.stopPropagation()}><button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(c.id)}><Icon name="trash" size={12} /></button></td>
+                  </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {view === "grid" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">🏗️</div><div className="empty-state-text">No contractors found</div></div>}
+          {filtered.map(c => {
+            const activeWOs = getActiveWOs(c);
+            const billCount = getContractorBills(c).length;
+            const billTotal = getBillTotal(c);
+            return (
+              <div key={c.id} className="card" onClick={() => openEdit(c)} style={{ cursor: "pointer", padding: 18 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</span>
+                  <span className="chip" style={{ fontSize: 10, background: hexToRgba(accent, 0.12), color: accent }}>{c.trade}</span>
+                </div>
+                {c.contact && <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>{c.contact}</div>}
+                {c.email && <div style={{ fontSize: 12, color: "#999", marginBottom: 2 }}>{c.email}</div>}
+                {c.phone && <div style={{ fontSize: 12, color: "#999", marginBottom: 8 }}>{c.phone}</div>}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: billCount > 0 ? 8 : 0 }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <span className="chip" style={{ fontSize: 10 }}>{getWOCount(c)} WO{getWOCount(c) !== 1 ? "s" : ""} · {activeWOs.length} active</span>
+                    {billCount > 0 && <span className="chip" style={{ fontSize: 10 }}>{billCount} bill{billCount !== 1 ? "s" : ""}</span>}
+                  </div>
+                  <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={e => { e.stopPropagation(); del(c.id); }}><Icon name="trash" size={12} /></button>
+                </div>
+                {billTotal > 0 && <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>Bills total: <span style={{ color: "#111" }}>{fmt(billTotal)}</span></div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {view === "kanban" && (
+        <div className="kanban" style={{ gridTemplateColumns: `repeat(${trades.length || 1}, minmax(200px,1fr))` }}>
+          {(trades.length > 0 ? trades : ["Other"]).map(trade => {
+            const colItems = filtered.filter(c => c.trade === trade);
+            return (
+              <div key={trade} className="kanban-col">
+                <div className="kanban-col-header">
+                  <span>{trade}</span>
+                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colItems.length}</span>
+                </div>
+                {colItems.map(c => {
+                  const activeWOs = getActiveWOs(c);
+                  const billCount = getContractorBills(c).length;
+                  return (
+                    <div key={c.id} className="kanban-card" onClick={() => openEdit(c)}>
+                      <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>{c.name}</div>
+                      {c.contact && <div style={{ fontSize: 11, color: "#999", marginBottom: 2 }}>{c.contact}</div>}
+                      {c.phone && <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{c.phone}</div>}
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                        {activeWOs.length > 0 && <span className="chip" style={{ fontSize: 10 }}>{activeWOs.length} active WO{activeWOs.length > 1 ? "s" : ""}</span>}
+                        {billCount > 0 && <span className="chip" style={{ fontSize: 10 }}>{billCount} bill{billCount > 1 ? "s" : ""}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {showModal && (() => {
+        const isNew = !editItem;
+        const linkedWOs = editItem ? workOrders.filter(wo => wo.contractorName === editItem.name || wo.contractorId === editItem.id) : [];
+        const linkedBills = editItem ? bills.filter(b => b.supplier === editItem.name) : [];
+        const linkedBillTotal = linkedBills.reduce((s, b) => s + (b.amount || 0), 0);
+        return (
+          <SectionDrawer
+            accent={accent}
+            icon={<Icon name="contractors" size={16} />}
+            typeLabel="Contractor"
+            title={editItem ? editItem.name : "New Contractor"}
+            mode={mode} setMode={setMode}
+            showToggle={!isNew} isNew={isNew}
+            onClose={() => setShowModal(false)}
+            footer={
+              <div style={{ padding: "12px 20px", borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                {mode === "edit" && <button className="btn btn-primary" style={{ background: accent }} onClick={save}><Icon name="check" size={14} />{isNew ? "Create" : "Save"}</button>}
+              </div>
+            }
+          >
+            <div style={{ padding: 20 }}>
+              {mode === "view" ? (
+                <>
+                  <ViewField label="Name" value={form.name} />
+                  <ViewField label="Contact Person" value={form.contact} />
+                  <ViewField label="Email" value={form.email} />
+                  <ViewField label="Phone" value={form.phone} />
+                  <ViewField label="Trade" value={form.trade} />
+                  <ViewField label="ABN" value={form.abn} />
+                  <ViewField label="Notes" value={form.notes} />
+                  {linkedWOs.length > 0 && (
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Linked Work Orders</div>
+                      {linkedWOs.map(wo => (
+                        <div key={wo.id} style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
+                          <span style={{ fontWeight: 700 }}>{wo.ref}</span>
+                          <OrderStatusBadge status={wo.status} />
+                          {wo.dueDate && <span style={{ float: "right", color: "#888" }}>{wo.dueDate}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {linkedBills.length > 0 && (
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Bills</div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#111" }}>{fmt(linkedBillTotal)}</span>
+                      </div>
+                      {linkedBills.map(b => {
+                        const bsc = BILL_STATUS_COLORS[b.status] || { bg: "#f0f0f0", text: "#666" };
+                        return (
+                        <div key={b.id} style={{ padding: "10px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                            <div>
+                              <span style={{ fontWeight: 700 }}>{b.supplier}</span>
+                              {b.invoiceNo && <span style={{ color: "#aaa", fontFamily: "monospace", fontSize: 11, marginLeft: 8 }}>{b.invoiceNo}</span>}
+                            </div>
+                            <span style={{ fontWeight: 700 }}>{fmt(b.amount)}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                              <span className="badge" style={{ background: bsc.bg, color: bsc.text, fontSize: 10 }}>{BILL_STATUS_LABELS[b.status] || b.status}</span>
+                              <span className="chip" style={{ fontSize: 10 }}>{b.category}</span>
+                            </div>
+                            <span style={{ fontSize: 11, color: "#999" }}>{b.date}</span>
+                          </div>
+                          {b.description && <div style={{ fontSize: 11, color: "#777", marginTop: 4 }}>{b.description}</div>}
+                        </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="form-group"><label>Name *</label><input className="form-control" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+                  <div className="form-group"><label>Contact Person</label><input className="form-control" value={form.contact} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} /></div>
+                  <div className="form-group"><label>Email</label><input className="form-control" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+                  <div className="form-group"><label>Phone</label><input className="form-control" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+                  <div className="form-group"><label>Trade</label><select className="form-control" value={form.trade} onChange={e => setForm(f => ({ ...f, trade: e.target.value }))}>{CONTRACTOR_TRADES.map(t => <option key={t}>{t}</option>)}</select></div>
+                  <div className="form-group"><label>ABN</label><input className="form-control" value={form.abn} onChange={e => setForm(f => ({ ...f, abn: e.target.value }))} /></div>
+                  <div className="form-group"><label>Notes</label><textarea className="form-control" rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
+                </>
+              )}
+            </div>
+          </SectionDrawer>
+        );
+      })()}
+    </div>
+  );
+};
+
+// ── Suppliers ─────────────────────────────────────────────────────────────────
+const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [mode, setMode] = useState("edit");
+  const [form, setForm] = useState({ name: "", contact: "", email: "", phone: "", abn: "", notes: "" });
+  const [search, setSearch] = useState("");
+  const [view, setView] = useState("list");
+
+  const filtered = suppliers.filter(s => {
+    const q = search.toLowerCase();
+    return !search || s.name.toLowerCase().includes(q) || (s.contact || "").toLowerCase().includes(q) || (s.email || "").toLowerCase().includes(q);
+  });
+
+  const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", abn: "", notes: "" }); setShowModal(true); };
+  const openEdit = (s) => { setEditItem(s); setMode("view"); setForm(s); setShowModal(true); };
+  const save = () => {
+    if (editItem) {
+      setSuppliers(ss => ss.map(s => s.id === editItem.id ? { ...s, ...form } : s));
+    } else {
+      setSuppliers(ss => [...ss, { ...form, id: "s" + Date.now() }]);
+    }
+    setShowModal(false);
+  };
+  const del = (id) => { if (window.confirm("Delete this supplier?")) setSuppliers(ss => ss.filter(s => s.id !== id)); };
+  const accent = SECTION_COLORS.suppliers.accent;
+
+  const getPOCount = (s) => purchaseOrders.filter(po => po.supplierName === s.name || po.supplierId === s.id).length;
+  const getActivePOs = (s) => purchaseOrders.filter(po => (po.supplierName === s.name || po.supplierId === s.id) && !ORDER_TERMINAL.includes(po.status));
+  const getBillCount = (s) => bills.filter(b => b.supplier === s.name).length;
+
+  const kanbanGroups = useMemo(() => {
+    const groups = { "Active POs": [], "Bills Only": [], "Inactive": [] };
+    filtered.forEach(s => {
+      if (getActivePOs(s).length > 0) groups["Active POs"].push(s);
+      else if (getBillCount(s) > 0) groups["Bills Only"].push(s);
+      else groups["Inactive"].push(s);
+    });
+    return groups;
+  }, [filtered, purchaseOrders, bills]);
+
+  return (
+    <div>
+      <div className="section-toolbar">
+        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+          <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search suppliers..." />
+        </div>
+        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
+        </div>
+        <div className="section-action-btns"><button className="btn btn-primary" style={{ background: accent }} onClick={openNew}><Icon name="plus" size={14} />New Supplier</button></div>
+      </div>
+
+      {view === "list" && (
+        <div className="card">
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Contact</th><th>Email</th><th>ABN</th><th>Phone</th><th>POs</th><th>Bills</th><th></th></tr></thead>
+              <tbody>
+                {filtered.length === 0 && <tr><td colSpan={8}><div className="empty-state"><div className="empty-state-icon">📦</div><div className="empty-state-text">No suppliers found</div></div></td></tr>}
+                {filtered.map(s => (
+                  <tr key={s.id} style={{ cursor: "pointer" }} onClick={() => openEdit(s)}>
+                    <td style={{ fontWeight: 700 }}>{s.name}</td>
+                    <td>{s.contact || "—"}</td>
+                    <td style={{ color: "#666" }}>{s.email || "—"}</td>
+                    <td style={{ fontFamily: "monospace", fontSize: 12, color: "#888" }}>{s.abn || "—"}</td>
+                    <td style={{ color: "#666" }}>{s.phone || "—"}</td>
+                    <td><span style={{ fontWeight: 600, color: getActivePOs(s).length > 0 ? accent : "#ccc" }}>{getPOCount(s)}</span></td>
+                    <td><span style={{ fontWeight: 600, color: getBillCount(s) > 0 ? "#dc2626" : "#ccc" }}>{getBillCount(s)}</span></td>
+                    <td onClick={e => e.stopPropagation()}><button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(s.id)}><Icon name="trash" size={12} /></button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {view === "grid" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">📦</div><div className="empty-state-text">No suppliers found</div></div>}
+          {filtered.map(s => (
+            <div key={s.id} className="card" onClick={() => openEdit(s)} style={{ cursor: "pointer", padding: 18 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{s.name}</div>
+              {s.contact && <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>{s.contact}</div>}
+              {s.email && <div style={{ fontSize: 12, color: "#999", marginBottom: 2 }}>{s.email}</div>}
+              {s.phone && <div style={{ fontSize: 12, color: "#999", marginBottom: 2 }}>{s.phone}</div>}
+              {s.abn && <div style={{ fontSize: 11, color: "#bbb", fontFamily: "monospace", marginBottom: 8 }}>ABN {s.abn}</div>}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <span className="chip" style={{ fontSize: 10 }}>{getPOCount(s)} PO{getPOCount(s) !== 1 ? "s" : ""}</span>
+                  <span className="chip" style={{ fontSize: 10 }}>{getBillCount(s)} bill{getBillCount(s) !== 1 ? "s" : ""}</span>
+                </div>
+                <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={e => { e.stopPropagation(); del(s.id); }}><Icon name="trash" size={12} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {view === "kanban" && (
+        <div className="kanban" style={{ gridTemplateColumns: "repeat(3, minmax(200px,1fr))" }}>
+          {Object.entries(kanbanGroups).map(([group, items]) => (
+            <div key={group} className="kanban-col">
+              <div className="kanban-col-header">
+                <span>{group}</span>
+                <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{items.length}</span>
+              </div>
+              {items.map(s => (
+                <div key={s.id} className="kanban-card" onClick={() => openEdit(s)}>
+                  <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>{s.name}</div>
+                  {s.contact && <div style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>{s.contact}</div>}
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {getPOCount(s) > 0 && <span className="chip" style={{ fontSize: 10 }}>{getPOCount(s)} PO{getPOCount(s) > 1 ? "s" : ""}</span>}
+                    {getBillCount(s) > 0 && <span className="chip" style={{ fontSize: 10 }}>{getBillCount(s)} bill{getBillCount(s) > 1 ? "s" : ""}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showModal && (() => {
+        const isNew = !editItem;
+        const linkedPOs = editItem ? purchaseOrders.filter(po => po.supplierName === editItem.name || po.supplierId === editItem.id) : [];
+        const linkedBills = editItem ? bills.filter(b => b.supplier === editItem.name) : [];
+        return (
+          <SectionDrawer
+            accent={accent}
+            icon={<Icon name="suppliers" size={16} />}
+            typeLabel="Supplier"
+            title={editItem ? editItem.name : "New Supplier"}
+            mode={mode} setMode={setMode}
+            showToggle={!isNew} isNew={isNew}
+            onClose={() => setShowModal(false)}
+            footer={
+              <div style={{ padding: "12px 20px", borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                {mode === "edit" && <button className="btn btn-primary" style={{ background: accent }} onClick={save}><Icon name="check" size={14} />{isNew ? "Create" : "Save"}</button>}
+              </div>
+            }
+          >
+            <div style={{ padding: 20 }}>
+              {mode === "view" ? (
+                <>
+                  <ViewField label="Name" value={form.name} />
+                  <ViewField label="Contact" value={form.contact} />
+                  <ViewField label="Email" value={form.email} />
+                  <ViewField label="Phone" value={form.phone} />
+                  <ViewField label="ABN" value={form.abn} />
+                  <ViewField label="Notes" value={form.notes} />
+                  {linkedPOs.length > 0 && (
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Purchase Orders</div>
+                      {linkedPOs.map(po => (
+                        <div key={po.id} style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
+                          <span style={{ fontWeight: 700 }}>{po.ref}</span>
+                          <OrderStatusBadge status={po.status} />
+                          {po.poLimit && <span style={{ float: "right", color: "#888" }}>${parseFloat(po.poLimit).toLocaleString()}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {linkedBills.length > 0 && (
+                    <div style={{ marginTop: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Bills</div>
+                      {linkedBills.map(b => (
+                        <div key={b.id} style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
+                          <span style={{ fontWeight: 700 }}>{b.supplier}</span>
+                          {b.invoiceNo && <span style={{ color: "#999", marginLeft: 8 }}>{b.invoiceNo}</span>}
+                          <span style={{ float: "right", fontWeight: 600 }}>{fmt(b.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="form-group"><label>Name *</label><input className="form-control" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+                  <div className="form-group"><label>Contact</label><input className="form-control" value={form.contact} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} /></div>
+                  <div className="form-group"><label>Email</label><input className="form-control" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+                  <div className="form-group"><label>Phone</label><input className="form-control" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+                  <div className="form-group"><label>ABN</label><input className="form-control" value={form.abn} onChange={e => setForm(f => ({ ...f, abn: e.target.value }))} /></div>
+                  <div className="form-group"><label>Notes</label><textarea className="form-control" rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
+                </>
+              )}
+            </div>
+          </SectionDrawer>
+        );
+      })()}
+    </div>
+  );
+};
+
 // ── Schedule ──────────────────────────────────────────────────────────────────
 const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
   const [showModal, setShowModal] = useState(false);
@@ -3169,10 +4462,23 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
   const [schedMode, setSchedMode] = useState("edit");
   const [form, setForm] = useState({ jobId: "", date: new Date().toISOString().slice(0,10), assignedTo: [], notes: "" });
   const [filterDate, setFilterDate] = useState("");
+  const [search, setSearch] = useState("");
+  const [view, setView] = useState("grouped");
 
   const today = new Date().toISOString().slice(0, 10);
   const sorted = [...schedule].sort((a, b) => a.date > b.date ? 1 : -1);
-  const displayed = filterDate ? sorted.filter(e => e.date === filterDate) : sorted;
+  const displayed = sorted.filter(e => {
+    const matchDate = !filterDate || e.date === filterDate;
+    if (!matchDate) return false;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    const job = jobs.find(j => j.id === e.jobId);
+    const client = clients.find(c => c.id === job?.clientId);
+    return (job?.title || "").toLowerCase().includes(q) ||
+      (client?.name || "").toLowerCase().includes(q) ||
+      (e.notes || "").toLowerCase().includes(q) ||
+      (e.assignedTo || []).some(n => n.toLowerCase().includes(q));
+  });
 
   const openNew = () => {
     setEditEntry(null);
@@ -3208,89 +4514,121 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
 
   const grouped = displayed.reduce((acc, e) => { (acc[e.date] = acc[e.date] || []).push(e); return acc; }, {});
 
+  // Week helpers for kanban view
+  const getMonday = (d) => { const dt = new Date(d + "T12:00:00"); const day = dt.getDay(); const diff = day === 0 ? -6 : 1 - day; dt.setDate(dt.getDate() + diff); return dt.toISOString().slice(0, 10); };
+  const todayMon = getMonday(today);
+  const nextMon = (() => { const d = new Date(todayMon + "T12:00:00"); d.setDate(d.getDate() + 7); return d.toISOString().slice(0, 10); })();
+  const weekDays = (mon) => Array.from({ length: 7 }, (_, i) => { const d = new Date(mon + "T12:00:00"); d.setDate(d.getDate() + i); return d.toISOString().slice(0, 10); });
+  const thisWeekDays = weekDays(todayMon);
+  const nextWeekDays = weekDays(nextMon);
+  const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  const accent = SECTION_COLORS.schedule.accent;
+
+  const DayCol = ({ dateStr, dayName, allEntries, isCompact }) => {
+    const d = new Date(dateStr + "T12:00:00");
+    const isToday = dateStr === today;
+    const isPast = dateStr < today;
+    const isWeekend = dayName === "Sat" || dayName === "Sun";
+    const dayEntries = allEntries.filter(e => e.date === dateStr);
+    return (
+      <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`} style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? accent : "#e5e5e5" }}>
+        <div className="schedule-day-header" style={{ background: isToday ? accent : isPast ? "#e0e0e0" : "#f5f5f5", color: isToday ? "#fff" : isPast ? "#999" : "#333" }}>
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>{dayName}</span>
+          <span style={{ fontSize: isCompact ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</span>
+        </div>
+        <div className="schedule-day-body">
+          {dayEntries.length === 0 && <div style={{ fontSize: 11, color: "#ccc", textAlign: "center", padding: isCompact ? "6px 0" : "12px 0" }}>—</div>}
+          {dayEntries.map(entry => {
+            const job = jobs.find(j => j.id === entry.jobId);
+            const client = clients.find(c => c.id === job?.clientId);
+            return (
+              <div key={entry.id} className="schedule-card" onClick={() => openEdit(entry)} style={{ borderLeft: `3px solid ${isPast ? "#ddd" : accent}` }}>
+                <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 2, lineHeight: 1.3 }}>{entry.title || job?.title || "Unknown"}</div>
+                {client && <div style={{ fontSize: 10, color: "#888", marginBottom: 3 }}>{client.name}</div>}
+                {entry.startTime && <div style={{ fontSize: 10, color: "#aaa" }}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}
+                {(entry.assignedTo || []).length > 0 && (
+                  <div style={{ marginTop: 4 }}><AvatarGroup names={entry.assignedTo} max={2} /></div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const WeekRow = ({ label, days, entries: allEntries }) => {
+    const weekdays = days.slice(0, 5);
+    const weekend = days.slice(5);
+    return (
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: "#555", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+        <div className="schedule-week-grid">
+          {weekdays.map((dateStr, i) => (
+            <DayCol key={dateStr} dateStr={dateStr} dayName={DAY_NAMES[i]} allEntries={allEntries} />
+          ))}
+          <div className="schedule-weekend-stack">
+            {weekend.map((dateStr, i) => (
+              <DayCol key={dateStr} dateStr={dateStr} dayName={DAY_NAMES[5 + i]} allEntries={allEntries} isCompact />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="section-toolbar">
+        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+          <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search jobs, team..." />
+        </div>
         <input type="date" className="form-control" style={{ width: "auto" }} value={filterDate} onChange={e => setFilterDate(e.target.value)} />
         {filterDate && <button className="btn btn-ghost btn-sm" onClick={() => setFilterDate("")} style={{ fontSize: 12 }}>Clear</button>}
-        <div style={{ flex: 1 }} />
-        <button className="btn btn-primary" style={{ background: SECTION_COLORS.schedule.accent }} onClick={openNew}><Icon name="plus" size={14} />Schedule Job</button>
+        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grouped" ? "" : "btn-ghost"}`} style={view === "grouped" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("grouped")}><Icon name="kanban" size={12} /></button>
+        </div>
+        <div className="section-action-btns"><button className="btn btn-primary" style={{ background: accent }} onClick={openNew}><Icon name="plus" size={14} />Schedule Job</button></div>
       </div>
 
-      {Object.keys(grouped).length === 0 && (
+      {displayed.length === 0 && (
         <div className="empty-state"><div className="empty-state-icon">📅</div><div className="empty-state-text">No schedule entries{filterDate ? " for this date" : ""}</div></div>
       )}
 
-      {Object.entries(grouped).map(([date, entries]) => {
-        const d = new Date(date + "T12:00:00");
-        const isToday = date === today;
-        const isPast = date < today;
-        return (
-          <div key={date} style={{ marginBottom: 28 }}>
-            {/* Day header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-              <div style={{ background: isToday ? "#111" : isPast ? "#e0e0e0" : "#f0f0f0", color: isToday ? "#fff" : "#555", borderRadius: 8, padding: "6px 14px", textAlign: "center", flexShrink: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  {d.toLocaleString("en", { month: "short" })}
-                </div>
-                <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</div>
-                <div style={{ fontSize: 10, color: isToday ? "#aaa" : "#888" }}>
-                  {d.toLocaleString("en", { weekday: "short" })}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>
-                  {isToday ? "Today · " : ""}
-                  {d.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-                </div>
-                <div style={{ fontSize: 12, color: "#aaa" }}>{entries.length} job{entries.length !== 1 ? "s" : ""} scheduled</div>
-              </div>
-            </div>
-
-            {/* Job cards for this day */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 4 }}>
-              {entries.map(entry => {
-                const job = jobs.find(j => j.id === entry.jobId);
-                const client = clients.find(c => c.id === job?.clientId);
-                const site = client?.sites?.find(s => s.id === job?.siteId);
-                return (
-                  <div key={entry.id} className="card" onClick={() => openEdit(entry)} style={{ padding: "14px 18px", borderLeft: `4px solid ${isPast ? "#ddd" : "#111"}`, cursor: "pointer", transition: "border-color 0.15s" }}>
-                    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
-                          <span style={{ fontWeight: 700, fontSize: 14 }}>{job?.title || "Unknown Job"}</span>
-                          {job && <StatusBadge status={job.status} />}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#777", marginBottom: entry.notes ? 6 : 0 }}>
-                          {client?.name}
-                          {site && <span style={{ color: "#aaa" }}> · {site.name}</span>}
-                        </div>
-                        {site?.contactName && (
-                          <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>
-                            👤 {site.contactName}
-                            {site.contactPhone && <span style={{ marginLeft: 10 }}>📞 {site.contactPhone}</span>}
-                          </div>
-                        )}
-                        {entry.notes && (
-                          <div style={{ fontSize: 12, color: "#999", fontStyle: "italic", marginTop: 4, padding: "6px 10px", background: "#fafafa", borderRadius: 6 }}>
-                            {entry.notes}
-                          </div>
-                        )}
-                        {(entry.assignedTo || []).length > 0 && (
-                          <div style={{ marginTop: 8 }}><AvatarGroup names={entry.assignedTo} max={5} /></div>
-                        )}
-                      </div>
-                      <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                        <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+      {view === "list" && displayed.length > 0 && (
+        <div className="card">
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Job</th><th>Client</th><th>Assigned</th><th>Notes</th><th></th></tr></thead>
+              <tbody>
+                {displayed.map(entry => {
+                  const job = jobs.find(j => j.id === entry.jobId);
+                  const client = clients.find(c => c.id === job?.clientId);
+                  return (
+                    <tr key={entry.id} onClick={() => openEdit(entry)} style={{ cursor: "pointer" }}>
+                      <td style={{ whiteSpace: "nowrap", fontWeight: 600 }}>{entry.date}</td>
+                      <td>{job?.title || "Unknown Job"}</td>
+                      <td style={{ fontSize: 12, color: "#666" }}>{client?.name || "—"}</td>
+                      <td>{(entry.assignedTo || []).length > 0 ? <AvatarGroup names={entry.assignedTo} max={3} /> : "—"}</td>
+                      <td style={{ fontSize: 12, color: "#888", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.notes || "—"}</td>
+                      <td onClick={e => e.stopPropagation()}><button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        );
-      })}
+        </div>
+      )}
+
+      {view === "grouped" && (
+        <>
+          <WeekRow label="This Week" days={thisWeekDays} entries={displayed} />
+          <WeekRow label="Next Week" days={nextWeekDays} entries={displayed} />
+        </>
+      )}
 
       {showModal && (() => {
         const schedJobName = jobs.find(j => String(j.id) === String(form.jobId))?.title || "Unknown Job";
@@ -3370,11 +4708,27 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
 };
 
 // ── Quotes ────────────────────────────────────────────────────────────────────
+const QUOTE_STATUSES = ["all", "draft", "sent", "accepted", "declined"];
 const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
   const [showModal, setShowModal] = useState(false);
   const [editQuote, setEditQuote] = useState(null);
   const [quoteMode, setQuoteMode] = useState("edit");
   const [form, setForm] = useState({ jobId: "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" });
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [view, setView] = useState("list");
+
+  const filtered = quotes.filter(q => {
+    const job = jobs.find(j => j.id === q.jobId);
+    const client = clients.find(c => c.id === job?.clientId);
+    const query = search.toLowerCase();
+    const matchSearch = !search ||
+      (q.number || "").toLowerCase().includes(query) ||
+      (job?.title || "").toLowerCase().includes(query) ||
+      (client?.name || "").toLowerCase().includes(query);
+    const matchStatus = filterStatus === "all" || q.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
 
   const openNew = () => { setEditQuote(null); setQuoteMode("edit"); setForm({ jobId: jobs[0]?.id || "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" }); setShowModal(true); };
   const openEdit = (q) => { setEditQuote(q); setQuoteMode("view"); setForm(q); setShowModal(true); };
@@ -3404,19 +4758,133 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
     } catch (err) { console.error('Failed to duplicate quote:', err); }
   };
 
+  const quoteStatusColors = { draft: "#888", sent: "#2563eb", accepted: "#16a34a", declined: "#dc2626" };
+  const quoteStatusLabels = { draft: "Draft", sent: "Sent", accepted: "Accepted", declined: "Declined" };
+
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ flex: 1 }} />
-        <button className="btn btn-primary" style={{ background: SECTION_COLORS.quotes.accent }} onClick={openNew}><Icon name="plus" size={14} />New Quote</button>
+      {/* ── Summary strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: 12, marginBottom: 24 }}>
+        {Object.entries(quoteStatusLabels).map(([key, label]) => {
+          const statusQuotes = quotes.filter(q => q.status === key);
+          const count = statusQuotes.length;
+          const total = statusQuotes.reduce((s, q) => s + calcQuoteTotal(q), 0);
+          const color = quoteStatusColors[key];
+          return (
+            <div key={key} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
+              onClick={() => { setFilterStatus(key); setView("list"); }}>
+              <div className="stat-label">{label}</div>
+              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
+              <div className="stat-sub">{fmt(total)}</div>
+            </div>
+          );
+        })}
       </div>
-      <div className="card">
+
+      <div className="section-toolbar">
+        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+          <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search quotes, jobs, clients..." />
+        </div>
+        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          {QUOTE_STATUSES.map(s => <option key={s} value={s}>{s === "all" ? "All Statuses" : s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+        </select>
+        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.quotes.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.quotes.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: SECTION_COLORS.quotes.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
+        </div>
+        <div className="section-action-btns"><button className="btn btn-primary" style={{ background: SECTION_COLORS.quotes.accent }} onClick={openNew}><Icon name="plus" size={14} />New Quote</button></div>
+      </div>
+
+      {view === "kanban" && (
+        <div className="kanban" style={{ gridTemplateColumns: "repeat(4, minmax(200px,1fr))" }}>
+          {["draft", "sent", "accepted", "declined"].map(col => {
+            const colQuotes = filtered.filter(q => q.status === col);
+            const labels = { draft: "Draft", sent: "Sent", accepted: "Accepted", declined: "Declined" };
+            return (
+              <div key={col} className="kanban-col">
+                <div className="kanban-col-header">
+                  <span>{labels[col]}</span>
+                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colQuotes.length}</span>
+                </div>
+                {colQuotes.map(q => {
+                  const job = jobs.find(j => j.id === q.jobId);
+                  const client = clients.find(c => c.id === job?.clientId);
+                  const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
+                  return (
+                    <div key={q.id} className="kanban-card" onClick={() => openEdit(q)}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                        <span style={{ fontWeight: 700, fontSize: 12, fontFamily: "monospace" }}>{q.number}</span>
+                      </div>
+                      <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 4 }}>{job?.title || "—"}</div>
+                      <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{client?.name || "—"}</div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontWeight: 700, fontSize: 13 }}>{fmt(sub * (1 + q.tax / 100))}</span>
+                        <span style={{ fontSize: 10, color: "#bbb" }}>{q.createdAt}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {view === "grid" && (
+        <div className="order-cards-grid">
+          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">📋</div><div className="empty-state-text">No quotes found</div></div>}
+          {filtered.map(q => {
+            const job = jobs.find(j => j.id === q.jobId);
+            const client = clients.find(c => c.id === job?.clientId);
+            const total = calcQuoteTotal(q);
+            const lineCount = q.lineItems.length;
+            return (
+              <div key={q.id} className="order-card" onClick={() => openEdit(q)}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.quotes.light, color: SECTION_COLORS.quotes.accent }}>
+                      <Icon name="quotes" size={15} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{q.number}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{q.createdAt}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <StatusBadge status={q.status} />
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {job?.title || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No job</span>}
+                </div>
+                {client && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>{client.name}</div>}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{fmt(total)}</span>
+                  <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
+                  {q.tax > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{q.tax}% GST</span>}
+                </div>
+                <SectionProgressBar status={q.status} section="quotes" />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+                  <span style={{ fontSize: 11, color: "#94a3b8" }}>{lineCount} line item{lineCount !== 1 ? "s" : ""}</span>
+                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                    <button className="btn btn-ghost btn-xs" onClick={() => duplicate(q)} title="Duplicate"><Icon name="copy" size={12} /></button>
+                    <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(q.id)}><Icon name="trash" size={12} /></button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {view === "list" && <div className="card">
         <div className="table-wrap">
           <table>
             <thead><tr><th>Number</th><th>Job</th><th>Client</th><th>Status</th><th>Subtotal</th><th>GST</th><th>Total</th><th>Created</th><th></th></tr></thead>
             <tbody>
-              {quotes.length === 0 && <tr><td colSpan={9}><div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">No quotes yet</div></div></td></tr>}
-              {quotes.map(q => {
+              {filtered.length === 0 && <tr><td colSpan={9}><div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">No quotes found</div></div></td></tr>}
+              {filtered.map(q => {
                 const job = jobs.find(j => j.id === q.jobId);
                 const client = clients.find(c => c.id === job?.clientId);
                 const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
@@ -3446,7 +4914,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
             </tbody>
           </table>
         </div>
-      </div>
+      </div>}
 
       {showModal && (() => {
         const isNewQ = !editQuote;
@@ -3883,9 +5351,18 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
   const [showLogModal, setShowLogModal] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
   const [calDrillDay, setCalDrillDay] = useState(null);
+  const [search, setSearch] = useState("");
 
-  // Stats — filtered to selected worker
-  const workerEntries = selectedWorker === "all" ? timeEntries : timeEntries.filter(t => t.worker === selectedWorker);
+  // Stats — filtered to selected worker and search
+  const searchFilter = (t) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    const job = jobs.find(j => j.id === t.jobId);
+    return (t.description || "").toLowerCase().includes(q) ||
+      (t.worker || "").toLowerCase().includes(q) ||
+      (job?.title || "").toLowerCase().includes(q);
+  };
+  const workerEntries = (selectedWorker === "all" ? timeEntries : timeEntries.filter(t => t.worker === selectedWorker)).filter(searchFilter);
   const now = new Date();
   const todayHrs   = workerEntries.filter(t => t.date === today).reduce((s,t) => s+t.hours, 0);
   const dow = now.getDay() === 0 ? 6 : now.getDay() - 1;
@@ -3896,6 +5373,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
   // Day entries for week view
   const dayEntries = timeEntries
     .filter(t => t.date === selectedDay && (selectedWorker === "all" || t.worker === selectedWorker))
+    .filter(searchFilter)
     .sort((a,b) => (a.startTime||"").localeCompare(b.startTime||""));
 
   const saveEntry = async (data) => {
@@ -3943,26 +5421,33 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
 
   return (
     <div>
-      {/* Stat pills row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+      {/* ── Summary strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12, marginBottom: 24 }}>
         {[
           { label: "Today", val: todayHrs, o: DAY_THR.orange, g: DAY_THR.green },
           { label: "This Week", val: weekHrs, o: DAY_THR.orange * 5, g: DAY_THR.green * 5 },
           { label: "This Month", val: monthHrs, o: DAY_THR.orange * 20, g: DAY_THR.green * 20 },
-        ].map(s => (
-          <div key={s.label} className="stat-card" style={{ padding: "12px 16px" }}>
-            <div className="stat-label">{s.label}</div>
-            <div className="stat-value" style={{ fontSize: 20, color: statClr(s.val, s.o, s.g) }}>{s.val.toFixed(1)}h</div>
-          </div>
-        ))}
+        ].map(s => {
+          const color = statClr(s.val, s.o, s.g);
+          return (
+            <div key={s.label} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}` }}>
+              <div className="stat-label">{s.label}</div>
+              <div className="stat-value" style={{ fontSize: 22, color }}>{s.val.toFixed(1)}h</div>
+              <div className="stat-sub">{s.val > 0 ? `${(s.val / s.g * 100).toFixed(0)}% of target` : "No hours logged"}</div>
+            </div>
+          );
+        })}
       </div>
       {/* Controls row */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, alignItems: "center" }}>
-        <select className="form-control" style={{ width: "auto", flex: 1 }} value={selectedWorker} onChange={e => setSelectedWorker(e.target.value)}>
+      <div className="section-toolbar">
+        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+          <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search entries, jobs..." />
+        </div>
+        <select className="form-control" style={{ width: "auto" }} value={selectedWorker} onChange={e => setSelectedWorker(e.target.value)}>
           <option value="all">All Team</option>
           {staffNames.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <button className="btn btn-primary" onClick={openNew} style={{ whiteSpace: "nowrap", background: SECTION_COLORS.time.accent }}><Icon name="plus" size={14} />Log Time</button>
+        <div className="section-action-btns"><button className="btn btn-primary" onClick={openNew} style={{ whiteSpace: "nowrap", background: SECTION_COLORS.time.accent }}><Icon name="plus" size={14} />Log Time</button></div>
       </div>
 
       {/* Sub-tabs */}
@@ -4593,7 +6078,7 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
 
 // ── Main Bills Component ───────────────────────────────────────────────────────
 const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
-  const [tab, setTab] = useState("pipeline");
+  const [tab, setTab] = useState("kanban");
   const [showBillModal, setShowBillModal] = useState(false);
   const [editBill, setEditBill] = useState(null);
   const [postBill, setPostBill] = useState(null);
@@ -4706,83 +6191,116 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
         ))}
       </div>
 
-      {/* ── Tabs + actions */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
-        <div className="tabs" style={{ marginBottom: 0 }}>
-          <div className={`tab ${tab === "pipeline" ? "active" : ""}`} onClick={() => setTab("pipeline")}>Pipeline</div>
-          <div className={`tab ${tab === "list" ? "active" : ""}`} onClick={() => setTab("list")}>All Bills</div>
+      {/* ── Toolbar */}
+      <div className="section-toolbar">
+        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+          <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search supplier, invoice, description…" />
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <option value="all">All Statuses</option>
+          {BILL_STATUSES.map(s => <option key={s} value={s}>{BILL_STATUS_LABELS[s]}</option>)}
+        </select>
+        <select className="form-control" style={{ width: "auto" }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
+          <option value="all">All Categories</option>
+          {BILL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+          <button className={`btn btn-xs ${tab === "list" ? "" : "btn-ghost"}`} style={tab === "list" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${tab === "grid" ? "" : "btn-ghost"}`} style={tab === "grid" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("grid")}><Icon name="grid_view" size={12} /></button>
+          <button className={`btn btn-xs ${tab === "kanban" ? "" : "btn-ghost"}`} style={tab === "kanban" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("kanban")}><Icon name="kanban" size={12} /></button>
+        </div>
+        <div className="section-action-btns">
           {selectedIds.length > 0 && (
             <button className="btn btn-secondary btn-sm" onClick={approveSelected}>
-              <Icon name="check" size={12} />Approve {selectedIds.length} selected
+              <Icon name="check" size={12} />Approve {selectedIds.length}
             </button>
           )}
           <button className="btn btn-primary" style={{ background: SECTION_COLORS.bills.accent }} onClick={openNew}><Icon name="plus" size={14} />Capture Bill</button>
         </div>
       </div>
 
-      {/* ══ PIPELINE VIEW ══ */}
-      {tab === "pipeline" && (
-        <div className="bill-pipeline">
-          {BILL_STATUSES.map(status => {
-            const stageBills = bills.filter(b => b.status === status);
-            const sc = BILL_STATUS_COLORS[status];
+      {/* ══ GRID VIEW ══ */}
+      {tab === "grid" && (
+        <div className="order-cards-grid">
+          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">🧾</div><div className="empty-state-text">No bills found</div></div>}
+          {filtered.map(b => {
+            const job = jobs.find(j => j.id === b.jobId);
+            const sc = BILL_STATUS_COLORS[b.status];
             return (
-              <div key={status} style={{ background: "#f7f7f7", borderRadius: 10, padding: "14px 16px" }}>
-                {/* Row header */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: stageBills.length ? 10 : 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span className="badge" style={{ background: sc.bg, color: sc.text, fontSize: 10 }}>{stageBills.length}</span>
+              <div key={b.id} className="order-card" onClick={() => openEdit(b)}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.bills.light, color: SECTION_COLORS.bills.accent }}>
+                      <Icon name="bills" size={15} />
+                    </div>
                     <div>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#333" }}>{BILL_STATUS_LABELS[status]}</span>
-                      <span style={{ fontSize: 12, color: "#aaa", marginLeft: 8 }}>{fmt(stageBills.reduce((s,b)=>s+b.amount,0))}</span>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{b.supplier}</div>
+                      {b.invoiceNo && <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>{b.invoiceNo}</div>}
                     </div>
                   </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: sc.bg, color: sc.text }}>{BILL_STATUS_LABELS[b.status]}</span>
+                  </div>
                 </div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {b.description || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No description</span>}
+                </div>
+                {job && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}><Icon name="jobs" size={10} /> {job.title}</div>}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{fmt(b.amount)}</span>
+                  <span className="chip" style={{ fontSize: 10 }}>{b.category}</span>
+                  {b.hasGst && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>incl. GST</span>}
+                </div>
+                <SectionProgressBar status={b.status} section="bills" />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b" }}>{b.date}</span>
+                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                    {b.status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
+                    {b.status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
+                    {b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
+                    <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={12} /></button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-                {/* Bill cards */}
+      {/* ══ KANBAN VIEW ══ */}
+      {tab === "kanban" && (
+        <div className="kanban" style={{ gridTemplateColumns: "repeat(4, minmax(200px,1fr))" }}>
+          {BILL_STATUSES.map(status => {
+            const stageBills = filtered.filter(b => b.status === status);
+            const sc = BILL_STATUS_COLORS[status];
+            return (
+              <div key={status} className="kanban-col">
+                <div className="kanban-col-header">
+                  <span>{BILL_STATUS_LABELS[status]}</span>
+                  <span style={{ background: sc.bg, color: sc.text, borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{stageBills.length}</span>
+                </div>
+                <div style={{ fontSize: 11, color: "#888", marginBottom: 8, fontWeight: 600 }}>{fmt(stageBills.reduce((s,b)=>s+b.amount,0))}</div>
                 {stageBills.map(b => {
                   const job = jobs.find(j => j.id === b.jobId);
-                  const exGst = b.hasGst ? b.amount / 1.1 : b.amount;
                   return (
-                    <div key={b.id} onClick={() => openEdit(b)} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 8, padding: "12px 14px", marginBottom: 8, fontSize: 12, cursor: "pointer" }}>
+                    <div key={b.id} className="kanban-card" onClick={() => openEdit(b)}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2 }}>{b.supplier}</div>
-                          {b.invoiceNo && <span style={{ color: "#aaa", fontFamily: "monospace", fontSize: 11 }}>{b.invoiceNo}</span>}
-                          {b.description && <div style={{ color: "#777", marginTop: 3, fontSize: 11, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.description}</div>}
+                          <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 2 }}>{b.supplier}</div>
+                          {b.invoiceNo && <span style={{ color: "#aaa", fontFamily: "monospace", fontSize: 10 }}>{b.invoiceNo}</span>}
                         </div>
-                        <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ fontWeight: 800, color: "#111", fontSize: 14 }}>{fmt(b.amount)}</div>
-                          {b.markup > 0 && <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>+{b.markup}%</div>}
-                        </div>
+                        <div style={{ fontWeight: 800, color: "#111", fontSize: 13, flexShrink: 0 }}>{fmt(b.amount)}</div>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-                        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                      {b.description && <div style={{ color: "#777", marginTop: 3, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.description}</div>}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, marginTop: 8 }}>
+                        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                           <span className="chip" style={{ fontSize: 10 }}>{b.category}</span>
-                          {job ? <span style={{ fontSize: 11, color: "#888" }}>{job.title}</span>
-                            : <span style={{ fontSize: 10, color: "#ccc" }}>Unlinked</span>}
+                          {job ? <span style={{ fontSize: 10, color: "#888" }}>{job.title}</span> : <span style={{ fontSize: 10, color: "#ccc" }}>Unlinked</span>}
                         </div>
-                        <div style={{ display: "flex", gap: 4, alignItems: "center" }} onClick={e => e.stopPropagation()}>
-                          {status === "inbox" && (
-                            <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId} title={!b.jobId ? "Link to a job first" : "Mark as Linked"}>
-                              Link →
-                            </button>
-                          )}
-                          {status === "linked" && (
-                            <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34", borderColor: "#c0e0c0" }} onClick={() => setStatus(b.id, "approved")}>
-                              ✓ Approve
-                            </button>
-                          )}
-                          {status === "approved" && (
-                            <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>
-                              Post →
-                            </button>
-                          )}
-                          {status === "posted" && (
-                            <span style={{ fontSize: 10, color: "#aaa", fontStyle: "italic" }}>✓ Posted</span>
-                          )}
+                        <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                          {status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
+                          {status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
+                          {status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
                           <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={10} /></button>
                         </div>
                       </div>
@@ -4798,24 +6316,6 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
       {/* ══ LIST VIEW ══ */}
       {tab === "list" && (
         <div>
-          {/* Filters */}
-          <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-            <div className="search-bar" style={{ flex: 1, minWidth: 180 }}>
-              <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search supplier, invoice, description…" />
-            </div>
-            <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-              <option value="all">All Statuses</option>
-              {BILL_STATUSES.map(s => <option key={s} value={s}>{BILL_STATUS_LABELS[s]}</option>)}
-            </select>
-            <select className="form-control" style={{ width: "auto" }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
-              <option value="all">All Categories</option>
-              {BILL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select className="form-control" style={{ width: "auto" }} value={filterJob} onChange={e => setFilterJob(e.target.value)}>
-              <option value="all">All Jobs</option>
-              {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
-            </select>
-          </div>
 
           {/* Totals bar */}
           {filtered.length > 0 && (
@@ -4906,11 +6406,15 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
 };
 
 // ── Invoices ──────────────────────────────────────────────────────────────────
+const INV_STATUSES = ["all", "draft", "sent", "paid", "overdue", "void"];
 const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
   const [showModal, setShowModal] = useState(false);
   const [editInvoice, setEditInvoice] = useState(null);
   const [invMode, setInvMode] = useState("edit");
   const [form, setForm] = useState({ jobId: "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" });
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [view, setView] = useState("list");
 
   const openNew = () => { setEditInvoice(null); setInvMode("edit"); setForm({ jobId: jobs[0]?.id || "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" }); setShowModal(true); };
   const openEdit = (inv) => { setEditInvoice(inv); setInvMode("view"); setForm(inv); setShowModal(true); };
@@ -4949,39 +6453,159 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
     } catch (err) { console.error('Failed to mark invoice paid:', err); }
   };
 
-  const totalOwed = invoices.filter(i => i.status !== "paid" && i.status !== "void").reduce((s, inv) => s + calcQuoteTotal(inv), 0);
-  const totalPaid = invoices.filter(i => i.status === "paid").reduce((s, inv) => s + calcQuoteTotal(inv), 0);
+  const filtered = invoices.filter(inv => {
+    const job = jobs.find(j => j.id === inv.jobId);
+    const client = clients.find(c => c.id === job?.clientId);
+    const q = search.toLowerCase();
+    const matchSearch = !search ||
+      (inv.number || "").toLowerCase().includes(q) ||
+      (job?.title || "").toLowerCase().includes(q) ||
+      (client?.name || "").toLowerCase().includes(q);
+    const matchStatus = filterStatus === "all" || inv.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  const invStatusColors = { draft: "#888", sent: "#2563eb", paid: "#16a34a", overdue: "#dc2626", void: "#555" };
+  const invStatusLabels = { draft: "Draft", sent: "Sent", paid: "Paid", overdue: "Overdue", void: "Void" };
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-        <div className="stat-card dark" style={{ flex: 1, padding: "14px 18px", minWidth: 180, background: SECTION_COLORS.invoices.accent }}>
-          <div className="stat-label">Outstanding</div>
-          <div className="stat-value" style={{ fontSize: 20 }}>{fmt(totalOwed)}</div>
-        </div>
-        <div className="stat-card" style={{ flex: 1, padding: "14px 18px", minWidth: 180 }}>
-          <div className="stat-label">Collected</div>
-          <div className="stat-value" style={{ fontSize: 20 }}>{fmt(totalPaid)}</div>
-        </div>
+      {/* ── Summary strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12, marginBottom: 24 }}>
+        {Object.entries(invStatusLabels).map(([key, label]) => {
+          const statusInvs = invoices.filter(i => i.status === key);
+          const count = statusInvs.length;
+          const total = statusInvs.reduce((s, inv) => s + calcQuoteTotal(inv), 0);
+          const color = invStatusColors[key];
+          return (
+            <div key={key} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
+              onClick={() => { setFilterStatus(key); setView("list"); }}>
+              <div className="stat-label">{label}</div>
+              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
+              <div className="stat-sub">{fmt(total)}</div>
+            </div>
+          );
+        })}
       </div>
-      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="section-toolbar">
+        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+          <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search invoices, jobs, clients..." />
+        </div>
+        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          {INV_STATUSES.map(s => <option key={s} value={s}>{s === "all" ? "All Statuses" : s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+        </select>
         {quotes.filter(q => q.status === "accepted").length > 0 && (
           <select className="form-control" style={{ width: "auto" }} onChange={e => { const q = quotes.find(q => String(q.id) === e.target.value); if (q) fromQuote(q); e.target.value = ""; }}>
-            <option value="">Invoice from Quote…</option>
+            <option value="">From Quote…</option>
             {quotes.filter(q => q.status === "accepted").map(q => <option key={q.id} value={q.id}>{q.number}</option>)}
           </select>
         )}
-        <div style={{ flex: 1 }} />
-        <button className="btn btn-primary" style={{ background: SECTION_COLORS.invoices.accent }} onClick={openNew}><Icon name="plus" size={14} />New Invoice</button>
+        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.invoices.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.invoices.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: SECTION_COLORS.invoices.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
+        </div>
+        <div className="section-action-btns"><button className="btn btn-primary" style={{ background: SECTION_COLORS.invoices.accent }} onClick={openNew}><Icon name="plus" size={14} />New Invoice</button></div>
       </div>
 
-      <div className="card">
+      {view === "kanban" && (
+        <div className="kanban" style={{ gridTemplateColumns: "repeat(5, minmax(200px,1fr))" }}>
+          {["draft", "sent", "paid", "overdue", "void"].map(col => {
+            const colInvoices = filtered.filter(i => i.status === col);
+            const labels = { draft: "Draft", sent: "Sent", paid: "Paid", overdue: "Overdue", void: "Void" };
+            const colTotal = colInvoices.reduce((s, inv) => s + calcQuoteTotal(inv), 0);
+            return (
+              <div key={col} className="kanban-col">
+                <div className="kanban-col-header">
+                  <span>{labels[col]}</span>
+                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colInvoices.length}</span>
+                </div>
+                {colTotal > 0 && <div style={{ fontSize: 11, color: "#888", marginBottom: 8, fontWeight: 600 }}>{fmt(colTotal)}</div>}
+                {colInvoices.map(inv => {
+                  const job = jobs.find(j => j.id === inv.jobId);
+                  const client = clients.find(c => c.id === job?.clientId);
+                  const total = calcQuoteTotal(inv);
+                  return (
+                    <div key={inv.id} className="kanban-card" onClick={() => openEdit(inv)}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                        <span style={{ fontWeight: 700, fontSize: 12, fontFamily: "monospace" }}>{inv.number}</span>
+                        <StatusBadge status={inv.status} />
+                      </div>
+                      <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 4 }}>{job?.title || "—"}</div>
+                      <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{client?.name || "—"}</div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontWeight: 700, fontSize: 13 }}>{fmt(total)}</span>
+                        <span style={{ fontSize: 10, color: inv.dueDate ? "#111" : "#ccc" }}>{inv.dueDate || "No due"}</span>
+                      </div>
+                      {inv.status !== "paid" && inv.status !== "void" && (
+                        <div style={{ display: "flex", gap: 4, marginTop: 8, justifyContent: "flex-end" }} onClick={e => e.stopPropagation()}>
+                          <button className="btn btn-ghost btn-xs" style={{ color: "#2a7" }} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {view === "grid" && (
+        <div className="order-cards-grid">
+          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">💳</div><div className="empty-state-text">No invoices found</div></div>}
+          {filtered.map(inv => {
+            const job = jobs.find(j => j.id === inv.jobId);
+            const client = clients.find(c => c.id === job?.clientId);
+            const total = calcQuoteTotal(inv);
+            const lineCount = inv.lineItems.length;
+            const fromQuote = inv.fromQuoteId ? quotes.find(q => q.id === inv.fromQuoteId) : null;
+            return (
+              <div key={inv.id} className="order-card" onClick={() => openEdit(inv)}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.invoices.light, color: SECTION_COLORS.invoices.accent }}>
+                      <Icon name="invoices" size={15} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{inv.number}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{inv.createdAt || "—"}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <StatusBadge status={inv.status} />
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {job?.title || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No job</span>}
+                </div>
+                {client && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>{client.name}</div>}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{fmt(total)}</span>
+                  <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
+                  {fromQuote && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>from {fromQuote.number}</span>}
+                </div>
+                <SectionProgressBar status={inv.status} section="invoices" />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: inv.dueDate ? "#334155" : "#ccc" }}>{inv.dueDate ? `Due ${inv.dueDate}` : "No due date"}</span>
+                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                    {inv.status !== "paid" && inv.status !== "void" && <button className="btn btn-ghost btn-xs" style={{ color: "#2a7" }} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>}
+                    <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(inv.id)}><Icon name="trash" size={12} /></button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {view === "list" && <div className="card">
         <div className="table-wrap">
           <table>
             <thead><tr><th>Number</th><th>Job</th><th>Client</th><th>Status</th><th>Subtotal</th><th>GST</th><th>Total</th><th>Due Date</th><th></th></tr></thead>
             <tbody>
-              {invoices.length === 0 && <tr><td colSpan={9}><div className="empty-state"><div className="empty-state-icon">💳</div><div className="empty-state-text">No invoices yet</div></div></td></tr>}
-              {invoices.map(inv => {
+              {filtered.length === 0 && <tr><td colSpan={9}><div className="empty-state"><div className="empty-state-icon">💳</div><div className="empty-state-text">No invoices found</div></div></td></tr>}
+              {filtered.map(inv => {
                 const job = jobs.find(j => j.id === inv.jobId);
                 const client = clients.find(c => c.id === job?.clientId);
                 const sub = inv.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
@@ -5008,7 +6632,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
             </tbody>
           </table>
         </div>
-      </div>
+      </div>}
 
       {showModal && (() => {
         const isNewInv = !editInvoice;
@@ -5213,6 +6837,8 @@ const ROUTE_MAP = {
   jobs: "/jobs",
   orders: "/orders",
   clients: "/clients",
+  contractors: "/contractors",
+  suppliers: "/suppliers",
   schedule: "/schedule",
   quotes: "/quotes",
   time: "/time",
@@ -5239,6 +6865,8 @@ export default function App() {
   const [bills, setBills] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [staff, setStaff] = useState([]);
+  const [contractors, setContractors] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [workOrders, setWorkOrders] = useState(SEED_WO);
   const [purchaseOrders, setPurchaseOrders] = useState(SEED_PO);
   const [loading, setLoading] = useState(true);
@@ -5256,6 +6884,8 @@ export default function App() {
       setTimeEntries(SEED_TIME);
       setBills(SEED_BILLS);
       setSchedule(SEED_SCHEDULE);
+      setContractors(SEED_CONTRACTORS);
+      setSuppliers(SEED_SUPPLIERS);
       setStaff(TEAM.map((name, i) => ({ id: i + 1, name })));
       setLoading(false);
       return;
@@ -5289,6 +6919,8 @@ export default function App() {
     { id: "jobs", label: "Jobs", icon: "jobs", badge: activeJobsCount || null },
     { id: "orders", label: "Orders", icon: "orders", badge: ordersOverdueCount || null },
     { id: "clients", label: "Clients", icon: "clients" },
+    { id: "contractors", label: "Contractors", icon: "contractors" },
+    { id: "suppliers", label: "Suppliers", icon: "suppliers" },
     { id: "schedule", label: "Schedule", icon: "schedule" },
     { id: "quotes", label: "Quotes", icon: "quotes" },
     { id: "time", label: "Time", icon: "time" },
@@ -5302,7 +6934,7 @@ export default function App() {
   const moreNavItems = navItems.slice(5);
   const moreIsActive = moreNavItems.some(n => n.id === page);
 
-  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log" };
+  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
@@ -5312,10 +6944,12 @@ export default function App() {
 
   const routeElements = (
     <Routes>
-      <Route path="/" element={<Dashboard jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} onNav={navigate} />} />
+      <Route path="/" element={<Dashboard jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} workOrders={workOrders} purchaseOrders={purchaseOrders} contractors={contractors} suppliers={suppliers} onNav={navigate} />} />
       <Route path="/jobs" element={<Jobs jobs={jobs} setJobs={setJobs} clients={clients} quotes={quotes} setQuotes={setQuotes} invoices={invoices} setInvoices={setInvoices} timeEntries={timeEntries} setTimeEntries={setTimeEntries} bills={bills} setBills={setBills} schedule={schedule} setSchedule={setSchedule} staff={staff} workOrders={workOrders} setWorkOrders={setWorkOrders} purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders} />} />
       <Route path="/orders" element={<OrdersPage workOrders={workOrders} setWorkOrders={setWorkOrders} purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders} jobs={jobs} />} />
       <Route path="/clients" element={<Clients clients={clients} setClients={setClients} jobs={jobs} />} />
+      <Route path="/contractors" element={<Contractors contractors={contractors} setContractors={setContractors} workOrders={workOrders} bills={bills} />} />
+      <Route path="/suppliers" element={<Suppliers suppliers={suppliers} setSuppliers={setSuppliers} purchaseOrders={purchaseOrders} bills={bills} />} />
       <Route path="/schedule" element={<Schedule schedule={schedule} setSchedule={setSchedule} jobs={jobs} clients={clients} staff={staff} />} />
       <Route path="/quotes" element={<Quotes quotes={quotes} setQuotes={setQuotes} jobs={jobs} clients={clients} invoices={invoices} />} />
       <Route path="/time" element={<TimeTracking timeEntries={timeEntries} setTimeEntries={setTimeEntries} jobs={jobs} setJobs={setJobs} clients={clients} staff={staff} />} />
@@ -5365,7 +6999,7 @@ export default function App() {
         </div>
         <div className="jm-nav">
           <div className="jm-nav-section">Main</div>
-          {navItems.slice(0, 5).map(n => {
+          {navItems.slice(0, 7).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -5377,7 +7011,7 @@ export default function App() {
             );
           })}
           <div className="jm-nav-section">Finance</div>
-          {navItems.slice(5, 9).map(n => {
+          {navItems.slice(7, 11).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -5389,7 +7023,7 @@ export default function App() {
             );
           })}
           <div className="jm-nav-section">System</div>
-          {navItems.slice(9).map(n => {
+          {navItems.slice(11).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.activity)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}

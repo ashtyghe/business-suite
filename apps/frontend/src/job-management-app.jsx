@@ -15,38 +15,50 @@ document.head.appendChild(spinStyle);
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
 const SEED_CLIENTS = [
-  { id: 1, name: "Hartwell Properties", email: "james@hartwell.com", phone: "0412 345 678", address: "22 King St, Sydney NSW 2000",
+  { id: 1, name: "Hartwell Properties", email: "admin@hartwell.com", phone: "02 9000 1234", address: "22 King St, Sydney NSW 2000",
+    mainContact: { name: "James Hartwell", phone: "0412 345 678", email: "james@hartwell.com" },
+    accountsContact: { name: "Susan Hartwell", phone: "0412 345 679", email: "accounts@hartwell.com" },
+    rates: { labourRate: 95, materialMargin: 15, subcontractorMargin: 10 },
     sites: [
-      { id: 101, name: "King St HQ",        address: "22 King St, Sydney NSW 2000",      contactName: "James Hartwell", contactPhone: "0412 345 678" },
-      { id: 102, name: "Parramatta Office", address: "8 Church St, Parramatta NSW 2150", contactName: "Linda Park",     contactPhone: "0412 345 900" },
+      { id: 101, name: "King St HQ",        address: "22 King St, Sydney NSW 2000",      contactName: "James Hartwell", contactPhone: "0412 345 678", contactEmail: "james@hartwell.com" },
+      { id: 102, name: "Parramatta Office", address: "8 Church St, Parramatta NSW 2150", contactName: "Linda Park",     contactPhone: "0412 345 900", contactEmail: "linda@hartwell.com" },
     ]
   },
-  { id: 2, name: "BlueLine Construction", email: "ops@blueline.com.au", phone: "0398 765 432", address: "88 Industrial Ave, Melbourne VIC 3000",
+  { id: 2, name: "BlueLine Construction", email: "admin@blueline.com.au", phone: "03 9876 5432", address: "88 Industrial Ave, Melbourne VIC 3000",
+    mainContact: { name: "Mark Chen", phone: "0398 765 432", email: "mark@blueline.com.au" },
+    accountsContact: { name: "Fiona Wells", phone: "0398 765 433", email: "accounts@blueline.com.au" },
+    rates: { labourRate: 90, materialMargin: 12, subcontractorMargin: 8 },
     sites: [
-      { id: 201, name: "Industrial Ave Depot", address: "88 Industrial Ave, Melbourne VIC 3000",  contactName: "Mark Chen",    contactPhone: "0398 765 432" },
-      { id: 202, name: "Southbank Site",        address: "14 Riverside Blvd, Southbank VIC 3006", contactName: "Rachel Moore", contactPhone: "0398 111 222" },
+      { id: 201, name: "Industrial Ave Depot", address: "88 Industrial Ave, Melbourne VIC 3000",  contactName: "Mark Chen",    contactPhone: "0398 765 432", contactEmail: "mark@blueline.com.au" },
+      { id: 202, name: "Southbank Site",        address: "14 Riverside Blvd, Southbank VIC 3006", contactName: "Rachel Moore", contactPhone: "0398 111 222", contactEmail: "rachel@blueline.com.au" },
     ]
   },
-  { id: 3, name: "Mara & Co Interiors", email: "mara@marainteriors.com", phone: "0455 111 222", address: "5 Design Lane, Brisbane QLD 4000",
+  { id: 3, name: "Mara & Co Interiors", email: "hello@marainteriors.com", phone: "07 3111 2222", address: "5 Design Lane, Brisbane QLD 4000",
+    mainContact: { name: "Mara Costa", phone: "0455 111 222", email: "mara@marainteriors.com" },
+    accountsContact: { name: "Kevin Tran", phone: "0455 111 223", email: "kevin@marainteriors.com" },
+    rates: { labourRate: 100, materialMargin: 20, subcontractorMargin: 15 },
     sites: [
-      { id: 301, name: "Brisbane Studio", address: "5 Design Lane, Brisbane QLD 4000", contactName: "Mara Costa", contactPhone: "0455 111 222" },
+      { id: 301, name: "Brisbane Studio", address: "5 Design Lane, Brisbane QLD 4000", contactName: "Mara Costa", contactPhone: "0455 111 222", contactEmail: "mara@marainteriors.com" },
     ]
   },
-  { id: 4, name: "Nexus Facilities", email: "facilities@nexus.com", phone: "0411 999 888", address: "101 Commerce Rd, Perth WA 6000",
+  { id: 4, name: "Nexus Facilities", email: "info@nexus.com", phone: "08 9111 9888", address: "101 Commerce Rd, Perth WA 6000",
+    mainContact: { name: "David Nguyen", phone: "0411 999 888", email: "david@nexus.com" },
+    accountsContact: { name: "Priya Sharma", phone: "0411 999 889", email: "accounts@nexus.com" },
+    rates: { labourRate: 85, materialMargin: 10, subcontractorMargin: 10 },
     sites: [
-      { id: 401, name: "Perth HQ",         address: "101 Commerce Rd, Perth WA 6000",       contactName: "David Nguyen", contactPhone: "0411 999 888" },
-      { id: 402, name: "Fremantle Store",  address: "44 Harbour St, Fremantle WA 6160",     contactName: "Aisha Patel",  contactPhone: "0411 777 333" },
-      { id: 403, name: "Joondalup Branch", address: "9 Ocean Keys Blvd, Joondalup WA 6027", contactName: "Tom Nguyen",   contactPhone: "0411 222 555" },
+      { id: 401, name: "Perth HQ",         address: "101 Commerce Rd, Perth WA 6000",       contactName: "David Nguyen", contactPhone: "0411 999 888", contactEmail: "david@nexus.com" },
+      { id: 402, name: "Fremantle Store",  address: "44 Harbour St, Fremantle WA 6160",     contactName: "Aisha Patel",  contactPhone: "0411 777 333", contactEmail: "aisha@nexus.com" },
+      { id: 403, name: "Joondalup Branch", address: "9 Ocean Keys Blvd, Joondalup WA 6027", contactName: "Tom Nguyen",   contactPhone: "0411 222 555", contactEmail: "tom@nexus.com" },
     ]
   },
 ];
 
 const SEED_JOBS = [
-  { id: 1, title: "Office Fitout – Level 3", clientId: 1, siteId: 101, status: "in_progress", priority: "high", description: "Full office refurbishment including partition walls, electrical and plumbing.", startDate: "2026-02-10", dueDate: "2026-03-25", assignedTo: ["Tom Baker", "Sarah Lee"], tags: ["fitout", "commercial"], createdAt: "2026-02-01", notes: [{ id: 1, text: "Site access confirmed via loading dock. Security pass required — collect from reception.", category: "general", attachments: [], createdAt: "2026-03-08T09:00:00Z", createdBy: "Alex Jones" }, { id: 2, text: "Found damaged plasterboard on Level 3 east wall. Needs replacement before painting.", category: "issue", attachments: [], createdAt: "2026-03-10T14:30:00Z", createdBy: "Tom Baker" }, { id: 3, text: "Electrical rough-in inspection passed. Certificate filed.", category: "inspection", attachments: [], createdAt: "2026-03-11T16:00:00Z", createdBy: "Alex Jones" }], activityLog: [{ ts: "2026-02-01 09:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-10 08:30", user: "Alex Jones", action: "Status changed to In Progress" }] },
-  { id: 2, title: "Roof Repair & Waterproofing", clientId: 2, siteId: 201, status: "quoted", priority: "medium", description: "Replace damaged roof sheets and apply waterproof membrane to flat section.", startDate: "2026-03-15", dueDate: "2026-03-30", assignedTo: ["Mike Chen"], tags: ["roofing", "maintenance"], createdAt: "2026-02-15", notes: [], activityLog: [{ ts: "2026-02-15 10:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-16 14:00", user: "Alex Jones", action: "Quote Q-0002 added" }] },
-  { id: 3, title: "Kitchen Renovation", clientId: 3, siteId: 301, status: "scheduled", priority: "medium", description: "Full kitchen demo and rebuild with new cabinetry, benchtops and appliances.", startDate: "2026-03-20", dueDate: "2026-04-20", assignedTo: ["Sarah Lee", "Dan Wright"], tags: ["renovation", "residential"], createdAt: "2026-02-20", notes: [], activityLog: [{ ts: "2026-02-20 11:00", user: "Alex Jones", action: "Job created" }] },
-  { id: 4, title: "HVAC Maintenance – Q1", clientId: 4, siteId: 401, status: "completed", priority: "low", description: "Quarterly service and filter replacement across all HVAC units.", startDate: "2026-01-15", dueDate: "2026-01-20", assignedTo: ["Tom Baker"], tags: ["hvac", "maintenance"], createdAt: "2026-01-10", notes: [], activityLog: [{ ts: "2026-01-10 08:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-01-20 16:00", user: "Tom Baker", action: "Status changed to Completed" }] },
-  { id: 5, title: "Bathroom Tiling & Fixtures", clientId: 1, siteId: null, status: "draft", priority: "low", description: "Re-tile master bathroom and replace all fixtures.", startDate: "", dueDate: "", assignedTo: [], tags: ["tiling", "plumbing"], createdAt: "2026-02-28", notes: [], activityLog: [{ ts: "2026-02-28 15:00", user: "Alex Jones", action: "Job created" }] },
+  { id: 1, title: "Office Fitout – Level 3", clientId: 1, siteId: 101, status: "in_progress", priority: "high", description: "Full office refurbishment including partition walls, electrical and plumbing.", startDate: "2026-02-10", dueDate: "2026-03-25", assignedTo: ["Tom Baker", "Sarah Lee"], tags: ["fitout", "commercial"], createdAt: "2026-02-01", estimate: { labour: 4200, materials: 3800, subcontractors: 3500, other: 500 }, notes: [{ id: 1, text: "Site access confirmed via loading dock. Security pass required — collect from reception.", category: "general", attachments: [], createdAt: "2026-03-08T09:00:00Z", createdBy: "Alex Jones" }, { id: 2, text: "Found damaged plasterboard on Level 3 east wall. Needs replacement before painting.", category: "issue", attachments: [], createdAt: "2026-03-10T14:30:00Z", createdBy: "Tom Baker" }, { id: 3, text: "Electrical rough-in inspection passed. Certificate filed.", category: "inspection", attachments: [], createdAt: "2026-03-11T16:00:00Z", createdBy: "Alex Jones" }], activityLog: [{ ts: "2026-02-01 09:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-10 08:30", user: "Alex Jones", action: "Status changed to In Progress" }] },
+  { id: 2, title: "Roof Repair & Waterproofing", clientId: 2, siteId: 201, status: "quoted", priority: "medium", description: "Replace damaged roof sheets and apply waterproof membrane to flat section.", startDate: "2026-03-15", dueDate: "2026-03-30", assignedTo: ["Mike Chen"], tags: ["roofing", "maintenance"], createdAt: "2026-02-15", estimate: { labour: 1800, materials: 4200, subcontractors: 0, other: 300 }, notes: [], activityLog: [{ ts: "2026-02-15 10:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-16 14:00", user: "Alex Jones", action: "Quote Q-0002 added" }] },
+  { id: 3, title: "Kitchen Renovation", clientId: 3, siteId: 301, status: "scheduled", priority: "medium", description: "Full kitchen demo and rebuild with new cabinetry, benchtops and appliances.", startDate: "2026-03-20", dueDate: "2026-04-20", assignedTo: ["Sarah Lee", "Dan Wright"], tags: ["renovation", "residential"], createdAt: "2026-02-20", estimate: { labour: 0, materials: 0, subcontractors: 0, other: 0 }, notes: [], activityLog: [{ ts: "2026-02-20 11:00", user: "Alex Jones", action: "Job created" }] },
+  { id: 4, title: "HVAC Maintenance – Q1", clientId: 4, siteId: 401, status: "completed", priority: "low", description: "Quarterly service and filter replacement across all HVAC units.", startDate: "2026-01-15", dueDate: "2026-01-20", assignedTo: ["Tom Baker"], tags: ["hvac", "maintenance"], createdAt: "2026-01-10", estimate: { labour: 800, materials: 400, subcontractors: 0, other: 100 }, notes: [], activityLog: [{ ts: "2026-01-10 08:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-01-20 16:00", user: "Tom Baker", action: "Status changed to Completed" }] },
+  { id: 5, title: "Bathroom Tiling & Fixtures", clientId: 1, siteId: null, status: "draft", priority: "low", description: "Re-tile master bathroom and replace all fixtures.", startDate: "", dueDate: "", assignedTo: [], tags: ["tiling", "plumbing"], createdAt: "2026-02-28", estimate: { labour: 0, materials: 0, subcontractors: 0, other: 0 }, notes: [], activityLog: [{ ts: "2026-02-28 15:00", user: "Alex Jones", action: "Job created" }] },
 ];
 
 const SEED_QUOTES = [
@@ -97,7 +109,14 @@ const SEED_INVOICES = [
   { id: 1, jobId: 4, number: "INV-0001", status: "paid", lineItems: [{ desc: "HVAC Quarterly Maintenance", qty: 1, unit: "lot", rate: 950 }, { desc: "Replacement Filters x6", qty: 6, unit: "ea", rate: 95 }], tax: 10, dueDate: "2026-02-17", notes: "Thank you for your business.", createdAt: "2026-01-20" },
 ];
 
-const TEAM = ["Tom Baker", "Sarah Lee", "Mike Chen", "Dan Wright", "Priya Sharma"];
+const TEAM_DATA = [
+  { name: "Tom Baker", costRate: 55, chargeRate: 95 },
+  { name: "Sarah Lee", costRate: 50, chargeRate: 85 },
+  { name: "Mike Chen", costRate: 60, chargeRate: 100 },
+  { name: "Dan Wright", costRate: 48, chargeRate: 80 },
+  { name: "Priya Sharma", costRate: 52, chargeRate: 90 },
+];
+const TEAM = TEAM_DATA.map(t => t.name);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n) => `$${Number(n).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -2204,6 +2223,10 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   const [lightboxImg, setLightboxImg] = useState(null);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editNoteForm, setEditNoteForm] = useState({ text: "", category: "general", attachments: [] });
+  // P&L estimate editing
+  const [editingEstimate, setEditingEstimate] = useState(false);
+  const defaultEstimate = { labour: 0, materials: 0, subcontractors: 0, other: 0 };
+  const [estimateForm, setEstimateForm] = useState({ ...defaultEstimate, ...(job.estimate || {}) });
 
   const addNote = () => {
     if (!noteForm.text.trim() && noteForm.attachments.length === 0) return;
@@ -2362,6 +2385,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   const jobNotes = job.notes || [];
   const tabs = [
     { id: "overview", label: "Overview" },
+    { id: "pnl", label: "P&L" },
     { id: "notes", label: `Notes (${jobNotes.length})` },
     { id: "quotes", label: `Quotes (${jobQuotes.length})` },
     { id: "invoices", label: `Invoices (${jobInvoices.length})` },
@@ -2494,6 +2518,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               {job.description && <p style={{ fontSize: 13, color: "#555", lineHeight: 1.6, marginBottom: 20 }}>{job.description}</p>}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px,1fr))", gap: 12, marginBottom: 20 }}>
                 {[
+                  { label: "Estimate", val: (() => { const e = job.estimate || {}; const t = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0); return t > 0 ? fmt(t) : "—"; })(), sub: (() => { const e = job.estimate || {}; const t = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0); return t > 0 ? "Budget set" : "Not set"; })() },
                   { label: "Quoted", val: fmt(totalQuoted), sub: `${jobQuotes.filter(q=>q.status==="accepted").length} accepted` },
                   { label: "Invoiced", val: fmt(totalInvoiced), sub: `${fmt(totalPaid)} paid` },
                   { label: "Time Logged", val: `${totalHours}h`, sub: `${jobTime.filter(t=>t.billable).reduce((s,t)=>s+t.hours,0)}h billable` },
@@ -2882,6 +2907,304 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               }
             </div>
           )}
+
+          {tab === "pnl" && (() => {
+            const est = job.estimate || defaultEstimate;
+            const totalEstimate = (est.labour || 0) + (est.materials || 0) + (est.subcontractors || 0) + (est.other || 0);
+
+            // Client rates
+            const clientRates = client?.rates || {};
+            const clientLabourRate = clientRates.labourRate || 0;
+            const clientMatMargin = clientRates.materialMargin || 0;
+            const clientSubMargin = clientRates.subcontractorMargin || 0;
+
+            // Revenue
+            const revenue = totalQuoted > 0 ? totalQuoted : totalInvoiced;
+            const revenueLabel = totalQuoted > 0 ? "Quoted (Accepted)" : "Invoiced";
+
+            // Labour costs from time entries × staff cost rates
+            const labourByWorker = {};
+            jobTime.forEach(t => {
+              const s = (staff || []).find(x => x.name === t.worker);
+              const rate = s?.costRate || 55;
+              if (!labourByWorker[t.worker]) labourByWorker[t.worker] = { hours: 0, cost: 0, rate };
+              labourByWorker[t.worker].hours += t.hours;
+              labourByWorker[t.worker].cost += t.hours * rate;
+            });
+            const actualLabour = Object.values(labourByWorker).reduce((s, w) => s + w.cost, 0);
+
+            // Material costs from bills
+            const matBills = jobBills.filter(b => b.category === "Materials");
+            const actualMaterials = matBills.reduce((s, b) => s + b.amount, 0);
+
+            // Subcontractor costs from bills + WO poLimits for accepted/completed WOs
+            const subBills = jobBills.filter(b => b.category === "Subcontractor");
+            const actualSubs = subBills.reduce((s, b) => s + b.amount, 0);
+
+            // Other costs
+            const otherBills = jobBills.filter(b => b.category !== "Materials" && b.category !== "Subcontractor");
+            const actualOther = otherBills.reduce((s, b) => s + b.amount, 0);
+
+            const totalActual = actualLabour + actualMaterials + actualSubs + actualOther;
+
+            // Revenue at client rates
+            const totalLabourHours = Object.values(labourByWorker).reduce((s, w) => s + w.hours, 0);
+            const clientLabourRevenue = totalLabourHours * clientLabourRate;
+            const clientMaterialRevenue = clientMatMargin > 0 ? actualMaterials * (1 + clientMatMargin / 100) : actualMaterials;
+            const clientSubRevenue = clientSubMargin > 0 ? actualSubs * (1 + clientSubMargin / 100) : actualSubs;
+            const clientTotalRevenue = clientLabourRevenue + clientMaterialRevenue + clientSubRevenue + actualOther;
+            const clientProfit = clientTotalRevenue - totalActual;
+            const clientMarginPct = clientTotalRevenue > 0 ? Math.round((clientProfit / clientTotalRevenue) * 100) : 0;
+
+            const profit = revenue - totalActual;
+            const marginPct = revenue > 0 ? Math.round((profit / revenue) * 100) : 0;
+            const costPct = totalEstimate > 0 ? Math.min(100, Math.round((totalActual / totalEstimate) * 100)) : 0;
+
+            const varRow = (label, estimated, actual) => {
+              const variance = estimated - actual;
+              const pct = estimated > 0 ? Math.round((actual / estimated) * 100) : (actual > 0 ? 999 : 0);
+              const overBudget = actual > estimated && estimated > 0;
+              return (
+                <tr key={label}>
+                  <td style={{ fontWeight: 600, fontSize: 13 }}>{label}</td>
+                  <td style={{ textAlign: "right", fontSize: 13 }}>{fmt(estimated)}</td>
+                  <td style={{ textAlign: "right", fontSize: 13 }}>{fmt(actual)}</td>
+                  <td style={{ textAlign: "right", fontSize: 13, color: overBudget ? "#dc2626" : "#059669", fontWeight: 600 }}>{variance >= 0 ? "+" : ""}{fmt(variance)}</td>
+                  <td style={{ textAlign: "right", fontSize: 13, color: overBudget ? "#dc2626" : "#059669" }}>{pct}%</td>
+                </tr>
+              );
+            };
+
+            const saveEstimate = () => {
+              setJobs(js => js.map(j => j.id === job.id ? { ...j, estimate: { ...estimateForm }, activityLog: addLog(j.activityLog, "Updated job estimate") } : j));
+              setEditingEstimate(false);
+            };
+
+            return (
+            <div>
+              {/* Hero stat cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20 }}>
+                <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "14px 16px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", marginBottom: 6 }}>Total Estimate</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em" }}>{totalEstimate > 0 ? fmt(totalEstimate) : "—"}</div>
+                  <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{totalEstimate > 0 ? "Budget set" : "No estimate set"}</div>
+                </div>
+                <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "14px 16px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", marginBottom: 6 }}>Revenue</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em" }}>{fmt(revenue)}</div>
+                  <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{revenueLabel}{totalPaid > 0 ? ` · ${fmt(totalPaid)} paid` : ""}</div>
+                </div>
+                <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "14px 16px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", marginBottom: 6 }}>Total Costs</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: totalEstimate > 0 && totalActual > totalEstimate ? "#dc2626" : "#111" }}>{fmt(totalActual)}</div>
+                  {totalEstimate > 0 && <div style={{ marginTop: 6 }}>
+                    <div style={{ height: 4, background: "#e5e7eb", borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ width: `${costPct}%`, height: "100%", background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#059669", borderRadius: 2 }} />
+                    </div>
+                    <div style={{ fontSize: 10, color: "#999", marginTop: 2 }}>{costPct}% of estimate</div>
+                  </div>}
+                </div>
+                <div style={{ background: profit >= 0 ? "#ecfdf5" : "#fef2f2", borderRadius: 8, padding: "14px 16px", borderLeft: `3px solid ${profit >= 0 ? "#059669" : "#dc2626"}` }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: profit >= 0 ? "#059669" : "#dc2626", marginBottom: 6 }}>Profit / Margin</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: profit >= 0 ? "#059669" : "#dc2626" }}>{fmt(profit)}</div>
+                  <div style={{ fontSize: 11, color: profit >= 0 ? "#059669" : "#dc2626", marginTop: 3 }}>{revenue > 0 ? `${marginPct}% margin` : "No revenue yet"}</div>
+                </div>
+              </div>
+
+              {/* Estimate Breakdown — editable */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Estimate Breakdown</div>
+                  {!editingEstimate && <button className="btn btn-ghost btn-xs" onClick={() => { setEstimateForm({ ...defaultEstimate, ...(job.estimate || {}) }); setEditingEstimate(true); }}><Icon name="edit" size={11} /> Edit</button>}
+                </div>
+                {editingEstimate ? (
+                  <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 16 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      {[{ key: "labour", label: "Labour" }, { key: "materials", label: "Materials" }, { key: "subcontractors", label: "Subcontractors" }, { key: "other", label: "Other" }].map(f => (
+                        <div key={f.key} className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label">{f.label}</label>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ fontSize: 13, color: "#999" }}>$</span>
+                            <input type="number" className="form-control" value={estimateForm[f.key] || ""} onChange={e => setEstimateForm(prev => ({ ...prev, [f.key]: parseFloat(e.target.value) || 0 }))} style={{ flex: 1 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, paddingTop: 12, borderTop: "1px solid #e2e8f0" }}>
+                      <div style={{ fontSize: 14, fontWeight: 700 }}>Total: {fmt((estimateForm.labour || 0) + (estimateForm.materials || 0) + (estimateForm.subcontractors || 0) + (estimateForm.other || 0))}</div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditingEstimate(false)}>Cancel</button>
+                        <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={saveEstimate}>Save Estimate</button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+                    {[{ label: "Labour", val: est.labour }, { label: "Materials", val: est.materials }, { label: "Subcontractors", val: est.subcontractors }, { label: "Other", val: est.other }].map(c => (
+                      <div key={c.label} style={{ background: "#f8f8f8", borderRadius: 8, padding: "10px 14px" }}>
+                        <div style={{ fontSize: 11, color: "#999", marginBottom: 2 }}>{c.label}</div>
+                        <div style={{ fontSize: 15, fontWeight: 700 }}>{c.val ? fmt(c.val) : "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Cost Breakdown */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 10 }}>Cost Breakdown</div>
+
+                {/* Labour */}
+                <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 16, marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>Labour</div>
+                    <div style={{ fontSize: 14, fontWeight: 800 }}>{fmt(actualLabour)}</div>
+                  </div>
+                  {Object.entries(labourByWorker).length > 0 ? Object.entries(labourByWorker).map(([name, w]) => (
+                    <div key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", fontSize: 12, color: "#555" }}>
+                      <span>{name} <span style={{ color: "#999" }}>({w.hours}h × ${w.rate}/hr)</span></span>
+                      <span style={{ fontWeight: 600 }}>{fmt(w.cost)}</span>
+                    </div>
+                  )) : <div style={{ fontSize: 12, color: "#999" }}>No time logged</div>}
+                </div>
+
+                {/* Materials */}
+                <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 16, marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>Materials</div>
+                    <div style={{ fontSize: 14, fontWeight: 800 }}>{fmt(actualMaterials)}</div>
+                  </div>
+                  {matBills.length > 0 ? matBills.map(b => (
+                    <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", fontSize: 12, color: "#555" }}>
+                      <span>{b.supplier} {b.invoiceNo && <span style={{ color: "#999" }}>({b.invoiceNo})</span>}</span>
+                      <span style={{ fontWeight: 600 }}>{fmt(b.amount)}</span>
+                    </div>
+                  )) : <div style={{ fontSize: 12, color: "#999" }}>No material costs</div>}
+                </div>
+
+                {/* Subcontractors */}
+                <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 16, marginBottom: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>Subcontractors</div>
+                    <div style={{ fontSize: 14, fontWeight: 800 }}>{fmt(actualSubs)}</div>
+                  </div>
+                  {subBills.length > 0 ? subBills.map(b => (
+                    <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", fontSize: 12, color: "#555" }}>
+                      <span>{b.supplier} {b.invoiceNo && <span style={{ color: "#999" }}>({b.invoiceNo})</span>}</span>
+                      <span style={{ fontWeight: 600 }}>{fmt(b.amount)}</span>
+                    </div>
+                  )) : <div style={{ fontSize: 12, color: "#999" }}>No subcontractor costs</div>}
+                </div>
+
+                {/* Other */}
+                {(otherBills.length > 0 || actualOther > 0) && (
+                  <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 16, marginBottom: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>Other</div>
+                      <div style={{ fontSize: 14, fontWeight: 800 }}>{fmt(actualOther)}</div>
+                    </div>
+                    {otherBills.map(b => (
+                      <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", fontSize: 12, color: "#555" }}>
+                        <span>{b.supplier} <span style={{ color: "#999" }}>({b.category})</span></span>
+                        <span style={{ fontWeight: 600 }}>{fmt(b.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Estimate vs Actual */}
+              {totalEstimate > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 10 }}>Estimate vs Actual</div>
+                  <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, overflow: "hidden" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ background: "#f8f8f8" }}>
+                          <th style={{ padding: "10px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Category</th>
+                          <th style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Estimate</th>
+                          <th style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Actual</th>
+                          <th style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Variance</th>
+                          <th style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Used</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {varRow("Labour", est.labour || 0, actualLabour)}
+                        {varRow("Materials", est.materials || 0, actualMaterials)}
+                        {varRow("Subcontractors", est.subcontractors || 0, actualSubs)}
+                        {varRow("Other", est.other || 0, actualOther)}
+                        <tr style={{ borderTop: "2px solid #e8e8e8", background: "#f8f8f8" }}>
+                          <td style={{ padding: "10px 16px", fontWeight: 800, fontSize: 13 }}>Total</td>
+                          <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 800, fontSize: 13 }}>{fmt(totalEstimate)}</td>
+                          <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 800, fontSize: 13 }}>{fmt(totalActual)}</td>
+                          <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 800, fontSize: 13, color: totalActual > totalEstimate ? "#dc2626" : "#059669" }}>{totalEstimate - totalActual >= 0 ? "+" : ""}{fmt(totalEstimate - totalActual)}</td>
+                          <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 800, fontSize: 13, color: costPct > 100 ? "#dc2626" : "#059669" }}>{costPct}%</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Revenue Breakdown */}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 10 }}>Revenue Breakdown</div>
+                <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 16 }}>
+                  {[{ label: "Accepted Quotes", val: totalQuoted, count: jobQuotes.filter(q => q.status === "accepted").length },
+                    { label: "Total Invoiced", val: totalInvoiced, count: jobInvoices.length },
+                    { label: "Paid", val: totalPaid, count: jobInvoices.filter(i => i.status === "paid").length }
+                  ].map((r, i) => (
+                    <div key={r.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 2 ? "1px solid #f0f0f0" : "none" }}>
+                      <span style={{ fontSize: 13, color: "#555" }}>{r.label} <span style={{ color: "#999" }}>({r.count})</span></span>
+                      <span style={{ fontSize: 14, fontWeight: 700 }}>{fmt(r.val)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Revenue at Client Rates */}
+              {clientLabourRate > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 10 }}>Revenue at Client Rates</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                  <div style={{ background: "#f0fdf4", borderRadius: 8, padding: "12px 16px", borderLeft: "3px solid #059669" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#059669", marginBottom: 4 }}>Calculated Revenue</div>
+                    <div style={{ fontSize: 20, fontWeight: 800 }}>{fmt(clientTotalRevenue)}</div>
+                    <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>Based on {client?.name} rates</div>
+                  </div>
+                  <div style={{ background: clientProfit >= 0 ? "#f0fdf4" : "#fef2f2", borderRadius: 8, padding: "12px 16px", borderLeft: `3px solid ${clientProfit >= 0 ? "#059669" : "#dc2626"}` }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: clientProfit >= 0 ? "#059669" : "#dc2626", marginBottom: 4 }}>Projected Profit</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: clientProfit >= 0 ? "#059669" : "#dc2626" }}>{fmt(clientProfit)}</div>
+                    <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{clientMarginPct}% margin</div>
+                  </div>
+                </div>
+                <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+                    <span style={{ fontSize: 13, color: "#555" }}>Labour <span style={{ color: "#999" }}>({totalLabourHours}h × ${clientLabourRate}/hr)</span></span>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>{fmt(clientLabourRevenue)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+                    <span style={{ fontSize: 13, color: "#555" }}>Materials <span style={{ color: "#999" }}>({fmt(actualMaterials)} + {clientMatMargin}% margin)</span></span>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>{fmt(clientMaterialRevenue)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f0f0f0" }}>
+                    <span style={{ fontSize: 13, color: "#555" }}>Subcontractors <span style={{ color: "#999" }}>({fmt(actualSubs)} + {clientSubMargin}% margin)</span></span>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>{fmt(clientSubRevenue)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
+                    <span style={{ fontSize: 13, color: "#555" }}>Other</span>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>{fmt(actualOther)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0 2px", borderTop: "2px solid #e8e8e8", marginTop: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 800 }}>Total</span>
+                    <span style={{ fontSize: 15, fontWeight: 800 }}>{fmt(clientTotalRevenue)}</span>
+                  </div>
+                </div>
+              </div>
+              )}
+            </div>
+            );
+          })()}
 
           {tab === "notes" && (
             <div>
@@ -3673,7 +3996,7 @@ const Clients = ({ clients, setClients, jobs }) => {
   const [showModal, setShowModal] = useState(false);
   const [editClient, setEditClient] = useState(null);
   const [clientMode, setClientMode] = useState("edit");
-  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", sites: [] });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", sites: [], mainContact: { name: "", phone: "", email: "" }, accountsContact: { name: "", phone: "", email: "" }, rates: { labourRate: 0, materialMargin: 0, subcontractorMargin: 0 } });
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [view, setView] = useState("grid");
@@ -3682,7 +4005,7 @@ const Clients = ({ clients, setClients, jobs }) => {
   const [showSiteModal, setShowSiteModal] = useState(false);
   const [editSite, setEditSite] = useState(null);
   const [siteClientId, setSiteClientId] = useState(null);
-  const [siteForm, setSiteForm] = useState({ name: "", address: "", contactName: "", contactPhone: "" });
+  const [siteForm, setSiteForm] = useState({ name: "", address: "", contactName: "", contactPhone: "", contactEmail: "" });
 
   const filtered = clients.filter(c => {
     const q = search.toLowerCase();
@@ -3696,13 +4019,13 @@ const Clients = ({ clients, setClients, jobs }) => {
   const openNew = () => {
     setEditClient(null);
     setClientMode("edit");
-    setForm({ name: "", email: "", phone: "", address: "", sites: [] });
+    setForm({ name: "", email: "", phone: "", address: "", sites: [], mainContact: { name: "", phone: "", email: "" }, accountsContact: { name: "", phone: "", email: "" }, rates: { labourRate: 0, materialMargin: 0, subcontractorMargin: 0 } });
     setShowModal(true);
   };
   const openEdit = (c) => {
     setEditClient(c);
     setClientMode("view");
-    setForm({ ...c, sites: c.sites || [] });
+    setForm({ ...c, sites: c.sites || [], mainContact: c.mainContact || { name: "", phone: "", email: "" }, accountsContact: c.accountsContact || { name: "", phone: "", email: "" }, rates: c.rates || { labourRate: 0, materialMargin: 0, subcontractorMargin: 0 } });
     setShowModal(true);
   };
   const save = async () => {
@@ -3734,7 +4057,7 @@ const Clients = ({ clients, setClients, jobs }) => {
   const openNewSite = (clientId) => {
     setSiteClientId(clientId);
     setEditSite(null);
-    setSiteForm({ name: "", address: "", contactName: "", contactPhone: "" });
+    setSiteForm({ name: "", address: "", contactName: "", contactPhone: "", contactEmail: "" });
     setShowSiteModal(true);
   };
   const openEditSite = (clientId, site) => {
@@ -3794,15 +4117,16 @@ const Clients = ({ clients, setClients, jobs }) => {
         <div className="card">
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Sites</th><th>Jobs</th><th>Active</th><th></th></tr></thead>
+              <thead><tr><th>Name</th><th>Contact</th><th>Email</th><th>Phone</th><th>Sites</th><th>Jobs</th><th>Active</th><th></th></tr></thead>
               <tbody>
-                {filtered.length === 0 && <tr><td colSpan={7}><div className="empty-state"><div className="empty-state-icon">👥</div><div className="empty-state-text">No clients found</div></div></td></tr>}
+                {filtered.length === 0 && <tr><td colSpan={8}><div className="empty-state"><div className="empty-state-icon">👥</div><div className="empty-state-text">No clients found</div></div></td></tr>}
                 {filtered.map(client => {
                   const clientJobs = jobs.filter(j => j.clientId === client.id);
                   const active = clientJobs.filter(j => j.status === "in_progress").length;
                   return (
                     <tr key={client.id} onClick={() => openEdit(client)} style={{ cursor: "pointer" }}>
                       <td style={{ fontWeight: 600 }}>{client.name}</td>
+                      <td style={{ fontSize: 12, color: "#555" }}>{client.mainContact?.name || "—"}</td>
                       <td style={{ fontSize: 12, color: "#666" }}>{client.email || "—"}</td>
                       <td style={{ fontSize: 12, color: "#666" }}>{client.phone || "—"}</td>
                       <td>{(client.sites || []).length}</td>
@@ -3839,6 +4163,8 @@ const Clients = ({ clients, setClients, jobs }) => {
                       {client.phone  && <span style={{ fontSize: 12, color: "#666" }}>📞 {client.phone}</span>}
                       {client.address && <span style={{ fontSize: 12, color: "#666" }}>📍 {client.address}</span>}
                     </div>
+                    {client.mainContact?.name && <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>👤 {client.mainContact.name} — Main Contact</div>}
+                    {client.rates?.labourRate > 0 && <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>${client.rates.labourRate}/hr labour rate</div>}
                     <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
                       <span className="chip">{clientJobs.length} jobs</span>
                       {active > 0 && <span className="chip" style={{ background: "#111", color: "#fff" }}>{active} active</span>}
@@ -3885,10 +4211,11 @@ const Clients = ({ clients, setClients, jobs }) => {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 3 }}>{site.name}</div>
                           {site.address && <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>📍 {site.address}</div>}
-                          {(site.contactName || site.contactPhone) && (
+                          {(site.contactName || site.contactPhone || site.contactEmail) && (
                             <div style={{ display: "flex", gap: "4px 14px", flexWrap: "wrap", marginTop: 4 }}>
                               {site.contactName  && <span style={{ fontSize: 12, color: "#555", fontWeight: 600 }}>👤 {site.contactName}</span>}
                               {site.contactPhone && <span style={{ fontSize: 12, color: "#555" }}>📞 {site.contactPhone}</span>}
+                              {site.contactEmail && <span style={{ fontSize: 12, color: "#555" }}>✉ {site.contactEmail}</span>}
                             </div>
                           )}
                         </div>
@@ -3954,7 +4281,43 @@ const Clients = ({ clients, setClients, jobs }) => {
                 <ViewField label="Phone" value={form.phone} />
               </div>
               <ViewField label="Address" value={form.address} />
-              <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4 }}>
+              {/* Contact cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+                {form.mainContact?.name && (
+                  <div style={{ padding: "10px 14px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 6 }}>Main Contact</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{form.mainContact.name}</div>
+                    {form.mainContact.phone && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>📞 {form.mainContact.phone}</div>}
+                    {form.mainContact.email && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>✉ {form.mainContact.email}</div>}
+                  </div>
+                )}
+                {form.accountsContact?.name && (
+                  <div style={{ padding: "10px 14px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 6 }}>Accounts Contact</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{form.accountsContact.name}</div>
+                    {form.accountsContact.phone && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>📞 {form.accountsContact.phone}</div>}
+                    {form.accountsContact.email && <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>✉ {form.accountsContact.email}</div>}
+                  </div>
+                )}
+              </div>
+              {/* Rates */}
+              {(form.rates?.labourRate || form.rates?.materialMargin || form.rates?.subcontractorMargin) ? (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}>
+                  <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 3 }}>Labour Rate</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#334155" }}>${form.rates.labourRate || 0}/hr</div>
+                  </div>
+                  <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 3 }}>Materials Margin</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#334155" }}>{form.rates.materialMargin || 0}%</div>
+                  </div>
+                  <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 3 }}>Subcontractor Margin</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#334155" }}>{form.rates.subcontractorMargin || 0}%</div>
+                  </div>
+                </div>
+              ) : null}
+              <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 12 }}>
                 <div style={{ display: "flex", gap: 8 }}>
                   <span className="chip">{clientJobCount} jobs</span>
                   <span className="chip">🏢 {clientSites.length} site{clientSites.length !== 1 ? "s" : ""}</span>
@@ -3967,7 +4330,7 @@ const Clients = ({ clients, setClients, jobs }) => {
                     <div key={s.id} style={{ padding: "10px 14px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6 }}>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
                       {s.address && <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{s.address}</div>}
-                      {s.contactName && <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>👤 {s.contactName}{s.contactPhone ? ` · ${s.contactPhone}` : ""}</div>}
+                      {s.contactName && <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>👤 {s.contactName}{s.contactPhone ? ` · ${s.contactPhone}` : ""}{s.contactEmail ? ` · ${s.contactEmail}` : ""}</div>}
                     </div>
                   ))}
                 </div>
@@ -3981,6 +4344,33 @@ const Clients = ({ clients, setClients, jobs }) => {
               <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
             </div>
             <div className="form-group"><label className="form-label">Address</label><input className="form-control" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
+            {/* Main Contact */}
+            <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Main Contact</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div className="form-group"><label className="form-label">Name</label><input className="form-control" value={form.mainContact?.name || ""} onChange={e => setForm(f => ({ ...f, mainContact: { ...f.mainContact, name: e.target.value } }))} placeholder="Full name" /></div>
+                <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.mainContact?.phone || ""} onChange={e => setForm(f => ({ ...f, mainContact: { ...f.mainContact, phone: e.target.value } }))} placeholder="04xx xxx xxx" /></div>
+                <div className="form-group"><label className="form-label">Email</label><input type="email" className="form-control" value={form.mainContact?.email || ""} onChange={e => setForm(f => ({ ...f, mainContact: { ...f.mainContact, email: e.target.value } }))} placeholder="email@company.com" /></div>
+              </div>
+            </div>
+            {/* Accounts Contact */}
+            <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Accounts Contact</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div className="form-group"><label className="form-label">Name</label><input className="form-control" value={form.accountsContact?.name || ""} onChange={e => setForm(f => ({ ...f, accountsContact: { ...f.accountsContact, name: e.target.value } }))} placeholder="Full name" /></div>
+                <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.accountsContact?.phone || ""} onChange={e => setForm(f => ({ ...f, accountsContact: { ...f.accountsContact, phone: e.target.value } }))} placeholder="04xx xxx xxx" /></div>
+                <div className="form-group"><label className="form-label">Email</label><input type="email" className="form-control" value={form.accountsContact?.email || ""} onChange={e => setForm(f => ({ ...f, accountsContact: { ...f.accountsContact, email: e.target.value } }))} placeholder="email@company.com" /></div>
+              </div>
+            </div>
+            {/* Rates */}
+            <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Rates &amp; Margins</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div className="form-group"><label className="form-label">Labour Rate ($/hr)</label><input type="number" className="form-control" value={form.rates?.labourRate || ""} onChange={e => setForm(f => ({ ...f, rates: { ...f.rates, labourRate: parseFloat(e.target.value) || 0 } }))} placeholder="0" /></div>
+                <div className="form-group"><label className="form-label">Materials Margin (%)</label><input type="number" className="form-control" value={form.rates?.materialMargin || ""} onChange={e => setForm(f => ({ ...f, rates: { ...f.rates, materialMargin: parseFloat(e.target.value) || 0 } }))} placeholder="0" /></div>
+                <div className="form-group"><label className="form-label">Subcontractor Margin (%)</label><input type="number" className="form-control" value={form.rates?.subcontractorMargin || ""} onChange={e => setForm(f => ({ ...f, rates: { ...f.rates, subcontractorMargin: parseFloat(e.target.value) || 0 } }))} placeholder="0" /></div>
+              </div>
+            </div>
           </div>
           )}
         </SectionDrawer>
@@ -4010,9 +4400,10 @@ const Clients = ({ clients, setClients, jobs }) => {
             <div className="form-group"><label className="form-label">Address</label><input className="form-control" value={siteForm.address} onChange={e => setSiteForm(f => ({ ...f, address: e.target.value }))} placeholder="Physical address" /></div>
             <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4, marginBottom: 16 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Site Contact</div>
-              <div className="grid-2">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                 <div className="form-group"><label className="form-label">Contact Name</label><input className="form-control" value={siteForm.contactName} onChange={e => setSiteForm(f => ({ ...f, contactName: e.target.value }))} placeholder="Full name" /></div>
                 <div className="form-group"><label className="form-label">Contact Phone</label><input className="form-control" value={siteForm.contactPhone} onChange={e => setSiteForm(f => ({ ...f, contactPhone: e.target.value }))} placeholder="04xx xxx xxx" /></div>
+                <div className="form-group"><label className="form-label">Contact Email</label><input type="email" className="form-control" value={siteForm.contactEmail || ""} onChange={e => setSiteForm(f => ({ ...f, contactEmail: e.target.value }))} placeholder="email@company.com" /></div>
               </div>
             </div>
           </div>
@@ -6886,7 +7277,7 @@ export default function App() {
       setSchedule(SEED_SCHEDULE);
       setContractors(SEED_CONTRACTORS);
       setSuppliers(SEED_SUPPLIERS);
-      setStaff(TEAM.map((name, i) => ({ id: i + 1, name })));
+      setStaff(TEAM_DATA.map((t, i) => ({ id: i + 1, name: t.name, costRate: t.costRate, chargeRate: t.chargeRate })));
       setLoading(false);
       return;
     }

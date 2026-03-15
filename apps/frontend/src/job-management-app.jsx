@@ -54,11 +54,40 @@ const SEED_CLIENTS = [
 ];
 
 const SEED_JOBS = [
-  { id: 1, title: "Office Fitout – Level 3", clientId: 1, siteId: 101, status: "in_progress", priority: "high", description: "Full office refurbishment including partition walls, electrical and plumbing.", startDate: "2026-02-10", dueDate: "2026-03-25", assignedTo: ["Tom Baker", "Sarah Lee"], tags: ["fitout", "commercial"], createdAt: "2026-02-01", estimate: { labour: 4200, materials: 3800, subcontractors: 3500, other: 500 }, notes: [{ id: 1, text: "Site access confirmed via loading dock. Security pass required — collect from reception.", category: "general", attachments: [], createdAt: "2026-03-08T09:00:00Z", createdBy: "Alex Jones" }, { id: 2, text: "Found damaged plasterboard on Level 3 east wall. Needs replacement before painting.", category: "issue", attachments: [], createdAt: "2026-03-10T14:30:00Z", createdBy: "Tom Baker" }, { id: 3, text: "Electrical rough-in inspection passed. Certificate filed.", category: "inspection", attachments: [], createdAt: "2026-03-11T16:00:00Z", createdBy: "Alex Jones" }], activityLog: [{ ts: "2026-02-01 09:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-10 08:30", user: "Alex Jones", action: "Status changed to In Progress" }] },
-  { id: 2, title: "Roof Repair & Waterproofing", clientId: 2, siteId: 201, status: "quoted", priority: "medium", description: "Replace damaged roof sheets and apply waterproof membrane to flat section.", startDate: "2026-03-15", dueDate: "2026-03-30", assignedTo: ["Mike Chen"], tags: ["roofing", "maintenance"], createdAt: "2026-02-15", estimate: { labour: 1800, materials: 4200, subcontractors: 0, other: 300 }, notes: [], activityLog: [{ ts: "2026-02-15 10:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-16 14:00", user: "Alex Jones", action: "Quote Q-0002 added" }] },
-  { id: 3, title: "Kitchen Renovation", clientId: 3, siteId: 301, status: "scheduled", priority: "medium", description: "Full kitchen demo and rebuild with new cabinetry, benchtops and appliances.", startDate: "2026-03-20", dueDate: "2026-04-20", assignedTo: ["Sarah Lee", "Dan Wright"], tags: ["renovation", "residential"], createdAt: "2026-02-20", estimate: { labour: 0, materials: 0, subcontractors: 0, other: 0 }, notes: [], activityLog: [{ ts: "2026-02-20 11:00", user: "Alex Jones", action: "Job created" }] },
-  { id: 4, title: "HVAC Maintenance – Q1", clientId: 4, siteId: 401, status: "completed", priority: "low", description: "Quarterly service and filter replacement across all HVAC units.", startDate: "2026-01-15", dueDate: "2026-01-20", assignedTo: ["Tom Baker"], tags: ["hvac", "maintenance"], createdAt: "2026-01-10", estimate: { labour: 800, materials: 400, subcontractors: 0, other: 100 }, notes: [], activityLog: [{ ts: "2026-01-10 08:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-01-20 16:00", user: "Tom Baker", action: "Status changed to Completed" }] },
-  { id: 5, title: "Bathroom Tiling & Fixtures", clientId: 1, siteId: null, status: "draft", priority: "low", description: "Re-tile master bathroom and replace all fixtures.", startDate: "", dueDate: "", assignedTo: [], tags: ["tiling", "plumbing"], createdAt: "2026-02-28", estimate: { labour: 0, materials: 0, subcontractors: 0, other: 0 }, notes: [], activityLog: [{ ts: "2026-02-28 15:00", user: "Alex Jones", action: "Job created" }] },
+  { id: 1, title: "Office Fitout – Level 3", clientId: 1, siteId: 101, status: "in_progress", priority: "high", description: "Full office refurbishment including partition walls, electrical and plumbing.", startDate: "2026-02-10", dueDate: "2026-03-25", assignedTo: ["Tom Baker", "Sarah Lee"], tags: ["fitout", "commercial"], createdAt: "2026-02-01", estimate: { labour: 4200, materials: 3800, subcontractors: 3500, other: 500 },
+    phases: [
+      { id: 1, name: "Demolition", startDate: "2026-02-10", endDate: "2026-02-14", color: "#ef4444", progress: 100 },
+      { id: 2, name: "Framing & Partitions", startDate: "2026-02-17", endDate: "2026-02-28", color: "#f97316", progress: 100 },
+      { id: 3, name: "Electrical Rough-in", startDate: "2026-02-24", endDate: "2026-03-07", color: "#eab308", progress: 80 },
+      { id: 4, name: "Plumbing", startDate: "2026-03-03", endDate: "2026-03-10", color: "#3b82f6", progress: 60 },
+      { id: 5, name: "Plasterboard & Painting", startDate: "2026-03-10", endDate: "2026-03-21", color: "#8b5cf6", progress: 20 },
+      { id: 6, name: "Final Fix & Handover", startDate: "2026-03-22", endDate: "2026-03-25", color: "#059669", progress: 0 },
+    ],
+    tasks: [
+      { id: 1, text: "Order plasterboard", done: true, dueDate: "2026-03-08", assignedTo: "Tom Baker", createdAt: "2026-03-01T09:00:00Z" },
+      { id: 2, text: "Book electrical inspection", done: true, dueDate: "2026-03-10", assignedTo: "Mike Chen", createdAt: "2026-03-02T10:00:00Z" },
+      { id: 3, text: "Confirm paint colours with client", done: false, dueDate: "2026-03-15", assignedTo: "Sarah Lee", createdAt: "2026-03-05T14:00:00Z" },
+      { id: 4, text: "Install partition doors", done: false, dueDate: "2026-03-18", assignedTo: "Tom Baker", createdAt: "2026-03-06T08:00:00Z" },
+      { id: 5, text: "Final clean before handover", done: false, dueDate: "2026-03-24", assignedTo: "Dan Wright", createdAt: "2026-03-06T08:30:00Z" },
+    ],
+    notes: [{ id: 1, text: "Site access confirmed via loading dock. Security pass required — collect from reception.", category: "general", attachments: [], createdAt: "2026-03-08T09:00:00Z", createdBy: "Alex Jones" }, { id: 2, text: "Found damaged plasterboard on Level 3 east wall. Needs replacement before painting.", category: "issue", attachments: [], createdAt: "2026-03-10T14:30:00Z", createdBy: "Tom Baker" }, { id: 3, text: "Electrical rough-in inspection passed. Certificate filed.", category: "inspection", attachments: [], createdAt: "2026-03-11T16:00:00Z", createdBy: "Alex Jones" }], activityLog: [{ ts: "2026-02-01 09:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-10 08:30", user: "Alex Jones", action: "Status changed to In Progress" }] },
+  { id: 2, title: "Roof Repair & Waterproofing", clientId: 2, siteId: 201, status: "quoted", priority: "medium", description: "Replace damaged roof sheets and apply waterproof membrane to flat section.", startDate: "2026-03-15", dueDate: "2026-03-30", assignedTo: ["Mike Chen"], tags: ["roofing", "maintenance"], createdAt: "2026-02-15", estimate: { labour: 1800, materials: 4200, subcontractors: 0, other: 300 },
+    phases: [
+      { id: 1, name: "Site Setup & Safety", startDate: "2026-03-15", endDate: "2026-03-16", color: "#ef4444", progress: 0 },
+      { id: 2, name: "Sheet Removal", startDate: "2026-03-17", endDate: "2026-03-19", color: "#f97316", progress: 0 },
+      { id: 3, name: "Membrane Application", startDate: "2026-03-20", endDate: "2026-03-24", color: "#3b82f6", progress: 0 },
+      { id: 4, name: "New Sheets Install", startDate: "2026-03-25", endDate: "2026-03-28", color: "#8b5cf6", progress: 0 },
+      { id: 5, name: "Final Inspection", startDate: "2026-03-29", endDate: "2026-03-30", color: "#059669", progress: 0 },
+    ],
+    tasks: [
+      { id: 1, text: "Order roof sheets (24 m²)", done: false, dueDate: "2026-03-14", assignedTo: "Dan Wright", createdAt: "2026-03-01T09:00:00Z" },
+      { id: 2, text: "Arrange crane hire", done: false, dueDate: "2026-03-14", assignedTo: "Mike Chen", createdAt: "2026-03-02T10:00:00Z" },
+      { id: 3, text: "Waterproof membrane delivery", done: false, dueDate: "2026-03-18", assignedTo: "Dan Wright", createdAt: "2026-03-03T11:00:00Z" },
+    ],
+    notes: [], activityLog: [{ ts: "2026-02-15 10:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-02-16 14:00", user: "Alex Jones", action: "Quote Q-0002 added" }] },
+  { id: 3, title: "Kitchen Renovation", clientId: 3, siteId: 301, status: "scheduled", priority: "medium", description: "Full kitchen demo and rebuild with new cabinetry, benchtops and appliances.", startDate: "2026-03-20", dueDate: "2026-04-20", assignedTo: ["Sarah Lee", "Dan Wright"], tags: ["renovation", "residential"], createdAt: "2026-02-20", estimate: { labour: 0, materials: 0, subcontractors: 0, other: 0 }, phases: [], tasks: [], notes: [], activityLog: [{ ts: "2026-02-20 11:00", user: "Alex Jones", action: "Job created" }] },
+  { id: 4, title: "HVAC Maintenance – Q1", clientId: 4, siteId: 401, status: "completed", priority: "low", description: "Quarterly service and filter replacement across all HVAC units.", startDate: "2026-01-15", dueDate: "2026-01-20", assignedTo: ["Tom Baker"], tags: ["hvac", "maintenance"], createdAt: "2026-01-10", estimate: { labour: 800, materials: 400, subcontractors: 0, other: 100 }, phases: [], tasks: [], notes: [], activityLog: [{ ts: "2026-01-10 08:00", user: "Alex Jones", action: "Job created" }, { ts: "2026-01-20 16:00", user: "Tom Baker", action: "Status changed to Completed" }] },
+  { id: 5, title: "Bathroom Tiling & Fixtures", clientId: 1, siteId: null, status: "draft", priority: "low", description: "Re-tile master bathroom and replace all fixtures.", startDate: "", dueDate: "", assignedTo: [], tags: ["tiling", "plumbing"], createdAt: "2026-02-28", estimate: { labour: 0, materials: 0, subcontractors: 0, other: 0 }, phases: [], tasks: [], notes: [], activityLog: [{ ts: "2026-02-28 15:00", user: "Alex Jones", action: "Job created" }] },
 ];
 
 const SEED_QUOTES = [
@@ -144,6 +173,54 @@ const NOTE_CATEGORIES = [
   { id: "inspection", label: "Inspection", color: "#7c3aed" },
   { id: "delivery", label: "Delivery", color: "#d97706" },
   { id: "safety", label: "Safety", color: "#059669" },
+  { id: "form", label: "Form", color: "#2563eb" },
+];
+
+// ── Form Templates ──────────────────────────────────────────────────────────
+const FORM_TEMPLATES = [
+  { id: "swms", name: "SWMS / HPS", icon: "⚠️", fields: [
+    { key: "jobDescription", label: "Job Description", type: "text" },
+    { key: "location", label: "Location", type: "text" },
+    { key: "date", label: "Date", type: "date" },
+    { key: "supervisor", label: "Supervisor", type: "text" },
+    { key: "hazards", label: "Identified Hazards", type: "textarea" },
+    { key: "controls", label: "Control Measures", type: "textarea" },
+    { key: "ppe", label: "PPE Required", type: "checklist", options: ["Hard Hat", "Safety Glasses", "High-Vis Vest", "Steel Cap Boots", "Gloves", "Ear Protection", "Dust Mask", "Fall Harness"] },
+    { key: "workersBriefed", label: "Workers Briefed", type: "textarea" },
+    { key: "signature", label: "Supervisor Signature", type: "signature" },
+  ]},
+  { id: "service_report", name: "Service Report", icon: "🔧", fields: [
+    { key: "client", label: "Client", type: "text" },
+    { key: "site", label: "Site", type: "text" },
+    { key: "date", label: "Date", type: "date" },
+    { key: "technician", label: "Technician", type: "text" },
+    { key: "arrivalTime", label: "Arrival Time", type: "time" },
+    { key: "departureTime", label: "Departure Time", type: "time" },
+    { key: "workPerformed", label: "Work Performed", type: "textarea" },
+    { key: "materialsUsed", label: "Materials Used", type: "textarea" },
+    { key: "followUp", label: "Follow-up Actions", type: "checklist", options: ["Parts on order", "Return visit required", "Quote to follow", "Warranty claim", "No further action"] },
+    { key: "clientSignature", label: "Client Signature", type: "signature" },
+  ]},
+  { id: "take5", name: "Take 5", icon: "✋", fields: [
+    { key: "date", label: "Date", type: "date" },
+    { key: "worker", label: "Worker Name", type: "text" },
+    { key: "location", label: "Location", type: "text" },
+    { key: "safetyChecks", label: "Safety Checks", type: "checklist", options: [
+      "Do I know the task and how to do it safely?",
+      "Am I fit for duty (not fatigued, medicated, etc)?",
+      "Have I identified all hazards?",
+      "Are tools and equipment in good condition?",
+      "Is the work area clean and clear?",
+      "Are others in the area safe from my work?",
+      "Do I have the right PPE?",
+      "Do I know emergency procedures?",
+      "Have I checked for overhead/underground services?",
+      "Am I comfortable to proceed?"
+    ]},
+    { key: "additionalHazards", label: "Additional Hazards Identified", type: "textarea" },
+    { key: "controlActions", label: "Control Actions Taken", type: "textarea" },
+    { key: "signature", label: "Worker Signature", type: "signature" },
+  ]},
 ];
 
 // ── Orders: Seed Data ────────────────────────────────────────────────────────
@@ -458,8 +535,10 @@ const injectStyles = () => {
     .schedule-day-col.schedule-day-compact { min-height: 0; flex: 1; }
     .schedule-day-header { padding: 6px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1px; }
     .schedule-day-body { padding: 6px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
-    .schedule-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 6px; padding: 8px 10px; cursor: pointer; transition: all 0.15s; }
+    .schedule-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 6px; padding: 8px 10px; cursor: grab; transition: all 0.15s; }
     .schedule-card:hover { border-color: var(--section-accent, #0891b2); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .schedule-card.dragging { opacity: 0.4; }
+    .schedule-day-col.drag-over { background: #e0f7fa !important; border-color: #0891b2 !important; box-shadow: inset 0 0 0 2px rgba(8,145,178,0.2); }
 
     .priority-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
     .priority-high { background: #111; }
@@ -2228,6 +2307,48 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   const defaultEstimate = { labour: 0, materials: 0, subcontractors: 0, other: 0 };
   const [estimateForm, setEstimateForm] = useState({ ...defaultEstimate, ...(job.estimate || {}) });
 
+  // ── Gantt state ──
+  const [showPhaseForm, setShowPhaseForm] = useState(false);
+  const [editPhase, setEditPhase] = useState(null);
+  const defaultPhase = { name: "", startDate: job.startDate || new Date().toISOString().slice(0,10), endDate: job.dueDate || new Date().toISOString().slice(0,10), color: "#3b82f6", progress: 0 };
+  const [phaseForm, setPhaseForm] = useState({ ...defaultPhase });
+
+  // ── Tasks state ──
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [taskForm, setTaskForm] = useState({ text: "", dueDate: "", assignedTo: "" });
+
+  // ── Forms state ──
+  const [showFormFiller, setShowFormFiller] = useState(null);
+  const [viewingForm, setViewingForm] = useState(null);
+  const [showFormMenu, setShowFormMenu] = useState(false);
+
+  const printFormPdf = (note, tmpl) => {
+    const data = note.formData || {};
+    const w = window.open("", "_blank");
+    w.document.write(`<html><head><title>${tmpl?.name || "Form"} – ${job.title}</title><style>body{font-family:sans-serif;padding:30px;max-width:700px;margin:0 auto}h1{font-size:20px;border-bottom:2px solid #333;padding-bottom:8px}h2{font-size:14px;color:#666;margin-top:0}.field{margin-bottom:16px}.label{font-size:11px;font-weight:700;text-transform:uppercase;color:#888;letter-spacing:0.05em;margin-bottom:4px}.value{font-size:13px;color:#333;white-space:pre-wrap}.check{display:flex;gap:6px;align-items:center;font-size:13px;margin:2px 0}.check-y{color:#059669;font-weight:700}.check-n{color:#dc2626;font-weight:700}.sig{max-width:300px;height:80px;border:1px solid #ddd;border-radius:4px}.meta{font-size:11px;color:#888;margin-bottom:16px}</style></head><body>`);
+    w.document.write(`<h1>${tmpl?.icon || ""} ${tmpl?.name || "Form"}</h1>`);
+    w.document.write(`<h2>${job.title}</h2>`);
+    w.document.write(`<div class="meta">Completed ${new Date(note.createdAt).toLocaleString()} by ${note.createdBy}</div>`);
+    (tmpl?.fields || []).forEach(field => {
+      const val = data[field.key];
+      w.document.write(`<div class="field"><div class="label">${field.label}</div>`);
+      if (field.type === "checklist") {
+        (field.options || []).forEach(opt => {
+          const checked = (val || []).includes(opt);
+          w.document.write(`<div class="check"><span class="${checked ? "check-y" : "check-n"}">${checked ? "✓" : "✗"}</span><span>${opt}</span></div>`);
+        });
+      } else if (field.type === "signature") {
+        w.document.write(val ? `<img class="sig" src="${val}" />` : `<div class="value">No signature</div>`);
+      } else {
+        w.document.write(`<div class="value">${val || "—"}</div>`);
+      }
+      w.document.write(`</div>`);
+    });
+    w.document.write(`</body></html>`);
+    w.document.close();
+    setTimeout(() => w.print(), 300);
+  };
+
   const addNote = () => {
     if (!noteForm.text.trim() && noteForm.attachments.length === 0) return;
     const note = { id: Date.now(), text: noteForm.text, category: noteForm.category, attachments: noteForm.attachments.map(a => ({ id: a.id, name: a.name, size: a.size, type: a.type, dataUrl: a.dataUrl })), createdAt: new Date().toISOString(), createdBy: CURRENT_USER };
@@ -2383,9 +2504,15 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   };
 
   const jobNotes = job.notes || [];
+  const jobPhases = job.phases || [];
+  const jobTasks = job.tasks || [];
+  const tasksDone = jobTasks.filter(t => t.done).length;
+  const tasksRemaining = jobTasks.length - tasksDone;
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "pnl", label: "P&L" },
+    { id: "gantt", label: `Gantt (${jobPhases.length})` },
+    { id: "tasks", label: `Tasks${tasksRemaining > 0 ? ` (${tasksRemaining})` : jobTasks.length > 0 ? " ✓" : ""}` },
     { id: "notes", label: `Notes (${jobNotes.length})` },
     { id: "quotes", label: `Quotes (${jobQuotes.length})` },
     { id: "invoices", label: `Invoices (${jobInvoices.length})` },
@@ -3206,6 +3333,216 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
             );
           })()}
 
+          {/* ── Gantt Tab ── */}
+          {tab === "gantt" && (() => {
+            const phases = job.phases || [];
+            if (phases.length === 0 && !showPhaseForm) {
+              return (
+                <div>
+                  <div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">No project phases yet</div></div>
+                  <div style={{ textAlign: "center", marginTop: 12 }}>
+                    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
+                  </div>
+                </div>
+              );
+            }
+            const allDates = phases.flatMap(p => [p.startDate, p.endDate]).filter(Boolean);
+            const minDate = allDates.length ? allDates.reduce((a, b) => a < b ? a : b) : job.startDate || new Date().toISOString().slice(0,10);
+            const maxDate = allDates.length ? allDates.reduce((a, b) => a > b ? a : b) : job.dueDate || new Date().toISOString().slice(0,10);
+            const startMs = new Date(minDate + "T00:00:00").getTime();
+            const endMs = new Date(maxDate + "T23:59:59").getTime();
+            const rangeMs = Math.max(endMs - startMs, 86400000);
+            const todayStr = new Date().toISOString().slice(0,10);
+            const todayMs = new Date(todayStr + "T12:00:00").getTime();
+            const todayPct = Math.max(0, Math.min(100, ((todayMs - startMs) / rangeMs) * 100));
+
+            const printGanttPdf = () => {
+              const w = window.open("", "_blank");
+              w.document.write(`<html><head><title>Gantt – ${job.title}</title><style>body{font-family:sans-serif;padding:30px}table{width:100%;border-collapse:collapse}th,td{padding:8px 12px;border:1px solid #ddd;text-align:left;font-size:13px}th{background:#f5f5f5;font-weight:700}.bar-cell{position:relative;height:24px}.bar{position:absolute;height:20px;border-radius:4px;top:2px}.bar-prog{height:100%;border-radius:4px;opacity:0.7}h1{font-size:20px;margin-bottom:4px}h2{font-size:14px;color:#888;margin-top:0}</style></head><body>`);
+              w.document.write(`<h1>${job.title}</h1><h2>Project Schedule — Gantt Chart</h2>`);
+              w.document.write(`<table><thead><tr><th style="width:160px">Phase</th><th>Start</th><th>End</th><th>Progress</th><th style="width:40%">Timeline</th></tr></thead><tbody>`);
+              phases.forEach(p => {
+                const pStart = ((new Date(p.startDate + "T00:00:00").getTime() - startMs) / rangeMs) * 100;
+                const pWidth = Math.max(2, ((new Date(p.endDate + "T23:59:59").getTime() - new Date(p.startDate + "T00:00:00").getTime()) / rangeMs) * 100);
+                w.document.write(`<tr><td style="font-weight:600">${p.name}</td><td>${p.startDate}</td><td>${p.endDate}</td><td>${p.progress}%</td><td class="bar-cell"><div class="bar" style="left:${pStart}%;width:${pWidth}%;background:${p.color}30"><div class="bar-prog" style="width:${p.progress}%;background:${p.color}"></div></div></td></tr>`);
+              });
+              w.document.write(`</tbody></table></body></html>`);
+              w.document.close();
+              setTimeout(() => w.print(), 300);
+            };
+
+            const savePhase = () => {
+              if (!phaseForm.name.trim()) return;
+              const updated = editPhase
+                ? (job.phases || []).map(p => p.id === editPhase.id ? { ...p, ...phaseForm } : p)
+                : [...(job.phases || []), { ...phaseForm, id: Date.now() }];
+              setJobs(js => js.map(j => j.id === job.id ? { ...j, phases: updated, activityLog: addLog(j.activityLog, editPhase ? `Updated phase "${phaseForm.name}"` : `Added phase "${phaseForm.name}"`) } : j));
+              setShowPhaseForm(false); setEditPhase(null);
+            };
+            const deletePhase = (pid) => {
+              setJobs(js => js.map(j => j.id === job.id ? { ...j, phases: (j.phases || []).filter(p => p.id !== pid), activityLog: addLog(j.activityLog, "Removed a project phase") } : j));
+            };
+
+            return (
+            <div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+                <div style={{ flex: 1, fontSize: 12, color: "#888" }}>{phases.length} phase{phases.length !== 1 ? "s" : ""} · {minDate} → {maxDate}</div>
+                <button className="btn btn-ghost btn-sm" onClick={printGanttPdf}>🖨️ Export PDF</button>
+                <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
+              </div>
+
+              {showPhaseForm && (
+                <div style={{ padding: 16, background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Phase Name</label><input className="form-control" value={phaseForm.name} onChange={e => setPhaseForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Demolition" /></div>
+                    <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Color</label><input type="color" value={phaseForm.color} onChange={e => setPhaseForm(f => ({ ...f, color: e.target.value }))} style={{ width: "100%", height: 36, border: "1px solid #e2e8f0", borderRadius: 6, cursor: "pointer" }} /></div>
+                    <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Start Date</label><input type="date" className="form-control" value={phaseForm.startDate} onChange={e => setPhaseForm(f => ({ ...f, startDate: e.target.value }))} /></div>
+                    <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>End Date</label><input type="date" className="form-control" value={phaseForm.endDate} onChange={e => setPhaseForm(f => ({ ...f, endDate: e.target.value }))} /></div>
+                  </div>
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Progress: {phaseForm.progress}%</label>
+                    <input type="range" min="0" max="100" step="5" value={phaseForm.progress} onChange={e => setPhaseForm(f => ({ ...f, progress: parseInt(e.target.value) }))} style={{ width: "100%" }} />
+                  </div>
+                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setShowPhaseForm(false); setEditPhase(null); }}>Cancel</button>
+                    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={savePhase} disabled={!phaseForm.name.trim()}>
+                      {editPhase ? "Update Phase" : "Add Phase"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Gantt Chart */}
+              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, overflow: "hidden" }}>
+                {/* Header with date markers */}
+                <div style={{ display: "flex", borderBottom: "1px solid #e8e8e8" }}>
+                  <div style={{ width: 160, minWidth: 160, padding: "8px 12px", fontWeight: 700, fontSize: 11, color: "#888", borderRight: "1px solid #e8e8e8" }}>Phase</div>
+                  <div style={{ flex: 1, position: "relative", padding: "8px 0", fontSize: 10, color: "#aaa" }}>
+                    <span style={{ position: "absolute", left: 4 }}>{minDate}</span>
+                    <span style={{ position: "absolute", right: 4 }}>{maxDate}</span>
+                  </div>
+                </div>
+                {phases.map(p => {
+                  const pStartMs = new Date(p.startDate + "T00:00:00").getTime();
+                  const pEndMs = new Date(p.endDate + "T23:59:59").getTime();
+                  const leftPct = ((pStartMs - startMs) / rangeMs) * 100;
+                  const widthPct = Math.max(2, ((pEndMs - pStartMs) / rangeMs) * 100);
+                  return (
+                    <div key={p.id} style={{ display: "flex", borderBottom: "1px solid #f0f0f0", minHeight: 40, alignItems: "center" }}>
+                      <div style={{ width: 160, minWidth: 160, padding: "6px 12px", borderRight: "1px solid #e8e8e8", display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, fontWeight: 600, flex: 1 }}>{p.name}</span>
+                        <button className="btn btn-ghost" style={{ padding: 2, fontSize: 10 }} onClick={() => { setEditPhase(p); setPhaseForm({ name: p.name, startDate: p.startDate, endDate: p.endDate, color: p.color, progress: p.progress }); setShowPhaseForm(true); }}>✏️</button>
+                        <button className="btn btn-ghost" style={{ padding: 2, fontSize: 10, color: "#c00" }} onClick={() => deletePhase(p.id)}>🗑</button>
+                      </div>
+                      <div style={{ flex: 1, position: "relative", height: 24, margin: "0 8px" }}>
+                        {todayPct > 0 && todayPct < 100 && <div style={{ position: "absolute", left: `${todayPct}%`, top: -2, bottom: -2, width: 2, background: "#ef4444", zIndex: 2, borderRadius: 1 }} />}
+                        <div style={{ position: "absolute", left: `${leftPct}%`, width: `${widthPct}%`, height: "100%", background: p.color + "25", borderRadius: 4, overflow: "hidden" }}>
+                          <div style={{ width: `${p.progress}%`, height: "100%", background: p.color, borderRadius: 4, transition: "width 0.3s" }} />
+                        </div>
+                        <div style={{ position: "absolute", left: `${leftPct + widthPct + 1}%`, top: 3, fontSize: 10, color: "#888", whiteSpace: "nowrap" }}>{p.progress}%</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            );
+          })()}
+
+          {/* ── Tasks Tab ── */}
+          {tab === "tasks" && (() => {
+            const tasks = job.tasks || [];
+            const done = tasks.filter(t => t.done).length;
+            const todayStr = new Date().toISOString().slice(0,10);
+
+            const toggleTask = (taskId) => {
+              setJobs(js => js.map(j => j.id === job.id ? { ...j, tasks: (j.tasks || []).map(t => t.id === taskId ? { ...t, done: !t.done } : t) } : j));
+            };
+            const addTask = () => {
+              if (!taskForm.text.trim()) return;
+              const task = { id: Date.now(), text: taskForm.text, done: false, dueDate: taskForm.dueDate, assignedTo: taskForm.assignedTo, createdAt: new Date().toISOString() };
+              setJobs(js => js.map(j => j.id === job.id ? { ...j, tasks: [...(j.tasks || []), task], activityLog: addLog(j.activityLog, `Added task "${task.text}"`) } : j));
+              setTaskForm({ text: "", dueDate: "", assignedTo: "" });
+              setShowTaskForm(false);
+            };
+            const deleteTask = (taskId) => {
+              setJobs(js => js.map(j => j.id === job.id ? { ...j, tasks: (j.tasks || []).filter(t => t.id !== taskId) } : j));
+            };
+            const copyFromGantt = () => {
+              const phases = job.phases || [];
+              if (phases.length === 0) return;
+              const existingTexts = new Set((job.tasks || []).map(t => t.text));
+              const newTasks = phases.filter(p => !existingTexts.has(p.name)).map(p => ({
+                id: Date.now() + Math.random(), text: p.name, done: p.progress >= 100, dueDate: p.endDate, assignedTo: "", createdAt: new Date().toISOString()
+              }));
+              if (newTasks.length === 0) return;
+              setJobs(js => js.map(j => j.id === job.id ? { ...j, tasks: [...(j.tasks || []), ...newTasks], activityLog: addLog(j.activityLog, `Copied ${newTasks.length} tasks from Gantt phases`) } : j));
+            };
+
+            return (
+            <div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+                {tasks.length > 0 && (
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>{done} of {tasks.length} complete</span>
+                    <div style={{ flex: 1, maxWidth: 200, height: 6, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ width: `${tasks.length > 0 ? (done / tasks.length) * 100 : 0}%`, height: "100%", background: done === tasks.length ? "#059669" : jobAccent, borderRadius: 3, transition: "width 0.3s" }} />
+                    </div>
+                  </div>
+                )}
+                {!tasks.length && <div style={{ flex: 1 }} />}
+                {(job.phases || []).length > 0 && <button className="btn btn-ghost btn-sm" onClick={copyFromGantt}>📋 Copy from Gantt</button>}
+                <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => setShowTaskForm(true)}>+ Add Task</button>
+              </div>
+
+              {showTaskForm && (
+                <div style={{ padding: 16, background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 16 }}>
+                  <input className="form-control" value={taskForm.text} onChange={e => setTaskForm(f => ({ ...f, text: e.target.value }))} placeholder="Task description…" style={{ marginBottom: 10 }} />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Due Date</label><input type="date" className="form-control" value={taskForm.dueDate} onChange={e => setTaskForm(f => ({ ...f, dueDate: e.target.value }))} /></div>
+                    <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Assigned To</label>
+                      <select className="form-control" value={taskForm.assignedTo} onChange={e => setTaskForm(f => ({ ...f, assignedTo: e.target.value }))}>
+                        <option value="">Unassigned</option>
+                        {TEAM.map(n => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setShowTaskForm(false)}>Cancel</button>
+                    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={addTask} disabled={!taskForm.text.trim()}>Add Task</button>
+                  </div>
+                </div>
+              )}
+
+              {tasks.length === 0 && !showTaskForm && (
+                <div className="empty-state"><div className="empty-state-icon">✅</div><div className="empty-state-text">No tasks yet</div></div>
+              )}
+
+              {tasks.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {tasks.map(task => {
+                    const isOverdue = !task.done && task.dueDate && task.dueDate < todayStr;
+                    return (
+                      <div key={task.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: task.done ? "#f9fafb" : "#fff", border: "1px solid #e8e8e8", borderRadius: 8, borderLeft: `3px solid ${task.done ? "#059669" : isOverdue ? "#dc2626" : jobAccent}` }}>
+                        <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} style={{ width: 18, height: 18, cursor: "pointer", accentColor: jobAccent }} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 500, textDecoration: task.done ? "line-through" : "none", color: task.done ? "#999" : "#333" }}>{task.text}</div>
+                          <div style={{ display: "flex", gap: 8, marginTop: 3, fontSize: 11, color: "#888" }}>
+                            {task.dueDate && <span style={{ color: isOverdue ? "#dc2626" : "#888", fontWeight: isOverdue ? 700 : 400 }}>{isOverdue ? "⚠️ " : ""}{task.dueDate}</span>}
+                            {task.assignedTo && <span>· {task.assignedTo}</span>}
+                          </div>
+                        </div>
+                        <button className="btn btn-ghost" style={{ padding: 4, color: "#ccc", fontSize: 12 }} onClick={() => deleteTask(task.id)}>✕</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            );
+          })()}
+
           {tab === "notes" && (
             <div>
               {/* Toolbar */}
@@ -3215,6 +3552,23 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   {NOTE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                 </select>
                 <div style={{ flex: 1 }} />
+                <div style={{ position: "relative" }}>
+                  <button className="btn btn-sm" style={{ background: "#2563eb", color: "#fff", border: "none" }} onClick={() => setShowFormMenu(m => !m)}>
+                    📋 New Form ▾
+                  </button>
+                  {showFormMenu && (
+                    <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 4, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", zIndex: 20, minWidth: 180, overflow: "hidden" }}>
+                      {FORM_TEMPLATES.map(tmpl => (
+                        <button key={tmpl.id} style={{ display: "block", width: "100%", padding: "10px 14px", border: "none", background: "none", textAlign: "left", fontSize: 13, cursor: "pointer", borderBottom: "1px solid #f0f0f0" }}
+                          onMouseEnter={e => e.target.style.background = "#f8fafc"}
+                          onMouseLeave={e => e.target.style.background = "none"}
+                          onClick={() => { setShowFormMenu(false); setShowFormFiller(tmpl); }}>
+                          {tmpl.icon} {tmpl.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => setShowNoteForm(true)}>
                   + Add Note
                 </button>
@@ -3308,6 +3662,27 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                           </div>
                         );
                       }
+                      // ── Form note card ──
+                      if (note.category === "form" && note.formType) {
+                        const tmpl = FORM_TEMPLATES.find(t => t.id === note.formType);
+                        return (
+                          <div key={note.id} style={{ padding: 14, background: "#fff", borderRadius: 10, border: "1px solid #e2e8f0", borderLeft: `3px solid ${cat.color}` }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 16 }}>{tmpl?.icon || "📋"}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700 }}>{tmpl?.name || note.formType}</span>
+                              <span style={{ padding: "2px 10px", borderRadius: 20, background: cat.color + "18", color: cat.color, fontSize: 11, fontWeight: 700 }}>Form</span>
+                              <span style={{ fontSize: 11, color: "#94a3b8" }}>{new Date(note.createdAt).toLocaleString()}</span>
+                              <span style={{ fontSize: 11, color: "#64748b", fontWeight: 500 }}>{note.createdBy}</span>
+                              <div style={{ flex: 1 }} />
+                              <button className="btn btn-ghost btn-xs" onClick={(e) => { e.stopPropagation(); setViewingForm(note); }} style={{ fontSize: 11 }}>👁 View</button>
+                              <button className="btn btn-ghost btn-xs" onClick={(e) => { e.stopPropagation(); printFormPdf(note, tmpl); }} style={{ fontSize: 11 }}>🖨️ PDF</button>
+                              <button onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer", lineHeight: 1 }} title="Delete">🗑</button>
+                            </div>
+                            {note.text && <div style={{ fontSize: 12, color: "#666" }}>{note.text}</div>}
+                          </div>
+                        );
+                      }
+                      // ── Regular note card ──
                       return (
                         <div key={note.id} onClick={() => startEditNote(note)} style={{ padding: 14, background: "#fff", borderRadius: 10, border: "1px solid #e2e8f0", borderLeft: `3px solid ${cat.color}`, cursor: "pointer", transition: "box-shadow 0.15s" }} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -3361,6 +3736,64 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         <button onClick={() => setLightboxImg(null)} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 20, width: 36, height: 36, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
       </div>
     )}
+
+    {/* ── Form Filler Modal ──────────────────────────────────────────── */}
+    {showFormFiller && (() => {
+      const tmpl = showFormFiller;
+      const client = clients.find(c => c.id === job.clientId);
+      const site = client?.sites?.find(s => s.id === job.siteId);
+      return <FormFillerModal template={tmpl} job={job} client={client} site={site}
+        onSave={(formData, andPrint) => {
+          const note = { id: Date.now(), text: `${tmpl.name} completed`, category: "form", formType: tmpl.id, formData, attachments: [], createdAt: new Date().toISOString(), createdBy: CURRENT_USER };
+          setJobs(js => js.map(j => j.id === job.id ? { ...j, notes: [...(j.notes || []), note], activityLog: addLog(j.activityLog, `Completed ${tmpl.name} form`) } : j));
+          setShowFormFiller(null);
+          if (andPrint) printFormPdf(note, tmpl);
+        }}
+        onClose={() => setShowFormFiller(null)}
+      />;
+    })()}
+
+    {/* ── Form Viewer Modal ──────────────────────────────────────────── */}
+    {viewingForm && (() => {
+      const tmpl = FORM_TEMPLATES.find(t => t.id === viewingForm.formType);
+      const data = viewingForm.formData || {};
+      return (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setViewingForm(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, width: "90%", maxWidth: 560, maxHeight: "85vh", overflow: "auto", padding: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 20 }}>{tmpl?.icon}</span>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{tmpl?.name || "Form"}</h3>
+              <div style={{ flex: 1 }} />
+              <button className="btn btn-ghost btn-sm" onClick={() => { printFormPdf(viewingForm, tmpl); }}>🖨️ Print PDF</button>
+              <button onClick={() => setViewingForm(null)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#999" }}>✕</button>
+            </div>
+            <div style={{ fontSize: 11, color: "#888", marginBottom: 16 }}>Completed {new Date(viewingForm.createdAt).toLocaleString()} by {viewingForm.createdBy}</div>
+            {(tmpl?.fields || []).map(field => {
+              const val = data[field.key];
+              return (
+                <div key={field.key} style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{field.label}</div>
+                  {field.type === "checklist" ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      {(field.options || []).map((opt, i) => (
+                        <div key={i} style={{ fontSize: 13, display: "flex", gap: 6, alignItems: "center" }}>
+                          <span style={{ color: (val || []).includes(opt) ? "#059669" : "#dc2626", fontWeight: 700 }}>{(val || []).includes(opt) ? "✓" : "✗"}</span>
+                          <span style={{ color: (val || []).includes(opt) ? "#333" : "#999" }}>{opt}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : field.type === "signature" ? (
+                    val ? <img src={val} alt="Signature" style={{ maxWidth: 300, height: 80, border: "1px solid #e2e8f0", borderRadius: 6 }} /> : <span style={{ fontSize: 13, color: "#999" }}>No signature</span>
+                  ) : (
+                    <div style={{ fontSize: 13, color: "#333", whiteSpace: "pre-wrap" }}>{val || "—"}</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    })()}
 
     {/* ── Inline Quote Drawer ─────────────────────────────────────────── */}
     {editingQuote && (() => {
@@ -4846,6 +5279,143 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
   );
 };
 
+// ── Form Filler Modal ────────────────────────────────────────────────────────
+const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
+  const canvasRef = useRef(null);
+  const [formData, setFormData] = useState(() => {
+    const defaults = {};
+    template.fields.forEach(f => {
+      if (f.type === "checklist") defaults[f.key] = [];
+      else if (f.type === "date") defaults[f.key] = new Date().toISOString().slice(0, 10);
+      else if (f.type === "time") defaults[f.key] = "";
+      else if (f.key === "jobDescription" || f.key === "workPerformed") defaults[f.key] = job?.description || "";
+      else if (f.key === "location" || f.key === "site") defaults[f.key] = site?.name || site?.address || "";
+      else if (f.key === "client") defaults[f.key] = client?.name || "";
+      else if (f.key === "supervisor" || f.key === "technician" || f.key === "worker") defaults[f.key] = (job?.assignedTo || [])[0] || "";
+      else defaults[f.key] = "";
+    });
+    return defaults;
+  });
+  const [sigField, setSigField] = useState(null);
+  const [drawing, setDrawing] = useState(false);
+
+  const startDraw = (e) => {
+    setDrawing(true);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+  const draw = (e) => {
+    if (!drawing) return;
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.stroke();
+  };
+  const endDraw = () => {
+    if (!drawing) return;
+    setDrawing(false);
+    if (sigField && canvasRef.current) {
+      setFormData(d => ({ ...d, [sigField]: canvasRef.current.toDataURL() }));
+    }
+  };
+  const clearSig = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (sigField) setFormData(d => ({ ...d, [sigField]: "" }));
+    }
+  };
+
+  const toggleChecklist = (key, opt) => {
+    setFormData(d => {
+      const arr = d[key] || [];
+      return { ...d, [key]: arr.includes(opt) ? arr.filter(x => x !== opt) : [...arr, opt] };
+    });
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, width: "90%", maxWidth: 560, maxHeight: "85vh", overflow: "auto", padding: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+          <span style={{ fontSize: 20 }}>{template.icon}</span>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{template.name}</h3>
+          <div style={{ flex: 1 }} />
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#999" }}>✕</button>
+        </div>
+
+        {template.fields.map(field => (
+          <div key={field.key} style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4, display: "block" }}>{field.label}</label>
+            {field.type === "text" && (
+              <input className="form-control" value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} />
+            )}
+            {field.type === "date" && (
+              <input type="date" className="form-control" value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} />
+            )}
+            {field.type === "time" && (
+              <input type="time" className="form-control" value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} />
+            )}
+            {field.type === "textarea" && (
+              <textarea className="form-control" rows={3} value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} style={{ resize: "vertical", fontFamily: "inherit" }} />
+            )}
+            {field.type === "checklist" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
+                {(field.options || []).map((opt, i) => (
+                  <label key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", padding: "4px 0" }}>
+                    <input type="checkbox" checked={(formData[field.key] || []).includes(opt)} onChange={() => toggleChecklist(field.key, opt)} style={{ width: 16, height: 16, accentColor: "#2563eb" }} />
+                    {opt}
+                  </label>
+                ))}
+              </div>
+            )}
+            {field.type === "signature" && (
+              <div>
+                {formData[field.key] && sigField !== field.key ? (
+                  <div>
+                    <img src={formData[field.key]} alt="Signature" style={{ maxWidth: 300, height: 80, border: "1px solid #e2e8f0", borderRadius: 6, marginBottom: 4 }} />
+                    <button className="btn btn-ghost btn-xs" onClick={() => { setSigField(field.key); setFormData(d => ({ ...d, [field.key]: "" })); }}>Re-sign</button>
+                  </div>
+                ) : (
+                  <div>
+                    <canvas ref={sigField === field.key ? canvasRef : undefined} width={400} height={120}
+                      style={{ border: "2px solid #e2e8f0", borderRadius: 8, cursor: "crosshair", touchAction: "none", display: "block", background: "#fafafa" }}
+                      onMouseDown={e => { setSigField(field.key); startDraw(e); }}
+                      onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
+                      onTouchStart={e => { setSigField(field.key); startDraw(e); }}
+                      onTouchMove={draw} onTouchEnd={endDraw}
+                      onClick={() => setSigField(field.key)}
+                    />
+                    <button className="btn btn-ghost btn-xs" style={{ marginTop: 4 }} onClick={clearSig}>Clear</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 20, paddingTop: 16, borderTop: "1px solid #e2e8f0" }}>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+          <button className="btn btn-sm" style={{ background: "#2563eb", color: "#fff", border: "none" }} onClick={() => onSave(formData, false)}>Save to Notes</button>
+          <button className="btn btn-sm" style={{ background: "#059669", color: "#fff", border: "none" }} onClick={() => onSave(formData, true)}>Save & Print PDF</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Schedule ──────────────────────────────────────────────────────────────────
 const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
   const [showModal, setShowModal] = useState(false);
@@ -4855,6 +5425,7 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
   const [filterDate, setFilterDate] = useState("");
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grouped");
+  const dragEntryRef = useRef(null);
 
   const today = new Date().toISOString().slice(0, 10);
   const sorted = [...schedule].sort((a, b) => a.date > b.date ? 1 : -1);
@@ -4916,14 +5487,39 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
 
   const accent = SECTION_COLORS.schedule.accent;
 
+  const handleDrop = async (dateStr, e) => {
+    e.preventDefault();
+    // Clear all drag-over highlights
+    document.querySelectorAll(".schedule-day-col.drag-over").forEach(el => el.classList.remove("drag-over"));
+    const entryId = dragEntryRef.current;
+    if (!entryId) return;
+    const entry = schedule.find(s => s.id === entryId);
+    dragEntryRef.current = null;
+    if (!entry || entry.date === dateStr) return;
+    // Update locally first for instant feedback
+    const movedEntry = { ...entry, date: dateStr };
+    setSchedule(s => s.map(x => x.id === entry.id ? movedEntry : x));
+    try {
+      const saved = await updateScheduleEntry(entry.id, movedEntry);
+      setSchedule(s => s.map(x => x.id === entry.id ? saved : x));
+    } catch (err) { console.error('Failed to persist schedule move:', err); }
+  };
+
   const DayCol = ({ dateStr, dayName, allEntries, isCompact }) => {
     const d = new Date(dateStr + "T12:00:00");
     const isToday = dateStr === today;
     const isPast = dateStr < today;
     const isWeekend = dayName === "Sat" || dayName === "Sun";
     const dayEntries = allEntries.filter(e => e.date === dateStr);
+    const counterRef = useRef(0);
     return (
-      <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`} style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? accent : "#e5e5e5" }}>
+      <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`}
+        style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? accent : "#e5e5e5" }}
+        onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+        onDragEnter={e => { e.preventDefault(); counterRef.current++; e.currentTarget.classList.add("drag-over"); }}
+        onDragLeave={e => { counterRef.current--; if (counterRef.current <= 0) { counterRef.current = 0; e.currentTarget.classList.remove("drag-over"); } }}
+        onDrop={e => { counterRef.current = 0; handleDrop(dateStr, e); }}
+      >
         <div className="schedule-day-header" style={{ background: isToday ? accent : isPast ? "#e0e0e0" : "#f5f5f5", color: isToday ? "#fff" : isPast ? "#999" : "#333" }}>
           <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>{dayName}</span>
           <span style={{ fontSize: isCompact ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</span>
@@ -4934,7 +5530,17 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
             const job = jobs.find(j => j.id === entry.jobId);
             const client = clients.find(c => c.id === job?.clientId);
             return (
-              <div key={entry.id} className="schedule-card" onClick={() => openEdit(entry)} style={{ borderLeft: `3px solid ${isPast ? "#ddd" : accent}` }}>
+              <div key={entry.id} className="schedule-card"
+                draggable="true"
+                onDragStart={e => {
+                  dragEntryRef.current = entry.id;
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("text/plain", entry.id);
+                  requestAnimationFrame(() => e.target.classList.add("dragging"));
+                }}
+                onDragEnd={e => { dragEntryRef.current = null; e.target.classList.remove("dragging"); document.querySelectorAll(".schedule-day-col.drag-over").forEach(el => el.classList.remove("drag-over")); }}
+                onClick={() => { if (!dragEntryRef.current) openEdit(entry); }}
+                style={{ borderLeft: `3px solid ${isPast ? "#ddd" : accent}` }}>
                 <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 2, lineHeight: 1.3 }}>{entry.title || job?.title || "Unknown"}</div>
                 {client && <div style={{ fontSize: 10, color: "#888", marginBottom: 3 }}>{client.name}</div>}
                 {entry.startTime && <div style={{ fontSize: 10, color: "#aaa" }}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}

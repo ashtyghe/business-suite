@@ -7925,7 +7925,7 @@ const DisplaySchedule = ({ schedule, jobs, clients }) => {
           {weekdays.map(dateStr => (
             <DayCol key={dateStr} dateStr={dateStr} isLarge={isLarge} />
           ))}
-          <div style={{ display: "flex", flexDirection: "column", gap: isLarge ? 8 : 6, minWidth: 0, flex: 1 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0, flex: 1 }}>
             {weekend.map(dateStr => (
               <DayCol key={dateStr} dateStr={dateStr} isLarge={isLarge} isCompact />
             ))}

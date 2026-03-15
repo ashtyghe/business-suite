@@ -4,3 +4,22 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
 }
+
+.section-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.section-action-btns {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.section-action-btns .btn {
+  min-width: 120px;
+  justify-content: center;
+}

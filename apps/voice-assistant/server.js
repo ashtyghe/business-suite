@@ -335,6 +335,16 @@ process.on('unhandledRejection', (reason) => {
   console.error('Unhandled rejection:', reason);
 });
 
+// Graceful shutdown for Railway
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => process.exit(0));
+});
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  server.close(() => process.exit(0));
+});
+
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`FieldOps Voice Assistant running on 0.0.0.0:${PORT}`);
   console.log(`Webhook: /incoming-call`);

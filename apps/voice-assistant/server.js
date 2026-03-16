@@ -9,7 +9,7 @@ const { handleToolCall } = require('./handlers');
 const PORT = parseInt(process.env.PORT, 10) || 3001;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_REALTIME_URL =
-  'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview';
+  'wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview';
 
 if (!OPENAI_API_KEY) {
   console.error('OPENAI_API_KEY is required');

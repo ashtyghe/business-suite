@@ -5,10 +5,16 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || '';
+
+let supabase = null;
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+  console.log('Supabase client initialized');
+} else {
+  console.warn('Supabase credentials missing — tool calls will return mock data');
+}
 
 // ─── READ HANDLERS ─────────────────────────────────────────────────
 
@@ -241,6 +247,9 @@ const handlerMap = {
  * Returns a JSON string of the result.
  */
 async function handleToolCall(toolName, args) {
+  if (!supabase) {
+    return JSON.stringify({ error: 'Database not connected. Supabase credentials are missing.' });
+  }
   const handler = handlerMap[toolName];
   if (!handler) {
     return JSON.stringify({ error: `Unknown tool: ${toolName}` });

@@ -327,6 +327,14 @@ wss.on('connection', (twilioWs, req) => {
 
 // ─── START SERVER ──────────────────────────────────────────────────
 
+// Global error handlers to prevent crashes
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+});
+
 server.listen(PORT, () => {
   console.log(`FieldOps Voice Assistant running on port ${PORT}`);
   console.log(`Webhook URL: http://localhost:${PORT}/incoming-call`);

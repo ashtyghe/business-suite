@@ -8,6 +8,23 @@ export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null
 
+export async function extractDocumentFromImage(base64, mimeType, docType) {
+  if (!supabase) return null;
+  const { data, error } = await supabase.functions.invoke('extract-document', {
+    body: { image: base64, mimeType, docType },
+  });
+  if (error) {
+    const msg = typeof error === 'object' && error.context
+      ? await error.context.text?.() || error.message
+      : error.message;
+    throw new Error(msg || 'Extraction failed');
+  }
+  if (typeof data === 'string') {
+    try { return JSON.parse(data); } catch { return null; }
+  }
+  return data;
+}
+
 export async function extractBillFromImage(base64, mimeType) {
   if (!supabase) return null;
   const { data, error } = await supabase.functions.invoke('extract-bill', {

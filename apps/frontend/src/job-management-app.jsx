@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useMemo, Fragment } from "react";
+import { useState, useEffect, useRef, useMemo, Fragment, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry } from './lib/db';
-import { extractBillFromImage } from './lib/supabase';
+import { extractBillFromImage, extractDocumentFromImage } from './lib/supabase';
+import * as fabric from "fabric";
 
 // ── Google Font ──────────────────────────────────────────────────────────────
 const fontLink = document.createElement("link");
@@ -108,6 +109,17 @@ const SEED_SCHEDULE = [
   { id: 9, jobId: 2, title: "Roof Sheet Delivery", date: "2026-03-18", startTime: "06:00", endTime: "08:00", assignedTo: ["Dan Wright", "Mike Chen"], notes: "Crane on site 6:30am." },
   { id: 10, jobId: 3, title: "Cabinet Install", date: "2026-03-19", startTime: "08:00", endTime: "16:00", assignedTo: ["Sarah Lee"], notes: "" },
   { id: 11, jobId: 1, title: "Final Inspection", date: "2026-03-20", startTime: "10:00", endTime: "12:00", assignedTo: ["Tom Baker", "Priya Sharma"], notes: "Client attending." },
+];
+
+const SEED_FUTURE_SCHEDULE = [
+  { id: 1, jobId: 1, weekStart: "2026-03-30", title: "Painting & Touch-ups", assignedTo: ["Tom Baker", "Dan Wright"], notes: "All Level 3 walls and ceilings." },
+  { id: 2, jobId: 3, weekStart: "2026-03-30", title: "Benchtop Measure & Template", assignedTo: ["Sarah Lee"], notes: "Stone mason on site." },
+  { id: 3, jobId: 2, weekStart: "2026-04-06", title: "Membrane Application", assignedTo: ["Mike Chen", "Dan Wright"], notes: "Weather dependent — need 3 dry days." },
+  { id: 4, jobId: 1, weekStart: "2026-04-06", title: "Final Fix Electrical", assignedTo: ["Mike Chen"], notes: "GPOs, switches, downlights." },
+  { id: 5, jobId: 3, weekStart: "2026-04-13", title: "Benchtop Install", assignedTo: ["Sarah Lee", "Tom Baker"], notes: "Crane may be required for stone." },
+  { id: 6, jobId: 2, weekStart: "2026-04-20", title: "New Roof Sheets Install", assignedTo: ["Dan Wright", "Mike Chen"], notes: "24m² Colorbond sheets." },
+  { id: 7, jobId: 3, weekStart: "2026-04-27", title: "Splashback & Appliances", assignedTo: ["Sarah Lee"], notes: "Tiler + plumber on site." },
+  { id: 8, jobId: 1, weekStart: "2026-05-04", title: "Handover & Defects", assignedTo: ["Tom Baker", "Priya Sharma"], notes: "Client walkthrough and sign-off." },
 ];
 
 const SEED_TIME = [
@@ -348,11 +360,82 @@ const SEED_PO = [
 ];
 
 const CONTRACTOR_TRADES = ["Electrical", "Plumbing", "Roofing", "Carpentry", "Painting", "Tiling", "HVAC", "Landscaping", "Other"];
+
+const COMPLIANCE_DOC_TYPES = [
+  { id: "workers_comp", label: "Workers Compensation", icon: "shield", reminderDays: [30, 14, 7], fields: ["policyNumber", "insurer", "expiryDate"] },
+  { id: "public_liability", label: "Public Liability", icon: "shield", reminderDays: [30, 14, 7], fields: ["policyNumber", "insurer", "coverAmount", "expiryDate"] },
+  { id: "white_card", label: "White Card", icon: "badge", reminderDays: [30, 14], fields: ["cardNumber", "holderName", "issueDate"] },
+  { id: "trade_license", label: "Trade License", icon: "badge", reminderDays: [30, 14, 7], fields: ["licenseNumber", "licenseClass", "issuingBody", "expiryDate"] },
+  { id: "subcontractor_statement", label: "Subcontractor Statement", icon: "file", reminderDays: [14, 7], fields: ["periodFrom", "periodTo", "abn"] },
+  { id: "swms", label: "SWMS", icon: "file", reminderDays: [14, 7], fields: ["title", "revision", "approvedBy", "approvalDate"] },
+];
+
+const COMPLIANCE_STATUS_COLORS = {
+  current: { bg: "#ecfdf5", text: "#059669", label: "Current" },
+  expiring_soon: { bg: "#fffbeb", text: "#d97706", label: "Expiring Soon" },
+  expired: { bg: "#fef2f2", text: "#dc2626", label: "Expired" },
+  missing: { bg: "#f0f0f0", text: "#888", label: "Missing" },
+  no_expiry: { bg: "#ecfdf5", text: "#059669", label: "Current" },
+};
+
+const getComplianceStatus = (doc) => {
+  if (!doc) return "missing";
+  if (!doc.expiryDate) return "no_expiry";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(doc.expiryDate + "T00:00:00");
+  const diffDays = Math.ceil((expiry - today) / 86400000);
+  if (diffDays < 0) return "expired";
+  if (diffDays <= 30) return "expiring_soon";
+  return "current";
+};
+
+const getDaysUntilExpiry = (expiryDate) => {
+  if (!expiryDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(expiryDate + "T00:00:00");
+  return Math.ceil((expiry - today) / 86400000);
+};
+
+const getContractorComplianceCount = (contractor) => {
+  const docs = contractor.documents || [];
+  let issues = 0;
+  COMPLIANCE_DOC_TYPES.forEach(dt => {
+    const doc = docs.find(d => d.type === dt.id);
+    const status = getComplianceStatus(doc);
+    if (status === "expired" || status === "missing") issues++;
+  });
+  return issues;
+};
+
 const SEED_CONTRACTORS = [
-  { id: "c1", name: "Apex Electrical Pty Ltd", contact: "Mark Simmons", email: "mark@apexelec.com.au", phone: "0412 345 678", trade: "Electrical", abn: "11 222 333 444", notes: "Preferred electrical contractor. Licensed for commercial." },
-  { id: "c2", name: "Blue Ridge Plumbing", contact: "Sarah O'Brien", email: "sarah@blueridgeplumbing.com.au", phone: "0421 987 654", trade: "Plumbing", abn: "22 333 444 555", notes: "Handles rough-in and fit-off." },
-  { id: "c3", name: "Ironclad Roofing Co.", contact: "Dave Nguyen", email: "dave@ironcladroofing.com.au", phone: "0455 667 788", trade: "Roofing", abn: "33 444 555 666", notes: "Specialises in metal and tile roofing." },
-  { id: "c4", name: "Precision Carpentry", contact: "James Ward", email: "james@precisioncarpentry.com.au", phone: "0433 112 233", trade: "Carpentry", abn: "44 555 666 777", notes: "Custom cabinetry and structural framing." },
+  { id: "c1", name: "Apex Electrical Pty Ltd", contact: "Mark Simmons", email: "mark@apexelec.com.au", phone: "0412 345 678", trade: "Electrical", abn: "11 222 333 444", notes: "Preferred electrical contractor. Licensed for commercial.", documents: [
+    { id: "d1", type: "workers_comp", policyNumber: "WC-2024-88431", insurer: "iCare NSW", expiryDate: "2026-06-30", fileUrl: null, uploadedAt: "2025-07-01" },
+    { id: "d2", type: "public_liability", policyNumber: "PL-990122", insurer: "QBE Insurance", coverAmount: "$20,000,000", expiryDate: "2026-04-15", fileUrl: null, uploadedAt: "2025-04-20" },
+    { id: "d3", type: "white_card", cardNumber: "WC-NSW-554321", holderName: "Mark Simmons", issueDate: "2019-03-10", fileUrl: null, uploadedAt: "2025-01-15" },
+    { id: "d4", type: "trade_license", licenseNumber: "EC-42891", licenseClass: "Electrical Contractor", issuingBody: "NSW Fair Trading", expiryDate: "2027-01-31", fileUrl: null, uploadedAt: "2025-02-01" },
+    { id: "d5", type: "subcontractor_statement", periodFrom: "2025-07-01", periodTo: "2026-06-30", abn: "11 222 333 444", fileUrl: null, uploadedAt: "2025-07-05" },
+    { id: "d6", type: "swms", title: "Electrical Installation — Commercial", revision: "Rev 4", approvedBy: "Mark Simmons", approvalDate: "2025-11-01", fileUrl: null, uploadedAt: "2025-11-02" },
+  ]},
+  { id: "c2", name: "Blue Ridge Plumbing", contact: "Sarah O'Brien", email: "sarah@blueridgeplumbing.com.au", phone: "0421 987 654", trade: "Plumbing", abn: "22 333 444 555", notes: "Handles rough-in and fit-off.", documents: [
+    { id: "d7", type: "workers_comp", policyNumber: "WC-2024-66210", insurer: "Allianz", expiryDate: "2026-03-20", fileUrl: null, uploadedAt: "2025-03-25" },
+    { id: "d8", type: "public_liability", policyNumber: "PL-445500", insurer: "CGU Insurance", coverAmount: "$10,000,000", expiryDate: "2026-08-01", fileUrl: null, uploadedAt: "2025-08-05" },
+    { id: "d9", type: "trade_license", licenseNumber: "PL-29110", licenseClass: "Plumbing Contractor", issuingBody: "NSW Fair Trading", expiryDate: "2026-03-25", fileUrl: null, uploadedAt: "2025-04-01" },
+    { id: "d10", type: "swms", title: "Plumbing Rough-in & Fit-off", revision: "Rev 2", approvedBy: "Sarah O'Brien", approvalDate: "2025-09-15", fileUrl: null, uploadedAt: "2025-09-16" },
+  ]},
+  { id: "c3", name: "Ironclad Roofing Co.", contact: "Dave Nguyen", email: "dave@ironcladroofing.com.au", phone: "0455 667 788", trade: "Roofing", abn: "33 444 555 666", notes: "Specialises in metal and tile roofing.", documents: [
+    { id: "d11", type: "workers_comp", policyNumber: "WC-2023-10044", insurer: "iCare NSW", expiryDate: "2025-12-31", fileUrl: null, uploadedAt: "2024-01-10" },
+    { id: "d12", type: "public_liability", policyNumber: "PL-778899", insurer: "Zurich", coverAmount: "$20,000,000", expiryDate: "2026-05-30", fileUrl: null, uploadedAt: "2025-06-01" },
+  ]},
+  { id: "c4", name: "Precision Carpentry", contact: "James Ward", email: "james@precisioncarpentry.com.au", phone: "0433 112 233", trade: "Carpentry", abn: "44 555 666 777", notes: "Custom cabinetry and structural framing.", documents: [
+    { id: "d13", type: "workers_comp", policyNumber: "WC-2025-33210", insurer: "GIO", expiryDate: "2026-09-30", fileUrl: null, uploadedAt: "2025-10-01" },
+    { id: "d14", type: "public_liability", policyNumber: "PL-221100", insurer: "NRMA", coverAmount: "$10,000,000", expiryDate: "2026-07-15", fileUrl: null, uploadedAt: "2025-07-20" },
+    { id: "d15", type: "white_card", cardNumber: "WC-NSW-887654", holderName: "James Ward", issueDate: "2018-06-22", fileUrl: null, uploadedAt: "2025-01-10" },
+    { id: "d16", type: "trade_license", licenseNumber: "BC-71543", licenseClass: "Builder — Carpentry", issuingBody: "NSW Fair Trading", expiryDate: "2026-11-30", fileUrl: null, uploadedAt: "2025-12-01" },
+    { id: "d17", type: "subcontractor_statement", periodFrom: "2025-07-01", periodTo: "2026-06-30", abn: "44 555 666 777", fileUrl: null, uploadedAt: "2025-07-10" },
+    { id: "d18", type: "swms", title: "Structural Framing — Residential", revision: "Rev 3", approvedBy: "James Ward", approvalDate: "2025-10-20", fileUrl: null, uploadedAt: "2025-10-21" },
+  ]},
 ];
 const SEED_SUPPLIERS = [
   { id: "s1", name: "Reece Plumbing & Bathrooms", contact: "Accounts", email: "accounts@reece.com.au", phone: "03 9123 4567", abn: "12 345 678 901", notes: "Trade account — 30-day terms." },
@@ -2232,11 +2315,176 @@ const SectionLabel = ({ children }) => (
   <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#999", marginBottom: 10, marginTop: 4 }}>{children}</div>
 );
 
+// ── Photo Markup Editor (fabric.js) ───────────────────────────────────────────
+const MARKUP_COLORS = ["#dc2626", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6", "#ffffff", "#000000"];
+const PhotoMarkupEditor = ({ imageSrc, onSave, onClose }) => {
+  const canvasRef = useRef(null);
+  const fabricRef = useRef(null);
+  const containerRef = useRef(null);
+  const [tool, setTool] = useState("pen");
+  const [color, setColor] = useState("#dc2626");
+  const [brushSize, setBrushSize] = useState(3);
+
+  useEffect(() => {
+    if (!canvasRef.current || fabricRef.current) return;
+    const cvs = new fabric.Canvas(canvasRef.current, { isDrawingMode: true, selection: true });
+    fabricRef.current = cvs;
+
+    // Load the background image
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const container = containerRef.current;
+      const maxW = container ? container.clientWidth - 40 : 800;
+      const maxH = (window.innerHeight * 0.65);
+      const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      cvs.setDimensions({ width: w, height: h });
+      const bgImg = new fabric.FabricImage(img, { scaleX: scale, scaleY: scale });
+      cvs.backgroundImage = bgImg;
+      cvs.renderAll();
+    };
+    img.src = imageSrc;
+
+    cvs.freeDrawingBrush = new fabric.PencilBrush(cvs);
+    cvs.freeDrawingBrush.color = color;
+    cvs.freeDrawingBrush.width = brushSize;
+
+    return () => { cvs.dispose(); fabricRef.current = null; };
+  }, [imageSrc]);
+
+  useEffect(() => {
+    const cvs = fabricRef.current;
+    if (!cvs) return;
+    if (tool === "pen") {
+      cvs.isDrawingMode = true;
+      cvs.freeDrawingBrush = new fabric.PencilBrush(cvs);
+      cvs.freeDrawingBrush.color = color;
+      cvs.freeDrawingBrush.width = brushSize;
+    } else {
+      cvs.isDrawingMode = false;
+    }
+  }, [tool, color, brushSize]);
+
+  const addArrow = () => {
+    const cvs = fabricRef.current; if (!cvs) return;
+    setTool("select");
+    const line = new fabric.Line([50, 100, 200, 100], { stroke: color, strokeWidth: brushSize, selectable: true });
+    const head = new fabric.Triangle({ width: 14, height: 14, fill: color, left: 200, top: 100, angle: 90, originX: "center", originY: "center", selectable: false });
+    const group = new fabric.Group([line, head], { left: 50, top: 80 });
+    cvs.add(group);
+    cvs.setActiveObject(group);
+    cvs.renderAll();
+  };
+
+  const addRect = () => {
+    const cvs = fabricRef.current; if (!cvs) return;
+    setTool("select");
+    const rect = new fabric.Rect({ left: 60, top: 60, width: 150, height: 100, fill: "transparent", stroke: color, strokeWidth: brushSize, rx: 4, ry: 4 });
+    cvs.add(rect);
+    cvs.setActiveObject(rect);
+    cvs.renderAll();
+  };
+
+  const addCircle = () => {
+    const cvs = fabricRef.current; if (!cvs) return;
+    setTool("select");
+    const circle = new fabric.Circle({ left: 80, top: 80, radius: 50, fill: "transparent", stroke: color, strokeWidth: brushSize });
+    cvs.add(circle);
+    cvs.setActiveObject(circle);
+    cvs.renderAll();
+  };
+
+  const addText = () => {
+    const cvs = fabricRef.current; if (!cvs) return;
+    setTool("select");
+    const text = new fabric.IText("Note", { left: 60, top: 60, fontSize: 20, fontFamily: "Open Sans, sans-serif", fontWeight: "700", fill: color, editable: true });
+    cvs.add(text);
+    cvs.setActiveObject(text);
+    cvs.renderAll();
+  };
+
+  const deleteSelected = () => {
+    const cvs = fabricRef.current; if (!cvs) return;
+    const active = cvs.getActiveObjects();
+    if (active.length) { active.forEach(o => cvs.remove(o)); cvs.discardActiveObject(); cvs.renderAll(); }
+  };
+
+  const clearAll = () => {
+    const cvs = fabricRef.current; if (!cvs) return;
+    const objs = cvs.getObjects();
+    objs.forEach(o => cvs.remove(o));
+    cvs.renderAll();
+  };
+
+  const handleSave = () => {
+    const cvs = fabricRef.current; if (!cvs) return;
+    cvs.discardActiveObject();
+    cvs.renderAll();
+    const dataUrl = cvs.toDataURL({ format: "png", quality: 0.92, multiplier: 2 });
+    onSave(dataUrl);
+  };
+
+  const tools = [
+    { id: "pen", icon: "✏️", label: "Draw" },
+    { id: "arrow", icon: "➡️", label: "Arrow", action: addArrow },
+    { id: "rect", icon: "▢", label: "Rectangle", action: addRect },
+    { id: "circle", icon: "◯", label: "Circle", action: addCircle },
+    { id: "text", icon: "T", label: "Text", action: addText },
+    { id: "select", icon: "☝️", label: "Select" },
+  ];
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.88)", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      {/* Toolbar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", background: "#1e1e1e", borderRadius: "0 0 12px 12px", flexWrap: "wrap", justifyContent: "center", maxWidth: "100%" }}>
+        {tools.map(t => (
+          <button key={t.id} onClick={() => { if (t.action) t.action(); else setTool(t.id); }}
+            style={{ padding: "6px 10px", borderRadius: 6, border: tool === t.id ? "2px solid #fff" : "2px solid transparent", background: tool === t.id ? "rgba(255,255,255,0.15)" : "transparent", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ fontSize: 15 }}>{t.icon}</span> {t.label}
+          </button>
+        ))}
+        <div style={{ width: 1, height: 24, background: "#555", margin: "0 4px" }} />
+        <button onClick={deleteSelected} style={{ padding: "6px 10px", borderRadius: 6, border: "2px solid transparent", background: "transparent", color: "#f87171", cursor: "pointer", fontSize: 13, fontWeight: 600 }} title="Delete selected">🗑 Delete</button>
+        <button onClick={clearAll} style={{ padding: "6px 10px", borderRadius: 6, border: "2px solid transparent", background: "transparent", color: "#fbbf24", cursor: "pointer", fontSize: 13, fontWeight: 600 }} title="Clear all markups">✕ Clear</button>
+        <div style={{ width: 1, height: 24, background: "#555", margin: "0 4px" }} />
+        {/* Brush size */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ color: "#aaa", fontSize: 11, fontWeight: 600 }}>Size</span>
+          <input type="range" min="1" max="12" value={brushSize} onChange={e => setBrushSize(Number(e.target.value))} style={{ width: 70, accentColor: color }} />
+        </div>
+        <div style={{ width: 1, height: 24, background: "#555", margin: "0 4px" }} />
+        {/* Colors */}
+        <div style={{ display: "flex", gap: 3 }}>
+          {MARKUP_COLORS.map(c => (
+            <button key={c} onClick={() => setColor(c)}
+              style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: color === c ? "3px solid #fff" : `2px solid ${c === "#ffffff" ? "#666" : "transparent"}`, cursor: "pointer", boxShadow: color === c ? "0 0 6px rgba(255,255,255,0.4)" : "none" }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Canvas area */}
+      <div ref={containerRef} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", width: "100%", padding: 20, overflow: "auto" }}>
+        <div style={{ borderRadius: 8, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.5)" }}>
+          <canvas ref={canvasRef} />
+        </div>
+      </div>
+
+      {/* Bottom bar */}
+      <div style={{ display: "flex", gap: 10, padding: "12px 20px", background: "#1e1e1e", borderRadius: "12px 12px 0 0", width: "100%", justifyContent: "center" }}>
+        <button onClick={onClose} style={{ padding: "8px 24px", borderRadius: 8, border: "1px solid #555", background: "transparent", color: "#ccc", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>Cancel</button>
+        <button onClick={handleSave} style={{ padding: "8px 24px", borderRadius: 8, border: "none", background: "#0891b2", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>💾 Save Markup</button>
+      </div>
+    </div>
+  );
+};
+
 // ── Job Detail Drawer ─────────────────────────────────────────────────────────
 const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, jobs, setJobs, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, onClose, onEdit }) => {
   const [tab, setTab] = useState("overview");
   const [detailMode, setDetailMode] = useState("view");
-  const [detailForm, setDetailForm] = useState({ title: job.title, clientId: job.clientId, siteId: job.siteId || null, status: job.status, priority: job.priority, description: job.description || "", startDate: job.startDate || "", dueDate: job.dueDate || "", assignedTo: job.assignedTo || [], tags: (job.tags || []).join(", ") });
+  const [detailForm, setDetailForm] = useState({ title: job.title, clientId: job.clientId, siteId: job.siteId || null, status: job.status, priority: job.priority, description: job.description || "", startDate: job.startDate || "", dueDate: job.dueDate || "", assignedTo: job.assignedTo || [], tags: (job.tags || []).join(", "), estimate: job.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } });
   const client = clients.find(c => c.id === job.clientId);
 
   const jobQuotes    = quotes.filter(q => q.jobId === job.id);
@@ -2300,6 +2548,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   const [noteForm, setNoteForm] = useState({ text: "", category: "general", attachments: [] });
   const [noteFilter, setNoteFilter] = useState("all");
   const [lightboxImg, setLightboxImg] = useState(null);
+  const [markupImg, setMarkupImg] = useState(null); // { src, noteId, attachmentId } or { src, target: "new" }
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editNoteForm, setEditNoteForm] = useState({ text: "", category: "general", attachments: [] });
   // P&L estimate editing
@@ -2407,6 +2656,37 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
     e.target.value = "";
   };
 
+  const saveMarkup = (dataUrl) => {
+    if (markupImg?.noteId && markupImg?.attachmentId) {
+      // Replace existing attachment on a saved note
+      setJobs(js => js.map(j => j.id === job.id ? {
+        ...j,
+        notes: (j.notes || []).map(n => n.id === markupImg.noteId ? {
+          ...n,
+          attachments: n.attachments.map(a => a.id === markupImg.attachmentId ? { ...a, dataUrl, name: a.name.replace(/\.[^.]+$/, "") + "_marked.png" } : a)
+        } : n),
+        activityLog: addLog(j.activityLog, "Photo marked up")
+      } : j));
+    } else if (markupImg?.target === "new" && markupImg?.attachmentId) {
+      // Replace attachment in new note form
+      setNoteForm(prev => ({
+        ...prev,
+        attachments: prev.attachments.map(a => a.id === markupImg.attachmentId ? { ...a, dataUrl, name: a.name.replace(/\.[^.]+$/, "") + "_marked.png" } : a)
+      }));
+    } else if (markupImg?.target === "new") {
+      // Add marked-up image as new attachment to the current note form (from lightbox)
+      const att = { id: genId(), name: "markup_" + Date.now() + ".png", size: Math.round(dataUrl.length * 0.75), type: "image/png", dataUrl };
+      setNoteForm(prev => ({ ...prev, attachments: [...prev.attachments, att] }));
+    } else if (markupImg?.target === "edit") {
+      // Replace attachment in edit form
+      setEditNoteForm(prev => ({
+        ...prev,
+        attachments: prev.attachments.map(a => a.id === markupImg.attachmentId ? { ...a, dataUrl, name: a.name.replace(/\.[^.]+$/, "") + "_marked.png" } : a)
+      }));
+    }
+    setMarkupImg(null);
+  };
+
   const delTime = async (id) => {
     try {
       await deleteTimeEntry(id);
@@ -2443,8 +2723,17 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
     const q = quotes.find(x => x.id === id);
     try {
       const saved = await updateQuote(id, { ...q, status: "accepted" });
-      setQuotes(qs => qs.map(x => x.id === saved.id ? saved : x));
-      setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `Quote ${q?.number} accepted`) } : j));
+      setQuotes(qs => {
+        const updated = qs.map(x => x.id === saved.id ? saved : x);
+        // Update job estimate with cumulative accepted quote total
+        const acceptedTotal = updated.filter(x => x.jobId === job.id && x.status === "accepted").reduce((s, x) => s + calcQuoteTotal(x), 0);
+        setJobs(js => js.map(j => j.id === job.id ? {
+          ...j,
+          estimate: { ...(j.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 }), total: acceptedTotal },
+          activityLog: addLog(j.activityLog, `Quote ${q?.number} accepted · Estimate updated to ${fmt(acceptedTotal)}`)
+        } : j));
+        return updated;
+      });
     } catch (err) { console.error('Failed to accept quote:', err); }
   };
 
@@ -2490,7 +2779,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   };
 
   const saveDetailForm = async () => {
-    const data = { ...detailForm, tags: detailForm.tags.split(",").map(t => t.trim()).filter(Boolean) };
+    const data = { ...detailForm, tags: detailForm.tags.split(",").map(t => t.trim()).filter(Boolean), estimate: detailForm.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } };
     try {
       const changes = [];
       if (job.title !== data.title) changes.push(`Title changed to "${data.title}"`);
@@ -2545,7 +2834,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
   const jobFooter = detailMode === "view" ? <>
     <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
-    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setDetailForm({ title: job.title, clientId: job.clientId, siteId: job.siteId || null, status: job.status, priority: job.priority, description: job.description || "", startDate: job.startDate || "", dueDate: job.dueDate || "", assignedTo: job.assignedTo || [], tags: (job.tags || []).join(", ") }); setDetailMode("edit"); }}>
+    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setDetailForm({ title: job.title, clientId: job.clientId, siteId: job.siteId || null, status: job.status, priority: job.priority, description: job.description || "", startDate: job.startDate || "", dueDate: job.dueDate || "", assignedTo: job.assignedTo || [], tags: (job.tags || []).join(", "), estimate: job.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } }); setDetailMode("edit"); }}>
       <Icon name="edit" size={13} /> Edit
     </button>
   </> : <>
@@ -2629,6 +2918,35 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   {t}
                 </span>
               ))}
+            </div>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Estimate</div>
+            <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 14 }}>
+              <div className="grid-2" style={{ marginBottom: 8 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: 11 }}>Labour ($)</label>
+                  <input type="number" className="form-control" min="0" step="100" value={detailForm.estimate?.labour || ""} onChange={e => setDetailForm(f => ({ ...f, estimate: { ...f.estimate, labour: Number(e.target.value) || 0 } }))} placeholder="0" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: 11 }}>Materials ($)</label>
+                  <input type="number" className="form-control" min="0" step="100" value={detailForm.estimate?.materials || ""} onChange={e => setDetailForm(f => ({ ...f, estimate: { ...f.estimate, materials: Number(e.target.value) || 0 } }))} placeholder="0" />
+                </div>
+              </div>
+              <div className="grid-2">
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: 11 }}>Subcontractors ($)</label>
+                  <input type="number" className="form-control" min="0" step="100" value={detailForm.estimate?.subcontractors || ""} onChange={e => setDetailForm(f => ({ ...f, estimate: { ...f.estimate, subcontractors: Number(e.target.value) || 0 } }))} placeholder="0" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: 11 }}>Other ($)</label>
+                  <input type="number" className="form-control" min="0" step="100" value={detailForm.estimate?.other || ""} onChange={e => setDetailForm(f => ({ ...f, estimate: { ...f.estimate, other: Number(e.target.value) || 0 } }))} placeholder="0" />
+                </div>
+              </div>
+              {(() => {
+                const t = (detailForm.estimate?.labour || 0) + (detailForm.estimate?.materials || 0) + (detailForm.estimate?.subcontractors || 0) + (detailForm.estimate?.other || 0);
+                return <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #e2e8f0", fontSize: 13, fontWeight: 800 }}>Total: {fmt(t)}</div>;
+              })()}
             </div>
           </div>
           <div className="form-group">
@@ -3037,7 +3355,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
           {tab === "pnl" && (() => {
             const est = job.estimate || defaultEstimate;
-            const totalEstimate = (est.labour || 0) + (est.materials || 0) + (est.subcontractors || 0) + (est.other || 0);
+            const breakdownTotal = (est.labour || 0) + (est.materials || 0) + (est.subcontractors || 0) + (est.other || 0);
+            const acceptedQuotesTotal = jobQuotes.filter(q => q.status === "accepted").reduce((s, q) => s + calcQuoteTotal(q), 0);
+            const totalEstimate = acceptedQuotesTotal > 0 ? Math.max(breakdownTotal, acceptedQuotesTotal) : breakdownTotal;
 
             // Client rates
             const clientRates = client?.rates || {};
@@ -3114,7 +3434,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "14px 16px" }}>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", marginBottom: 6 }}>Total Estimate</div>
                   <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em" }}>{totalEstimate > 0 ? fmt(totalEstimate) : "—"}</div>
-                  <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{totalEstimate > 0 ? "Budget set" : "No estimate set"}</div>
+                  <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{acceptedQuotesTotal > 0 ? `Incl. ${fmt(acceptedQuotesTotal)} quoted` : totalEstimate > 0 ? "Budget set" : "No estimate set"}</div>
                 </div>
                 <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "14px 16px" }}>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", marginBottom: 6 }}>Revenue</div>
@@ -3593,6 +3913,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                             {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }} /> : <FileIconBadge name={f.name} />}
                             <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#334155" }}>{f.name}</span>
                             <span style={{ color: "#94a3b8", fontSize: 11 }}>{fmtFileSize(f.size)}</span>
+                            {f.dataUrl && f.type?.startsWith("image/") && <button onClick={() => setMarkupImg({ src: f.dataUrl, target: "new", attachmentId: f.id })} style={{ padding: 2, background: "none", border: "none", color: "#0891b2", cursor: "pointer", lineHeight: 1, fontSize: 11 }} title="Mark up">✏️</button>}
                             <button onClick={() => setNoteForm(prev => ({ ...prev, attachments: prev.attachments.filter(x => x.id !== f.id) }))} style={{ padding: 2, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer", lineHeight: 1 }}>✕</button>
                           </div>
                         ))}
@@ -3644,6 +3965,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                                     <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#fff", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}>
                                       {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }} /> : <FileIconBadge name={f.name} />}
                                       <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#334155" }}>{f.name}</span>
+                                      {f.dataUrl && f.type?.startsWith("image/") && <button onClick={() => setMarkupImg({ src: f.dataUrl, target: "edit", attachmentId: f.id })} style={{ padding: 2, background: "none", border: "none", color: "#0891b2", cursor: "pointer", lineHeight: 1, fontSize: 11 }} title="Mark up">✏️</button>}
                                       <button onClick={() => setEditNoteForm(prev => ({ ...prev, attachments: prev.attachments.filter(x => x.id !== f.id) }))} style={{ padding: 2, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer", lineHeight: 1 }}>✕</button>
                                     </div>
                                   ))}
@@ -3697,7 +4019,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
                               {note.attachments.map(att => (
                                 att.type && att.type.startsWith("image/") && att.dataUrl ? (
-                                  <img key={att.id} src={att.dataUrl} alt={att.name} onClick={(e) => { e.stopPropagation(); setLightboxImg(att.dataUrl); }} style={{ width: 64, height: 64, borderRadius: 6, objectFit: "cover", border: "1px solid #e2e8f0", cursor: "pointer" }} />
+                                  <div key={att.id} style={{ position: "relative", display: "inline-block" }} onClick={e => e.stopPropagation()}>
+                                    <img src={att.dataUrl} alt={att.name} onClick={() => setLightboxImg(att.dataUrl)} style={{ width: 64, height: 64, borderRadius: 6, objectFit: "cover", border: "1px solid #e2e8f0", cursor: "pointer" }} />
+                                    <button onClick={() => setMarkupImg({ src: att.dataUrl, noteId: note.id, attachmentId: att.id })}
+                                      style={{ position: "absolute", bottom: 2, right: 2, width: 20, height: 20, borderRadius: 4, background: "rgba(0,0,0,0.65)", border: "none", color: "#fff", fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
+                                      title="Mark up photo">✏️</button>
+                                  </div>
                                 ) : (
                                   <div key={att.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", background: "#f8fafc", borderRadius: 6, border: "1px solid #e2e8f0", fontSize: 12 }}>
                                     <FileIconBadge name={att.name} />
@@ -3733,8 +4060,21 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
     {lightboxImg && (
       <div onClick={() => setLightboxImg(null)} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
         <img src={lightboxImg} alt="Attachment" style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: 8, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }} />
+        <button onClick={(e) => { e.stopPropagation(); setMarkupImg({ src: lightboxImg, target: "new" }); setLightboxImg(null); }}
+          style={{ position: "absolute", bottom: 30, left: "50%", transform: "translateX(-50%)", padding: "10px 24px", borderRadius: 8, background: "#0891b2", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+          ✏️ Mark Up Photo
+        </button>
         <button onClick={() => setLightboxImg(null)} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 20, width: 36, height: 36, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
       </div>
+    )}
+
+    {/* ── Photo Markup Editor ──────────────────────────────────────── */}
+    {markupImg && (
+      <PhotoMarkupEditor
+        imageSrc={markupImg.src}
+        onSave={saveMarkup}
+        onClose={() => setMarkupImg(null)}
+      />
     )}
 
     {/* ── Form Filler Modal ──────────────────────────────────────────── */}
@@ -4046,7 +4386,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
   const [editJob, setEditJob] = useState(null);
   const [jobMode, setJobMode] = useState("edit");
   const [detailJob, setDetailJob] = useState(null);
-  const [form, setForm] = useState({ title: "", clientId: "", status: "draft", priority: "medium", description: "", startDate: "", dueDate: "", assignedTo: [], tags: "" });
+  const [form, setForm] = useState({ title: "", clientId: "", status: "draft", priority: "medium", description: "", startDate: "", dueDate: "", assignedTo: [], tags: "", estimate: { labour: 0, materials: 0, subcontractors: 0, other: 0 } });
 
   const filtered = jobs.filter(j => {
     const q = search.toLowerCase();
@@ -4055,11 +4395,11 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
       (j.title.toLowerCase().includes(q) || client?.name.toLowerCase().includes(q));
   });
 
-  const openNew = () => { setEditJob(null); setJobMode("edit"); setForm({ title: "", clientId: clients[0]?.id || "", siteId: null, status: "draft", priority: "medium", description: "", startDate: "", dueDate: "", assignedTo: [], tags: "" }); setShowModal(true); };
-  const openEdit = (j) => { setEditJob(j); setJobMode("view"); setForm({ ...j, siteId: j.siteId || null, tags: j.tags.join(", ") }); setShowModal(true); };
+  const openNew = () => { setEditJob(null); setJobMode("edit"); setForm({ title: "", clientId: clients[0]?.id || "", siteId: null, status: "draft", priority: "medium", description: "", startDate: "", dueDate: "", assignedTo: [], tags: "", estimate: { labour: 0, materials: 0, subcontractors: 0, other: 0 } }); setShowModal(true); };
+  const openEdit = (j) => { setEditJob(j); setJobMode("view"); setForm({ ...j, siteId: j.siteId || null, tags: j.tags.join(", "), estimate: j.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } }); setShowModal(true); };
   const openDetail = (j) => setDetailJob(j);
   const save = async () => {
-    const data = { ...form, clientId: form.clientId, tags: form.tags.split(",").map(t => t.trim()).filter(Boolean) };
+    const data = { ...form, clientId: form.clientId, tags: form.tags.split(",").map(t => t.trim()).filter(Boolean), estimate: form.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } };
     try {
       if (editJob) {
         const changes = [];
@@ -4317,7 +4657,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
             </button>
           </> : <>
             <button className="btn btn-ghost btn-sm" onClick={() => editJob ? setJobMode("view") : setShowModal(false)}>{editJob ? "Cancel" : "Cancel"}</button>
-            <button className="btn btn-sm" style={{ background: SECTION_COLORS.jobs.accent, color: "#fff", border: "none" }} onClick={() => { save(); if (editJob) setJobMode("view"); }} disabled={!form.title}>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.jobs.accent, color: "#fff", border: "none" }} onClick={() => { save(); if (editJob) setJobMode("view"); }} disabled={!form.title || (isNewJob && ((form.estimate?.labour || 0) + (form.estimate?.materials || 0) + (form.estimate?.subcontractors || 0) + (form.estimate?.other || 0)) === 0)}>
               <Icon name="check" size={13} /> {isNewJob ? "Create Job" : "Save Changes"}
             </button>
           </>}
@@ -4348,6 +4688,28 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                 </div>
               )}
               {form.description && <ViewField label="Description" value={form.description} />}
+              {(() => {
+                const est = form.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 };
+                const totalEst = (est.labour || 0) + (est.materials || 0) + (est.subcontractors || 0) + (est.other || 0);
+                const acceptedTotal = quotes.filter(q => q.jobId === (editJob?.id) && q.status === "accepted").reduce((s, q) => s + calcQuoteTotal(q), 0);
+                return (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Estimate</div>
+                    <div style={{ background: "#f8f8f8", borderRadius: 10, padding: 14 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 10 }}>
+                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Labour</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.labour || 0)}</div></div>
+                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Materials</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.materials || 0)}</div></div>
+                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Subcontractors</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.subcontractors || 0)}</div></div>
+                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Other</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.other || 0)}</div></div>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e5e7eb", paddingTop: 10 }}>
+                        <div style={{ fontSize: 13, fontWeight: 800 }}>Total Estimate: {fmt(totalEst)}</div>
+                        {acceptedTotal > 0 && <div style={{ fontSize: 11, color: "#059669", fontWeight: 600 }}>Accepted Quotes: {fmt(acceptedTotal)}</div>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           ) : (
           <div style={{ padding: "20px 24px" }}>
@@ -4409,6 +4771,35 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                     {t}
                   </span>
                 ))}
+              </div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Estimate *</div>
+              <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 14 }}>
+                <div className="grid-2" style={{ marginBottom: 8 }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: 11 }}>Labour ($)</label>
+                    <input type="number" className="form-control" min="0" step="100" value={form.estimate?.labour || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, labour: Number(e.target.value) || 0 } }))} placeholder="0" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: 11 }}>Materials ($)</label>
+                    <input type="number" className="form-control" min="0" step="100" value={form.estimate?.materials || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, materials: Number(e.target.value) || 0 } }))} placeholder="0" />
+                  </div>
+                </div>
+                <div className="grid-2">
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: 11 }}>Subcontractors ($)</label>
+                    <input type="number" className="form-control" min="0" step="100" value={form.estimate?.subcontractors || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, subcontractors: Number(e.target.value) || 0 } }))} placeholder="0" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: 11 }}>Other ($)</label>
+                    <input type="number" className="form-control" min="0" step="100" value={form.estimate?.other || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, other: Number(e.target.value) || 0 } }))} placeholder="0" />
+                  </div>
+                </div>
+                {(() => {
+                  const t = (form.estimate?.labour || 0) + (form.estimate?.materials || 0) + (form.estimate?.subcontractors || 0) + (form.estimate?.other || 0);
+                  return <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #e2e8f0", fontSize: 13, fontWeight: 800 }}>Total: {fmt(t)}</div>;
+                })()}
               </div>
             </div>
             <div className="form-group">
@@ -4854,23 +5245,36 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
   const [form, setForm] = useState({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" });
   const [search, setSearch] = useState("");
   const [filterTrade, setFilterTrade] = useState("all");
+  const [filterCompliance, setFilterCompliance] = useState("all");
   const [view, setView] = useState("list");
+  const [showDocForm, setShowDocForm] = useState(false);
+  const [editDoc, setEditDoc] = useState(null);
+  const [docForm, setDocForm] = useState({ type: "workers_comp" });
+  const [docImagePreview, setDocImagePreview] = useState(null);
+  const [docExtracting, setDocExtracting] = useState(false);
+  const [docExtractError, setDocExtractError] = useState(null);
+  const docFileRef = useRef(null);
 
   const filtered = contractors.filter(c => {
     const q = search.toLowerCase();
     const matchSearch = !search || c.name.toLowerCase().includes(q) || (c.contact || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q) || (c.trade || "").toLowerCase().includes(q);
     const matchTrade = filterTrade === "all" || c.trade === filterTrade;
-    return matchSearch && matchTrade;
+    if (!matchSearch || !matchTrade) return false;
+    if (filterCompliance === "all") return true;
+    const issues = getContractorComplianceCount(c);
+    if (filterCompliance === "compliant") return issues === 0;
+    if (filterCompliance === "issues") return issues > 0;
+    return true;
   });
   const trades = [...new Set(contractors.map(c => c.trade).filter(Boolean))].sort();
 
-  const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" }); setShowModal(true); };
-  const openEdit = (c) => { setEditItem(c); setMode("view"); setForm(c); setShowModal(true); };
+  const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" }); setShowDocForm(false); setShowModal(true); };
+  const openEdit = (c) => { setEditItem(c); setMode("view"); setForm(c); setShowDocForm(false); setShowModal(true); };
   const save = () => {
     if (editItem) {
       setContractors(cs => cs.map(c => c.id === editItem.id ? { ...c, ...form } : c));
     } else {
-      setContractors(cs => [...cs, { ...form, id: "c" + Date.now() }]);
+      setContractors(cs => [...cs, { ...form, id: "c" + Date.now(), documents: [] }]);
     }
     setShowModal(false);
   };
@@ -4882,6 +5286,83 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
   const getContractorBills = (c) => bills.filter(b => b.supplier === c.name);
   const getBillTotal = (c) => getContractorBills(c).reduce((s, b) => s + (b.amount || 0), 0);
 
+  // Document management
+  const openDocForm = (docType, existingDoc) => {
+    if (existingDoc) {
+      setEditDoc(existingDoc);
+      setDocForm({ ...existingDoc });
+    } else {
+      setEditDoc(null);
+      setDocForm({ type: docType });
+    }
+    setDocImagePreview(null);
+    setDocExtractError(null);
+    setShowDocForm(true);
+  };
+
+  const saveDoc = () => {
+    const contractorId = editItem?.id;
+    if (!contractorId) return;
+    setContractors(cs => cs.map(c => {
+      if (c.id !== contractorId) return c;
+      const docs = [...(c.documents || [])];
+      if (editDoc) {
+        const idx = docs.findIndex(d => d.id === editDoc.id);
+        if (idx >= 0) docs[idx] = { ...docForm, id: editDoc.id };
+      } else {
+        docs.push({ ...docForm, id: "d" + Date.now(), uploadedAt: new Date().toISOString().slice(0, 10) });
+      }
+      const updated = { ...c, documents: docs };
+      setEditItem(updated);
+      setForm(updated);
+      return updated;
+    }));
+    setShowDocForm(false);
+  };
+
+  const deleteDoc = (docId) => {
+    if (!editItem || !window.confirm("Delete this document?")) return;
+    setContractors(cs => cs.map(c => {
+      if (c.id !== editItem.id) return c;
+      const updated = { ...c, documents: (c.documents || []).filter(d => d.id !== docId) };
+      setEditItem(updated);
+      setForm(updated);
+      return updated;
+    }));
+  };
+
+  const handleDocFile = async (file) => {
+    if (!file) return;
+    setDocExtractError(null);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target.result;
+      setDocImagePreview(dataUrl);
+      const base64 = dataUrl.split(",")[1];
+      const mimeType = file.type || "image/jpeg";
+      setDocExtracting(true);
+      try {
+        const data = await extractDocumentFromImage(base64, mimeType, docForm.type);
+        if (data) {
+          setDocForm(f => ({ ...f, ...data }));
+        } else {
+          setDocExtractError("AI extraction not available — fill in manually.");
+        }
+      } catch (err) {
+        setDocExtractError(err.message || "Extraction failed — fill in manually.");
+      } finally {
+        setDocExtracting(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const ComplianceBadge = ({ contractor }) => {
+    const issues = getContractorComplianceCount(contractor);
+    if (issues === 0) return <span className="badge" style={{ background: "#ecfdf5", color: "#059669", fontSize: 10 }}>Compliant</span>;
+    return <span className="badge" style={{ background: "#fef2f2", color: "#dc2626", fontSize: 10 }}>{issues} issue{issues > 1 ? "s" : ""}</span>;
+  };
+
   return (
     <div>
       <div className="section-toolbar">
@@ -4891,6 +5372,11 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
         <select className="form-control" style={{ width: "auto" }} value={filterTrade} onChange={e => setFilterTrade(e.target.value)}>
           <option value="all">All Trades</option>
           {CONTRACTOR_TRADES.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <select className="form-control" style={{ width: "auto" }} value={filterCompliance} onChange={e => setFilterCompliance(e.target.value)}>
+          <option value="all">All Compliance</option>
+          <option value="compliant">Compliant</option>
+          <option value="issues">Has Issues</option>
         </select>
         <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
@@ -4904,19 +5390,19 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
         <div className="card">
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Name</th><th>Contact</th><th>Email</th><th>Phone</th><th>Trade</th><th>Active WOs</th><th>Bills</th><th>Bill Total</th><th></th></tr></thead>
+              <thead><tr><th>Name</th><th>Contact</th><th>Trade</th><th>Compliance</th><th>Active WOs</th><th>Bills</th><th>Bill Total</th><th></th></tr></thead>
               <tbody>
-                {filtered.length === 0 && <tr><td colSpan={9}><div className="empty-state"><div className="empty-state-icon">🏗️</div><div className="empty-state-text">No contractors found</div></div></td></tr>}
+                {filtered.length === 0 && <tr><td colSpan={8}><div className="empty-state"><div className="empty-state-icon">🏗️</div><div className="empty-state-text">No contractors found</div></div></td></tr>}
                 {filtered.map(c => {
                   const billCount = getContractorBills(c).length;
                   const billTotal = getBillTotal(c);
+                  const compIssues = getContractorComplianceCount(c);
                   return (
                   <tr key={c.id} style={{ cursor: "pointer" }} onClick={() => openEdit(c)}>
                     <td style={{ fontWeight: 700 }}>{c.name}</td>
-                    <td>{c.contact || "—"}</td>
-                    <td style={{ color: "#666" }}>{c.email || "—"}</td>
-                    <td style={{ color: "#666" }}>{c.phone || "—"}</td>
+                    <td>{c.contact || "—"}<div style={{ fontSize: 11, color: "#999" }}>{c.phone}</div></td>
                     <td><span className="chip" style={{ fontSize: 10 }}>{c.trade}</span></td>
+                    <td><ComplianceBadge contractor={c} /></td>
                     <td><span style={{ fontWeight: 600, color: getActiveWOs(c).length > 0 ? accent : "#ccc" }}>{getActiveWOs(c).length}</span></td>
                     <td><span style={{ fontWeight: 600, color: billCount > 0 ? SECTION_COLORS.bills.accent : "#ccc" }}>{billCount}</span></td>
                     <td style={{ fontWeight: billTotal > 0 ? 600 : 400, color: billTotal > 0 ? "#111" : "#ccc" }}>{billTotal > 0 ? fmt(billTotal) : "—"}</td>
@@ -4941,7 +5427,10 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
               <div key={c.id} className="card" onClick={() => openEdit(c)} style={{ cursor: "pointer", padding: 18 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                   <span style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</span>
-                  <span className="chip" style={{ fontSize: 10, background: hexToRgba(accent, 0.12), color: accent }}>{c.trade}</span>
+                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                    <ComplianceBadge contractor={c} />
+                    <span className="chip" style={{ fontSize: 10, background: hexToRgba(accent, 0.12), color: accent }}>{c.trade}</span>
+                  </div>
                 </div>
                 {c.contact && <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>{c.contact}</div>}
                 {c.email && <div style={{ fontSize: 12, color: "#999", marginBottom: 2 }}>{c.email}</div>}
@@ -4975,7 +5464,10 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                   const billCount = getContractorBills(c).length;
                   return (
                     <div key={c.id} className="kanban-card" onClick={() => openEdit(c)}>
-                      <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>{c.name}</div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+                        <div style={{ fontWeight: 700, fontSize: 12 }}>{c.name}</div>
+                        <ComplianceBadge contractor={c} />
+                      </div>
                       {c.contact && <div style={{ fontSize: 11, color: "#999", marginBottom: 2 }}>{c.contact}</div>}
                       {c.phone && <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{c.phone}</div>}
                       <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
@@ -4996,6 +5488,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
         const linkedWOs = editItem ? workOrders.filter(wo => wo.contractorName === editItem.name || wo.contractorId === editItem.id) : [];
         const linkedBills = editItem ? bills.filter(b => b.supplier === editItem.name) : [];
         const linkedBillTotal = linkedBills.reduce((s, b) => s + (b.amount || 0), 0);
+        const docs = editItem?.documents || [];
         return (
           <SectionDrawer
             accent={accent}
@@ -5004,7 +5497,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
             title={editItem ? editItem.name : "New Contractor"}
             mode={mode} setMode={setMode}
             showToggle={!isNew} isNew={isNew}
-            onClose={() => setShowModal(false)}
+            onClose={() => { setShowModal(false); setShowDocForm(false); }}
             footer={
               <div style={{ padding: "12px 20px", borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "flex-end", gap: 8 }}>
                 {mode === "edit" && <button className="btn btn-primary" style={{ background: accent }} onClick={save}><Icon name="check" size={14} />{isNew ? "Create" : "Save"}</button>}
@@ -5021,6 +5514,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                   <ViewField label="Trade" value={form.trade} />
                   <ViewField label="ABN" value={form.abn} />
                   <ViewField label="Notes" value={form.notes} />
+
                   {linkedWOs.length > 0 && (
                     <div style={{ marginTop: 20 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Linked Work Orders</div>
@@ -5063,6 +5557,55 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                       })}
                     </div>
                   )}
+
+                  {/* Compliance Documents */}
+                  <div style={{ marginTop: 24 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Compliance Documents</div>
+                      <ComplianceBadge contractor={editItem} />
+                    </div>
+                    {COMPLIANCE_DOC_TYPES.map(dt => {
+                      const doc = docs.find(d => d.type === dt.id);
+                      const status = getComplianceStatus(doc);
+                      const sc = COMPLIANCE_STATUS_COLORS[status];
+                      const days = doc?.expiryDate ? getDaysUntilExpiry(doc.expiryDate) : null;
+                      return (
+                        <div key={dt.id} style={{ padding: "12px 14px", background: "#f8f8f8", borderRadius: 8, marginBottom: 8, borderLeft: `3px solid ${sc.text}`, cursor: "pointer" }} onClick={() => openDocForm(dt.id, doc)}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: doc ? 6 : 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ fontWeight: 600, fontSize: 13 }}>{dt.label}</span>
+                              <span className="badge" style={{ background: sc.bg, color: sc.text, fontSize: 10 }}>{sc.label}</span>
+                            </div>
+                            {doc && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={e => { e.stopPropagation(); deleteDoc(doc.id); }}><Icon name="trash" size={10} /></button>}
+                          </div>
+                          {doc && (
+                            <div style={{ fontSize: 11, color: "#666" }}>
+                              {doc.policyNumber && <div>Policy: <span style={{ fontWeight: 600, color: "#333" }}>{doc.policyNumber}</span></div>}
+                              {doc.licenseNumber && <div>License: <span style={{ fontWeight: 600, color: "#333" }}>{doc.licenseNumber}</span></div>}
+                              {doc.cardNumber && <div>Card: <span style={{ fontWeight: 600, color: "#333" }}>{doc.cardNumber}</span></div>}
+                              {doc.insurer && <div>Insurer: {doc.insurer}</div>}
+                              {doc.coverAmount && <div>Cover: {doc.coverAmount}</div>}
+                              {doc.licenseClass && <div>Class: {doc.licenseClass}</div>}
+                              {doc.issuingBody && <div>Issued by: {doc.issuingBody}</div>}
+                              {doc.holderName && <div>Holder: {doc.holderName}</div>}
+                              {doc.title && <div>Title: {doc.title}</div>}
+                              {doc.revision && <div>Revision: {doc.revision}</div>}
+                              {doc.approvedBy && <div>Approved by: {doc.approvedBy}</div>}
+                              {doc.expiryDate && (
+                                <div style={{ marginTop: 4, fontWeight: 600, color: status === "expired" ? "#dc2626" : status === "expiring_soon" ? "#d97706" : "#059669" }}>
+                                  Expires: {doc.expiryDate} {days !== null && `(${days < 0 ? Math.abs(days) + "d overdue" : days + "d remaining"})`}
+                                </div>
+                              )}
+                              {doc.periodFrom && doc.periodTo && <div>Period: {doc.periodFrom} to {doc.periodTo}</div>}
+                              {doc.issueDate && <div>Issued: {doc.issueDate}</div>}
+                              {doc.approvalDate && <div>Approved: {doc.approvalDate}</div>}
+                            </div>
+                          )}
+                          {!doc && <div style={{ fontSize: 11, color: "#bbb", marginTop: 4 }}>Not uploaded</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </>
               ) : (
                 <>
@@ -5077,6 +5620,105 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
               )}
             </div>
           </SectionDrawer>
+        );
+      })()}
+
+      {/* Document Add/Edit Modal */}
+      {showDocForm && (() => {
+        const dt = COMPLIANCE_DOC_TYPES.find(t => t.id === docForm.type);
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 10001, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => setShowDocForm(false)}>
+            <div style={{ background: "#fff", borderRadius: 12, width: "100%", maxWidth: 480, maxHeight: "90vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8e8e8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: 700, fontSize: 15 }}>{editDoc ? "Edit" : "Add"} {dt?.label || "Document"}</span>
+                <button className="btn btn-ghost btn-xs" onClick={() => setShowDocForm(false)}><Icon name="close" size={14} /></button>
+              </div>
+              <div style={{ padding: 20 }}>
+                {/* AI Capture */}
+                <div style={{ marginBottom: 16, padding: 16, border: "2px dashed #d0d0d0", borderRadius: 8, textAlign: "center", background: "#fafafa", cursor: "pointer" }}
+                  onClick={() => docFileRef.current?.click()}
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f && (f.type.startsWith("image/") || f.type === "application/pdf")) handleDocFile(f); }}
+                >
+                  <input ref={docFileRef} type="file" accept="image/*,application/pdf" capture="environment" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) handleDocFile(f); }} />
+                  {docExtracting ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: 12 }}>
+                      <div style={{ width: 24, height: 24, border: "3px solid #e8e8e8", borderTopColor: accent, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                      <span style={{ fontSize: 12, color: "#888" }}>Extracting document details...</span>
+                    </div>
+                  ) : docImagePreview ? (
+                    <div>
+                      <img src={docImagePreview} alt="Document" style={{ maxWidth: "100%", maxHeight: 120, borderRadius: 6, marginBottom: 8 }} />
+                      <div style={{ fontSize: 11, color: "#888" }}>Tap to replace</div>
+                    </div>
+                  ) : (
+                    <div style={{ padding: 8 }}>
+                      <div style={{ fontSize: 20, marginBottom: 4 }}>📷</div>
+                      <div style={{ fontSize: 12, color: "#888" }}>Take photo or upload document</div>
+                      <div style={{ fontSize: 11, color: "#bbb" }}>AI will extract key details</div>
+                    </div>
+                  )}
+                </div>
+                {docExtractError && <div style={{ fontSize: 11, color: "#d97706", background: "#fffbeb", padding: "6px 10px", borderRadius: 6, marginBottom: 12 }}>{docExtractError}</div>}
+
+                {/* Document type selector (only for new) */}
+                {!editDoc && (
+                  <div className="form-group">
+                    <label>Document Type</label>
+                    <select className="form-control" value={docForm.type} onChange={e => setDocForm(f => ({ ...f, type: e.target.value }))}>
+                      {COMPLIANCE_DOC_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {/* Dynamic fields based on doc type */}
+                {(docForm.type === "workers_comp" || docForm.type === "public_liability") && (
+                  <>
+                    <div className="form-group"><label>Policy Number</label><input className="form-control" value={docForm.policyNumber || ""} onChange={e => setDocForm(f => ({ ...f, policyNumber: e.target.value }))} /></div>
+                    <div className="form-group"><label>Insurer</label><input className="form-control" value={docForm.insurer || ""} onChange={e => setDocForm(f => ({ ...f, insurer: e.target.value }))} /></div>
+                    {docForm.type === "public_liability" && (
+                      <div className="form-group"><label>Cover Amount</label><input className="form-control" value={docForm.coverAmount || ""} onChange={e => setDocForm(f => ({ ...f, coverAmount: e.target.value }))} /></div>
+                    )}
+                    <div className="form-group"><label>Expiry Date</label><input className="form-control" type="date" value={docForm.expiryDate || ""} onChange={e => setDocForm(f => ({ ...f, expiryDate: e.target.value }))} /></div>
+                  </>
+                )}
+                {docForm.type === "white_card" && (
+                  <>
+                    <div className="form-group"><label>Card Number</label><input className="form-control" value={docForm.cardNumber || ""} onChange={e => setDocForm(f => ({ ...f, cardNumber: e.target.value }))} /></div>
+                    <div className="form-group"><label>Holder Name</label><input className="form-control" value={docForm.holderName || ""} onChange={e => setDocForm(f => ({ ...f, holderName: e.target.value }))} /></div>
+                    <div className="form-group"><label>Issue Date</label><input className="form-control" type="date" value={docForm.issueDate || ""} onChange={e => setDocForm(f => ({ ...f, issueDate: e.target.value }))} /></div>
+                  </>
+                )}
+                {docForm.type === "trade_license" && (
+                  <>
+                    <div className="form-group"><label>License Number</label><input className="form-control" value={docForm.licenseNumber || ""} onChange={e => setDocForm(f => ({ ...f, licenseNumber: e.target.value }))} /></div>
+                    <div className="form-group"><label>License Class</label><input className="form-control" value={docForm.licenseClass || ""} onChange={e => setDocForm(f => ({ ...f, licenseClass: e.target.value }))} /></div>
+                    <div className="form-group"><label>Issuing Body</label><input className="form-control" value={docForm.issuingBody || ""} onChange={e => setDocForm(f => ({ ...f, issuingBody: e.target.value }))} /></div>
+                    <div className="form-group"><label>Expiry Date</label><input className="form-control" type="date" value={docForm.expiryDate || ""} onChange={e => setDocForm(f => ({ ...f, expiryDate: e.target.value }))} /></div>
+                  </>
+                )}
+                {docForm.type === "subcontractor_statement" && (
+                  <>
+                    <div className="form-group"><label>Period From</label><input className="form-control" type="date" value={docForm.periodFrom || ""} onChange={e => setDocForm(f => ({ ...f, periodFrom: e.target.value }))} /></div>
+                    <div className="form-group"><label>Period To</label><input className="form-control" type="date" value={docForm.periodTo || ""} onChange={e => setDocForm(f => ({ ...f, periodTo: e.target.value }))} /></div>
+                    <div className="form-group"><label>ABN</label><input className="form-control" value={docForm.abn || ""} onChange={e => setDocForm(f => ({ ...f, abn: e.target.value }))} /></div>
+                  </>
+                )}
+                {docForm.type === "swms" && (
+                  <>
+                    <div className="form-group"><label>Title</label><input className="form-control" value={docForm.title || ""} onChange={e => setDocForm(f => ({ ...f, title: e.target.value }))} /></div>
+                    <div className="form-group"><label>Revision</label><input className="form-control" value={docForm.revision || ""} onChange={e => setDocForm(f => ({ ...f, revision: e.target.value }))} /></div>
+                    <div className="form-group"><label>Approved By</label><input className="form-control" value={docForm.approvedBy || ""} onChange={e => setDocForm(f => ({ ...f, approvedBy: e.target.value }))} /></div>
+                    <div className="form-group"><label>Approval Date</label><input className="form-control" type="date" value={docForm.approvalDate || ""} onChange={e => setDocForm(f => ({ ...f, approvalDate: e.target.value }))} /></div>
+                  </>
+                )}
+              </div>
+              <div style={{ padding: "12px 20px", borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setShowDocForm(false)}>Cancel</button>
+                <button className="btn btn-primary btn-sm" style={{ background: accent }} onClick={saveDoc}><Icon name="check" size={14} />{editDoc ? "Update" : "Add"}</button>
+              </div>
+            </div>
+          </div>
         );
       })()}
     </div>
@@ -5417,7 +6059,7 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
 };
 
 // ── Schedule ──────────────────────────────────────────────────────────────────
-const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
+const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jobs, clients, staff }) => {
   const [showModal, setShowModal] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
   const [schedMode, setSchedMode] = useState("edit");
@@ -5426,6 +6068,11 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grouped");
   const dragEntryRef = useRef(null);
+  const [showFutureModal, setShowFutureModal] = useState(false);
+  const [editFutureEntry, setEditFutureEntry] = useState(null);
+  const [futureMode, setFutureMode] = useState("edit");
+  const [futureForm, setFutureForm] = useState({ jobId: "", weekStart: "", title: "", assignedTo: [], notes: "" });
+  const dragFutureRef = useRef(null);
 
   const today = new Date().toISOString().slice(0, 10);
   const sorted = [...schedule].sort((a, b) => a.date > b.date ? 1 : -1);
@@ -5575,6 +6222,49 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
     );
   };
 
+  // ── Future schedule (weeks 3–8 from current Monday) ──
+  const futureWeeks = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(todayMon + "T12:00:00");
+    d.setDate(d.getDate() + (i + 2) * 7);
+    return d.toISOString().slice(0, 10);
+  });
+
+  // Auto-clean: filter out future entries whose weekStart is now this/next week
+  const activeFuture = (futureSchedule || []).filter(e => e.weekStart >= futureWeeks[0]);
+
+  const openFutureNew = (weekStart) => {
+    setEditFutureEntry(null);
+    setFutureMode("edit");
+    setFutureForm({ jobId: jobs[0]?.id || "", weekStart, title: "", assignedTo: [], notes: "" });
+    setShowFutureModal(true);
+  };
+  const openFutureEdit = (entry) => {
+    setEditFutureEntry(entry);
+    setFutureMode("view");
+    setFutureForm({ jobId: entry.jobId, weekStart: entry.weekStart, title: entry.title || "", assignedTo: entry.assignedTo || [], notes: entry.notes || "" });
+    setShowFutureModal(true);
+  };
+  const saveFuture = () => {
+    const data = { ...futureForm };
+    if (editFutureEntry) {
+      setFutureSchedule(fs => fs.map(e => e.id === editFutureEntry.id ? { ...editFutureEntry, ...data } : e));
+    } else {
+      const newId = Math.max(0, ...(futureSchedule || []).map(e => e.id)) + 1;
+      setFutureSchedule(fs => [...fs, { id: newId, ...data }]);
+    }
+    setShowFutureModal(false);
+  };
+  const delFuture = (id) => {
+    setFutureSchedule(fs => fs.filter(e => e.id !== id));
+  };
+
+  const formatWeekLabel = (mon) => {
+    const d = new Date(mon + "T12:00:00");
+    const end = new Date(d); end.setDate(end.getDate() + 6);
+    const mShort = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return `${d.getDate()} ${mShort[d.getMonth()]} – ${end.getDate()} ${mShort[end.getMonth()]}`;
+  };
+
   return (
     <div>
       <div className="section-toolbar">
@@ -5624,6 +6314,57 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
         <>
           <WeekRow label="This Week" days={thisWeekDays} entries={displayed} />
           <WeekRow label="Next Week" days={nextWeekDays} entries={displayed} />
+
+          {/* Future Schedule — 6 weeks */}
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#555", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Future Schedule</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
+              {futureWeeks.map(weekMon => {
+                const weekEntries = activeFuture.filter(e => e.weekStart === weekMon);
+                const counterRef = { current: 0 };
+                return (
+                  <div key={weekMon} className="future-week-col"
+                    style={{ background: "#fff", border: "1px solid #e5e5e5", borderRadius: 10, minHeight: 160, display: "flex", flexDirection: "column", overflow: "hidden", transition: "border-color 0.15s, box-shadow 0.15s" }}
+                    onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+                    onDragEnter={e => { e.preventDefault(); counterRef.current++; e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}33`; }}
+                    onDragLeave={e => { counterRef.current--; if (counterRef.current <= 0) { counterRef.current = 0; e.currentTarget.style.borderColor = "#e5e5e5"; e.currentTarget.style.boxShadow = "none"; } }}
+                    onDrop={e => { e.preventDefault(); counterRef.current = 0; e.currentTarget.style.borderColor = "#e5e5e5"; e.currentTarget.style.boxShadow = "none"; const entryId = dragFutureRef.current; dragFutureRef.current = null; if (!entryId) return; setFutureSchedule(fs => fs.map(x => x.id === entryId ? { ...x, weekStart: weekMon } : x)); }}
+                  >
+                    <div style={{ background: "#f5f5f5", padding: "8px 10px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e5e5e5" }}>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "0.04em" }}>Week of</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#333" }}>{formatWeekLabel(weekMon)}</div>
+                      </div>
+                      <button className="btn btn-ghost btn-xs" style={{ padding: "2px 6px" }} onClick={() => openFutureNew(weekMon)}>
+                        <Icon name="plus" size={11} />
+                      </button>
+                    </div>
+                    <div style={{ flex: 1, padding: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                      {weekEntries.length === 0 && <div style={{ fontSize: 11, color: "#ccc", textAlign: "center", padding: "16px 0" }}>No plans yet</div>}
+                      {weekEntries.map(entry => {
+                        const job = jobs.find(j => j.id === entry.jobId);
+                        const client = clients.find(c => c.id === job?.clientId);
+                        return (
+                          <div key={entry.id}
+                            draggable="true"
+                            onDragStart={e => { dragFutureRef.current = entry.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(entry.id)); requestAnimationFrame(() => e.target.style.opacity = "0.4"); }}
+                            onDragEnd={e => { dragFutureRef.current = null; e.target.style.opacity = "1"; document.querySelectorAll('.future-week-col').forEach(el => { el.style.borderColor = "#e5e5e5"; el.style.boxShadow = "none"; }); }}
+                            style={{ background: "#f8f8f8", borderRadius: 8, padding: "8px 10px", borderLeft: `3px solid ${accent}`, cursor: "grab" }}
+                            onClick={() => { if (!dragFutureRef.current) openFutureEdit(entry); }}>
+                            <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 2, lineHeight: 1.3 }}>{entry.title || job?.title || "Unknown"}</div>
+                            {client && <div style={{ fontSize: 10, color: "#888", marginBottom: 3 }}>{client.name}</div>}
+                            {(entry.assignedTo || []).length > 0 && (
+                              <div style={{ marginTop: 3 }}><AvatarGroup names={entry.assignedTo} max={3} /></div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </>
       )}
 
@@ -5694,6 +6435,90 @@ const Schedule = ({ schedule, setSchedule, jobs, clients, staff }) => {
             <div className="form-group">
               <label className="form-label">Notes</label>
               <textarea className="form-control" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Access instructions, special requirements..." />
+            </div>
+          </div>
+          )}
+        </SectionDrawer>
+        );
+      })()}
+
+      {showFutureModal && (() => {
+        const futJobName = jobs.find(j => String(j.id) === String(futureForm.jobId))?.title || "Unknown Job";
+        const isNewFuture = !editFutureEntry;
+        return (
+        <SectionDrawer
+          accent={accent}
+          icon={<Icon name="schedule" size={16} />}
+          typeLabel="Future Plan"
+          title={editFutureEntry ? `${futureForm.title || futJobName}` : "Plan Future Week"}
+          mode={futureMode} setMode={setFutureMode}
+          showToggle={!isNewFuture}
+          isNew={isNewFuture}
+          footer={futureMode === "view" ? <>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowFutureModal(false)}>Close</button>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button className="btn btn-ghost btn-sm" style={{ color: "#c00" }} onClick={() => { delFuture(editFutureEntry.id); setShowFutureModal(false); }}>
+                <Icon name="trash" size={13} /> Delete
+              </button>
+              <button className="btn btn-sm" style={{ background: accent, color: "#fff", border: "none" }} onClick={() => setFutureMode("edit")}>
+                <Icon name="edit" size={13} /> Edit
+              </button>
+            </div>
+          </> : <>
+            <button className="btn btn-ghost btn-sm" onClick={() => editFutureEntry ? setFutureMode("view") : setShowFutureModal(false)}>Cancel</button>
+            <button className="btn btn-sm" style={{ background: accent, color: "#fff", border: "none" }} onClick={() => { saveFuture(); if (editFutureEntry) setFutureMode("view"); }} disabled={!futureForm.jobId}>
+              <Icon name="check" size={13} /> {isNewFuture ? "Add Plan" : "Save Changes"}
+            </button>
+          </>}
+          onClose={() => setShowFutureModal(false)}
+        >
+          {futureMode === "view" ? (
+            <div style={{ padding: "20px 24px" }}>
+              <ViewField label="Job" value={futJobName} />
+              <ViewField label="Week" value={formatWeekLabel(futureForm.weekStart)} />
+              {futureForm.title && <ViewField label="Title" value={futureForm.title} />}
+              {(futureForm.assignedTo || []).length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 6 }}>Assigned To</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {futureForm.assignedTo.map(t => <span key={t} className="chip">{t}</span>)}
+                  </div>
+                </div>
+              )}
+              {futureForm.notes && <ViewField label="Notes" value={futureForm.notes} />}
+            </div>
+          ) : (
+          <div style={{ padding: "20px 24px" }}>
+            <div className="form-group">
+              <label className="form-label">Job *</label>
+              <select className="form-control" value={futureForm.jobId} onChange={e => setFutureForm(f => ({ ...f, jobId: e.target.value }))}>
+                {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Title</label>
+              <input className="form-control" value={futureForm.title} onChange={e => setFutureForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Painting & Touch-ups" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Week</label>
+              <select className="form-control" value={futureForm.weekStart} onChange={e => setFutureForm(f => ({ ...f, weekStart: e.target.value }))}>
+                {futureWeeks.map(w => <option key={w} value={w}>{formatWeekLabel(w)}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Assigned To</label>
+              <div className="multi-select">
+                {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => (
+                  <span key={t} className={`multi-option ${futureForm.assignedTo.includes(t) ? "selected" : ""}`}
+                    onClick={() => setFutureForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Notes</label>
+              <textarea className="form-control" value={futureForm.notes} onChange={e => setFutureForm(f => ({ ...f, notes: e.target.value }))} placeholder="Planning notes, requirements..." />
             </div>
           </div>
           )}
@@ -8124,6 +8949,7 @@ export default function App() {
   const [jobs, setJobs] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [schedule, setSchedule] = useState([]);
+  const [futureSchedule, setFutureSchedule] = useState([]);
   const [timeEntries, setTimeEntries] = useState([]);
   const [bills, setBills] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -8147,6 +8973,7 @@ export default function App() {
       setTimeEntries(SEED_TIME);
       setBills(SEED_BILLS);
       setSchedule(SEED_SCHEDULE);
+      setFutureSchedule(SEED_FUTURE_SCHEDULE);
       setContractors(SEED_CONTRACTORS);
       setSuppliers(SEED_SUPPLIERS);
       setStaff(TEAM_DATA.map((t, i) => ({ id: i + 1, name: t.name, costRate: t.costRate, chargeRate: t.chargeRate })));
@@ -8176,13 +9003,14 @@ export default function App() {
   const unpaidInvCount = invoices.filter(i => i.status !== "paid" && i.status !== "void").length;
   const activeJobsCount = jobs.filter(j => j.status === "in_progress").length;
   const ordersOverdueCount = [...workOrders, ...purchaseOrders].filter(o => !ORDER_TERMINAL.includes(o.status) && daysUntil(o.dueDate) < 0).length;
+  const contractorComplianceIssues = contractors.reduce((sum, c) => sum + getContractorComplianceCount(c), 0);
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "dashboard" },
     { id: "jobs", label: "Jobs", icon: "jobs", badge: activeJobsCount || null },
     { id: "orders", label: "Orders", icon: "orders", badge: ordersOverdueCount || null },
     { id: "clients", label: "Clients", icon: "clients" },
-    { id: "contractors", label: "Contractors", icon: "contractors" },
+    { id: "contractors", label: "Contractors", icon: "contractors", badge: contractorComplianceIssues || null, badgeColor: "#dc2626" },
     { id: "suppliers", label: "Suppliers", icon: "suppliers" },
     { id: "schedule", label: "Schedule", icon: "schedule" },
     { id: "quotes", label: "Quotes", icon: "quotes" },
@@ -8213,7 +9041,7 @@ export default function App() {
       <Route path="/clients" element={<Clients clients={clients} setClients={setClients} jobs={jobs} />} />
       <Route path="/contractors" element={<Contractors contractors={contractors} setContractors={setContractors} workOrders={workOrders} bills={bills} />} />
       <Route path="/suppliers" element={<Suppliers suppliers={suppliers} setSuppliers={setSuppliers} purchaseOrders={purchaseOrders} bills={bills} />} />
-      <Route path="/schedule" element={<Schedule schedule={schedule} setSchedule={setSchedule} jobs={jobs} clients={clients} staff={staff} />} />
+      <Route path="/schedule" element={<Schedule schedule={schedule} setSchedule={setSchedule} futureSchedule={futureSchedule} setFutureSchedule={setFutureSchedule} jobs={jobs} clients={clients} staff={staff} />} />
       <Route path="/quotes" element={<Quotes quotes={quotes} setQuotes={setQuotes} jobs={jobs} clients={clients} invoices={invoices} />} />
       <Route path="/time" element={<TimeTracking timeEntries={timeEntries} setTimeEntries={setTimeEntries} jobs={jobs} setJobs={setJobs} clients={clients} staff={staff} />} />
       <Route path="/bills" element={<Bills bills={bills} setBills={setBills} jobs={jobs} setJobs={setJobs} clients={clients} />} />
@@ -8283,7 +9111,7 @@ export default function App() {
               onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
               style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
               <Icon name={n.icon} size={15} />{n.label}
-              {n.badge ? <span className="badge">{n.badge}</span> : null}
+              {n.badge ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
             </div>
             );
           })}
@@ -8295,7 +9123,7 @@ export default function App() {
               onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
               style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
               <Icon name={n.icon} size={15} />{n.label}
-              {n.badge ? <span className="badge">{n.badge}</span> : null}
+              {n.badge ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
             </div>
             );
           })}
@@ -8357,7 +9185,7 @@ export default function App() {
               style={page === n.id ? { color: '#fff', background: hexToRgba(accent, 0.15) } : undefined}>
               <Icon name={n.icon} size={16} />
               {n.id === "time" ? "Time Tracking" : n.id === "bills" ? "Bills & Costs" : n.label}
-              {n.badge ? <span className="jm-more-badge">{n.badge}</span> : null}
+              {n.badge ? <span className="jm-more-badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
             </button>
             );
           })}
@@ -8372,7 +9200,7 @@ export default function App() {
             return (
             <button key={n.id} className={`jm-bottom-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
               style={page === n.id ? { color: accent, boxShadow: `inset 0 2px 0 ${accent}` } : undefined}>
-              {n.badge ? <span className="bnav-badge">{n.badge}</span> : null}
+              {n.badge ? <span className="bnav-badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
               <Icon name={n.icon} size={20} />
               <span>{n.label}</span>
             </button>

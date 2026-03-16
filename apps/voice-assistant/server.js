@@ -335,8 +335,8 @@ process.on('unhandledRejection', (reason) => {
   console.error('Unhandled rejection:', reason);
 });
 
-server.listen(PORT, () => {
-  console.log(`FieldOps Voice Assistant running on port ${PORT}`);
-  console.log(`Webhook URL: http://localhost:${PORT}/incoming-call`);
-  console.log(`WebSocket:   ws://localhost:${PORT}/media-stream`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`FieldOps Voice Assistant running on 0.0.0.0:${PORT}`);
+  console.log(`Webhook: /incoming-call`);
+  console.log(`WebSocket: /media-stream`);
 });

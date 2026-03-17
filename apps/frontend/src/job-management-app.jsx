@@ -9615,7 +9615,7 @@ const SystemStatus = () => {
         if (!url) return { status: "unconfigured", detail: "VITE_SUPABASE_URL not set" };
         const start = performance.now();
         try {
-          const res = await fetch(`${url}/auth/v1/health`);
+          const res = await fetch(`${url}/auth/v1/health`, { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY } });
           const latency = Math.round(performance.now() - start);
           return res.ok ? { status: "operational", latency, detail: `Responding in ${latency}ms` } : { status: "degraded", latency, detail: `HTTP ${res.status}` };
         } catch (e) { return { status: "down", detail: e.message }; }
@@ -9626,7 +9626,7 @@ const SystemStatus = () => {
         if (!url) return { status: "unconfigured", detail: "VITE_SUPABASE_URL not set" };
         const start = performance.now();
         try {
-          const res = await fetch(`${url}/storage/v1/`, { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` } });
+          const res = await fetch(`${url}/storage/v1/bucket`, { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` } });
           const latency = Math.round(performance.now() - start);
           return res.ok || res.status === 400 ? { status: "operational", latency, detail: `Responding in ${latency}ms` } : { status: "degraded", latency, detail: `HTTP ${res.status}` };
         } catch (e) { return { status: "down", detail: e.message }; }

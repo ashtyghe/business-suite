@@ -18,7 +18,8 @@ export function AuthProvider({ children }) {
     setStaff(profile);
   };
 
-  // Initial session check
+  // Initial session check — use onAuthStateChange only (not getSession)
+  // to avoid Supabase lock contention ("Lock broken by another request")
   useEffect(() => {
     // If Supabase isn't configured, skip auth (local dev with seed data)
     if (!supabase) {
@@ -26,28 +27,19 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // Race the session check against a timeout so the app never hangs
-    const sessionTimeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Session check timed out')), 5000)
-    );
-
-    Promise.race([getSession(), sessionTimeout]).then(async (session) => {
-      const authUser = session?.user || null;
-      setUser(authUser);
-      await resolveStaff(authUser);
-    }).catch((err) => {
-      console.error('Auth session check failed:', err.message);
-    }).finally(() => {
+    // Safety timeout — if auth never resolves, show login page
+    const timeout = setTimeout(() => {
       setLoading(false);
-    });
+    }, 5000);
 
+    // onAuthStateChange fires INITIAL_SESSION on setup, which gives us
+    // the current session without a separate getSession() call
     const { data: { subscription } } = onAuthStateChange(async (event, session) => {
       try {
         const authUser = session?.user || null;
         setUser(authUser);
         await resolveStaff(authUser);
 
-        // Handle session expiry / sign out events
         if (event === 'SIGNED_OUT') {
           setStaff(null);
         }
@@ -59,11 +51,15 @@ export function AuthProvider({ children }) {
       } catch (err) {
         console.error('Auth state change error:', err.message);
       } finally {
+        clearTimeout(timeout);
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email, password) => {

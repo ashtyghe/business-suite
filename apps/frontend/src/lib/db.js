@@ -46,6 +46,12 @@ function normalizeJob(row) {
     createdAt: row.created_at ? row.created_at.slice(0, 10) : '',
     priority: row.priority || 'medium',
     tags: row.tags || [],
+    estimate: {
+      labour: Number(row.estimate_labour || 0),
+      materials: Number(row.estimate_materials || 0),
+      subcontractors: Number(row.estimate_subcontractors || 0),
+      other: Number(row.estimate_other || 0),
+    },
     activityLog: [],
   };
 }
@@ -139,6 +145,175 @@ function normalizeStaff(row) {
   };
 }
 
+function normalizePhase(row) {
+  return {
+    id: row.id,
+    jobId: row.job_id,
+    name: row.name,
+    startDate: row.start_date || '',
+    endDate: row.end_date || '',
+    color: row.color || '#3b82f6',
+    progress: Number(row.progress || 0),
+    sortOrder: row.sort_order || 0,
+  };
+}
+
+function normalizeTask(row) {
+  return {
+    id: row.id,
+    jobId: row.job_id,
+    text: row.text,
+    done: row.is_done || false,
+    dueDate: row.due_date || '',
+    assignedTo: row.assigned_to || '',
+    sortOrder: row.sort_order || 0,
+    createdAt: row.created_at || '',
+  };
+}
+
+function normalizeNote(row) {
+  return {
+    id: row.id,
+    jobId: row.job_id,
+    text: row.text || '',
+    category: row.category || 'general',
+    createdBy: row.created_by || '',
+    createdAt: row.created_at || '',
+    formType: row.form_type || null,
+    formData: row.form_data || null,
+    pdfNote: row.is_pdf || false,
+    pdfUrl: row.pdf_url || null,
+    pdfThumbnail: row.pdf_thumbnail_url || null,
+    pdfFields: row.pdf_fields || null,
+    pdfOriginalName: row.pdf_original_name || null,
+    attachments: [],  // populated after fetch via attachments table
+  };
+}
+
+function normalizeAttachment(row) {
+  return {
+    id: row.id,
+    parentType: row.parent_type,
+    parentId: row.parent_id,
+    name: row.name || '',
+    size: row.size || 0,
+    type: row.mime_type || '',
+    url: row.url,
+    dataUrl: row.url,  // alias for frontend compatibility
+  };
+}
+
+function normalizeWorkOrder(row) {
+  return {
+    id: row.id,
+    ref: row.ref,
+    jobId: row.job_id,
+    contractorId: row.contractor_id,
+    contractorName: row.contractor_name || '',
+    contractorContact: row.contractor_contact || '',
+    contractorEmail: row.contractor_email || '',
+    contractorPhone: row.contractor_phone || '',
+    trade: row.trade || '',
+    status: row.status,
+    issueDate: row.issue_date || '',
+    dueDate: row.due_date || '',
+    poLimit: row.po_limit ? String(row.po_limit) : '',
+    scopeOfWork: row.scope_of_work || '',
+    notes: row.notes || '',
+    internalNotes: row.internal_notes || '',
+    attachments: [],  // populated after fetch
+    auditLog: [],     // populated from audit_log table
+  };
+}
+
+function normalizePurchaseOrder(row) {
+  return {
+    id: row.id,
+    ref: row.ref,
+    jobId: row.job_id,
+    supplierId: row.supplier_id,
+    supplierName: row.supplier_name || '',
+    supplierContact: row.supplier_contact || '',
+    supplierEmail: row.supplier_email || '',
+    supplierAbn: row.supplier_abn || '',
+    status: row.status,
+    issueDate: row.issue_date || '',
+    dueDate: row.due_date || '',
+    poLimit: row.po_limit ? String(row.po_limit) : '',
+    deliveryAddress: row.delivery_address || '',
+    notes: row.notes || '',
+    internalNotes: row.internal_notes || '',
+    lines: [],        // populated after fetch
+    attachments: [],  // populated after fetch
+    auditLog: [],     // populated from audit_log table
+  };
+}
+
+function normalizePOLine(row) {
+  return {
+    id: row.id,
+    desc: row.description,
+    qty: Number(row.quantity || 1),
+    unit: row.unit || 'ea',
+    rate: Number(row.unit_price || 0),
+  };
+}
+
+function normalizeContractor(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    contact: row.contact || '',
+    email: row.email || '',
+    phone: row.phone || '',
+    trade: row.trade || '',
+    abn: row.abn || '',
+    notes: row.notes || '',
+    isActive: row.is_active !== false,
+    documents: [],  // populated after fetch
+  };
+}
+
+function normalizeContractorDoc(row) {
+  return {
+    id: row.id,
+    contractorId: row.contractor_id,
+    docType: row.doc_type,
+    policyNumber: row.policy_number || '',
+    insurer: row.insurer || '',
+    coverAmount: row.cover_amount || '',
+    licenseNumber: row.license_number || '',
+    licenseClass: row.license_class || '',
+    issuingBody: row.issuing_body || '',
+    cardNumber: row.card_number || '',
+    holderName: row.holder_name || '',
+    title: row.title || '',
+    revision: row.revision || '',
+    approvedBy: row.approved_by || '',
+    approvalDate: row.approval_date || '',
+    issueDate: row.issue_date || '',
+    expiryDate: row.expiry_date || '',
+    expiry: row.expiry_date || '',  // alias used by compliance checks
+    periodFrom: row.period_from || '',
+    periodTo: row.period_to || '',
+    abn: row.abn || '',
+    fileUrl: row.file_url || '',
+  };
+}
+
+function normalizeAuditEntry(row) {
+  return {
+    id: row.id,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    ts: row.created_at,
+    action: row.action,
+    detail: row.detail || '',
+    auto: row.is_auto || false,
+    user: row.user_name || '',
+  };
+}
+
 // ── Denormalizers (frontend shape → DB) ───────────────────────────────────
 
 function denormalizeJob(data) {
@@ -152,6 +327,99 @@ function denormalizeJob(data) {
     scheduled_start: data.startDate ? data.startDate + 'T00:00:00+00:00' : null,
     scheduled_end: data.dueDate ? data.dueDate + 'T00:00:00+00:00' : null,
     job_number: data.jobNumber,
+    priority: data.priority || 'medium',
+    tags: data.tags || [],
+    estimate_labour: data.estimate?.labour || 0,
+    estimate_materials: data.estimate?.materials || 0,
+    estimate_subcontractors: data.estimate?.subcontractors || 0,
+    estimate_other: data.estimate?.other || 0,
+  };
+}
+
+function denormalizeWorkOrder(data) {
+  return {
+    ref: data.ref,
+    job_id: data.jobId || null,
+    contractor_id: data.contractorId || null,
+    contractor_name: data.contractorName || null,
+    contractor_contact: data.contractorContact || null,
+    contractor_email: data.contractorEmail || null,
+    contractor_phone: data.contractorPhone || null,
+    trade: data.trade || null,
+    status: data.status || 'Draft',
+    issue_date: data.issueDate || null,
+    due_date: data.dueDate || null,
+    po_limit: data.poLimit ? Number(data.poLimit) : 0,
+    scope_of_work: data.scopeOfWork || null,
+    notes: data.notes || null,
+    internal_notes: data.internalNotes || null,
+  };
+}
+
+function denormalizePurchaseOrder(data) {
+  return {
+    ref: data.ref,
+    job_id: data.jobId || null,
+    supplier_id: data.supplierId || null,
+    supplier_name: data.supplierName || null,
+    supplier_contact: data.supplierContact || null,
+    supplier_email: data.supplierEmail || null,
+    supplier_abn: data.supplierAbn || null,
+    status: data.status || 'Draft',
+    issue_date: data.issueDate || null,
+    due_date: data.dueDate || null,
+    po_limit: data.poLimit ? Number(data.poLimit) : 0,
+    delivery_address: data.deliveryAddress || null,
+    notes: data.notes || null,
+    internal_notes: data.internalNotes || null,
+  };
+}
+
+function denormalizePOLines(lines, poId) {
+  return (lines || []).map(li => ({
+    purchase_order_id: poId,
+    description: li.desc,
+    quantity: li.qty || 1,
+    unit: li.unit || 'ea',
+    unit_price: li.rate || 0,
+  }));
+}
+
+function denormalizeContractor(data) {
+  return {
+    name: data.name,
+    contact: data.contact || null,
+    email: data.email || null,
+    phone: data.phone || null,
+    trade: data.trade || null,
+    abn: data.abn || null,
+    notes: data.notes || null,
+    is_active: data.isActive !== false,
+  };
+}
+
+function denormalizeContractorDoc(data, contractorId) {
+  return {
+    contractor_id: contractorId,
+    doc_type: data.docType,
+    policy_number: data.policyNumber || null,
+    insurer: data.insurer || null,
+    cover_amount: data.coverAmount || null,
+    license_number: data.licenseNumber || null,
+    license_class: data.licenseClass || null,
+    issuing_body: data.issuingBody || null,
+    card_number: data.cardNumber || null,
+    holder_name: data.holderName || null,
+    title: data.title || null,
+    revision: data.revision || null,
+    approved_by: data.approvedBy || null,
+    approval_date: data.approvalDate || null,
+    issue_date: data.issueDate || null,
+    expiry_date: data.expiryDate || data.expiry || null,
+    period_from: data.periodFrom || null,
+    period_to: data.periodTo || null,
+    abn: data.abn || null,
+    file_url: data.fileUrl || null,
   };
 }
 
@@ -233,6 +501,16 @@ export async function fetchAll() {
     bills,
     schedule,
     staff,
+    workOrders,
+    purchaseOrders,
+    poLines,
+    contractors,
+    contractorDocs,
+    phases,
+    tasks,
+    notes,
+    attachments,
+    auditEntries,
   ] = await Promise.all([
     q(supabase.from('customers').select('*').order('name')),
     q(supabase.from('sites').select('*').order('name')),
@@ -245,6 +523,16 @@ export async function fetchAll() {
     q(supabase.from('bills').select('*').order('created_at', { ascending: false })),
     q(supabase.from('schedule').select('*').order('entry_date')),
     q(supabase.from('staff').select('*').order('full_name')),
+    q(supabase.from('work_orders').select('*').order('created_at', { ascending: false })),
+    q(supabase.from('purchase_orders').select('*').order('created_at', { ascending: false })),
+    q(supabase.from('purchase_order_lines').select('*')),
+    q(supabase.from('contractors').select('*').order('name')),
+    q(supabase.from('contractor_documents').select('*')),
+    q(supabase.from('job_phases').select('*').order('sort_order')),
+    q(supabase.from('job_tasks').select('*').order('sort_order')),
+    q(supabase.from('job_notes').select('*').order('created_at', { ascending: false })),
+    q(supabase.from('attachments').select('*')),
+    q(supabase.from('audit_log').select('*').order('created_at', { ascending: false })),
   ]);
 
   const normalizedStaff = staff.map(normalizeStaff);
@@ -268,6 +556,41 @@ export async function fetchAll() {
     worker: staffById[e.staff_id] || e.staff_id || '',
   }));
 
+  // Normalize attachments and group by parent
+  const allAttachments = attachments.map(normalizeAttachment);
+  const attachmentsByParent = (type, id) => allAttachments.filter(a => a.parentType === type && a.parentId === id);
+
+  // Normalize audit log entries and group by entity
+  const allAudit = auditEntries.map(normalizeAuditEntry);
+  const auditByEntity = (type, id) => allAudit.filter(a => a.entityType === type && a.entityId === id);
+
+  // Normalize notes with their attachments
+  const normalizedNotes = notes.map(n => ({
+    ...normalizeNote(n),
+    attachments: attachmentsByParent('note', n.id),
+  }));
+
+  // Normalize work orders with attachments and audit log
+  const normalizedWOs = workOrders.map(wo => ({
+    ...normalizeWorkOrder(wo),
+    attachments: attachmentsByParent('work_order', wo.id),
+    auditLog: auditByEntity('work_order', wo.id),
+  }));
+
+  // Normalize purchase orders with lines, attachments, and audit log
+  const normalizedPOs = purchaseOrders.map(po => ({
+    ...normalizePurchaseOrder(po),
+    lines: poLines.filter(l => l.purchase_order_id === po.id).map(normalizePOLine),
+    attachments: attachmentsByParent('purchase_order', po.id),
+    auditLog: auditByEntity('purchase_order', po.id),
+  }));
+
+  // Normalize contractors with their documents
+  const normalizedContractors = contractors.map(c => ({
+    ...normalizeContractor(c),
+    documents: contractorDocs.filter(d => d.contractor_id === c.id).map(normalizeContractorDoc),
+  }));
+
   return {
     clients: customers.map(c => normalizeCustomer(c, sites)),
     staff: normalizedStaff,
@@ -277,6 +600,12 @@ export async function fetchAll() {
     timeEntries: normalizedTime,
     bills: bills.map(normalizeBill),
     schedule: schedule.map(normalizeSchedule),
+    workOrders: normalizedWOs,
+    purchaseOrders: normalizedPOs,
+    contractors: normalizedContractors,
+    phases: phases.map(normalizePhase),
+    tasks: tasks.map(normalizeTask),
+    notes: normalizedNotes,
   };
 }
 
@@ -485,4 +814,311 @@ export async function updateScheduleEntry(id, data) {
 
 export async function deleteScheduleEntry(id) {
   return q(supabase.from('schedule').delete().eq('id', id));
+}
+
+// ── File upload helper ────────────────────────────────────────────────────
+
+export async function uploadFile(bucket, path, dataUrl) {
+  const blob = await fetch(dataUrl).then(r => r.blob());
+  const { error } = await supabase.storage.from(bucket).upload(path, blob, { upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function deleteFile(bucket, path) {
+  const { error } = await supabase.storage.from(bucket).remove([path]);
+  if (error) throw error;
+}
+
+// ── Attachments ───────────────────────────────────────────────────────────
+
+export async function createAttachment(parentType, parentId, file) {
+  // file: { name, size, type, dataUrl }
+  const path = `${parentType}s/${parentId}/${file.name}`;
+  const url = await uploadFile('attachments', path, file.dataUrl);
+  const row = await q(
+    supabase.from('attachments')
+      .insert({ parent_type: parentType, parent_id: parentId, name: file.name, size: file.size, mime_type: file.type, url })
+      .select().single()
+  );
+  return normalizeAttachment(row);
+}
+
+export async function deleteAttachment(id) {
+  const rows = await q(supabase.from('attachments').select('*').eq('id', id));
+  if (rows.length) {
+    const att = rows[0];
+    // Extract storage path from URL
+    const urlObj = new URL(att.url);
+    const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/attachments\/(.+)/);
+    if (pathMatch) {
+      try { await deleteFile('attachments', pathMatch[1]); } catch { /* ignore */ }
+    }
+  }
+  return q(supabase.from('attachments').delete().eq('id', id));
+}
+
+// ── Work Orders ───────────────────────────────────────────────────────────
+
+async function nextWORef() {
+  const rows = await q(supabase.from('work_orders').select('ref').order('created_at', { ascending: false }).limit(1));
+  if (!rows.length) return 'WO-101';
+  const last = parseInt(rows[0].ref?.replace(/\D/g, '') || '100', 10);
+  return 'WO-' + String(last + 1);
+}
+
+export async function createWorkOrder(data) {
+  const ref = data.ref || await nextWORef();
+  const row = await q(
+    supabase.from('work_orders')
+      .insert({ ...denormalizeWorkOrder(data), ref })
+      .select().single()
+  );
+  return { ...normalizeWorkOrder(row), attachments: [], auditLog: [] };
+}
+
+export async function updateWorkOrder(id, data) {
+  const row = await q(
+    supabase.from('work_orders')
+      .update({ ...denormalizeWorkOrder(data), updated_at: new Date().toISOString() })
+      .eq('id', id).select().single()
+  );
+  return normalizeWorkOrder(row);
+}
+
+export async function deleteWorkOrder(id) {
+  // Delete attachments from storage first
+  const atts = await q(supabase.from('attachments').select('*').eq('parent_type', 'work_order').eq('parent_id', id));
+  for (const att of atts) {
+    const urlObj = new URL(att.url);
+    const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/attachments\/(.+)/);
+    if (pathMatch) {
+      try { await deleteFile('attachments', pathMatch[1]); } catch { /* ignore */ }
+    }
+  }
+  return q(supabase.from('work_orders').delete().eq('id', id));
+}
+
+// ── Purchase Orders ───────────────────────────────────────────────────────
+
+async function nextPORef() {
+  const rows = await q(supabase.from('purchase_orders').select('ref').order('created_at', { ascending: false }).limit(1));
+  if (!rows.length) return 'PO-201';
+  const last = parseInt(rows[0].ref?.replace(/\D/g, '') || '200', 10);
+  return 'PO-' + String(last + 1);
+}
+
+export async function createPurchaseOrder(data) {
+  const ref = data.ref || await nextPORef();
+  const po = await q(
+    supabase.from('purchase_orders')
+      .insert({ ...denormalizePurchaseOrder(data), ref })
+      .select().single()
+  );
+  if (data.lines?.length) {
+    await q(supabase.from('purchase_order_lines').insert(denormalizePOLines(data.lines, po.id)));
+  }
+  const lines = await q(supabase.from('purchase_order_lines').select('*').eq('purchase_order_id', po.id));
+  return { ...normalizePurchaseOrder(po), lines: lines.map(normalizePOLine), attachments: [], auditLog: [] };
+}
+
+export async function updatePurchaseOrder(id, data) {
+  const po = await q(
+    supabase.from('purchase_orders')
+      .update({ ...denormalizePurchaseOrder(data), updated_at: new Date().toISOString() })
+      .eq('id', id).select().single()
+  );
+  // Replace lines
+  await q(supabase.from('purchase_order_lines').delete().eq('purchase_order_id', id));
+  if (data.lines?.length) {
+    await q(supabase.from('purchase_order_lines').insert(denormalizePOLines(data.lines, id)));
+  }
+  const lines = await q(supabase.from('purchase_order_lines').select('*').eq('purchase_order_id', id));
+  return { ...normalizePurchaseOrder(po), lines: lines.map(normalizePOLine) };
+}
+
+export async function deletePurchaseOrder(id) {
+  const atts = await q(supabase.from('attachments').select('*').eq('parent_type', 'purchase_order').eq('parent_id', id));
+  for (const att of atts) {
+    const urlObj = new URL(att.url);
+    const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/attachments\/(.+)/);
+    if (pathMatch) {
+      try { await deleteFile('attachments', pathMatch[1]); } catch { /* ignore */ }
+    }
+  }
+  return q(supabase.from('purchase_orders').delete().eq('id', id));
+}
+
+// ── Contractors ───────────────────────────────────────────────────────────
+
+export async function createContractor(data) {
+  const row = await q(
+    supabase.from('contractors').insert(denormalizeContractor(data)).select().single()
+  );
+  return { ...normalizeContractor(row), documents: [] };
+}
+
+export async function updateContractor(id, data) {
+  const row = await q(
+    supabase.from('contractors')
+      .update({ ...denormalizeContractor(data), updated_at: new Date().toISOString() })
+      .eq('id', id).select().single()
+  );
+  return normalizeContractor(row);
+}
+
+export async function deleteContractor(id) {
+  // Delete document files from storage
+  const docs = await q(supabase.from('contractor_documents').select('file_url').eq('contractor_id', id));
+  for (const doc of docs) {
+    if (doc.file_url) {
+      try {
+        const urlObj = new URL(doc.file_url);
+        const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/documents\/(.+)/);
+        if (pathMatch) await deleteFile('documents', pathMatch[1]);
+      } catch { /* ignore */ }
+    }
+  }
+  return q(supabase.from('contractors').delete().eq('id', id));
+}
+
+// ── Contractor Documents ──────────────────────────────────────────────────
+
+export async function createContractorDoc(contractorId, data) {
+  const row = await q(
+    supabase.from('contractor_documents')
+      .insert(denormalizeContractorDoc(data, contractorId))
+      .select().single()
+  );
+  return normalizeContractorDoc(row);
+}
+
+export async function updateContractorDoc(id, data, contractorId) {
+  const row = await q(
+    supabase.from('contractor_documents')
+      .update(denormalizeContractorDoc(data, contractorId))
+      .eq('id', id).select().single()
+  );
+  return normalizeContractorDoc(row);
+}
+
+export async function deleteContractorDoc(id) {
+  const rows = await q(supabase.from('contractor_documents').select('file_url').eq('id', id));
+  if (rows.length && rows[0].file_url) {
+    try {
+      const urlObj = new URL(rows[0].file_url);
+      const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/documents\/(.+)/);
+      if (pathMatch) await deleteFile('documents', pathMatch[1]);
+    } catch { /* ignore */ }
+  }
+  return q(supabase.from('contractor_documents').delete().eq('id', id));
+}
+
+// ── Phases (Gantt) ────────────────────────────────────────────────────────
+
+export async function createPhase(data) {
+  const row = await q(
+    supabase.from('job_phases')
+      .insert({ job_id: data.jobId, name: data.name, start_date: data.startDate || null, end_date: data.endDate || null, color: data.color || '#3b82f6', progress: data.progress || 0, sort_order: data.sortOrder || 0 })
+      .select().single()
+  );
+  return normalizePhase(row);
+}
+
+export async function updatePhase(id, data) {
+  const row = await q(
+    supabase.from('job_phases')
+      .update({ name: data.name, start_date: data.startDate || null, end_date: data.endDate || null, color: data.color || '#3b82f6', progress: data.progress || 0, sort_order: data.sortOrder || 0 })
+      .eq('id', id).select().single()
+  );
+  return normalizePhase(row);
+}
+
+export async function deletePhase(id) {
+  return q(supabase.from('job_phases').delete().eq('id', id));
+}
+
+// ── Tasks (to-do) ─────────────────────────────────────────────────────────
+
+export async function createTask(data) {
+  const row = await q(
+    supabase.from('job_tasks')
+      .insert({ job_id: data.jobId, text: data.text, is_done: data.done || false, due_date: data.dueDate || null, assigned_to: data.assignedTo || null, sort_order: data.sortOrder || 0 })
+      .select().single()
+  );
+  return normalizeTask(row);
+}
+
+export async function updateTask(id, data) {
+  const row = await q(
+    supabase.from('job_tasks')
+      .update({ text: data.text, is_done: data.done || false, due_date: data.dueDate || null, assigned_to: data.assignedTo || null, sort_order: data.sortOrder || 0 })
+      .eq('id', id).select().single()
+  );
+  return normalizeTask(row);
+}
+
+export async function deleteTask(id) {
+  return q(supabase.from('job_tasks').delete().eq('id', id));
+}
+
+// ── Notes ─────────────────────────────────────────────────────────────────
+
+export async function createNote(data) {
+  const dbData = {
+    job_id: data.jobId,
+    text: data.text || null,
+    category: data.category || 'general',
+    created_by: data.createdBy || null,
+    form_type: data.formType || null,
+    form_data: data.formData || null,
+    is_pdf: data.pdfNote || false,
+    pdf_url: data.pdfUrl || null,
+    pdf_thumbnail_url: data.pdfThumbnail || null,
+    pdf_fields: data.pdfFields || null,
+    pdf_original_name: data.pdfOriginalName || null,
+  };
+  const row = await q(supabase.from('job_notes').insert(dbData).select().single());
+  return { ...normalizeNote(row), attachments: [] };
+}
+
+export async function updateNote(id, data) {
+  const dbData = {
+    text: data.text || null,
+    category: data.category || 'general',
+    form_type: data.formType || null,
+    form_data: data.formData || null,
+    is_pdf: data.pdfNote || false,
+    pdf_url: data.pdfUrl || null,
+    pdf_thumbnail_url: data.pdfThumbnail || null,
+    pdf_fields: data.pdfFields || null,
+    pdf_original_name: data.pdfOriginalName || null,
+  };
+  const row = await q(supabase.from('job_notes').update(dbData).eq('id', id).select().single());
+  return normalizeNote(row);
+}
+
+export async function deleteNote(id) {
+  // Delete attachments from storage
+  const atts = await q(supabase.from('attachments').select('*').eq('parent_type', 'note').eq('parent_id', id));
+  for (const att of atts) {
+    const urlObj = new URL(att.url);
+    const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/attachments\/(.+)/);
+    if (pathMatch) {
+      try { await deleteFile('attachments', pathMatch[1]); } catch { /* ignore */ }
+    }
+  }
+  return q(supabase.from('job_notes').delete().eq('id', id));
+}
+
+// ── Audit Log ─────────────────────────────────────────────────────────────
+
+export async function createAuditEntry(entityType, entityId, action, detail, userName, isAuto = false) {
+  const row = await q(
+    supabase.from('audit_log')
+      .insert({ entity_type: entityType, entity_id: entityId, action, detail: detail || null, user_name: userName || null, is_auto: isAuto })
+      .select().single()
+  );
+  return normalizeAuditEntry(row);
 }

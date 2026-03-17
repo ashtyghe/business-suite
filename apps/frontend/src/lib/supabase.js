@@ -25,6 +25,23 @@ export async function extractDocumentFromImage(base64, mimeType, docType) {
   return data;
 }
 
+export async function sendEmail(type, to, data) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data: result, error } = await supabase.functions.invoke('send-email', {
+    body: { type, to, data },
+  });
+  if (error) {
+    const msg = typeof error === 'object' && error.context
+      ? await error.context.text?.() || error.message
+      : error.message;
+    throw new Error(msg || 'Email send failed');
+  }
+  if (typeof result === 'string') {
+    try { return JSON.parse(result); } catch { return result; }
+  }
+  return result;
+}
+
 export async function extractBillFromImage(base64, mimeType) {
   if (!supabase) return null;
   const { data, error } = await supabase.functions.invoke('extract-bill', {

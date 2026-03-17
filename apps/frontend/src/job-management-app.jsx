@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, Fragment, useCallback } from "rea
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry } from './lib/db';
 import { extractBillFromImage, extractDocumentFromImage, sendEmail } from './lib/supabase';
+import { useAuth } from './lib/AuthContext';
 import * as fabric from "fabric";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
@@ -173,7 +174,8 @@ const calcQuoteTotal = (q) => {
 const uid = () => Date.now() + Math.random();
 
 // ── Activity Log Helpers ──────────────────────────────────────────────────────
-const CURRENT_USER = "Alex Jones";
+// Set dynamically from auth context inside App — defaults to seed data name
+let CURRENT_USER = "Alex Jones";
 const nowTs = () => {
   const d = new Date();
   return d.toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) + " " +
@@ -10467,6 +10469,10 @@ const PATH_TO_ID = Object.fromEntries(
 );
 
 export default function App() {
+  const auth = useAuth();
+  // Update module-level CURRENT_USER from auth context
+  if (auth.staff) CURRENT_USER = auth.staff.name;
+
   const location = useLocation();
   const routerNavigate = useNavigate();
   const page = PATH_TO_ID[location.pathname] || "dashboard";
@@ -10682,11 +10688,18 @@ export default function App() {
         </div>
         <div style={{ padding: "16px 20px", borderTop: "1px solid #1e1e1e" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#fff", color: "#111", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>AJ</div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>Alex Jones</div>
-              <div style={{ fontSize: 10, color: "#555" }}>Admin</div>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#fff", color: "#111", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
+              {(auth.staff?.name || "AJ").split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase()}
             </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{auth.staff?.name || "Alex Jones"}</div>
+              <div style={{ fontSize: 10, color: "#555", textTransform: "capitalize" }}>{auth.staff?.role || "Admin"}</div>
+            </div>
+            {!auth.isLocalDev && (
+              <button onClick={() => auth.signOut()} title="Sign out" style={{ background: "transparent", border: "none", color: "#555", cursor: "pointer", padding: 4, flexShrink: 0, transition: "color 0.15s" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#555"}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg>
+              </button>
+            )}
           </div>
         </div>
       </nav>

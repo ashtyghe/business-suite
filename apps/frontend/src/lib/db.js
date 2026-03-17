@@ -1174,3 +1174,54 @@ export async function saveVoiceSettings(settings) {
   if (error) throw error;
   return data;
 }
+
+// ── Reminders ─────────────────────────────────────────────────────────────
+
+function normalizeReminder(row) {
+  return {
+    id: row.id,
+    staffId: row.staff_id,
+    text: row.text || '',
+    isChecklist: row.is_checklist || false,
+    reminderDate: row.reminder_date || null,
+    completed: row.completed || false,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function fetchReminders(staffId) {
+  const rows = await q(
+    supabase.from('reminders').select('*').eq('staff_id', staffId).order('created_at', { ascending: false })
+  );
+  return rows.map(normalizeReminder);
+}
+
+export async function createReminder(data) {
+  const row = await q(
+    supabase.from('reminders').insert({
+      staff_id: data.staffId,
+      text: data.text,
+      is_checklist: data.isChecklist || false,
+      reminder_date: data.reminderDate || null,
+      completed: false,
+    }).select().single()
+  );
+  return normalizeReminder(row);
+}
+
+export async function updateReminder(id, data) {
+  const dbData = {};
+  if (data.text !== undefined) dbData.text = data.text;
+  if (data.isChecklist !== undefined) dbData.is_checklist = data.isChecklist;
+  if (data.reminderDate !== undefined) dbData.reminder_date = data.reminderDate;
+  if (data.completed !== undefined) dbData.completed = data.completed;
+  const row = await q(
+    supabase.from('reminders').update(dbData).eq('id', id).select().single()
+  );
+  return normalizeReminder(row);
+}
+
+export async function deleteReminder(id) {
+  return q(supabase.from('reminders').delete().eq('id', id));
+}

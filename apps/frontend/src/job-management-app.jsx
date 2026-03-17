@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, Fragment, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
-import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry, getVoiceSettings, saveVoiceSettings } from './lib/db';
+import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry, getVoiceSettings, saveVoiceSettings, fetchReminders, createReminder, updateReminder, deleteReminder } from './lib/db';
 import { extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord } from './lib/supabase';
 import { useAuth } from './lib/AuthContext';
 import { changePassword, adminResetUserPassword } from './lib/auth';
@@ -299,6 +299,7 @@ const SECTION_COLORS = {
   suppliers: { accent: "#d97706", light: "#fffbeb" },
   status: { accent: "#059669", light: "#ecfdf5" },
   settings: { accent: "#6b7280", light: "#f9fafb" },
+  reminders: { accent: "#8b5cf6", light: "#f5f3ff" },
 };
 const hexToRgba = (hex, a) => {
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
@@ -10780,6 +10781,247 @@ const ChangePasswordModal = ({ onClose }) => {
   );
 };
 
+// ── Reminders ──────────────────────────────────────────────────────────────
+
+const Reminders = ({ reminders, setReminders, staffId }) => {
+  const accent = SECTION_COLORS.reminders.accent;
+  const [showModal, setShowModal] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [text, setText] = useState("");
+  const [isChecklist, setIsChecklist] = useState(false);
+  const [reminderDate, setReminderDate] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState("active"); // active | completed | all
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const isOverdue = (r) => r.reminderDate && !r.completed && r.reminderDate < today;
+  const isDueToday = (r) => r.reminderDate && !r.completed && r.reminderDate === today;
+
+  const sorted = [...reminders].sort((a, b) => {
+    // Overdue first, then due today, then by date ascending, no-date last
+    const aOver = isOverdue(a) ? 0 : 1;
+    const bOver = isOverdue(b) ? 0 : 1;
+    if (aOver !== bOver) return aOver - bOver;
+    const aToday = isDueToday(a) ? 0 : 1;
+    const bToday = isDueToday(b) ? 0 : 1;
+    if (aToday !== bToday) return aToday - bToday;
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    if (a.reminderDate && b.reminderDate) return a.reminderDate.localeCompare(b.reminderDate);
+    if (a.reminderDate) return -1;
+    if (b.reminderDate) return 1;
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+
+  const filtered = sorted.filter(r => {
+    if (filter === "active") return !r.completed;
+    if (filter === "completed") return r.completed;
+    return true;
+  });
+
+  const openNew = () => { setText(""); setIsChecklist(false); setReminderDate(""); setEditId(null); setShowModal(true); };
+  const openEdit = (r) => { setText(r.text); setIsChecklist(r.isChecklist); setReminderDate(r.reminderDate || ""); setEditId(r.id); setShowModal(true); };
+
+  const save = async () => {
+    if (!text.trim()) return;
+    setSaving(true);
+    try {
+      if (editId) {
+        const updated = await updateReminder(editId, { text, isChecklist, reminderDate: reminderDate || null });
+        setReminders(prev => prev.map(r => r.id === editId ? updated : r));
+      } else {
+        const created = await createReminder({ staffId, text, isChecklist, reminderDate: reminderDate || null });
+        setReminders(prev => [created, ...prev]);
+      }
+      setShowModal(false);
+    } catch (err) {
+      console.error("Failed to save reminder:", err);
+      alert("Failed to save reminder");
+    } finally { setSaving(false); }
+  };
+
+  const toggleComplete = async (r) => {
+    try {
+      const updated = await updateReminder(r.id, { completed: !r.completed });
+      setReminders(prev => prev.map(x => x.id === r.id ? updated : x));
+    } catch (err) { console.error("Failed to toggle reminder:", err); }
+  };
+
+  const del = async (id) => {
+    if (!confirm("Delete this reminder?")) return;
+    try {
+      await deleteReminder(id);
+      setReminders(prev => prev.filter(r => r.id !== id));
+    } catch (err) { console.error("Failed to delete reminder:", err); }
+  };
+
+  const formatDate = (d) => {
+    if (!d) return "";
+    const dt = new Date(d + "T00:00:00");
+    return dt.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  const parseChecklistItems = (txt) => {
+    return txt.split("\n").filter(l => l.trim()).map(line => {
+      const checked = line.startsWith("[x] ") || line.startsWith("[X] ");
+      const label = line.replace(/^\[[ xX]\] /, "").replace(/^- /, "").trim();
+      return { checked, label };
+    });
+  };
+
+  const toggleChecklistItem = async (r, idx) => {
+    const items = parseChecklistItems(r.text);
+    items[idx].checked = !items[idx].checked;
+    const newText = items.map(i => `[${i.checked ? "x" : " "}] ${i.label}`).join("\n");
+    try {
+      const updated = await updateReminder(r.id, { text: newText });
+      setReminders(prev => prev.map(x => x.id === r.id ? updated : x));
+    } catch (err) { console.error("Failed to update checklist:", err); }
+  };
+
+  const overdueCount = reminders.filter(r => isOverdue(r)).length;
+
+  return (
+    <div>
+      {/* Toolbar */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          {["active", "completed", "all"].map(f => (
+            <button key={f} onClick={() => setFilter(f)} style={{
+              padding: "5px 14px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 12, fontWeight: 600, cursor: "pointer",
+              background: filter === f ? accent : "#fff", color: filter === f ? "#fff" : "#555",
+            }}>{f.charAt(0).toUpperCase() + f.slice(1)}</button>
+          ))}
+        </div>
+        <button onClick={openNew} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, border: "none", background: accent, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+          <Icon name="add" size={14} /> New Reminder
+        </button>
+      </div>
+
+      {/* Overdue banner */}
+      {overdueCount > 0 && filter !== "completed" && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#dc2626", display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="notification" size={14} /> You have {overdueCount} overdue reminder{overdueCount > 1 ? "s" : ""}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {filtered.length === 0 && (
+        <div style={{ textAlign: "center", padding: "60px 20px", color: "#999" }}>
+          <div style={{ fontSize: 14, marginBottom: 8 }}>{filter === "completed" ? "No completed reminders" : "No reminders yet"}</div>
+          {filter === "active" && <div style={{ fontSize: 12 }}>Click "New Reminder" to add one</div>}
+        </div>
+      )}
+
+      {/* Reminder list */}
+      <div style={{ display: "grid", gap: 10 }}>
+        {filtered.map(r => {
+          const overdue = isOverdue(r);
+          const dueToday = isDueToday(r);
+          const checkItems = r.isChecklist ? parseChecklistItems(r.text) : null;
+          return (
+            <div key={r.id} style={{
+              background: "#fff", border: overdue ? "1px solid #fecaca" : "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px",
+              borderLeft: overdue ? `4px solid #dc2626` : dueToday ? `4px solid ${accent}` : "1px solid #e8e8e8",
+              opacity: r.completed ? 0.6 : 1,
+            }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                {/* Complete checkbox */}
+                <button onClick={() => toggleComplete(r)} style={{
+                  width: 20, height: 20, borderRadius: 4, border: r.completed ? `2px solid ${accent}` : "2px solid #ccc",
+                  background: r.completed ? accent : "#fff", cursor: "pointer", flexShrink: 0, marginTop: 2,
+                  display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+                }}>
+                  {r.completed && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                </button>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Text or checklist */}
+                  {checkItems ? (
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {checkItems.map((item, idx) => (
+                        <label key={idx} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13 }}>
+                          <input type="checkbox" checked={item.checked} onChange={() => toggleChecklistItem(r, idx)} style={{ accentColor: accent }} />
+                          <span style={{ textDecoration: item.checked ? "line-through" : "none", color: item.checked ? "#999" : "#333" }}>{item.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 13, color: r.completed ? "#999" : "#333", textDecoration: r.completed ? "line-through" : "none", whiteSpace: "pre-wrap" }}>{r.text}</div>
+                  )}
+
+                  {/* Date badge */}
+                  {r.reminderDate && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4,
+                        background: overdue ? "#fef2f2" : dueToday ? hexToRgba(accent, 0.1) : "#f5f5f5",
+                        color: overdue ? "#dc2626" : dueToday ? accent : "#888",
+                      }}>
+                        {overdue ? "Overdue" : dueToday ? "Due today" : ""}{overdue || dueToday ? " — " : ""}{formatDate(r.reminderDate)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                  <button onClick={() => openEdit(r)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#999" }}><Icon name="edit" size={14} /></button>
+                  <button onClick={() => del(r.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#ccc" }}><Icon name="delete" size={14} /></button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }} onClick={() => setShowModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 24, width: "100%", maxWidth: 520, maxHeight: "90vh", overflow: "auto" }}>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{editId ? "Edit Reminder" : "New Reminder"}</div>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Content</label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", color: "#666" }}>
+                  <input type="checkbox" checked={isChecklist} onChange={e => setIsChecklist(e.target.checked)} style={{ accentColor: accent }} />
+                  Checklist mode
+                </label>
+              </div>
+              <textarea
+                value={text}
+                onChange={e => setText(e.target.value)}
+                placeholder={isChecklist ? "One item per line, e.g.:\n[ ] Pick up materials\n[ ] Call electrician\n[ ] Submit invoice" : "What do you need to remember?"}
+                rows={5}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", lineHeight: 1.6 }}
+              />
+              {isChecklist && <div style={{ fontSize: 11, color: "#999", marginTop: 4 }}>Use [ ] for unchecked and [x] for checked items. One per line.</div>}
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#555", display: "block", marginBottom: 6 }}>Reminder Date (optional)</label>
+              <input
+                type="date"
+                value={reminderDate}
+                onChange={e => setReminderDate(e.target.value)}
+                style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif" }}
+              />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button onClick={() => setShowModal(false)} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #ddd", background: "#fff", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+              <button onClick={save} disabled={saving || !text.trim()} style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: accent, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: saving || !text.trim() ? 0.5 : 1 }}>
+                {saving ? "Saving..." : editId ? "Update" : "Create"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ROUTE_MAP = {
   dashboard: "/",
   jobs: "/jobs",
@@ -10794,6 +11036,7 @@ const ROUTE_MAP = {
   invoices: "/invoices",
   activity: "/activity",
   status: "/status",
+  reminders: "/reminders",
   settings: "/settings",
 };
 const PATH_TO_ID = Object.fromEntries(
@@ -10826,6 +11069,7 @@ export default function App() {
   const [suppliers, setSuppliers] = useState([]);
   const [workOrders, setWorkOrders] = useState(SEED_WO);
   const [purchaseOrders, setPurchaseOrders] = useState(SEED_PO);
+  const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState(null);
 
@@ -10876,11 +11120,24 @@ export default function App() {
       });
   }, []);
 
+  // Load user's reminders
+  useEffect(() => {
+    if (!auth.staff?.id) return;
+    fetchReminders(auth.staff.id)
+      .then(setReminders)
+      .catch(err => console.warn('Failed to load reminders:', err));
+  }, [auth.staff?.id]);
+
   const pendingBillsCount = bills.filter(b => b.status === "inbox" || b.status === "linked" || b.status === "approved").length;
   const unpaidInvCount = invoices.filter(i => i.status !== "paid" && i.status !== "void").length;
   const activeJobsCount = jobs.filter(j => j.status === "in_progress").length;
   const ordersOverdueCount = [...workOrders, ...purchaseOrders].filter(o => !ORDER_TERMINAL.includes(o.status) && daysUntil(o.dueDate) < 0).length;
   const contractorComplianceIssues = contractors.reduce((sum, c) => sum + getContractorComplianceCount(c), 0);
+  const todayStr = new Date().toISOString().split("T")[0];
+  const overdueRemindersCount = reminders.filter(r => r.reminderDate && !r.completed && r.reminderDate < todayStr).length;
+  const activeRemindersCount = reminders.filter(r => !r.completed).length;
+  const remindersBadge = activeRemindersCount || null;
+  const remindersBadgeColor = overdueRemindersCount > 0 ? "#dc2626" : undefined;
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "dashboard" },
@@ -10894,6 +11151,7 @@ export default function App() {
     { id: "time", label: "Time", icon: "time" },
     { id: "bills", label: "Bills", icon: "bills", badge: pendingBillsCount || null },
     { id: "invoices", label: "Invoices", icon: "invoices", badge: unpaidInvCount || null },
+    { id: "reminders", label: "Reminders", icon: "notification", badge: remindersBadge, badgeColor: remindersBadgeColor },
     { id: "activity", label: "Activity", icon: "notification" },
     { id: "status", label: "System Status", icon: "activity" },
     ...((auth.isAdmin || auth.isLocalDev) ? [{ id: "settings", label: "Settings", icon: "settings" }] : []),
@@ -10904,7 +11162,7 @@ export default function App() {
   const moreNavItems = navItems.slice(5);
   const moreIsActive = moreNavItems.some(n => n.id === page);
 
-  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log", status: "System Status", settings: "Settings" };
+  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", reminders: "Reminders", activity: "Activity Log", status: "System Status", settings: "Settings" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
@@ -10925,6 +11183,7 @@ export default function App() {
       <Route path="/time" element={<TimeTracking timeEntries={timeEntries} setTimeEntries={setTimeEntries} jobs={jobs} setJobs={setJobs} clients={clients} staff={staff} />} />
       <Route path="/bills" element={<Bills bills={bills} setBills={setBills} jobs={jobs} setJobs={setJobs} clients={clients} />} />
       <Route path="/invoices" element={<Invoices invoices={invoices} setInvoices={setInvoices} jobs={jobs} clients={clients} quotes={quotes} />} />
+      <Route path="/reminders" element={<Reminders reminders={reminders} setReminders={setReminders} staffId={auth.staff?.id} />} />
       <Route path="/activity" element={<ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />} />
       <Route path="/status" element={<SystemStatus />} />
       <Route path="/settings" element={(auth.isAdmin || auth.isLocalDev) ? <Settings staff={staff} setStaff={setStaff} /> : <Navigate to="/" replace />} />

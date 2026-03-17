@@ -69,7 +69,7 @@ Add email/password authentication for internal staff using Supabase Auth. Two ro
 - Creates `shared.staff` row linked to the auth user
 - Returns success/error
 
-### Phase 3 — Role-Based Access Control
+### Phase 3 — Role-Based Access Control ✅
 
 **8. Frontend route guards**
 - Admin: full access to everything

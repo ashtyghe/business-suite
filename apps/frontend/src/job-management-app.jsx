@@ -1755,6 +1755,8 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
 
 // ── Orders: Orders Page ───────────────────────────────────────────────────────
 const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs }) => {
+  const auth = useAuth();
+  const canDeleteOrder = auth.isAdmin || auth.isLocalDev;
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -1866,7 +1868,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
           })}
         </div>
       ) : view === "grid" ? (
-        <div className="order-cards-grid">{filtered.map(o => <OrderCard key={o._type + o.id} type={o._type} order={o} jobs={jobs} onOpen={o => openOrder(o._type || (workOrders.find(w => w.id === o.id) ? "wo" : "po"), o, "view")} onDelete={(id) => handleDelete(o._type, id)} />)}</div>
+        <div className="order-cards-grid">{filtered.map(o => <OrderCard key={o._type + o.id} type={o._type} order={o} jobs={jobs} onOpen={o => openOrder(o._type || (workOrders.find(w => w.id === o.id) ? "wo" : "po"), o, "view")} onDelete={canDeleteOrder ? (id) => handleDelete(o._type, id) : null} />)}</div>
       ) : (
         <div style={{ overflowX: "auto" }}>
           <table className="data-table">
@@ -1892,7 +1894,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
                   <td><OrderStatusBadge status={o.status} /></td>
                   <td>{orderFmtDate(o.issueDate)}</td>
                   <td><DueDateChip dateStr={o.dueDate} isTerminal={ORDER_TERMINAL.includes(o.status)} /></td>
-                  <td><button onClick={e => { e.stopPropagation(); handleDelete(o._type, o.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }} title="Delete"><Icon name="delete" size={14} /></button></td>
+                  {canDeleteOrder && <td><button onClick={e => { e.stopPropagation(); handleDelete(o._type, o.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }} title="Delete"><Icon name="delete" size={14} /></button></td>}
                 </tr>
               );
             })}</tbody>
@@ -4965,6 +4967,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
 // ── Jobs ──────────────────────────────────────────────────────────────────────
 const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders }) => {
+  const auth = useAuth();
+  const canDeleteJob = auth.isAdmin || auth.isLocalDev;
+  const canEditJob = (j) => auth.isAdmin || auth.isLocalDev || (j.assignedTo || []).includes(auth.currentUserName);
   const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -5060,7 +5065,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
           <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
         </div>
         <div className="section-action-btns">
-          <button className="btn btn-primary" style={{ background: SECTION_COLORS.jobs.accent }} onClick={openNew}><Icon name="plus" size={14} />New Job</button>
+          {(auth.isAdmin || auth.isLocalDev) && <button className="btn btn-primary" style={{ background: SECTION_COLORS.jobs.accent }} onClick={openNew}><Icon name="plus" size={14} />New Job</button>}
         </div>
       </div>
 
@@ -5105,8 +5110,8 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: job.dueDate ? "#334155" : "#ccc" }}>{job.dueDate ? `Due ${job.dueDate}` : "No due date"}</span>
                   <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
-                    <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>
-                    <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>
+                    {canEditJob(job) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>}
+                    {canDeleteJob && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>}
                   </div>
                 </div>
               </div>
@@ -5151,8 +5156,8 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                       </td>
                       <td onClick={e => e.stopPropagation()}>
                         <div style={{ display: "flex", gap: 4 }}>
-                          <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>
-                          <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>
+                          {canEditJob(job) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>}
+                          {canDeleteJob && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>}
                         </div>
                       </td>
                     </tr>
@@ -7493,7 +7498,10 @@ function dayColour(hours) {
 
 // ── Log Time Modal ────────────────────────────────────────────────────────────
 const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
+  const auth = useAuth();
   const staffNames = (staff && staff.length > 0) ? staff.map(s => s.name) : TEAM;
+  const isStaffRole = !auth.isAdmin && !auth.isLocalDev;
+  const defaultWorker = isStaffRole ? auth.currentUserName : (staffNames[0] || "");
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState(() => {
     if (editEntry) return {
@@ -7505,7 +7513,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
       description: editEntry.description,
       billable: editEntry.billable,
     };
-    return { jobId: String(jobs[0]?.id || ""), worker: staffNames[0] || "", date: today, startTime: "", endTime: "", description: "", billable: true };
+    return { jobId: String(jobs[0]?.id || ""), worker: defaultWorker, date: today, startTime: "", endTime: "", description: "", billable: true };
   });
   const isNewTime = !editEntry;
   const [mode, setMode] = useState(isNewTime ? "edit" : "view");
@@ -7600,9 +7608,13 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
           </div>
           <div className="form-group">
             <label className="form-label">Worker</label>
-            <select className="form-control" value={form.worker} onChange={e => setForm(f => ({ ...f, worker: e.target.value }))}>
-              {staffNames.map(t => <option key={t}>{t}</option>)}
-            </select>
+            {isStaffRole ? (
+              <input className="form-control" value={auth.currentUserName} disabled style={{ background: "#f5f5f5" }} />
+            ) : (
+              <select className="form-control" value={form.worker} onChange={e => setForm(f => ({ ...f, worker: e.target.value }))}>
+                {staffNames.map(t => <option key={t}>{t}</option>)}
+              </select>
+            )}
           </div>
         </div>
 
@@ -7793,6 +7805,10 @@ const WeekStrip = ({ timeEntries, selectedWorker, weekOffset, setWeekOffset, sel
 
 // ── Main TimeTracking component ───────────────────────────────────────────────
 const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, staff }) => {
+  const auth = useAuth();
+  const isOwn = (entry) => entry.worker === auth.currentUserName;
+  const canEditEntry = (entry) => auth.isAdmin || auth.isLocalDev || isOwn(entry);
+  const canDeleteEntry = (entry) => auth.isAdmin || auth.isLocalDev || isOwn(entry);
   const today = new Date().toISOString().slice(0, 10);
   const [tsTab, setTsTab] = useState("week");           // "week" | "team" | "calendar"
   const [selectedWorker, setSelectedWorker] = useState("all");
@@ -7935,10 +7951,10 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                 const job = jobs.find(j => j.id === entry.jobId);
                 const clr = dayColour(entry.hours);
                 return (
-                  <div key={entry.id} onClick={() => openEdit(entry)} style={{
+                  <div key={entry.id} onClick={() => canEditEntry(entry) ? openEdit(entry) : null} style={{
                     background: "#fff", borderRadius: 10, padding: 14, marginBottom: 10,
                     border: "1px solid #e8e8e8", borderLeft: `4px solid ${clr}`,
-                    display: "flex", gap: 14, alignItems: "flex-start", cursor: "pointer", transition: "border-color 0.15s",
+                    display: "flex", gap: 14, alignItems: "flex-start", cursor: canEditEntry(entry) ? "pointer" : "default", transition: "border-color 0.15s",
                   }}>
                     <div style={{ minWidth: 56, textAlign: "center" }}>
                       <div style={{ fontSize: 22, fontWeight: 800, color: clr, lineHeight: 1 }}>{entry.hours.toFixed(1)}h</div>
@@ -7957,9 +7973,11 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                       {job && <div style={{ fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 3 }}>{job.title}</div>}
                       {entry.description && <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>{entry.description}</div>}
                     </div>
+                    {canDeleteEntry(entry) && (
                     <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                       <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>
                     </div>
+                    )}
                   </div>
                 );
               })
@@ -8068,8 +8086,8 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                         {entry.description && <div style={{ fontSize: 11, color: "#aaa" }}>{entry.description}</div>}
                       </div>
                       <div style={{ display: "flex", gap: 4 }}>
-                        <button className="btn btn-ghost btn-xs" onClick={() => openEdit(entry)}><Icon name="edit" size={12} /></button>
-                        <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>
+                        {canEditEntry(entry) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(entry)}><Icon name="edit" size={12} /></button>}
+                        {canDeleteEntry(entry) && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>}
                       </div>
                     </div>
                   );
@@ -8529,6 +8547,9 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
 
 // ── Main Bills Component ───────────────────────────────────────────────────────
 const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
+  const auth = useAuth();
+  const canApprove = auth.isAdmin || auth.isLocalDev;
+  const canDelete = auth.isAdmin || auth.isLocalDev;
   const [tab, setTab] = useState("kanban");
   const [showBillModal, setShowBillModal] = useState(false);
   const [editBill, setEditBill] = useState(null);
@@ -8661,7 +8682,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
           <button className={`btn btn-xs ${tab === "kanban" ? "" : "btn-ghost"}`} style={tab === "kanban" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("kanban")}><Icon name="kanban" size={12} /></button>
         </div>
         <div className="section-action-btns">
-          {selectedIds.length > 0 && (
+          {canApprove && selectedIds.length > 0 && (
             <button className="btn btn-secondary btn-sm" onClick={approveSelected}>
               <Icon name="check" size={12} />Approve {selectedIds.length}
             </button>
@@ -8707,9 +8728,9 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b" }}>{b.date}</span>
                   <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
                     {b.status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
-                    {b.status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
-                    {b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
-                    <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={12} /></button>
+                    {canApprove && b.status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
+                    {canApprove && b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
+                    {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={12} /></button>}
                   </div>
                 </div>
               </div>
@@ -8750,9 +8771,9 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                         </div>
                         <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
                           {status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
-                          {status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
-                          {status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
-                          <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={10} /></button>
+                          {canApprove && status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
+                          {canApprove && status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
+                          {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={10} /></button>}
                         </div>
                       </div>
                     </div>
@@ -8824,10 +8845,10 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                         <td>
                           <div style={{ display: "flex", gap: 4, flexWrap: "nowrap" }}>
                             {b.status === "inbox"    && <button className="btn btn-ghost btn-xs" title="Link" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}><Icon name="arrow_right" size={11} /></button>}
-                            {b.status === "linked"   && <button className="btn btn-ghost btn-xs" style={{ color: "#1e7e34" }} title="Approve" onClick={() => setStatus(b.id, "approved")}><Icon name="check" size={11} /></button>}
-                            {b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} title="Post to Job" onClick={() => setPostBill(b)}>Post →</button>}
+                            {canApprove && b.status === "linked"   && <button className="btn btn-ghost btn-xs" style={{ color: "#1e7e34" }} title="Approve" onClick={() => setStatus(b.id, "approved")}><Icon name="check" size={11} /></button>}
+                            {canApprove && b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} title="Post to Job" onClick={() => setPostBill(b)}>Post →</button>}
                             <button className="btn btn-ghost btn-xs" onClick={() => openEdit(b)}><Icon name="edit" size={11} /></button>
-                            <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={11} /></button>
+                            {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={11} /></button>}
                           </div>
                         </td>
                       </tr>
@@ -10793,7 +10814,7 @@ export default function App() {
     { id: "invoices", label: "Invoices", icon: "invoices", badge: unpaidInvCount || null },
     { id: "activity", label: "Activity", icon: "notification" },
     { id: "status", label: "System Status", icon: "activity" },
-    { id: "settings", label: "Settings", icon: "settings" },
+    ...((auth.isAdmin || auth.isLocalDev) ? [{ id: "settings", label: "Settings", icon: "settings" }] : []),
   ];
 
   // Bottom nav shows first 5; rest in "More"
@@ -10824,7 +10845,7 @@ export default function App() {
       <Route path="/invoices" element={<Invoices invoices={invoices} setInvoices={setInvoices} jobs={jobs} clients={clients} quotes={quotes} />} />
       <Route path="/activity" element={<ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />} />
       <Route path="/status" element={<SystemStatus />} />
-      <Route path="/settings" element={<Settings staff={staff} setStaff={setStaff} />} />
+      <Route path="/settings" element={(auth.isAdmin || auth.isLocalDev) ? <Settings staff={staff} setStaff={setStaff} /> : <Navigate to="/" replace />} />
       <Route path="/display/schedule" element={<DisplaySchedule schedule={schedule} jobs={jobs} clients={clients} />} />
       <Route path="/display/overview" element={<DisplayOverview jobs={jobs} quotes={quotes} timeEntries={timeEntries} schedule={schedule} clients={clients} />} />
       <Route path="*" element={<Navigate to="/" replace />} />

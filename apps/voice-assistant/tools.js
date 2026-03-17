@@ -16,7 +16,7 @@ const tools = [
       properties: {
         status: {
           type: 'string',
-          enum: ['active', 'completed', 'on-hold', 'scheduled', 'quoted'],
+          enum: ['draft', 'scheduled', 'quoted', 'in_progress', 'completed', 'cancelled'],
           description: 'Filter jobs by status. Omit to return all jobs.',
         },
         limit: {
@@ -32,13 +32,13 @@ const tools = [
     type: 'function',
     name: 'get_job',
     description:
-      'Get full details of a specific job by its ID, including notes.',
+      'Get full details of a specific job by its ID or job number (e.g. J-0001).',
     parameters: {
       type: 'object',
       properties: {
         job_id: {
           type: 'string',
-          description: 'The job ID to look up.',
+          description: 'The job ID (UUID) or job number (e.g. J-0001) to look up.',
         },
       },
       required: ['job_id'],
@@ -98,8 +98,8 @@ const tools = [
       properties: {
         status: {
           type: 'string',
-          enum: ['pending', 'paid', 'overdue'],
-          description: 'Filter by bill status. Default is "pending".',
+          enum: ['inbox', 'linked', 'approved', 'paid'],
+          description: 'Filter by bill status. Default is "linked".',
         },
         supplier: {
           type: 'string',
@@ -222,7 +222,7 @@ const tools = [
         },
         status: {
           type: 'string',
-          enum: ['active', 'completed', 'on-hold', 'scheduled', 'quoted'],
+          enum: ['draft', 'scheduled', 'quoted', 'in_progress', 'completed', 'cancelled'],
           description: 'The new status.',
         },
       },

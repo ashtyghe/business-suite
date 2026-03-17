@@ -97,11 +97,11 @@ CREATE POLICY "jobs_staff_update_assigned" ON jobs.jobs
   FOR UPDATE TO authenticated
   USING (
     shared.get_my_role() = 'staff'
-    AND (SELECT full_name FROM shared.staff WHERE auth_user_id = auth.uid()) = ANY(assigned_to)
+    AND shared.get_my_staff_id() = ANY(assigned_staff_ids)
   )
   WITH CHECK (
     shared.get_my_role() = 'staff'
-    AND (SELECT full_name FROM shared.staff WHERE auth_user_id = auth.uid()) = ANY(assigned_to)
+    AND shared.get_my_staff_id() = ANY(assigned_staff_ids)
   );
 
 -- ══════════════════════════════════════════════════════════════════════════════

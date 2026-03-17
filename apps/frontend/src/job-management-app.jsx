@@ -9628,33 +9628,17 @@ const VOICE_OPTIONS = {
     { id: "shimmer", label: "Shimmer", desc: "Bright and energetic" },
     { id: "verse", label: "Verse", desc: "Warm and expressive" },
   ],
-  greetingStyles: [
-    { id: "song_snippet", label: "Song Snippet", desc: "Sings a short snippet from a random song before greeting" },
-    { id: "friendly", label: "Friendly", desc: "Warm and casual greeting — no singing" },
-    { id: "professional", label: "Professional", desc: "Polished and businesslike greeting" },
-    { id: "minimal", label: "Minimal", desc: "Brief and to the point — just name and how can I help" },
-  ],
-  personalities: [
-    { id: "friendly_aussie", label: "Friendly Aussie", desc: "Warm, uses Aussie slang, upbeat and encouraging" },
-    { id: "professional", label: "Professional", desc: "Polished, clear, business-focused" },
-    { id: "cheeky", label: "Cheeky", desc: "Playful, witty, a bit of banter" },
-    { id: "calm", label: "Calm & Supportive", desc: "Reassuring, patient, gentle tone" },
-  ],
-  localKnowledge: [
-    { id: "coffs_harbour", label: "Coffs Harbour", desc: "Knows the local area — beaches, council, trades scene" },
-    { id: "sydney", label: "Sydney", desc: "Familiar with Sydney metro — councils, suburbs, traffic" },
-    { id: "melbourne", label: "Melbourne", desc: "Knows Melbourne — inner suburbs, weather, tram routes" },
-    { id: "brisbane", label: "Brisbane", desc: "Familiar with Brisbane and surrounds" },
-    { id: "none", label: "None", desc: "No specific local knowledge" },
-  ],
+  greetingStylePlaceholder: "e.g. Start every call by singing a short snippet from a random well-known song, then transition into a warm greeting",
+  personalityPlaceholder: "e.g. Friendly and warm — talk like a helpful mate. Use Aussie slang like 'no worries', 'easy done', 'nice one'. Keep it brief and upbeat.",
+  generalKnowledgePlaceholder: "e.g. You know Coffs Harbour — the beaches, the Big Banana, Park Beach, Sawtell. You know the local building scene and trades language.",
 };
 
 const DEFAULT_VOICE_SETTINGS = {
   name: "Iris",
   voice: "sage",
-  greetingStyle: "song_snippet",
-  personality: "friendly_aussie",
-  localKnowledge: "coffs_harbour",
+  greetingStyle: "Start every call by singing a short snippet (3-8 words) from a random well-known song, then smoothly transition into a warm greeting. Pick a different song every time — pop, rock, classic, 80s, 90s, anything catchy.",
+  personality: "Friendly and warm — talk like a helpful mate, not a robot. Use 'hey', 'no worries', 'easy done', 'nice one'. Bright and positive — always upbeat, encouraging, and supportive. Keep it brief — this is a phone call. Use Australian English and throw in the occasional Aussie slang naturally — 'reckon', 'heaps', 'no dramas', 'too easy'.",
+  generalKnowledge: "You know Coffs Harbour and the region — the beaches, the Big Banana, Park Beach, Sawtell, Woolgoolga. You know the local building scene — coastal builds deal with salt air corrosion, council approvals through Coffs Harbour City Council. You know the weather matters for trades work. You know the trades — sparkies, chippies, plumbers, concreters, roofers.",
   silenceDuration: 500,
   vadThreshold: 0.5,
   confirmWrites: true,
@@ -9666,7 +9650,14 @@ const Settings = ({ staff = [], setStaff }) => {
   const [voiceSettings, setVoiceSettings] = useState(() => {
     try {
       const saved = localStorage.getItem("fieldops_voice_settings");
-      return saved ? { ...DEFAULT_VOICE_SETTINGS, ...JSON.parse(saved) } : DEFAULT_VOICE_SETTINGS;
+      if (!saved) return DEFAULT_VOICE_SETTINGS;
+      const parsed = JSON.parse(saved);
+      // Migrate old localKnowledge key to generalKnowledge
+      if (parsed.localKnowledge && !parsed.generalKnowledge) {
+        parsed.generalKnowledge = parsed.localKnowledge;
+        delete parsed.localKnowledge;
+      }
+      return { ...DEFAULT_VOICE_SETTINGS, ...parsed };
     } catch { return DEFAULT_VOICE_SETTINGS; }
   });
   const [saved, setSaved] = useState(false);
@@ -9678,8 +9669,21 @@ const Settings = ({ staff = [], setStaff }) => {
     setSaved(false);
   };
 
-  const saveVoiceSettings = () => {
+  const saveVoiceSettings = async () => {
     localStorage.setItem("fieldops_voice_settings", JSON.stringify(voiceSettings));
+    // Push settings to voice server so they apply on next call
+    const voiceServerUrl = import.meta.env.VITE_VOICE_SERVER_URL;
+    if (voiceServerUrl) {
+      try {
+        await fetch(`${voiceServerUrl}/settings`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(voiceSettings),
+        });
+      } catch (err) {
+        console.warn("Could not sync settings to voice server:", err.message);
+      }
+    }
     setSaved(true);
     setDirty(false);
     setTimeout(() => setSaved(false), 2500);
@@ -9766,31 +9770,40 @@ const Settings = ({ staff = [], setStaff }) => {
       {/* Greeting Style */}
       <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Greeting Style</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 8 }}>
-          {VOICE_OPTIONS.greetingStyles.map(g => (
-            <OptionCard key={g.id} option={g} selected={voiceSettings.greetingStyle === g.id} onSelect={() => updateVoice("greetingStyle", g.id)} />
-          ))}
-        </div>
+        <textarea
+          value={voiceSettings.greetingStyle}
+          onChange={e => updateVoice("greetingStyle", e.target.value)}
+          placeholder={VOICE_OPTIONS.greetingStylePlaceholder}
+          rows={3}
+          style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }}
+        />
+        <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>Describe how Iris should greet callers</div>
       </div>
 
       {/* Personality */}
       <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Personality</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 8 }}>
-          {VOICE_OPTIONS.personalities.map(p => (
-            <OptionCard key={p.id} option={p} selected={voiceSettings.personality === p.id} onSelect={() => updateVoice("personality", p.id)} />
-          ))}
-        </div>
+        <textarea
+          value={voiceSettings.personality}
+          onChange={e => updateVoice("personality", e.target.value)}
+          placeholder={VOICE_OPTIONS.personalityPlaceholder}
+          rows={3}
+          style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }}
+        />
+        <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>Describe the tone, style, and personality of your assistant</div>
       </div>
 
-      {/* Local Knowledge */}
+      {/* General Knowledge */}
       <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Local Knowledge</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8 }}>
-          {VOICE_OPTIONS.localKnowledge.map(l => (
-            <OptionCard key={l.id} option={l} selected={voiceSettings.localKnowledge === l.id} onSelect={() => updateVoice("localKnowledge", l.id)} />
-          ))}
-        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>General Knowledge</div>
+        <textarea
+          value={voiceSettings.generalKnowledge}
+          onChange={e => updateVoice("generalKnowledge", e.target.value)}
+          placeholder={VOICE_OPTIONS.generalKnowledgePlaceholder}
+          rows={3}
+          style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }}
+        />
+        <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>Any background knowledge your assistant should have — local area, industry, etc.</div>
       </div>
 
       {/* Advanced Settings */}
@@ -9858,9 +9871,9 @@ const Settings = ({ staff = [], setStaff }) => {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, fontSize: 12 }}>
           <div><span style={{ color: "#888" }}>Name:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.name}</span></div>
           <div><span style={{ color: "#888" }}>Voice:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.voices.find(v => v.id === voiceSettings.voice)?.label || voiceSettings.voice}</span></div>
-          <div><span style={{ color: "#888" }}>Greeting:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.greetingStyles.find(g => g.id === voiceSettings.greetingStyle)?.label || voiceSettings.greetingStyle}</span></div>
-          <div><span style={{ color: "#888" }}>Personality:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.personalities.find(p => p.id === voiceSettings.personality)?.label || voiceSettings.personality}</span></div>
-          <div><span style={{ color: "#888" }}>Local Knowledge:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.localKnowledge.find(l => l.id === voiceSettings.localKnowledge)?.label || voiceSettings.localKnowledge}</span></div>
+          <div><span style={{ color: "#888" }}>Greeting:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.greetingStyle ? (voiceSettings.greetingStyle.length > 60 ? voiceSettings.greetingStyle.slice(0, 60) + "…" : voiceSettings.greetingStyle) : "Not set"}</span></div>
+          <div><span style={{ color: "#888" }}>Personality:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.personality ? (voiceSettings.personality.length > 60 ? voiceSettings.personality.slice(0, 60) + "…" : voiceSettings.personality) : "Not set"}</span></div>
+          <div><span style={{ color: "#888" }}>General Knowledge:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.generalKnowledge ? (voiceSettings.generalKnowledge.length > 60 ? voiceSettings.generalKnowledge.slice(0, 60) + "…" : voiceSettings.generalKnowledge) : "Not set"}</span></div>
           <div><span style={{ color: "#888" }}>Silence:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.silenceDuration}ms</span></div>
         </div>
       </div>

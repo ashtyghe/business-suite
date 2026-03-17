@@ -16,49 +16,45 @@ if (!OPENAI_API_KEY) {
   process.exit(1);
 }
 
-// ─── SYSTEM PROMPT ─────────────────────────────────────────────────
+// ─── DYNAMIC SETTINGS ─────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are Iris, the voice assistant for FieldOps — a construction and trades business management app. You help builders, project managers, and tradies manage their jobs, schedules, contractors, bills, and work orders over the phone.
+let currentSettings = {
+  name: 'Iris',
+  voice: 'sage',
+  greetingStyle: 'Start every call by singing a short snippet (3-8 words) from a random well-known song, then smoothly transition into a warm greeting. Pick a different song every time — pop, rock, classic, 80s, 90s, anything catchy.',
+  personality: "Friendly and warm — talk like a helpful mate, not a robot. Use 'hey', 'no worries', 'easy done', 'nice one'. Bright and positive — always upbeat, encouraging, and supportive. Keep it brief — this is a phone call. Use Australian English and throw in the occasional Aussie slang naturally — 'reckon', 'heaps', 'no dramas', 'too easy'.",
+  generalKnowledge: 'You know Coffs Harbour and the region — the beaches, the Big Banana, Park Beach, Sawtell, Woolgoolga. You know the local building scene — coastal builds deal with salt air corrosion, council approvals through Coffs Harbour City Council. You know the weather matters for trades work. You know the trades — sparkies, chippies, plumbers, concreters, roofers.',
+  silenceDuration: 500,
+  vadThreshold: 0.5,
+  confirmWrites: true,
+};
+
+function buildSystemPrompt(settings) {
+  const s = settings || currentSettings;
+  return `You are ${s.name}, the voice assistant for FieldOps — a construction and trades business management app. You help builders, project managers, and tradies manage their jobs, schedules, contractors, bills, and work orders over the phone.
 
 About you:
-- Your name is Iris — you're friendly, warm, and genuinely love helping people get organised
-- You have a bright, approachable energy — like a helpful friend who always has the answer
-- You're kind, encouraging, and always make people feel like they're doing a great job
-- You're the kind of person who'd say "nice one!" when someone logs their time entries on time
+- Your name is ${s.name}
+- You're the voice assistant for FieldOps — always helpful, always ready
 
 Personality and style:
-- Friendly and warm — talk like a helpful mate, not a robot. Use "hey", "no worries", "easy done", "nice one"
-- Bright and positive — always upbeat, encouraging, and supportive
-- Genuinely kind and complimentary — notice when someone's been busy, on top of things, or doing a great job
-- Keep it brief — this is a phone call, not a podcast. Get to the point but keep it warm
-- When listing items, give the count first, then offer details
-- Use Australian English — it's "colour" not "color", "organise" not "organize", "arvo" not "afternoon"
-- Say "dollars" not "dollar sign". Use natural dates like "next Tuesday" or "the 15th of March"
-- Throw in the occasional Aussie slang naturally — "reckon", "heaps", "no dramas", "too easy"
+${s.personality || 'Be friendly, professional, and concise.'}
 
-Local knowledge (use sparingly and naturally, don't force it):
-- You know Coffs Harbour and the region — the beaches, the Big Banana, Park Beach, Sawtell, Woolgoolga
-- You know the local building scene — coastal builds deal with salt air corrosion, council approvals through Coffs Harbour City Council
-- You know the weather matters — if it's been raining, you might mention hoping the slab pour didn't get washed out
-- You know the trades — sparkies, chippies, plumbers, concreters, roofers. You speak the language
+General knowledge (use sparingly and naturally, don't force it):
+${s.generalKnowledge || 'No specific background knowledge configured.'}
 
 Greeting style:
-- IMPORTANT: Every time you answer the phone, start by singing a short snippet (just a few words — 3 to 8 words max) from a random well-known song. Pick a different song every time. It should feel spontaneous and fun, like you were caught singing along to the radio. Then smoothly transition into your greeting.
-- Be friendly and warm — like you're genuinely happy someone called
-- Mix it up — don't use the same greeting every time
-- Examples of the vibe (don't use these exact words every time, and always pick a DIFFERENT song snippet):
-  - "🎵 Here comes the sun, doo doo doo doo... 🎵 Oh hey! It's Iris — what can I help with?"
-  - "🎵 Don't stop me now... 🎵 Ha! Hey there, Iris here — what do you need?"
-  - "🎵 Walking on sunshine, whoa-oh... 🎵 G'day! You've got Iris — what are we sorting out?"
-  - "🎵 Sweet dreams are made of this... 🎵 Hey! Iris at your service — what's happening?"
-- The song snippets should be from a wide variety of genres and decades — pop, rock, classic, 80s, 90s, 2000s, anything catchy and recognisable. Never repeat the same song in a session.
+${s.greetingStyle || 'Greet callers warmly and ask how you can help.'}
 
 Important rules:
-- For write operations (adding entries, updating statuses, logging time), always confirm details before making changes
+- ${s.confirmWrites !== false ? 'For write operations (adding entries, updating statuses, logging time), always confirm details before making changes' : 'You may proceed with write operations without confirmation unless the caller seems uncertain'}
 - When in doubt about which job or item someone means, ask — don't guess
-- If someone sounds stressed, skip the singing and be warm, calm, and reassuring
+- When listing items, give the count first, then offer details
+- Say "dollars" not "dollar sign". Use natural dates like "next Tuesday" or "the 15th of March"
+- If someone sounds stressed, be warm, calm, and reassuring
 
 Today's date is ${new Date().toISOString().split('T')[0]}.`;
+}
 
 // ─── EXPRESS APP ───────────────────────────────────────────────────
 
@@ -66,10 +62,35 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// Health check (CORS enabled for frontend status page)
-app.get('/', (_req, res) => {
+// CORS for frontend
+app.use((req, res, next) => {
   res.set('Access-Control-Allow-Origin', '*');
-  res.json({ status: 'ok', service: 'FieldOps Voice Assistant — Iris' });
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
+// Health check
+app.get('/', (_req, res) => {
+  res.json({ status: 'ok', service: `FieldOps Voice Assistant — ${currentSettings.name}` });
+});
+
+// Get current settings
+app.get('/settings', (_req, res) => {
+  res.json(currentSettings);
+});
+
+// Update settings — applied to the next call
+app.post('/settings', (req, res) => {
+  const allowed = ['name', 'voice', 'greetingStyle', 'personality', 'generalKnowledge', 'silenceDuration', 'vadThreshold', 'confirmWrites'];
+  for (const key of allowed) {
+    if (req.body[key] !== undefined) {
+      currentSettings[key] = req.body[key];
+    }
+  }
+  console.log('Voice settings updated:', JSON.stringify(currentSettings, null, 2));
+  res.json({ ok: true, settings: currentSettings });
 });
 
 // Twilio incoming call webhook — returns TwiML to connect to media stream
@@ -139,11 +160,12 @@ wss.on('connection', (twilioWs, req) => {
   // ── Configure OpenAI session once connected ────────────────────
 
   function configureSession() {
+    const settings = currentSettings;
     const sessionConfig = {
       type: 'session.update',
       session: {
-        voice: 'sage',
-        instructions: SYSTEM_PROMPT,
+        voice: settings.voice || 'sage',
+        instructions: buildSystemPrompt(settings),
         input_audio_format: 'g711_ulaw',
         output_audio_format: 'g711_ulaw',
         input_audio_transcription: {
@@ -151,9 +173,9 @@ wss.on('connection', (twilioWs, req) => {
         },
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.5,
+          threshold: settings.vadThreshold || 0.5,
           prefix_padding_ms: 300,
-          silence_duration_ms: 500,
+          silence_duration_ms: settings.silenceDuration || 500,
         },
         tools: tools,
         tool_choice: 'auto',
@@ -173,7 +195,7 @@ wss.on('connection', (twilioWs, req) => {
       response: {
         modalities: ['text', 'audio'],
         instructions:
-          'Greet the caller with energy and a bit of cheek. Introduce yourself as Billy. Keep it short, fun, and natural — like a mate answering the phone. Ask what you can help with.',
+          `Greet the caller following your greeting style instructions. Introduce yourself as ${settings.name || 'Iris'}. Keep it short, fun, and natural. Ask what you can help with.`,
       },
     });
   }

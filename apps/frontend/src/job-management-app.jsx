@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useMemo, Fragment, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry } from './lib/db';
-import { extractBillFromImage, extractDocumentFromImage, sendEmail } from './lib/supabase';
+import { extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord } from './lib/supabase';
+import { useAuth } from './lib/AuthContext';
+import { changePassword, adminResetUserPassword } from './lib/auth';
 import * as fabric from "fabric";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
@@ -173,7 +175,8 @@ const calcQuoteTotal = (q) => {
 const uid = () => Date.now() + Math.random();
 
 // ── Activity Log Helpers ──────────────────────────────────────────────────────
-const CURRENT_USER = "Alex Jones";
+// Set dynamically from auth context inside App — defaults to seed data name
+let CURRENT_USER = "Alex Jones";
 const nowTs = () => {
   const d = new Date();
   return d.toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" }) + " " +
@@ -295,6 +298,7 @@ const SECTION_COLORS = {
   contractors: { accent: "#0d9488", light: "#f0fdfa" },
   suppliers: { accent: "#d97706", light: "#fffbeb" },
   status: { accent: "#059669", light: "#ecfdf5" },
+  settings: { accent: "#6b7280", light: "#f9fafb" },
 };
 const hexToRgba = (hex, a) => {
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
@@ -822,6 +826,7 @@ const Icon = ({ name, size = 15 }) => {
     orders: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h4m-4 4h4m-8-4h.01m-.01 4h.01",
     contractors: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
     suppliers: "M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0",
+    settings: "M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4",
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -1751,6 +1756,8 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
 
 // ── Orders: Orders Page ───────────────────────────────────────────────────────
 const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs }) => {
+  const auth = useAuth();
+  const canDeleteOrder = auth.isAdmin || auth.isLocalDev;
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -1862,7 +1869,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
           })}
         </div>
       ) : view === "grid" ? (
-        <div className="order-cards-grid">{filtered.map(o => <OrderCard key={o._type + o.id} type={o._type} order={o} jobs={jobs} onOpen={o => openOrder(o._type || (workOrders.find(w => w.id === o.id) ? "wo" : "po"), o, "view")} onDelete={(id) => handleDelete(o._type, id)} />)}</div>
+        <div className="order-cards-grid">{filtered.map(o => <OrderCard key={o._type + o.id} type={o._type} order={o} jobs={jobs} onOpen={o => openOrder(o._type || (workOrders.find(w => w.id === o.id) ? "wo" : "po"), o, "view")} onDelete={canDeleteOrder ? (id) => handleDelete(o._type, id) : null} />)}</div>
       ) : (
         <div style={{ overflowX: "auto" }}>
           <table className="data-table">
@@ -1888,7 +1895,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
                   <td><OrderStatusBadge status={o.status} /></td>
                   <td>{orderFmtDate(o.issueDate)}</td>
                   <td><DueDateChip dateStr={o.dueDate} isTerminal={ORDER_TERMINAL.includes(o.status)} /></td>
-                  <td><button onClick={e => { e.stopPropagation(); handleDelete(o._type, o.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }} title="Delete"><Icon name="delete" size={14} /></button></td>
+                  {canDeleteOrder && <td><button onClick={e => { e.stopPropagation(); handleDelete(o._type, o.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }} title="Delete"><Icon name="delete" size={14} /></button></td>}
                 </tr>
               );
             })}</tbody>
@@ -4961,6 +4968,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
 // ── Jobs ──────────────────────────────────────────────────────────────────────
 const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders }) => {
+  const auth = useAuth();
+  const canDeleteJob = auth.isAdmin || auth.isLocalDev;
+  const canEditJob = (j) => auth.isAdmin || auth.isLocalDev || (j.assignedTo || []).includes(auth.currentUserName);
   const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -5056,7 +5066,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
           <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
         </div>
         <div className="section-action-btns">
-          <button className="btn btn-primary" style={{ background: SECTION_COLORS.jobs.accent }} onClick={openNew}><Icon name="plus" size={14} />New Job</button>
+          {(auth.isAdmin || auth.isLocalDev) && <button className="btn btn-primary" style={{ background: SECTION_COLORS.jobs.accent }} onClick={openNew}><Icon name="plus" size={14} />New Job</button>}
         </div>
       </div>
 
@@ -5101,8 +5111,8 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: job.dueDate ? "#334155" : "#ccc" }}>{job.dueDate ? `Due ${job.dueDate}` : "No due date"}</span>
                   <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
-                    <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>
-                    <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>
+                    {canEditJob(job) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>}
+                    {canDeleteJob && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>}
                   </div>
                 </div>
               </div>
@@ -5147,8 +5157,8 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                       </td>
                       <td onClick={e => e.stopPropagation()}>
                         <div style={{ display: "flex", gap: 4 }}>
-                          <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>
-                          <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>
+                          {canEditJob(job) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>}
+                          {canDeleteJob && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>}
                         </div>
                       </td>
                     </tr>
@@ -7489,7 +7499,10 @@ function dayColour(hours) {
 
 // ── Log Time Modal ────────────────────────────────────────────────────────────
 const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
+  const auth = useAuth();
   const staffNames = (staff && staff.length > 0) ? staff.map(s => s.name) : TEAM;
+  const isStaffRole = !auth.isAdmin && !auth.isLocalDev;
+  const defaultWorker = isStaffRole ? auth.currentUserName : (staffNames[0] || "");
   const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState(() => {
     if (editEntry) return {
@@ -7501,7 +7514,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
       description: editEntry.description,
       billable: editEntry.billable,
     };
-    return { jobId: String(jobs[0]?.id || ""), worker: staffNames[0] || "", date: today, startTime: "", endTime: "", description: "", billable: true };
+    return { jobId: String(jobs[0]?.id || ""), worker: defaultWorker, date: today, startTime: "", endTime: "", description: "", billable: true };
   });
   const isNewTime = !editEntry;
   const [mode, setMode] = useState(isNewTime ? "edit" : "view");
@@ -7596,9 +7609,13 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
           </div>
           <div className="form-group">
             <label className="form-label">Worker</label>
-            <select className="form-control" value={form.worker} onChange={e => setForm(f => ({ ...f, worker: e.target.value }))}>
-              {staffNames.map(t => <option key={t}>{t}</option>)}
-            </select>
+            {isStaffRole ? (
+              <input className="form-control" value={auth.currentUserName} disabled style={{ background: "#f5f5f5" }} />
+            ) : (
+              <select className="form-control" value={form.worker} onChange={e => setForm(f => ({ ...f, worker: e.target.value }))}>
+                {staffNames.map(t => <option key={t}>{t}</option>)}
+              </select>
+            )}
           </div>
         </div>
 
@@ -7789,6 +7806,10 @@ const WeekStrip = ({ timeEntries, selectedWorker, weekOffset, setWeekOffset, sel
 
 // ── Main TimeTracking component ───────────────────────────────────────────────
 const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, staff }) => {
+  const auth = useAuth();
+  const isOwn = (entry) => entry.worker === auth.currentUserName;
+  const canEditEntry = (entry) => auth.isAdmin || auth.isLocalDev || isOwn(entry);
+  const canDeleteEntry = (entry) => auth.isAdmin || auth.isLocalDev || isOwn(entry);
   const today = new Date().toISOString().slice(0, 10);
   const [tsTab, setTsTab] = useState("week");           // "week" | "team" | "calendar"
   const [selectedWorker, setSelectedWorker] = useState("all");
@@ -7931,10 +7952,10 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                 const job = jobs.find(j => j.id === entry.jobId);
                 const clr = dayColour(entry.hours);
                 return (
-                  <div key={entry.id} onClick={() => openEdit(entry)} style={{
+                  <div key={entry.id} onClick={() => canEditEntry(entry) ? openEdit(entry) : null} style={{
                     background: "#fff", borderRadius: 10, padding: 14, marginBottom: 10,
                     border: "1px solid #e8e8e8", borderLeft: `4px solid ${clr}`,
-                    display: "flex", gap: 14, alignItems: "flex-start", cursor: "pointer", transition: "border-color 0.15s",
+                    display: "flex", gap: 14, alignItems: "flex-start", cursor: canEditEntry(entry) ? "pointer" : "default", transition: "border-color 0.15s",
                   }}>
                     <div style={{ minWidth: 56, textAlign: "center" }}>
                       <div style={{ fontSize: 22, fontWeight: 800, color: clr, lineHeight: 1 }}>{entry.hours.toFixed(1)}h</div>
@@ -7953,9 +7974,11 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                       {job && <div style={{ fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 3 }}>{job.title}</div>}
                       {entry.description && <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>{entry.description}</div>}
                     </div>
+                    {canDeleteEntry(entry) && (
                     <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                       <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>
                     </div>
+                    )}
                   </div>
                 );
               })
@@ -8064,8 +8087,8 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                         {entry.description && <div style={{ fontSize: 11, color: "#aaa" }}>{entry.description}</div>}
                       </div>
                       <div style={{ display: "flex", gap: 4 }}>
-                        <button className="btn btn-ghost btn-xs" onClick={() => openEdit(entry)}><Icon name="edit" size={12} /></button>
-                        <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>
+                        {canEditEntry(entry) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(entry)}><Icon name="edit" size={12} /></button>}
+                        {canDeleteEntry(entry) && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>}
                       </div>
                     </div>
                   );
@@ -8525,6 +8548,9 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
 
 // ── Main Bills Component ───────────────────────────────────────────────────────
 const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
+  const auth = useAuth();
+  const canApprove = auth.isAdmin || auth.isLocalDev;
+  const canDelete = auth.isAdmin || auth.isLocalDev;
   const [tab, setTab] = useState("kanban");
   const [showBillModal, setShowBillModal] = useState(false);
   const [editBill, setEditBill] = useState(null);
@@ -8657,7 +8683,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
           <button className={`btn btn-xs ${tab === "kanban" ? "" : "btn-ghost"}`} style={tab === "kanban" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("kanban")}><Icon name="kanban" size={12} /></button>
         </div>
         <div className="section-action-btns">
-          {selectedIds.length > 0 && (
+          {canApprove && selectedIds.length > 0 && (
             <button className="btn btn-secondary btn-sm" onClick={approveSelected}>
               <Icon name="check" size={12} />Approve {selectedIds.length}
             </button>
@@ -8703,9 +8729,9 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b" }}>{b.date}</span>
                   <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
                     {b.status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
-                    {b.status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
-                    {b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
-                    <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={12} /></button>
+                    {canApprove && b.status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
+                    {canApprove && b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
+                    {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={12} /></button>}
                   </div>
                 </div>
               </div>
@@ -8746,9 +8772,9 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                         </div>
                         <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
                           {status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
-                          {status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
-                          {status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
-                          <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={10} /></button>
+                          {canApprove && status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
+                          {canApprove && status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
+                          {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={10} /></button>}
                         </div>
                       </div>
                     </div>
@@ -8820,10 +8846,10 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                         <td>
                           <div style={{ display: "flex", gap: 4, flexWrap: "nowrap" }}>
                             {b.status === "inbox"    && <button className="btn btn-ghost btn-xs" title="Link" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}><Icon name="arrow_right" size={11} /></button>}
-                            {b.status === "linked"   && <button className="btn btn-ghost btn-xs" style={{ color: "#1e7e34" }} title="Approve" onClick={() => setStatus(b.id, "approved")}><Icon name="check" size={11} /></button>}
-                            {b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} title="Post to Job" onClick={() => setPostBill(b)}>Post →</button>}
+                            {canApprove && b.status === "linked"   && <button className="btn btn-ghost btn-xs" style={{ color: "#1e7e34" }} title="Approve" onClick={() => setStatus(b.id, "approved")}><Icon name="check" size={11} /></button>}
+                            {canApprove && b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} title="Post to Job" onClick={() => setPostBill(b)}>Post →</button>}
                             <button className="btn btn-ghost btn-xs" onClick={() => openEdit(b)}><Icon name="edit" size={11} /></button>
-                            <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={11} /></button>
+                            {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={11} /></button>}
                           </div>
                         </td>
                       </tr>
@@ -9589,6 +9615,527 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
   );
 };
 
+// ── Settings Page ───────────────────────────────────────────────────────────
+
+const VOICE_OPTIONS = {
+  voices: [
+    { id: "alloy", label: "Alloy", desc: "Neutral and balanced" },
+    { id: "ash", label: "Ash", desc: "Warm and conversational" },
+    { id: "ballad", label: "Ballad", desc: "Smooth and melodic" },
+    { id: "coral", label: "Coral", desc: "Clear and friendly" },
+    { id: "echo", label: "Echo", desc: "Deep and resonant" },
+    { id: "sage", label: "Sage", desc: "Calm and articulate" },
+    { id: "shimmer", label: "Shimmer", desc: "Bright and energetic" },
+    { id: "verse", label: "Verse", desc: "Warm and expressive" },
+  ],
+  greetingStyles: [
+    { id: "song_snippet", label: "Song Snippet", desc: "Sings a short snippet from a random song before greeting" },
+    { id: "friendly", label: "Friendly", desc: "Warm and casual greeting — no singing" },
+    { id: "professional", label: "Professional", desc: "Polished and businesslike greeting" },
+    { id: "minimal", label: "Minimal", desc: "Brief and to the point — just name and how can I help" },
+  ],
+  personalities: [
+    { id: "friendly_aussie", label: "Friendly Aussie", desc: "Warm, uses Aussie slang, upbeat and encouraging" },
+    { id: "professional", label: "Professional", desc: "Polished, clear, business-focused" },
+    { id: "cheeky", label: "Cheeky", desc: "Playful, witty, a bit of banter" },
+    { id: "calm", label: "Calm & Supportive", desc: "Reassuring, patient, gentle tone" },
+  ],
+  localKnowledge: [
+    { id: "coffs_harbour", label: "Coffs Harbour", desc: "Knows the local area — beaches, council, trades scene" },
+    { id: "sydney", label: "Sydney", desc: "Familiar with Sydney metro — councils, suburbs, traffic" },
+    { id: "melbourne", label: "Melbourne", desc: "Knows Melbourne — inner suburbs, weather, tram routes" },
+    { id: "brisbane", label: "Brisbane", desc: "Familiar with Brisbane and surrounds" },
+    { id: "none", label: "None", desc: "No specific local knowledge" },
+  ],
+};
+
+const DEFAULT_VOICE_SETTINGS = {
+  name: "Iris",
+  voice: "sage",
+  greetingStyle: "song_snippet",
+  personality: "friendly_aussie",
+  localKnowledge: "coffs_harbour",
+  silenceDuration: 500,
+  vadThreshold: 0.5,
+  confirmWrites: true,
+};
+
+const Settings = ({ staff = [], setStaff }) => {
+  const auth = useAuth();
+  const [tab, setTab] = useState("integrations");
+  const [voiceSettings, setVoiceSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem("fieldops_voice_settings");
+      return saved ? { ...DEFAULT_VOICE_SETTINGS, ...JSON.parse(saved) } : DEFAULT_VOICE_SETTINGS;
+    } catch { return DEFAULT_VOICE_SETTINGS; }
+  });
+  const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  const updateVoice = (key, value) => {
+    setVoiceSettings(prev => ({ ...prev, [key]: value }));
+    setDirty(true);
+    setSaved(false);
+  };
+
+  const saveVoiceSettings = () => {
+    localStorage.setItem("fieldops_voice_settings", JSON.stringify(voiceSettings));
+    setSaved(true);
+    setDirty(false);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const resetVoiceSettings = () => {
+    setVoiceSettings(DEFAULT_VOICE_SETTINGS);
+    setDirty(true);
+    setSaved(false);
+  };
+
+  const accent = SECTION_COLORS.settings.accent;
+
+  const tabs = [
+    { id: "integrations", label: "Integrations", icon: "send" },
+    ...(auth.isAdmin || auth.isLocalDev ? [{ id: "users", label: "Users", icon: "clients" }] : []),
+  ];
+
+  const OptionCard = ({ option, selected, onSelect }) => (
+    <div
+      onClick={onSelect}
+      style={{
+        padding: "12px 16px", borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
+        border: selected ? `2px solid ${accent}` : "2px solid #e8e8e8",
+        background: selected ? hexToRgba(accent, 0.06) : "#fff",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{
+          width: 16, height: 16, borderRadius: "50%", border: selected ? `5px solid ${accent}` : "2px solid #ccc",
+          background: selected ? "#fff" : "#fff", flexShrink: 0,
+        }} />
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#111" : "#333" }}>{option.label}</div>
+          <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{option.desc}</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const VoiceIntegration = () => (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Voice Assistant</div>
+          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Configure your Iris voice assistant — powered by OpenAI Realtime + Twilio</div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={resetVoiceSettings} style={{ fontSize: 11 }}>Reset Defaults</button>
+          <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: dirty ? 1 : 0.5 }} onClick={saveVoiceSettings} disabled={!dirty}>
+            {saved ? "Saved!" : "Save Changes"}
+          </button>
+        </div>
+      </div>
+
+      {saved && (
+        <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="check" size={14} /> Voice settings saved. Changes will apply to the next call.
+        </div>
+      )}
+
+      {/* Assistant Name */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Assistant Name</div>
+        <input
+          type="text" value={voiceSettings.name}
+          onChange={e => updateVoice("name", e.target.value)}
+          placeholder="e.g. Iris, Billy, Sage"
+          style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif" }}
+        />
+        <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>The name your assistant introduces itself as on calls</div>
+      </div>
+
+      {/* Voice Selection */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Voice</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+          {VOICE_OPTIONS.voices.map(v => (
+            <OptionCard key={v.id} option={v} selected={voiceSettings.voice === v.id} onSelect={() => updateVoice("voice", v.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Greeting Style */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Greeting Style</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 8 }}>
+          {VOICE_OPTIONS.greetingStyles.map(g => (
+            <OptionCard key={g.id} option={g} selected={voiceSettings.greetingStyle === g.id} onSelect={() => updateVoice("greetingStyle", g.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Personality */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Personality</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 8 }}>
+          {VOICE_OPTIONS.personalities.map(p => (
+            <OptionCard key={p.id} option={p} selected={voiceSettings.personality === p.id} onSelect={() => updateVoice("personality", p.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Local Knowledge */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Local Knowledge</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8 }}>
+          {VOICE_OPTIONS.localKnowledge.map(l => (
+            <OptionCard key={l.id} option={l} selected={voiceSettings.localKnowledge === l.id} onSelect={() => updateVoice("localKnowledge", l.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Advanced Settings */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 16 }}>Advanced</div>
+        <div style={{ display: "grid", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>Confirm before writing</div>
+              <div style={{ fontSize: 11, color: "#888" }}>Ask for confirmation before creating or updating records</div>
+            </div>
+            <button
+              onClick={() => updateVoice("confirmWrites", !voiceSettings.confirmWrites)}
+              style={{
+                width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s",
+                background: voiceSettings.confirmWrites ? accent : "#ccc",
+              }}
+            >
+              <div style={{
+                width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, transition: "left 0.2s",
+                left: voiceSettings.confirmWrites ? 23 : 3, boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }} />
+            </button>
+          </div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>Silence detection (ms)</div>
+                <div style={{ fontSize: 11, color: "#888" }}>How long to wait after the caller stops speaking before responding</div>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: accent, minWidth: 50, textAlign: "right" }}>{voiceSettings.silenceDuration}ms</span>
+            </div>
+            <input
+              type="range" min={200} max={1500} step={100} value={voiceSettings.silenceDuration}
+              onChange={e => updateVoice("silenceDuration", Number(e.target.value))}
+              style={{ width: "100%", maxWidth: 400, accentColor: accent }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 400, fontSize: 10, color: "#bbb" }}>
+              <span>200ms (fast)</span><span>1500ms (patient)</span>
+            </div>
+          </div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>Voice detection sensitivity</div>
+                <div style={{ fontSize: 11, color: "#888" }}>How sensitive the mic is to picking up speech (lower = more sensitive)</div>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: accent, minWidth: 50, textAlign: "right" }}>{voiceSettings.vadThreshold}</span>
+            </div>
+            <input
+              type="range" min={0.1} max={0.9} step={0.1} value={voiceSettings.vadThreshold}
+              onChange={e => updateVoice("vadThreshold", Number(e.target.value))}
+              style={{ width: "100%", maxWidth: 400, accentColor: accent }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 400, fontSize: 10, color: "#bbb" }}>
+              <span>0.1 (very sensitive)</span><span>0.9 (less sensitive)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Current Config Summary */}
+      <div style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Current Configuration</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, fontSize: 12 }}>
+          <div><span style={{ color: "#888" }}>Name:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.name}</span></div>
+          <div><span style={{ color: "#888" }}>Voice:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.voices.find(v => v.id === voiceSettings.voice)?.label || voiceSettings.voice}</span></div>
+          <div><span style={{ color: "#888" }}>Greeting:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.greetingStyles.find(g => g.id === voiceSettings.greetingStyle)?.label || voiceSettings.greetingStyle}</span></div>
+          <div><span style={{ color: "#888" }}>Personality:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.personalities.find(p => p.id === voiceSettings.personality)?.label || voiceSettings.personality}</span></div>
+          <div><span style={{ color: "#888" }}>Local Knowledge:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.localKnowledge.find(l => l.id === voiceSettings.localKnowledge)?.label || voiceSettings.localKnowledge}</span></div>
+          <div><span style={{ color: "#888" }}>Silence:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.silenceDuration}ms</span></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const UserManagement = () => {
+    const [showInvite, setShowInvite] = useState(false);
+    const [inviteForm, setInviteForm] = useState({ fullName: "", email: "", role: "staff", password: "" });
+    const [inviteLoading, setInviteLoading] = useState(false);
+    const [inviteError, setInviteError] = useState(null);
+    const [inviteSuccess, setInviteSuccess] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [editRole, setEditRole] = useState("");
+    const [updateError, setUpdateError] = useState(null);
+
+    const handleInvite = async (e) => {
+      e.preventDefault();
+      setInviteError(null);
+      setInviteLoading(true);
+      try {
+        const result = await inviteUser(inviteForm.email, inviteForm.fullName, inviteForm.role, inviteForm.password || undefined);
+        setInviteSuccess(result.user);
+        setInviteForm({ fullName: "", email: "", role: "staff", password: "" });
+        // Add to local staff list
+        if (setStaff) {
+          setStaff(prev => [...prev, { id: result.user.id, name: result.user.fullName, email: result.user.email, role: result.user.role, active: true }]);
+        }
+      } catch (err) {
+        setInviteError(err.message);
+      } finally {
+        setInviteLoading(false);
+      }
+    };
+
+    const handleToggleActive = async (s) => {
+      setUpdateError(null);
+      try {
+        await updateStaffRecord(s.id, { active: !s.active });
+        if (setStaff) {
+          setStaff(prev => prev.map(st => st.id === s.id ? { ...st, active: !st.active } : st));
+        }
+      } catch (err) {
+        setUpdateError(`Failed to update ${s.name}: ${err.message}`);
+      }
+    };
+
+    const handleRoleChange = async (s) => {
+      setUpdateError(null);
+      try {
+        await updateStaffRecord(s.id, { role: editRole });
+        if (setStaff) {
+          setStaff(prev => prev.map(st => st.id === s.id ? { ...st, role: editRole } : st));
+        }
+        setEditingId(null);
+      } catch (err) {
+        setUpdateError(`Failed to update role: ${err.message}`);
+      }
+    };
+
+    const handleResetPassword = async (s) => {
+      if (!window.confirm(`Send a password reset email to ${s.email}?`)) return;
+      setUpdateError(null);
+      try {
+        await adminResetUserPassword(s.email);
+        alert(`Password reset email sent to ${s.email}`);
+      } catch (err) {
+        setUpdateError(`Failed to send reset: ${err.message}`);
+      }
+    };
+
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>User Management</div>
+            <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{staff.length} team member{staff.length !== 1 ? "s" : ""}</div>
+          </div>
+          <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11 }} onClick={() => { setShowInvite(true); setInviteSuccess(null); setInviteError(null); }}>
+            <Icon name="plus" size={12} /> Invite User
+          </button>
+        </div>
+
+        {updateError && (
+          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#dc2626" }}>
+            {updateError}
+          </div>
+        )}
+
+        {/* Invite form */}
+        {showInvite && (
+          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Invite New User</div>
+              <CloseBtn onClick={() => { setShowInvite(false); setInviteSuccess(null); }} />
+            </div>
+
+            {inviteSuccess ? (
+              <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: 16 }}>
+                <div style={{ fontWeight: 700, color: "#166534", marginBottom: 8, fontSize: 13 }}>
+                  <Icon name="check" size={14} /> User created successfully
+                </div>
+                <div style={{ display: "grid", gap: 6, fontSize: 12 }}>
+                  <div><span style={{ color: "#888" }}>Name:</span> <span style={{ fontWeight: 600 }}>{inviteSuccess.fullName}</span></div>
+                  <div><span style={{ color: "#888" }}>Email:</span> <span style={{ fontWeight: 600 }}>{inviteSuccess.email}</span></div>
+                  <div><span style={{ color: "#888" }}>Role:</span> <span style={{ fontWeight: 600, textTransform: "capitalize" }}>{inviteSuccess.role}</span></div>
+                  <div style={{ background: "#fff", border: "1px solid #bbf7d0", borderRadius: 6, padding: "10px 14px", marginTop: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 4, letterSpacing: "0.06em", textTransform: "uppercase" }}>Temporary Password</div>
+                    <div style={{ fontFamily: "monospace", fontSize: 15, fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>{inviteSuccess.temporaryPassword}</div>
+                    <div style={{ fontSize: 10, color: "#888", marginTop: 4 }}>Share this securely with the user. They should change it on first login.</div>
+                  </div>
+                </div>
+                <button className="btn btn-sm" style={{ marginTop: 12, fontSize: 11 }} onClick={() => { setInviteSuccess(null); }}>Invite Another</button>
+              </div>
+            ) : (
+              <form onSubmit={handleInvite}>
+                {inviteError && (
+                  <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#dc2626" }}>
+                    {inviteError}
+                  </div>
+                )}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Full Name</label>
+                    <input type="text" value={inviteForm.fullName} onChange={e => setInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="e.g. Tom Baker" required
+                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Email</label>
+                    <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="tom@company.com" required
+                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Role</label>
+                    <select value={inviteForm.role} onChange={e => setInviteForm(f => ({ ...f, role: e.target.value }))}
+                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", background: "#fff" }}>
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Password (optional)</label>
+                    <input type="text" value={inviteForm.password} onChange={e => setInviteForm(f => ({ ...f, password: e.target.value }))} placeholder="Auto-generated if blank"
+                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button type="button" className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => setShowInvite(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: inviteLoading ? 0.6 : 1 }} disabled={inviteLoading}>
+                    {inviteLoading ? "Creating..." : "Create User"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* Users list */}
+        <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: "#f8f8f8", borderBottom: "1px solid #e8e8e8" }}>
+                <th style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>User</th>
+                <th style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Email</th>
+                <th style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Role</th>
+                <th style={{ textAlign: "center", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Status</th>
+                <th style={{ textAlign: "right", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {staff.length === 0 && (
+                <tr><td colSpan={5} style={{ padding: 24, textAlign: "center", color: "#999" }}>No users found</td></tr>
+              )}
+              {staff.map(s => {
+                const initials = s.name.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
+                const isSelf = auth.staff?.id === s.id;
+                return (
+                  <tr key={s.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                    <td style={{ padding: "12px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: s.active ? "#111" : "#ddd", color: s.active ? "#fff" : "#999", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
+                          {initials}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, color: s.active ? "#111" : "#999" }}>{s.name}{isSelf ? " (you)" : ""}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: "12px 16px", color: "#666" }}>{s.email}</td>
+                    <td style={{ padding: "12px 16px" }}>
+                      {editingId === s.id ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <select value={editRole} onChange={e => setEditRole(e.target.value)}
+                            style={{ padding: "4px 8px", border: "1px solid #ddd", borderRadius: 4, fontSize: 12, fontFamily: "'Open Sans', sans-serif" }}>
+                            <option value="staff">Staff</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                          <button className="btn btn-xs" style={{ background: accent, color: "#fff", border: "none", fontSize: 10, padding: "3px 8px" }} onClick={() => handleRoleChange(s)}>Save</button>
+                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10, padding: "3px 8px" }} onClick={() => setEditingId(null)}>Cancel</button>
+                        </div>
+                      ) : (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+                          background: s.role === "admin" ? "#f5f3ff" : "#f0f9ff",
+                          color: s.role === "admin" ? "#7c3aed" : "#0284c7",
+                          textTransform: "capitalize",
+                        }}>
+                          {s.role}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+                        background: s.active ? "#ecfdf5" : "#f9fafb",
+                        color: s.active ? "#059669" : "#9ca3af",
+                      }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.active ? "#059669" : "#9ca3af" }} />
+                        {s.active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "12px 16px", textAlign: "right" }}>
+                      {!isSelf && (
+                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10 }} onClick={() => { setEditingId(s.id); setEditRole(s.role); }}>
+                            Change Role
+                          </button>
+                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10 }} onClick={() => handleResetPassword(s)}>
+                            Reset Password
+                          </button>
+                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10, color: s.active ? "#dc2626" : "#059669" }} onClick={() => handleToggleActive(s)}>
+                            {s.active ? "Deactivate" : "Activate"}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      {/* Settings sub-navigation */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #e8e8e8", paddingBottom: 0 }}>
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className="btn"
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", fontSize: 13, fontWeight: 600,
+              border: "none", borderBottom: tab === t.id ? `2px solid ${accent}` : "2px solid transparent",
+              borderRadius: 0, background: "transparent", color: tab === t.id ? "#111" : "#888",
+              cursor: "pointer", transition: "all 0.15s",
+            }}
+          >
+            <Icon name={t.icon} size={14} />{t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "integrations" && <VoiceIntegration />}
+      {tab === "users" && <UserManagement />}
+    </div>
+  );
+};
+
 // ── System Status Page ──────────────────────────────────────────────────────
 const SystemStatus = () => {
   const [services, setServices] = useState([]);
@@ -10168,6 +10715,59 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
   );
 };
 
+// ── Change Password Modal ────────────────────────────────────────────────────
+const ChangePasswordModal = ({ onClose }) => {
+  const [pw, setPw] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+
+  const save = async (e) => {
+    e.preventDefault();
+    setError(null);
+    if (pw.length < 6) { setError("Password must be at least 6 characters"); return; }
+    if (pw !== confirm) { setError("Passwords do not match"); return; }
+    setSaving(true);
+    try {
+      await changePassword(pw);
+      setSuccess(true);
+    } catch (err) { setError(err.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: "100%", maxWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }} onClick={e => e.stopPropagation()}>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Change Password</div>
+        <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>Enter a new password for your account</div>
+        {success ? (
+          <>
+            <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 6, padding: "10px 14px", fontSize: 12, color: "#059669", marginBottom: 16 }}>Password updated successfully.</div>
+            <button className="btn btn-ghost btn-sm" onClick={onClose} style={{ width: "100%" }}>Close</button>
+          </>
+        ) : (
+          <form onSubmit={save}>
+            {error && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, padding: "10px 14px", fontSize: 12, color: "#dc2626", marginBottom: 8 }}>{error}</div>}
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>New Password</label>
+            <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="••••••••" required autoFocus
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Confirm Password</label>
+            <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="••••••••" required
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 16 }} />
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-sm" style={{ background: "#111", color: "#fff", border: "none", opacity: saving ? 0.6 : 1 }} disabled={saving}>
+                {saving ? "Saving…" : "Update Password"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const ROUTE_MAP = {
   dashboard: "/",
   jobs: "/jobs",
@@ -10182,18 +10782,25 @@ const ROUTE_MAP = {
   invoices: "/invoices",
   activity: "/activity",
   status: "/status",
+  settings: "/settings",
 };
 const PATH_TO_ID = Object.fromEntries(
   Object.entries(ROUTE_MAP).map(([id, path]) => [path, id])
 );
 
 export default function App() {
+  const auth = useAuth();
+  // Update module-level CURRENT_USER from auth context
+  if (auth.staff) CURRENT_USER = auth.staff.name;
+
   const location = useLocation();
   const routerNavigate = useNavigate();
   const page = PATH_TO_ID[location.pathname] || "dashboard";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [hoverNav, setHoverNav] = useState(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [clients, setClients] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [quotes, setQuotes] = useState([]);
@@ -10277,6 +10884,7 @@ export default function App() {
     { id: "invoices", label: "Invoices", icon: "invoices", badge: unpaidInvCount || null },
     { id: "activity", label: "Activity", icon: "notification" },
     { id: "status", label: "System Status", icon: "activity" },
+    ...((auth.isAdmin || auth.isLocalDev) ? [{ id: "settings", label: "Settings", icon: "settings" }] : []),
   ];
 
   // Bottom nav shows first 5; rest in "More"
@@ -10284,7 +10892,7 @@ export default function App() {
   const moreNavItems = navItems.slice(5);
   const moreIsActive = moreNavItems.some(n => n.id === page);
 
-  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log", status: "System Status" };
+  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log", status: "System Status", settings: "Settings" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
@@ -10307,6 +10915,7 @@ export default function App() {
       <Route path="/invoices" element={<Invoices invoices={invoices} setInvoices={setInvoices} jobs={jobs} clients={clients} quotes={quotes} />} />
       <Route path="/activity" element={<ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />} />
       <Route path="/status" element={<SystemStatus />} />
+      <Route path="/settings" element={(auth.isAdmin || auth.isLocalDev) ? <Settings staff={staff} setStaff={setStaff} /> : <Navigate to="/" replace />} />
       <Route path="/display/schedule" element={<DisplaySchedule schedule={schedule} jobs={jobs} clients={clients} />} />
       <Route path="/display/overview" element={<DisplayOverview jobs={jobs} quotes={quotes} timeEntries={timeEntries} schedule={schedule} clients={clients} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -10399,13 +11008,37 @@ export default function App() {
             );
           })}
         </div>
-        <div style={{ padding: "16px 20px", borderTop: "1px solid #1e1e1e" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#fff", color: "#111", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>AJ</div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>Alex Jones</div>
-              <div style={{ fontSize: 10, color: "#555" }}>Admin</div>
+        <div style={{ padding: "16px 20px", borderTop: "1px solid #1e1e1e", position: "relative" }}>
+          {/* User menu popover */}
+          {showUserMenu && !auth.isLocalDev && (
+            <div style={{ position: "absolute", bottom: "100%", left: 12, right: 12, background: "#1e1e1e", borderRadius: 8, border: "1px solid #333", padding: 4, marginBottom: 4, zIndex: 10 }}>
+              <button onClick={() => { setShowChangePassword(true); setShowUserMenu(false); }}
+                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px", background: "transparent", border: "none", color: "#ccc", fontSize: 12, cursor: "pointer", borderRadius: 6, fontFamily: "'Open Sans', sans-serif", textAlign: "left" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#333"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                Change Password
+              </button>
+              <button onClick={() => { auth.signOut(); setShowUserMenu(false); }}
+                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px", background: "transparent", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer", borderRadius: 6, fontFamily: "'Open Sans', sans-serif", textAlign: "left" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#333"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg>
+                Sign Out
+              </button>
             </div>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: auth.isLocalDev ? "default" : "pointer" }} onClick={() => !auth.isLocalDev && setShowUserMenu(v => !v)}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#fff", color: "#111", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
+              {(auth.staff?.name || "AJ").split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase()}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{auth.staff?.name || "Alex Jones"}</div>
+              <div style={{ fontSize: 10, color: "#555", textTransform: "capitalize" }}>{auth.staff?.role || "Admin"}</div>
+            </div>
+            {!auth.isLocalDev && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={showUserMenu ? "#fff" : "#555"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transition: "transform 0.15s", transform: showUserMenu ? "rotate(180deg)" : "rotate(0)" }}>
+                <polyline points="18 15 12 9 6 15"/>
+              </svg>
+            )}
           </div>
         </div>
       </nav>
@@ -10483,6 +11116,9 @@ export default function App() {
       </div>
       </>
       )}
+
+      {/* Change Password Modal */}
+      {showChangePassword && <ChangePasswordModal onClose={() => setShowChangePassword(false)} />}
     </div>
   );
 }

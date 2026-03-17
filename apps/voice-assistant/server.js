@@ -6,6 +6,8 @@ const http = require('http');
 const { tools } = require('./tools');
 const { handleToolCall } = require('./handlers');
 
+const { createClient } = require('@supabase/supabase-js');
+
 const PORT = parseInt(process.env.PORT, 10) || 3001;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_REALTIME_URL =
@@ -16,49 +18,72 @@ if (!OPENAI_API_KEY) {
   process.exit(1);
 }
 
-// ─── SYSTEM PROMPT ─────────────────────────────────────────────────
+// ─── SUPABASE CLIENT ──────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are Iris, the voice assistant for FieldOps — a construction and trades business management app. You help builders, project managers, and tradies manage their jobs, schedules, contractors, bills, and work orders over the phone.
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || '';
+const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
+
+// ─── VOICE SETTINGS ──────────────────────────────────────────────
+
+const DEFAULT_SETTINGS = {
+  name: 'Iris',
+  voice: 'sage',
+  greeting_style: 'Sing a short snippet (3-8 words) from a random well-known song before greeting. Be spontaneous and fun, like you were caught singing along to the radio. Then smoothly transition into a warm, friendly greeting.',
+  personality: 'Friendly and warm — like a helpful mate. Upbeat, encouraging, and genuinely kind. Use Australian English and throw in the occasional Aussie slang naturally. Keep it brief — this is a phone call, not a podcast.',
+  general_knowledge: 'Construction and trades business based in Coffs Harbour, Australia. Familiar with the local area — beaches, council, trades scene. Knows the building industry — sparkies, chippies, plumbers, concreters, roofers.',
+  silence_duration: 500,
+  vad_threshold: 0.5,
+  confirm_writes: true,
+};
+
+async function fetchVoiceSettings() {
+  if (!supabase) {
+    console.warn('No Supabase client — using default voice settings');
+    return DEFAULT_SETTINGS;
+  }
+  try {
+    const { data, error } = await supabase
+      .from('voice_assistant_settings')
+      .select('*')
+      .limit(1)
+      .single();
+    if (error || !data) {
+      console.warn('No voice settings in DB, using defaults:', error?.message);
+      return DEFAULT_SETTINGS;
+    }
+    console.log('Loaded voice settings from DB (updated_at:', data.updated_at + ')');
+    return data;
+  } catch (err) {
+    console.error('Failed to fetch voice settings:', err.message);
+    return DEFAULT_SETTINGS;
+  }
+}
+
+function buildSystemPrompt(settings) {
+  return `You are ${settings.name}, the voice assistant for FieldOps — a construction and trades business management app. You help builders, project managers, and tradies manage their jobs, schedules, contractors, bills, and work orders over the phone.
 
 About you:
-- Your name is Iris — you're friendly, warm, and genuinely love helping people get organised
-- You have a bright, approachable energy — like a helpful friend who always has the answer
-- You're kind, encouraging, and always make people feel like they're doing a great job
-- You're the kind of person who'd say "nice one!" when someone logs their time entries on time
+- Your name is ${settings.name}
+- You are the phone assistant for a construction/trades business management app called FieldOps
 
 Personality and style:
-- Friendly and warm — talk like a helpful mate, not a robot. Use "hey", "no worries", "easy done", "nice one"
-- Bright and positive — always upbeat, encouraging, and supportive
-- Genuinely kind and complimentary — notice when someone's been busy, on top of things, or doing a great job
-- Keep it brief — this is a phone call, not a podcast. Get to the point but keep it warm
+${settings.personality}
 - When listing items, give the count first, then offer details
-- Use Australian English — it's "colour" not "color", "organise" not "organize", "arvo" not "afternoon"
 - Say "dollars" not "dollar sign". Use natural dates like "next Tuesday" or "the 15th of March"
-- Throw in the occasional Aussie slang naturally — "reckon", "heaps", "no dramas", "too easy"
 
-Local knowledge (use sparingly and naturally, don't force it):
-- You know Coffs Harbour and the region — the beaches, the Big Banana, Park Beach, Sawtell, Woolgoolga
-- You know the local building scene — coastal builds deal with salt air corrosion, council approvals through Coffs Harbour City Council
-- You know the weather matters — if it's been raining, you might mention hoping the slab pour didn't get washed out
-- You know the trades — sparkies, chippies, plumbers, concreters, roofers. You speak the language
+General knowledge (use sparingly and naturally, don't force it):
+${settings.general_knowledge}
 
 Greeting style:
-- IMPORTANT: Every time you answer the phone, start by singing a short snippet (just a few words — 3 to 8 words max) from a random well-known song. Pick a different song every time. It should feel spontaneous and fun, like you were caught singing along to the radio. Then smoothly transition into your greeting.
-- Be friendly and warm — like you're genuinely happy someone called
-- Mix it up — don't use the same greeting every time
-- Examples of the vibe (don't use these exact words every time, and always pick a DIFFERENT song snippet):
-  - "🎵 Here comes the sun, doo doo doo doo... 🎵 Oh hey! It's Iris — what can I help with?"
-  - "🎵 Don't stop me now... 🎵 Ha! Hey there, Iris here — what do you need?"
-  - "🎵 Walking on sunshine, whoa-oh... 🎵 G'day! You've got Iris — what are we sorting out?"
-  - "🎵 Sweet dreams are made of this... 🎵 Hey! Iris at your service — what's happening?"
-- The song snippets should be from a wide variety of genres and decades — pop, rock, classic, 80s, 90s, 2000s, anything catchy and recognisable. Never repeat the same song in a session.
+${settings.greeting_style}
 
 Important rules:
-- For write operations (adding entries, updating statuses, logging time), always confirm details before making changes
+${settings.confirm_writes ? '- For write operations (adding entries, updating statuses, logging time), always confirm details before making changes' : '- You may proceed with write operations without explicit confirmation, but mention what you did'}
 - When in doubt about which job or item someone means, ask — don't guess
-- If someone sounds stressed, skip the singing and be warm, calm, and reassuring
 
 Today's date is ${new Date().toISOString().split('T')[0]}.`;
+}
 
 // ─── EXPRESS APP ───────────────────────────────────────────────────
 
@@ -138,12 +163,15 @@ wss.on('connection', (twilioWs, req) => {
 
   // ── Configure OpenAI session once connected ────────────────────
 
-  function configureSession() {
+  async function configureSession() {
+    const settings = await fetchVoiceSettings();
+    const systemPrompt = buildSystemPrompt(settings);
+
     const sessionConfig = {
       type: 'session.update',
       session: {
-        voice: 'sage',
-        instructions: SYSTEM_PROMPT,
+        voice: settings.voice || 'sage',
+        instructions: systemPrompt,
         input_audio_format: 'g711_ulaw',
         output_audio_format: 'g711_ulaw',
         input_audio_transcription: {
@@ -151,9 +179,9 @@ wss.on('connection', (twilioWs, req) => {
         },
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.5,
+          threshold: parseFloat(settings.vad_threshold) || 0.5,
           prefix_padding_ms: 300,
-          silence_duration_ms: 500,
+          silence_duration_ms: settings.silence_duration || 500,
         },
         tools: tools,
         tool_choice: 'auto',
@@ -173,7 +201,7 @@ wss.on('connection', (twilioWs, req) => {
       response: {
         modalities: ['text', 'audio'],
         instructions:
-          'Greet the caller with energy and a bit of cheek. Introduce yourself as Billy. Keep it short, fun, and natural — like a mate answering the phone. Ask what you can help with.',
+          `Greet the caller. Introduce yourself as ${settings.name}. Follow your greeting style instructions. Keep it short, fun, and natural. Ask what you can help with.`,
       },
     });
   }

@@ -1122,3 +1122,55 @@ export async function createAuditEntry(entityType, entityId, action, detail, use
   );
   return normalizeAuditEntry(row);
 }
+
+// ── Voice Assistant Settings ──────────────────────────────────────────────
+
+export async function getVoiceSettings() {
+  const { data, error } = await supabase
+    .from('voice_assistant_settings')
+    .select('*')
+    .limit(1)
+    .single();
+  if (error && error.code === 'PGRST116') return null; // no row yet
+  if (error) throw error;
+  return {
+    name: data.name,
+    voice: data.voice,
+    greetingStyle: data.greeting_style,
+    personality: data.personality,
+    generalKnowledge: data.general_knowledge,
+    silenceDuration: data.silence_duration,
+    vadThreshold: parseFloat(data.vad_threshold),
+    confirmWrites: data.confirm_writes,
+  };
+}
+
+export async function saveVoiceSettings(settings) {
+  const dbData = {
+    name: settings.name,
+    voice: settings.voice,
+    greeting_style: settings.greetingStyle,
+    personality: settings.personality,
+    general_knowledge: settings.generalKnowledge,
+    silence_duration: settings.silenceDuration,
+    vad_threshold: settings.vadThreshold,
+    confirm_writes: settings.confirmWrites,
+  };
+  const { data, error } = await supabase
+    .from('voice_assistant_settings')
+    .upsert(dbData, { onConflict: 'id' })
+    .select()
+    .single();
+  // If upsert fails because no row exists yet, insert without id
+  if (error && error.code === 'PGRST116') {
+    const { data: inserted, error: insertErr } = await supabase
+      .from('voice_assistant_settings')
+      .insert(dbData)
+      .select()
+      .single();
+    if (insertErr) throw insertErr;
+    return inserted;
+  }
+  if (error) throw error;
+  return data;
+}

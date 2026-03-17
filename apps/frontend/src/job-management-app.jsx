@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, Fragment, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
-import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry } from './lib/db';
+import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry, getVoiceSettings, saveVoiceSettings } from './lib/db';
 import { extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord } from './lib/supabase';
 import { useAuth } from './lib/AuthContext';
 import { changePassword, adminResetUserPassword } from './lib/auth';
@@ -9644,14 +9644,28 @@ const DEFAULT_VOICE_SETTINGS = {
 const Settings = ({ staff = [], setStaff }) => {
   const auth = useAuth();
   const [tab, setTab] = useState("integrations");
-  const [voiceSettings, setVoiceSettings] = useState(() => {
-    try {
-      const saved = localStorage.getItem("fieldops_voice_settings");
-      return saved ? { ...DEFAULT_VOICE_SETTINGS, ...JSON.parse(saved) } : DEFAULT_VOICE_SETTINGS;
-    } catch { return DEFAULT_VOICE_SETTINGS; }
-  });
+  const [voiceSettings, setVoiceSettings] = useState(DEFAULT_VOICE_SETTINGS);
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const dbSettings = await getVoiceSettings();
+        if (!cancelled && dbSettings) {
+          setVoiceSettings({ ...DEFAULT_VOICE_SETTINGS, ...dbSettings });
+        }
+      } catch (err) {
+        console.warn("Failed to load voice settings from DB, using defaults:", err);
+      } finally {
+        if (!cancelled) setLoadingSettings(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const updateVoice = (key, value) => {
     setVoiceSettings(prev => ({ ...prev, [key]: value }));
@@ -9659,11 +9673,19 @@ const Settings = ({ staff = [], setStaff }) => {
     setSaved(false);
   };
 
-  const saveVoiceSettings = () => {
-    localStorage.setItem("fieldops_voice_settings", JSON.stringify(voiceSettings));
-    setSaved(true);
-    setDirty(false);
-    setTimeout(() => setSaved(false), 2500);
+  const handleSaveVoiceSettings = async () => {
+    setSaving(true);
+    try {
+      await saveVoiceSettings(voiceSettings);
+      setSaved(true);
+      setDirty(false);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      console.error("Failed to save voice settings:", err);
+      alert("Failed to save settings. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const resetVoiceSettings = () => {
@@ -9710,8 +9732,8 @@ const Settings = ({ staff = [], setStaff }) => {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={resetVoiceSettings} style={{ fontSize: 11 }}>Reset Defaults</button>
-          <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: dirty ? 1 : 0.5 }} onClick={saveVoiceSettings} disabled={!dirty}>
-            {saved ? "Saved!" : "Save Changes"}
+          <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: dirty ? 1 : 0.5 }} onClick={handleSaveVoiceSettings} disabled={!dirty || saving}>
+            {saving ? "Saving..." : saved ? "Saved!" : "Save Changes"}
           </button>
         </div>
       </div>

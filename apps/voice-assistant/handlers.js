@@ -271,6 +271,58 @@ async function updateWorkOrderStatus({ work_order_id, status }) {
   return { success: true, work_order: data };
 }
 
+async function createWorkOrder({ job_id, contractor_name, trade, scope_of_work, due_date, po_limit }) {
+  // Generate next WO ref
+  const { data: latest } = await supabase
+    .from('work_orders')
+    .select('ref')
+    .order('created_at', { ascending: false })
+    .limit(1);
+  const lastNum = latest?.length ? parseInt(latest[0].ref.replace('WO-', ''), 10) : 100;
+  const ref = `WO-${lastNum + 1}`;
+
+  // Resolve job_number to UUID if needed
+  let actualJobId = job_id || null;
+  if (job_id && job_id.startsWith('J-')) {
+    const { data: job, error: jobErr } = await supabase
+      .from('jobs')
+      .select('id')
+      .eq('job_number', job_id)
+      .single();
+    if (jobErr) throw new Error(`Failed to find job ${job_id}: ${jobErr.message}`);
+    actualJobId = job.id;
+  }
+
+  // Look up contractor if name provided
+  let contractorId = null;
+  if (contractor_name) {
+    const { data: contractors } = await supabase
+      .from('contractors')
+      .select('id, name')
+      .ilike('name', `%${contractor_name}%`)
+      .limit(1);
+    if (contractors?.length) contractorId = contractors[0].id;
+  }
+
+  const { data, error } = await supabase
+    .from('work_orders')
+    .insert({
+      ref,
+      job_id: actualJobId,
+      contractor_id: contractorId,
+      contractor_name: contractor_name || null,
+      trade: trade || null,
+      scope_of_work,
+      due_date: due_date || null,
+      po_limit: po_limit || 0,
+      status: 'Draft',
+    })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create work order: ${error.message}`);
+  return { success: true, work_order: data, ref };
+}
+
 async function logTimeEntry({ job_id, worker, hours, date, description }) {
   // Actual schema: id, staff_id, job_id, entry_date, hours, notes
   // Look up job by number if needed
@@ -314,6 +366,7 @@ const handlerMap = {
   add_job_note: addJobNote,
   update_job_status: updateJobStatus,
   update_work_order_status: updateWorkOrderStatus,
+  create_work_order: createWorkOrder,
   log_time_entry: logTimeEntry,
 };
 

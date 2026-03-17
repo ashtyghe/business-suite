@@ -253,6 +253,43 @@ const tools = [
 
   {
     type: 'function',
+    name: 'create_work_order',
+    description:
+      'Create a new work order. Use when someone wants to raise a work order for a contractor or trade.',
+    parameters: {
+      type: 'object',
+      properties: {
+        job_id: {
+          type: 'string',
+          description: 'The job ID or job number (e.g. J-0001) this work order relates to.',
+        },
+        contractor_name: {
+          type: 'string',
+          description: 'Name of the contractor.',
+        },
+        trade: {
+          type: 'string',
+          description: 'Trade type, e.g. electrical, plumbing, carpentry.',
+        },
+        scope_of_work: {
+          type: 'string',
+          description: 'Description of the work to be done.',
+        },
+        due_date: {
+          type: 'string',
+          description: 'Due date in YYYY-MM-DD format.',
+        },
+        po_limit: {
+          type: 'number',
+          description: 'Purchase order limit in dollars.',
+        },
+      },
+      required: ['scope_of_work'],
+    },
+  },
+
+  {
+    type: 'function',
     name: 'log_time_entry',
     description:
       'Log a time entry for a job. Use when someone reports hours worked.',

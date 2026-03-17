@@ -295,6 +295,7 @@ const SECTION_COLORS = {
   contractors: { accent: "#0d9488", light: "#f0fdfa" },
   suppliers: { accent: "#d97706", light: "#fffbeb" },
   status: { accent: "#059669", light: "#ecfdf5" },
+  settings: { accent: "#6b7280", light: "#f9fafb" },
 };
 const hexToRgba = (hex, a) => {
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
@@ -822,6 +823,7 @@ const Icon = ({ name, size = 15 }) => {
     orders: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h4m-4 4h4m-8-4h.01m-.01 4h.01",
     contractors: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
     suppliers: "M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0",
+    settings: "M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4",
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -9589,6 +9591,282 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
   );
 };
 
+// ── Settings Page ───────────────────────────────────────────────────────────
+
+const VOICE_OPTIONS = {
+  voices: [
+    { id: "alloy", label: "Alloy", desc: "Neutral and balanced" },
+    { id: "ash", label: "Ash", desc: "Warm and conversational" },
+    { id: "ballad", label: "Ballad", desc: "Smooth and melodic" },
+    { id: "coral", label: "Coral", desc: "Clear and friendly" },
+    { id: "echo", label: "Echo", desc: "Deep and resonant" },
+    { id: "sage", label: "Sage", desc: "Calm and articulate" },
+    { id: "shimmer", label: "Shimmer", desc: "Bright and energetic" },
+    { id: "verse", label: "Verse", desc: "Warm and expressive" },
+  ],
+  greetingStyles: [
+    { id: "song_snippet", label: "Song Snippet", desc: "Sings a short snippet from a random song before greeting" },
+    { id: "friendly", label: "Friendly", desc: "Warm and casual greeting — no singing" },
+    { id: "professional", label: "Professional", desc: "Polished and businesslike greeting" },
+    { id: "minimal", label: "Minimal", desc: "Brief and to the point — just name and how can I help" },
+  ],
+  personalities: [
+    { id: "friendly_aussie", label: "Friendly Aussie", desc: "Warm, uses Aussie slang, upbeat and encouraging" },
+    { id: "professional", label: "Professional", desc: "Polished, clear, business-focused" },
+    { id: "cheeky", label: "Cheeky", desc: "Playful, witty, a bit of banter" },
+    { id: "calm", label: "Calm & Supportive", desc: "Reassuring, patient, gentle tone" },
+  ],
+  localKnowledge: [
+    { id: "coffs_harbour", label: "Coffs Harbour", desc: "Knows the local area — beaches, council, trades scene" },
+    { id: "sydney", label: "Sydney", desc: "Familiar with Sydney metro — councils, suburbs, traffic" },
+    { id: "melbourne", label: "Melbourne", desc: "Knows Melbourne — inner suburbs, weather, tram routes" },
+    { id: "brisbane", label: "Brisbane", desc: "Familiar with Brisbane and surrounds" },
+    { id: "none", label: "None", desc: "No specific local knowledge" },
+  ],
+};
+
+const DEFAULT_VOICE_SETTINGS = {
+  name: "Iris",
+  voice: "sage",
+  greetingStyle: "song_snippet",
+  personality: "friendly_aussie",
+  localKnowledge: "coffs_harbour",
+  silenceDuration: 500,
+  vadThreshold: 0.5,
+  confirmWrites: true,
+};
+
+const Settings = () => {
+  const [tab, setTab] = useState("integrations");
+  const [voiceSettings, setVoiceSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem("fieldops_voice_settings");
+      return saved ? { ...DEFAULT_VOICE_SETTINGS, ...JSON.parse(saved) } : DEFAULT_VOICE_SETTINGS;
+    } catch { return DEFAULT_VOICE_SETTINGS; }
+  });
+  const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  const updateVoice = (key, value) => {
+    setVoiceSettings(prev => ({ ...prev, [key]: value }));
+    setDirty(true);
+    setSaved(false);
+  };
+
+  const saveVoiceSettings = () => {
+    localStorage.setItem("fieldops_voice_settings", JSON.stringify(voiceSettings));
+    setSaved(true);
+    setDirty(false);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const resetVoiceSettings = () => {
+    setVoiceSettings(DEFAULT_VOICE_SETTINGS);
+    setDirty(true);
+    setSaved(false);
+  };
+
+  const accent = SECTION_COLORS.settings.accent;
+
+  const tabs = [
+    { id: "integrations", label: "Integrations", icon: "send" },
+  ];
+
+  const OptionCard = ({ option, selected, onSelect }) => (
+    <div
+      onClick={onSelect}
+      style={{
+        padding: "12px 16px", borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
+        border: selected ? `2px solid ${accent}` : "2px solid #e8e8e8",
+        background: selected ? hexToRgba(accent, 0.06) : "#fff",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{
+          width: 16, height: 16, borderRadius: "50%", border: selected ? `5px solid ${accent}` : "2px solid #ccc",
+          background: selected ? "#fff" : "#fff", flexShrink: 0,
+        }} />
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#111" : "#333" }}>{option.label}</div>
+          <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{option.desc}</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const VoiceIntegration = () => (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Voice Assistant</div>
+          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Configure your Iris voice assistant — powered by OpenAI Realtime + Twilio</div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={resetVoiceSettings} style={{ fontSize: 11 }}>Reset Defaults</button>
+          <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: dirty ? 1 : 0.5 }} onClick={saveVoiceSettings} disabled={!dirty}>
+            {saved ? "Saved!" : "Save Changes"}
+          </button>
+        </div>
+      </div>
+
+      {saved && (
+        <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="check" size={14} /> Voice settings saved. Changes will apply to the next call.
+        </div>
+      )}
+
+      {/* Assistant Name */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Assistant Name</div>
+        <input
+          type="text" value={voiceSettings.name}
+          onChange={e => updateVoice("name", e.target.value)}
+          placeholder="e.g. Iris, Billy, Sage"
+          style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif" }}
+        />
+        <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>The name your assistant introduces itself as on calls</div>
+      </div>
+
+      {/* Voice Selection */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Voice</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+          {VOICE_OPTIONS.voices.map(v => (
+            <OptionCard key={v.id} option={v} selected={voiceSettings.voice === v.id} onSelect={() => updateVoice("voice", v.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Greeting Style */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Greeting Style</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 8 }}>
+          {VOICE_OPTIONS.greetingStyles.map(g => (
+            <OptionCard key={g.id} option={g} selected={voiceSettings.greetingStyle === g.id} onSelect={() => updateVoice("greetingStyle", g.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Personality */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Personality</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 8 }}>
+          {VOICE_OPTIONS.personalities.map(p => (
+            <OptionCard key={p.id} option={p} selected={voiceSettings.personality === p.id} onSelect={() => updateVoice("personality", p.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Local Knowledge */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Local Knowledge</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8 }}>
+          {VOICE_OPTIONS.localKnowledge.map(l => (
+            <OptionCard key={l.id} option={l} selected={voiceSettings.localKnowledge === l.id} onSelect={() => updateVoice("localKnowledge", l.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Advanced Settings */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 16 }}>Advanced</div>
+        <div style={{ display: "grid", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>Confirm before writing</div>
+              <div style={{ fontSize: 11, color: "#888" }}>Ask for confirmation before creating or updating records</div>
+            </div>
+            <button
+              onClick={() => updateVoice("confirmWrites", !voiceSettings.confirmWrites)}
+              style={{
+                width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s",
+                background: voiceSettings.confirmWrites ? accent : "#ccc",
+              }}
+            >
+              <div style={{
+                width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, transition: "left 0.2s",
+                left: voiceSettings.confirmWrites ? 23 : 3, boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }} />
+            </button>
+          </div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>Silence detection (ms)</div>
+                <div style={{ fontSize: 11, color: "#888" }}>How long to wait after the caller stops speaking before responding</div>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: accent, minWidth: 50, textAlign: "right" }}>{voiceSettings.silenceDuration}ms</span>
+            </div>
+            <input
+              type="range" min={200} max={1500} step={100} value={voiceSettings.silenceDuration}
+              onChange={e => updateVoice("silenceDuration", Number(e.target.value))}
+              style={{ width: "100%", maxWidth: 400, accentColor: accent }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 400, fontSize: 10, color: "#bbb" }}>
+              <span>200ms (fast)</span><span>1500ms (patient)</span>
+            </div>
+          </div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>Voice detection sensitivity</div>
+                <div style={{ fontSize: 11, color: "#888" }}>How sensitive the mic is to picking up speech (lower = more sensitive)</div>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: accent, minWidth: 50, textAlign: "right" }}>{voiceSettings.vadThreshold}</span>
+            </div>
+            <input
+              type="range" min={0.1} max={0.9} step={0.1} value={voiceSettings.vadThreshold}
+              onChange={e => updateVoice("vadThreshold", Number(e.target.value))}
+              style={{ width: "100%", maxWidth: 400, accentColor: accent }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 400, fontSize: 10, color: "#bbb" }}>
+              <span>0.1 (very sensitive)</span><span>0.9 (less sensitive)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Current Config Summary */}
+      <div style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Current Configuration</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, fontSize: 12 }}>
+          <div><span style={{ color: "#888" }}>Name:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.name}</span></div>
+          <div><span style={{ color: "#888" }}>Voice:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.voices.find(v => v.id === voiceSettings.voice)?.label || voiceSettings.voice}</span></div>
+          <div><span style={{ color: "#888" }}>Greeting:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.greetingStyles.find(g => g.id === voiceSettings.greetingStyle)?.label || voiceSettings.greetingStyle}</span></div>
+          <div><span style={{ color: "#888" }}>Personality:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.personalities.find(p => p.id === voiceSettings.personality)?.label || voiceSettings.personality}</span></div>
+          <div><span style={{ color: "#888" }}>Local Knowledge:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.localKnowledge.find(l => l.id === voiceSettings.localKnowledge)?.label || voiceSettings.localKnowledge}</span></div>
+          <div><span style={{ color: "#888" }}>Silence:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.silenceDuration}ms</span></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Settings sub-navigation */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #e8e8e8", paddingBottom: 0 }}>
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className="btn"
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", fontSize: 13, fontWeight: 600,
+              border: "none", borderBottom: tab === t.id ? `2px solid ${accent}` : "2px solid transparent",
+              borderRadius: 0, background: "transparent", color: tab === t.id ? "#111" : "#888",
+              cursor: "pointer", transition: "all 0.15s",
+            }}
+          >
+            <Icon name={t.icon} size={14} />{t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "integrations" && <VoiceIntegration />}
+    </div>
+  );
+};
+
 // ── System Status Page ──────────────────────────────────────────────────────
 const SystemStatus = () => {
   const [services, setServices] = useState([]);
@@ -10182,6 +10460,7 @@ const ROUTE_MAP = {
   invoices: "/invoices",
   activity: "/activity",
   status: "/status",
+  settings: "/settings",
 };
 const PATH_TO_ID = Object.fromEntries(
   Object.entries(ROUTE_MAP).map(([id, path]) => [path, id])
@@ -10277,6 +10556,7 @@ export default function App() {
     { id: "invoices", label: "Invoices", icon: "invoices", badge: unpaidInvCount || null },
     { id: "activity", label: "Activity", icon: "notification" },
     { id: "status", label: "System Status", icon: "activity" },
+    { id: "settings", label: "Settings", icon: "settings" },
   ];
 
   // Bottom nav shows first 5; rest in "More"
@@ -10284,7 +10564,7 @@ export default function App() {
   const moreNavItems = navItems.slice(5);
   const moreIsActive = moreNavItems.some(n => n.id === page);
 
-  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log", status: "System Status" };
+  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log", status: "System Status", settings: "Settings" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
@@ -10307,6 +10587,7 @@ export default function App() {
       <Route path="/invoices" element={<Invoices invoices={invoices} setInvoices={setInvoices} jobs={jobs} clients={clients} quotes={quotes} />} />
       <Route path="/activity" element={<ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />} />
       <Route path="/status" element={<SystemStatus />} />
+      <Route path="/settings" element={<Settings />} />
       <Route path="/display/schedule" element={<DisplaySchedule schedule={schedule} jobs={jobs} clients={clients} />} />
       <Route path="/display/overview" element={<DisplayOverview jobs={jobs} quotes={quotes} timeEntries={timeEntries} schedule={schedule} clients={clients} />} />
       <Route path="*" element={<Navigate to="/" replace />} />

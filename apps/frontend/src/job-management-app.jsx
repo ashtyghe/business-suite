@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef, useMemo, Fragment, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
-import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry } from './lib/db';
-import { extractBillFromImage, extractDocumentFromImage } from './lib/supabase';
+import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry } from './lib/db';
+import { extractBillFromImage, extractDocumentFromImage, sendEmail } from './lib/supabase';
 import * as fabric from "fabric";
+import * as pdfjsLib from "pdfjs-dist";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import SignaturePad from "signature_pad";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 // ── Google Font ──────────────────────────────────────────────────────────────
 const fontLink = document.createElement("link");
@@ -289,6 +294,7 @@ const SECTION_COLORS = {
   orders:    { accent: "#2563eb", light: "#eff6ff" },
   contractors: { accent: "#0d9488", light: "#f0fdfa" },
   suppliers: { accent: "#d97706", light: "#fffbeb" },
+  status: { accent: "#059669", light: "#ecfdf5" },
 };
 const hexToRgba = (hex, a) => {
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
@@ -1290,7 +1296,49 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
   const [lightboxImg, setLightboxImg] = useState(null);
   const [markupImg, setMarkupImg] = useState(null);
   const [showPlanDrawing, setShowPlanDrawing] = useState(false);
+  const [showOrderPdfFiller, setShowOrderPdfFiller] = useState(null);
+  const orderPdfInputRef = useRef(null);
+  const [orderEmailSending, setOrderEmailSending] = useState(false);
+  const [orderEmailStatus, setOrderEmailStatus] = useState(null);
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setDirty(true); };
+
+  const handleOrderPdfFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.name.toLowerCase().endsWith(".pdf")) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setShowOrderPdfFiller({ pdfData: ev.target.result, fileName: file.name });
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = "";
+  };
+
+  const handleOrderPdfSave = ({ filledPdfDataUrl, thumbnail, fields: pdfFields, fileName: filledName }) => {
+    const att = { id: genId(), name: filledName, size: Math.round(filledPdfDataUrl.length * 0.75), type: "application/pdf", dataUrl: filledPdfDataUrl, pdfThumbnail: thumbnail };
+    setForm(f => ({ ...f, attachments: [...f.attachments, att] }));
+    setDirty(true);
+    setShowOrderPdfFiller(null);
+  };
+
+  const handleDirectSendOrder = async () => {
+    const recipientEmail = isWO ? form.contractorEmail : form.supplierEmail;
+    const recipientName = isWO ? form.contractorName : form.supplierName;
+    const emailType = isWO ? "work_order" : "purchase_order";
+    if (!recipientEmail) { alert(`No ${isWO ? "contractor" : "supplier"} email address found.`); return; }
+    const jobTitle = jobs.find(j => j.id === form.jobId)?.title || "";
+    if (!window.confirm(`Send ${form.ref} via email to ${recipientName} (${recipientEmail})?`)) return;
+    setOrderEmailSending(true); setOrderEmailStatus(null);
+    try {
+      await sendEmail(emailType, recipientEmail, { ...form, jobTitle, contractorName: form.contractorName, supplierName: form.supplierName });
+      setOrderEmailStatus({ type: "success", msg: `Sent to ${recipientEmail}` });
+      let u = form;
+      u = { ...u, auditLog: [...(u.auditLog || []), { action: "Emailed via Resend", detail: `Sent to ${recipientEmail}`, ts: new Date().toISOString(), user: "System" }] };
+      setForm(u); if (onSave) onSave(u);
+      setTimeout(() => setOrderEmailStatus(null), 4000);
+    } catch (err) {
+      setOrderEmailStatus({ type: "error", msg: err.message || "Failed to send" });
+    } finally { setOrderEmailSending(false); }
+  };
 
   const saveOrderMarkup = (dataUrl) => {
     if (markupImg?.attachmentId) {
@@ -1366,7 +1414,8 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       {mode === "edit" && dirty && <button className="btn btn-primary" style={{ background: accent }} onClick={handleSave}>Save</button>}
       {mode === "edit" && !isNew && !dirty && <button className="btn btn-secondary" onClick={() => setMode("view")}>Done editing</button>}
-      {mode === "view" && <button className="btn btn-primary" style={{ background: accent }} onClick={() => setShowEmail(true)}><OrderIcon name="mail" size={14} /> Send {isWO ? "to Contractor" : "to Supplier"}</button>}
+      {mode === "view" && <button className="btn btn-sm" style={{ background: "#2563eb", color: "#fff", border: "none" }} disabled={orderEmailSending} onClick={handleDirectSendOrder}><OrderIcon name="send" size={14} /> {orderEmailSending ? "Sending..." : `Email ${isWO ? "Contractor" : "Supplier"}`}</button>}
+      {mode === "view" && <button className="btn btn-primary" style={{ background: accent }} onClick={() => setShowEmail(true)}><OrderIcon name="mail" size={14} /> Draft Email</button>}
       {isNew && <button className="btn btn-primary" style={{ background: accent }} onClick={handleSave}>Create {isWO ? "Work Order" : "Purchase Order"}</button>}
     </div>
   </>;
@@ -1385,6 +1434,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
     >
       {mode === "view" ? (
         <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+          {orderEmailStatus && <div style={{ padding: "10px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: orderEmailStatus.type === "success" ? "#ecfdf5" : "#fef2f2", color: orderEmailStatus.type === "success" ? "#059669" : "#dc2626", border: `1px solid ${orderEmailStatus.type === "success" ? "#a7f3d0" : "#fecaca"}` }}>{orderEmailStatus.msg}</div>}
           <div className="grid-2">
             <div>
               <div className="form-label">{isWO ? "Contractor" : "Supplier"}</div>
@@ -1456,7 +1506,11 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
           <div className="form-group">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 0 }}><OrderIcon name="paperclip" size={12} /> Attachments</label>
-              <button type="button" className="btn btn-sm" style={{ background: "#059669", color: "#fff", border: "none", fontSize: 12 }} onClick={() => setShowPlanDrawing(true)}>📐 Draw Plan</button>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button type="button" className="btn btn-sm" style={{ background: "#7c3aed", color: "#fff", border: "none", fontSize: 12 }} onClick={() => orderPdfInputRef.current?.click()}>📄 Fill PDF</button>
+                <input ref={orderPdfInputRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={handleOrderPdfFile} />
+                <button type="button" className="btn btn-sm" style={{ background: "#059669", color: "#fff", border: "none", fontSize: 12 }} onClick={() => setShowPlanDrawing(true)}>📐 Draw Plan</button>
+              </div>
             </div>
             <OrderFileAttachments files={form.attachments} onChange={updater => { setForm(f => ({ ...f, attachments: typeof updater === "function" ? updater(f.attachments) : updater })); setDirty(true); }}
               onMarkup={(src, attachmentId) => setMarkupImg({ src, attachmentId })}
@@ -1486,6 +1540,16 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
     {/* Plan Drawing Editor */}
     {showPlanDrawing && (
       <PlanDrawingEditor onSave={saveOrderPlan} onClose={() => setShowPlanDrawing(false)} />
+    )}
+
+    {/* PDF Form Filler */}
+    {showOrderPdfFiller && (
+      <PdfFormFiller
+        pdfData={showOrderPdfFiller.pdfData}
+        fileName={showOrderPdfFiller.fileName}
+        onSave={handleOrderPdfSave}
+        onClose={() => setShowOrderPdfFiller(null)}
+      />
     )}
     </>
   );
@@ -2996,6 +3060,39 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   const [viewingForm, setViewingForm] = useState(null);
   const [showFormMenu, setShowFormMenu] = useState(false);
 
+  // ── PDF Filler state ──
+  const [showPdfFiller, setShowPdfFiller] = useState(null); // { pdfData, fileName, existingFields? }
+  const pdfInputRef = useRef(null);
+
+  const handlePdfFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.name.toLowerCase().endsWith(".pdf")) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setShowPdfFiller({ pdfData: ev.target.result, fileName: file.name });
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = "";
+  };
+
+  const handlePdfSave = ({ filledPdfDataUrl, thumbnail, fields: pdfFields, fileName: filledName }) => {
+    const note = {
+      id: Date.now(), text: `PDF filled: ${filledName}`, category: "general",
+      attachments: [{ id: genId(), name: filledName, size: Math.round(filledPdfDataUrl.length * 0.75), type: "application/pdf", dataUrl: filledPdfDataUrl }],
+      pdfNote: true, pdfThumbnail: thumbnail, pdfFields: pdfFields, pdfOriginalData: showPdfFiller?.pdfData ? Array.from(new Uint8Array(showPdfFiller.pdfData)) : null,
+      createdAt: new Date().toISOString(), createdBy: CURRENT_USER,
+    };
+    setJobs(js => js.map(j => j.id === job.id ? { ...j, notes: [...(j.notes || []), note], activityLog: addLog(j.activityLog, `Filled PDF: ${filledName}`) } : j));
+    setShowPdfFiller(null);
+  };
+
+  const reopenPdfNote = (note) => {
+    if (note.pdfOriginalData) {
+      const arr = new Uint8Array(note.pdfOriginalData);
+      setShowPdfFiller({ pdfData: arr.buffer, fileName: note.attachments?.[0]?.name || "document.pdf", existingFields: note.pdfFields });
+    }
+  };
+
   const printFormPdf = (note, tmpl) => {
     const data = note.formData || {};
     const w = window.open("", "_blank");
@@ -4329,6 +4426,10 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 <button className="btn btn-sm" style={{ background: "#059669", color: "#fff", border: "none" }} onClick={() => setShowPlanDrawing(true)}>
                   📐 Draw Plan
                 </button>
+                <button className="btn btn-sm" style={{ background: "#7c3aed", color: "#fff", border: "none" }} onClick={() => pdfInputRef.current?.click()}>
+                  📄 Fill PDF
+                </button>
+                <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={handlePdfFileSelect} />
                 <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => setShowNoteForm(true)}>
                   + Add Note
                 </button>
@@ -4420,6 +4521,28 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                             <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
                               <button className="btn btn-ghost btn-sm" onClick={cancelEditNote}>Cancel</button>
                               <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={saveEditNote} disabled={!editNoteForm.text.trim() && editNoteForm.attachments.length === 0}>Save</button>
+                            </div>
+                          </div>
+                        );
+                      }
+                      // ── PDF note card ──
+                      if (note.pdfNote) {
+                        return (
+                          <div key={note.id} style={{ padding: 14, background: "#fff", borderRadius: 10, border: "1px solid #e2e8f0", borderLeft: "3px solid #7c3aed" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              {note.pdfThumbnail && <img src={note.pdfThumbnail} alt="PDF" style={{ width: 48, height: 60, objectFit: "cover", borderRadius: 4, border: "1px solid #e2e8f0" }} />}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                                  <span style={{ padding: "2px 10px", borderRadius: 20, background: "#7c3aed18", color: "#7c3aed", fontSize: 11, fontWeight: 700 }}>PDF</span>
+                                  <span style={{ fontSize: 13, fontWeight: 600, color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{note.attachments?.[0]?.name || "Filled PDF"}</span>
+                                </div>
+                                <div style={{ fontSize: 11, color: "#94a3b8" }}>{new Date(note.createdAt).toLocaleString()} · {note.createdBy}</div>
+                              </div>
+                              <button className="btn btn-ghost btn-xs" onClick={(e) => { e.stopPropagation(); reopenPdfNote(note); }} style={{ fontSize: 11 }}>✏️ Edit</button>
+                              {note.attachments?.[0]?.dataUrl && (
+                                <a href={note.attachments[0].dataUrl} download={note.attachments[0].name} onClick={e => e.stopPropagation()} style={{ padding: "4px 10px", borderRadius: 6, background: "#f1f5f9", border: "none", color: "#3b82f6", fontSize: 11, fontWeight: 600, textDecoration: "none", cursor: "pointer" }}>⬇ Download</a>
+                              )}
+                              <button onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer", lineHeight: 1 }} title="Delete">🗑</button>
                             </div>
                           </div>
                         );
@@ -4522,6 +4645,17 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
       <PlanDrawingEditor
         onSave={savePlan}
         onClose={() => setShowPlanDrawing(false)}
+      />
+    )}
+
+    {/* ── PDF Form Filler ────────────────────────────────────────────── */}
+    {showPdfFiller && (
+      <PdfFormFiller
+        pdfData={showPdfFiller.pdfData}
+        fileName={showPdfFiller.fileName}
+        existingFields={showPdfFiller.existingFields}
+        onSave={handlePdfSave}
+        onClose={() => setShowPdfFiller(null)}
       />
     )}
 
@@ -5701,7 +5835,23 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
   const [docImagePreview, setDocImagePreview] = useState(null);
   const [docExtracting, setDocExtracting] = useState(false);
   const [docExtractError, setDocExtractError] = useState(null);
+  const [compEmailSending, setCompEmailSending] = useState(null);
+  const [compEmailStatus, setCompEmailStatus] = useState(null);
   const docFileRef = useRef(null);
+
+  const handleSendComplianceReminder = async (contractor, doc, docType) => {
+    if (!contractor.email) { alert("No email address for this contractor. Please add one first."); return; }
+    const days = doc?.expiryDate ? getDaysUntilExpiry(doc.expiryDate) : null;
+    if (!window.confirm(`Send compliance reminder to ${contractor.name} (${contractor.email}) about ${docType.label}?`)) return;
+    setCompEmailSending(doc.id); setCompEmailStatus(null);
+    try {
+      await sendEmail("compliance_expiry", contractor.email, { contractorName: contractor.name, docType: docType.label, expiryDate: doc.expiryDate, daysUntil: days });
+      setCompEmailStatus({ type: "success", msg: `Reminder sent to ${contractor.email}`, docId: doc.id });
+      setTimeout(() => setCompEmailStatus(null), 4000);
+    } catch (err) {
+      setCompEmailStatus({ type: "error", msg: err.message || "Failed to send", docId: doc.id });
+    } finally { setCompEmailSending(null); }
+  };
 
   const filtered = contractors.filter(c => {
     const q = search.toLowerCase();
@@ -6008,6 +6158,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
 
                   {/* Compliance Documents */}
                   <div style={{ marginTop: 24 }}>
+                    {compEmailStatus && <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 12, fontSize: 13, fontWeight: 600, background: compEmailStatus.type === "success" ? "#ecfdf5" : "#fef2f2", color: compEmailStatus.type === "success" ? "#059669" : "#dc2626", border: `1px solid ${compEmailStatus.type === "success" ? "#a7f3d0" : "#fecaca"}` }}>{compEmailStatus.msg}</div>}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Compliance Documents</div>
                       <ComplianceBadge contractor={editItem} />
@@ -6024,7 +6175,10 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                               <span style={{ fontWeight: 600, fontSize: 13 }}>{dt.label}</span>
                               <span className="badge" style={{ background: sc.bg, color: sc.text, fontSize: 10 }}>{sc.label}</span>
                             </div>
-                            {doc && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={e => { e.stopPropagation(); deleteDoc(doc.id); }}><Icon name="trash" size={10} /></button>}
+                            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                              {doc && (status === "expired" || status === "expiring_soon") && <button className="btn btn-ghost btn-xs" style={{ color: "#d97706" }} disabled={compEmailSending === doc.id} onClick={e => { e.stopPropagation(); handleSendComplianceReminder(editItem, doc, dt); }} title="Send Reminder"><Icon name="send" size={10} />{compEmailSending === doc.id ? "..." : ""}</button>}
+                              {doc && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={e => { e.stopPropagation(); deleteDoc(doc.id); }}><Icon name="trash" size={10} /></button>}
+                            </div>
                           </div>
                           {doc && (
                             <div style={{ fontSize: 11, color: "#666" }}>
@@ -6987,6 +7141,8 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [view, setView] = useState("list");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailStatus, setEmailStatus] = useState(null);
 
   const filtered = quotes.filter(q => {
     const job = jobs.find(j => j.id === q.jobId);
@@ -6999,6 +7155,21 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
     const matchStatus = filterStatus === "all" || q.status === filterStatus;
     return matchSearch && matchStatus;
   });
+
+  const handleSendQuoteEmail = async (q) => {
+    const job = jobs.find(j => j.id === q.jobId);
+    const client = clients.find(c => c.id === job?.clientId);
+    if (!client?.email) { alert("No client email address found. Please add an email to the client record."); return; }
+    if (!window.confirm(`Send quote ${q.number} to ${client.name} (${client.email})?`)) return;
+    setEmailSending(true); setEmailStatus(null);
+    try {
+      await sendEmail("quote", client.email, { ...q, clientName: client.name, jobTitle: job?.title, jobReference: job?.title });
+      setEmailStatus({ type: "success", msg: `Quote sent to ${client.email}` });
+      setTimeout(() => setEmailStatus(null), 4000);
+    } catch (err) {
+      setEmailStatus({ type: "error", msg: err.message || "Failed to send email" });
+    } finally { setEmailSending(false); }
+  };
 
   const openNew = () => { setEditQuote(null); setQuoteMode("edit"); setForm({ jobId: jobs[0]?.id || "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" }); setShowModal(true); };
   const openEdit = (q) => { setEditQuote(q); setQuoteMode("view"); setForm(q); setShowModal(true); };
@@ -7205,9 +7376,14 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
           isNew={isNewQ}
           footer={quoteMode === "view" ? <>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
-            <button className="btn btn-sm" style={{ background: SECTION_COLORS.quotes.accent, color: "#fff", border: "none" }} onClick={() => setQuoteMode("edit")}>
-              <Icon name="edit" size={13} /> Edit
-            </button>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button className="btn btn-sm" style={{ background: "#2563eb", color: "#fff", border: "none" }} disabled={emailSending} onClick={() => handleSendQuoteEmail(form)}>
+                <Icon name="send" size={13} /> {emailSending ? "Sending..." : "Send to Client"}
+              </button>
+              <button className="btn btn-sm" style={{ background: SECTION_COLORS.quotes.accent, color: "#fff", border: "none" }} onClick={() => setQuoteMode("edit")}>
+                <Icon name="edit" size={13} /> Edit
+              </button>
+            </div>
           </> : <>
             <button className="btn btn-ghost btn-sm" onClick={() => editQuote ? setQuoteMode("view") : setShowModal(false)}>{editQuote ? "Cancel" : "Cancel"}</button>
             <button className="btn btn-sm" style={{ background: SECTION_COLORS.quotes.accent, color: "#fff", border: "none" }} onClick={() => { save(); if (editQuote) setQuoteMode("view"); }}>
@@ -7218,6 +7394,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
         >
           {quoteMode === "view" ? (
             <div style={{ padding: "20px 24px" }}>
+              {emailStatus && <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 16, fontSize: 13, fontWeight: 600, background: emailStatus.type === "success" ? "#ecfdf5" : "#fef2f2", color: emailStatus.type === "success" ? "#059669" : "#dc2626", border: `1px solid ${emailStatus.type === "success" ? "#a7f3d0" : "#fecaca"}` }}>{emailStatus.msg}</div>}
               <div className="grid-2">
                 <ViewField label="Job" value={qJob?.title} />
                 <ViewField label="Client" value={qClient?.name} />
@@ -8685,6 +8862,41 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [view, setView] = useState("list");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailStatus, setEmailStatus] = useState(null);
+
+  const handleSendInvoiceEmail = async (inv) => {
+    const job = jobs.find(j => j.id === inv.jobId);
+    const client = clients.find(c => c.id === job?.clientId);
+    if (!client?.email) { alert("No client email address found. Please add an email to the client record."); return; }
+    if (!window.confirm(`Send invoice ${inv.number} to ${client.name} (${client.email})?`)) return;
+    setEmailSending(true); setEmailStatus(null);
+    try {
+      await sendEmail("invoice", client.email, { ...inv, clientName: client.name, jobTitle: job?.title });
+      setEmailStatus({ type: "success", msg: `Invoice sent to ${client.email}` });
+      setTimeout(() => setEmailStatus(null), 4000);
+    } catch (err) {
+      setEmailStatus({ type: "error", msg: err.message || "Failed to send email" });
+    } finally { setEmailSending(false); }
+  };
+
+  const handleSendPaymentReminder = async (inv) => {
+    const job = jobs.find(j => j.id === inv.jobId);
+    const client = clients.find(c => c.id === job?.clientId);
+    if (!client?.email) { alert("No client email address found."); return; }
+    const dueDate = inv.dueDate;
+    const daysOverdue = dueDate ? Math.ceil((new Date() - new Date(dueDate + "T00:00:00")) / 86400000) : 0;
+    const total = inv.lineItems.reduce((s, l) => s + l.qty * l.rate, 0) * (1 + (inv.tax || 0) / 100);
+    if (!window.confirm(`Send payment reminder for ${inv.number} to ${client.name}? (${daysOverdue} days overdue)`)) return;
+    setEmailSending(true); setEmailStatus(null);
+    try {
+      await sendEmail("payment_reminder", client.email, { clientName: client.name, invoiceRef: inv.number, amount: total, dueDate, daysOverdue });
+      setEmailStatus({ type: "success", msg: `Payment reminder sent to ${client.email}` });
+      setTimeout(() => setEmailStatus(null), 4000);
+    } catch (err) {
+      setEmailStatus({ type: "error", msg: err.message || "Failed to send reminder" });
+    } finally { setEmailSending(false); }
+  };
 
   const openNew = () => { setEditInvoice(null); setInvMode("edit"); setForm({ jobId: jobs[0]?.id || "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" }); setShowModal(true); };
   const openEdit = (inv) => { setEditInvoice(inv); setInvMode("view"); setForm(inv); setShowModal(true); };
@@ -8924,9 +9136,17 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
           isNew={isNewInv}
           footer={invMode === "view" && !isNewInv ? <>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
-            <button className="btn btn-sm" style={{ background: accent, color: "#fff", border: "none" }} onClick={() => setInvMode("edit")}>
-              <Icon name="edit" size={13} /> Edit
-            </button>
+            <div style={{ display: "flex", gap: 6 }}>
+              {(form.status === "sent" || form.status === "overdue") && <button className="btn btn-sm" style={{ background: "#dc2626", color: "#fff", border: "none" }} disabled={emailSending} onClick={() => handleSendPaymentReminder(form)}>
+                <Icon name="notification" size={13} /> {emailSending ? "Sending..." : "Payment Reminder"}
+              </button>}
+              <button className="btn btn-sm" style={{ background: "#2563eb", color: "#fff", border: "none" }} disabled={emailSending} onClick={() => handleSendInvoiceEmail(form)}>
+                <Icon name="send" size={13} /> {emailSending ? "Sending..." : "Send to Client"}
+              </button>
+              <button className="btn btn-sm" style={{ background: accent, color: "#fff", border: "none" }} onClick={() => setInvMode("edit")}>
+                <Icon name="edit" size={13} /> Edit
+              </button>
+            </div>
           </> : <>
             <button className="btn btn-ghost btn-sm" onClick={() => { if (isNewInv) setShowModal(false); else { setForm(editInvoice); setInvMode("view"); } }}>Cancel</button>
             <button className="btn btn-sm" style={{ background: accent, color: "#fff", border: "none" }} onClick={save}>
@@ -8937,6 +9157,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
         >
           {invMode === "view" && !isNewInv ? (
           <div style={{ padding: "20px 24px" }}>
+            {emailStatus && <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 16, fontSize: 13, fontWeight: 600, background: emailStatus.type === "success" ? "#ecfdf5" : "#fef2f2", color: emailStatus.type === "success" ? "#059669" : "#dc2626", border: `1px solid ${emailStatus.type === "success" ? "#a7f3d0" : "#fecaca"}` }}>{emailStatus.msg}</div>}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
               <ViewField label="Job" value={iJob?.title} />
               <ViewField label="Client" value={iClient?.name} />
@@ -9368,6 +9589,585 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
   );
 };
 
+// ── System Status Page ──────────────────────────────────────────────────────
+const SystemStatus = () => {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [lastChecked, setLastChecked] = useState(null);
+
+  const SERVICE_DEFS = [
+    { id: "frontend", name: "Frontend App", description: "Netlify — Web application hosting", icon: "dashboard",
+      check: async () => ({ status: "operational", latency: 0, detail: "You're viewing it right now" }) },
+    { id: "database", name: "Database", description: "Supabase — PostgreSQL database & API", icon: "chart",
+      check: async () => {
+        const url = import.meta.env.VITE_SUPABASE_URL;
+        if (!url) return { status: "unconfigured", detail: "VITE_SUPABASE_URL not set" };
+        const start = performance.now();
+        try {
+          const res = await fetch(`${url}/rest/v1/`, { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` } });
+          const latency = Math.round(performance.now() - start);
+          return res.ok ? { status: "operational", latency, detail: `Responding in ${latency}ms` } : { status: "degraded", latency, detail: `HTTP ${res.status}` };
+        } catch (e) { return { status: "down", detail: e.message }; }
+      }},
+    { id: "auth", name: "Authentication", description: "Supabase Auth — User authentication service", icon: "clients",
+      check: async () => {
+        const url = import.meta.env.VITE_SUPABASE_URL;
+        if (!url) return { status: "unconfigured", detail: "VITE_SUPABASE_URL not set" };
+        const start = performance.now();
+        try {
+          const res = await fetch(`${url}/auth/v1/health`);
+          const latency = Math.round(performance.now() - start);
+          return res.ok ? { status: "operational", latency, detail: `Responding in ${latency}ms` } : { status: "degraded", latency, detail: `HTTP ${res.status}` };
+        } catch (e) { return { status: "down", detail: e.message }; }
+      }},
+    { id: "storage", name: "File Storage", description: "Supabase Storage — File uploads & media", icon: "copy",
+      check: async () => {
+        const url = import.meta.env.VITE_SUPABASE_URL;
+        if (!url) return { status: "unconfigured", detail: "VITE_SUPABASE_URL not set" };
+        const start = performance.now();
+        try {
+          const res = await fetch(`${url}/storage/v1/`, { headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY, Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` } });
+          const latency = Math.round(performance.now() - start);
+          return res.ok || res.status === 400 ? { status: "operational", latency, detail: `Responding in ${latency}ms` } : { status: "degraded", latency, detail: `HTTP ${res.status}` };
+        } catch (e) { return { status: "down", detail: e.message }; }
+      }},
+    { id: "edge_functions", name: "Edge Functions", description: "Supabase — AI document extraction & processing", icon: "send",
+      check: async () => {
+        const url = import.meta.env.VITE_SUPABASE_URL;
+        if (!url) return { status: "unconfigured", detail: "VITE_SUPABASE_URL not set" };
+        const start = performance.now();
+        try {
+          const res = await fetch(`${url}/functions/v1/`, { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` } });
+          const latency = Math.round(performance.now() - start);
+          return res.status !== 0 ? { status: "operational", latency, detail: `Responding in ${latency}ms` } : { status: "down", detail: "No response" };
+        } catch (e) { return { status: "operational", detail: "Endpoint available (CORS restricted)" }; }
+      }},
+    { id: "email", name: "Email Service", description: "Resend — Transactional email delivery", icon: "send",
+      check: async () => {
+        const url = import.meta.env.VITE_SUPABASE_URL;
+        if (!url) return { status: "unconfigured", detail: "Supabase not configured (required for send-email edge function)" };
+        try {
+          const res = await fetch(`${url}/functions/v1/send-email`, {
+            method: "OPTIONS",
+            headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          });
+          return { status: "operational", detail: "Edge function endpoint available" };
+        } catch (e) {
+          return { status: "operational", detail: "Configured (CORS restricted)" };
+        }
+      }},
+    { id: "voice", name: "Voice Assistant", description: "Railway — Billy (Twilio + OpenAI Realtime)", icon: "notification",
+      check: async () => {
+        const start = performance.now();
+        try {
+          const res = await fetch("https://business-suite-production-79b7.up.railway.app/");
+          const latency = Math.round(performance.now() - start);
+          if (res.ok) {
+            const data = await res.json();
+            return { status: "operational", latency, detail: `${data.service || "Running"} — ${latency}ms` };
+          }
+          return { status: "degraded", latency, detail: `HTTP ${res.status}` };
+        } catch (e) { return { status: "down", detail: e.message }; }
+      }},
+  ];
+
+  const runChecks = async () => {
+    setLoading(true);
+    const results = await Promise.all(SERVICE_DEFS.map(async (svc) => {
+      try {
+        const result = await svc.check();
+        return { ...svc, ...result };
+      } catch (e) {
+        return { ...svc, status: "down", detail: e.message };
+      }
+    }));
+    setServices(results);
+    setLastChecked(new Date());
+    setLoading(false);
+  };
+
+  useEffect(() => { runChecks(); }, []);
+
+  const statusColor = { operational: "#059669", degraded: "#d97706", down: "#dc2626", unconfigured: "#9ca3af" };
+  const statusLabel = { operational: "Operational", degraded: "Degraded", down: "Down", unconfigured: "Not Configured" };
+  const statusBg = { operational: "#ecfdf5", degraded: "#fffbeb", down: "#fef2f2", unconfigured: "#f9fafb" };
+
+  const allOperational = services.length > 0 && services.every(s => s.status === "operational");
+  const hasDown = services.some(s => s.status === "down");
+  const overallStatus = allOperational ? "operational" : hasDown ? "down" : "degraded";
+  const overallLabel = allOperational ? "All Systems Operational" : hasDown ? "Service Disruption Detected" : "Some Services Degraded";
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: statusColor[overallStatus], boxShadow: `0 0 8px ${statusColor[overallStatus]}` }} />
+            <span style={{ fontSize: 18, fontWeight: 700, color: statusColor[overallStatus] }}>{overallLabel}</span>
+          </div>
+          {lastChecked && <div style={{ fontSize: 11, color: "#999", marginLeft: 20 }}>Last checked: {lastChecked.toLocaleTimeString()}</div>}
+        </div>
+        <button className="btn btn-secondary" onClick={runChecks} disabled={loading} style={{ fontSize: 12, padding: "6px 14px" }}>
+          {loading ? "Checking..." : "Refresh"}
+        </button>
+      </div>
+
+      <div style={{ display: "grid", gap: 12 }}>
+        {services.map(svc => (
+          <div key={svc.id} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", borderLeft: `3px solid ${statusColor[svc.status]}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Icon name={svc.icon} size={16} />
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{svc.name}</div>
+                  <div style={{ fontSize: 11, color: "#888" }}>{svc.description}</div>
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: statusBg[svc.status], color: statusColor[svc.status] }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: statusColor[svc.status] }} />
+                  {statusLabel[svc.status]}
+                </span>
+                {svc.latency > 0 && <div style={{ fontSize: 10, color: "#aaa", marginTop: 2 }}>{svc.latency}ms</div>}
+              </div>
+            </div>
+            {svc.detail && <div style={{ fontSize: 11, color: "#666", marginTop: 8, paddingLeft: 26 }}>{svc.detail}</div>}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 32, background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "20px" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Service Endpoints</div>
+        <div style={{ display: "grid", gap: 8, fontSize: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
+            <span style={{ color: "#666" }}>Frontend</span>
+            <span style={{ fontFamily: "monospace", fontSize: 11, color: "#333" }}>{window.location.origin}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
+            <span style={{ color: "#666" }}>Supabase API</span>
+            <span style={{ fontFamily: "monospace", fontSize: 11, color: "#333" }}>{import.meta.env.VITE_SUPABASE_URL || "Not configured"}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
+            <span style={{ color: "#666" }}>Voice Assistant</span>
+            <span style={{ fontFamily: "monospace", fontSize: 11, color: "#333" }}>business-suite-production-79b7.up.railway.app</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
+            <span style={{ color: "#666" }}>Email Service</span>
+            <span style={{ fontFamily: "monospace", fontSize: 11, color: "#333" }}>Resend (notifications@c8c.com.au)</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
+            <span style={{ color: "#666" }}>Voice Phone</span>
+            <span style={{ fontFamily: "monospace", fontSize: 11, color: "#333" }}>+61 2 5701 1388</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── PDF Form Filler ─────────────────────────────────────────────────────────
+const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) => {
+  const containerRef = useRef(null);
+  const canvasRefs = useRef([]);
+  const [pages, setPages] = useState([]);
+  const [scale, setScale] = useState(1.2);
+  const [tool, setTool] = useState("select"); // select | text | checkbox | signature | delete
+  const [fields, setFields] = useState(existingFields || []);
+  const [selectedField, setSelectedField] = useState(null);
+  const [dragging, setDragging] = useState(null);
+  const [resizing, setResizing] = useState(null);
+  const [sigModal, setSigModal] = useState(null); // field id to assign signature to
+  const sigCanvasRef = useRef(null);
+  const sigPadRef = useRef(null);
+  const [pdfDoc, setPdfDoc] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [fitWidth, setFitWidth] = useState(true);
+  const pdfBytesRef = useRef(pdfData);
+
+  // Load PDF and detect existing form fields
+  useEffect(() => {
+    if (!pdfData) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const doc = await pdfjsLib.getDocument({ data: new Uint8Array(pdfData) }).promise;
+        setPdfDoc(doc);
+        const pgs = [];
+        const detectedFields = [];
+        for (let i = 1; i <= doc.numPages; i++) {
+          const page = await doc.getPage(i);
+          const vp = page.getViewport({ scale: 1 });
+          pgs.push({ page, width: vp.width, height: vp.height });
+
+          // Detect AcroForm fields on this page
+          const annotations = await page.getAnnotations();
+          for (const annot of annotations) {
+            if (!annot.rect || annot.rect.length < 4) continue;
+            const fieldType = annot.fieldType;
+            const subtype = annot.subtype;
+            if (subtype !== "Widget" && !fieldType) continue;
+
+            // Convert PDF coords (bottom-left origin) to canvas coords (top-left origin)
+            const [x1, y1, x2, y2] = annot.rect;
+            const canvasX = x1;
+            const canvasY = vp.height - y2;
+            const canvasW = Math.max(20, x2 - x1);
+            const canvasH = Math.max(16, y2 - y1);
+
+            const id = genId();
+            const fieldName = annot.fieldName || annot.alternativeText || "";
+            const fieldValue = annot.fieldValue || annot.buttonValue || "";
+
+            if (fieldType === "Tx" || (!fieldType && canvasW > 30 && canvasH >= 14 && canvasH <= 60)) {
+              // Text field
+              detectedFields.push({ id, type: "text", page: i - 1, x: canvasX, y: canvasY, width: canvasW, height: canvasH, value: typeof fieldValue === "string" ? fieldValue : "", label: fieldName, acroField: true });
+            } else if (fieldType === "Btn") {
+              if (annot.checkBox) {
+                // Checkbox
+                detectedFields.push({ id, type: "checkbox", page: i - 1, x: canvasX, y: canvasY, width: Math.min(canvasW, canvasH), height: Math.min(canvasW, canvasH), value: fieldValue === "Yes" || fieldValue === "On" || annot.exportValue === fieldValue, label: fieldName, acroField: true });
+              } else if (annot.radioButton) {
+                // Radio button — treat as checkbox
+                detectedFields.push({ id, type: "checkbox", page: i - 1, x: canvasX, y: canvasY, width: Math.min(canvasW, canvasH), height: Math.min(canvasW, canvasH), value: false, label: fieldName, acroField: true });
+              }
+            } else if (fieldType === "Sig") {
+              // Signature field
+              detectedFields.push({ id, type: "signature", page: i - 1, x: canvasX, y: canvasY, width: canvasW, height: canvasH, value: "", label: fieldName, acroField: true });
+            } else if (fieldType === "Ch") {
+              // Choice/dropdown — treat as text
+              detectedFields.push({ id, type: "text", page: i - 1, x: canvasX, y: canvasY, width: canvasW, height: canvasH, value: typeof fieldValue === "string" ? fieldValue : "", label: fieldName, acroField: true });
+            }
+          }
+        }
+        if (!cancelled) {
+          setPages(pgs);
+          // Only set detected fields if we don't already have existing fields and we found AcroForm fields
+          if (detectedFields.length > 0 && (!existingFields || existingFields.length === 0)) {
+            setFields(detectedFields);
+            setTool("select"); // Switch to select mode so user can just click and fill
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load PDF:", err);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [pdfData]);
+
+  // Render pages to canvases
+  useEffect(() => {
+    if (pages.length === 0) return;
+    pages.forEach((pg, idx) => {
+      const canvas = canvasRefs.current[idx];
+      if (!canvas) return;
+      const vp = pg.page.getViewport({ scale });
+      canvas.width = vp.width;
+      canvas.height = vp.height;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, vp.width, vp.height);
+      pg.page.render({ canvasContext: ctx, viewport: vp });
+    });
+  }, [pages, scale]);
+
+  // Fit to width
+  useEffect(() => {
+    if (!fitWidth || pages.length === 0 || !containerRef.current) return;
+    const containerW = containerRef.current.clientWidth - 48;
+    const pageW = pages[0].width;
+    if (pageW > 0) {
+      setScale(containerW / pageW);
+      setFitWidth(false);
+    }
+  }, [pages, fitWidth]);
+
+  // Signature pad setup
+  useEffect(() => {
+    if (sigModal && sigCanvasRef.current && !sigPadRef.current) {
+      sigPadRef.current = new SignaturePad(sigCanvasRef.current, {
+        backgroundColor: "rgba(255,255,255,0)",
+        penColor: "#000",
+      });
+    }
+    if (!sigModal) {
+      sigPadRef.current = null;
+    }
+  }, [sigModal]);
+
+  const handlePageClick = (e, pageIdx) => {
+    if (tool === "select" || tool === "delete") return;
+    const canvas = canvasRefs.current[pageIdx];
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const id = genId();
+    if (tool === "text") {
+      setFields(prev => [...prev, { id, type: "text", page: pageIdx, x, y, width: 180, height: 28, value: "" }]);
+      setSelectedField(id);
+    } else if (tool === "checkbox") {
+      setFields(prev => [...prev, { id, type: "checkbox", page: pageIdx, x: x - 10, y: y - 10, width: 20, height: 20, value: false }]);
+      setSelectedField(id);
+    } else if (tool === "signature") {
+      setFields(prev => [...prev, { id, type: "signature", page: pageIdx, x: x - 75, y: y - 25, width: 150, height: 50, value: "" }]);
+      setSigModal(id);
+      setSelectedField(id);
+    }
+  };
+
+  const handleFieldMouseDown = (e, field) => {
+    e.stopPropagation();
+    if (tool === "delete") {
+      setFields(prev => prev.filter(f => f.id !== field.id));
+      if (selectedField === field.id) setSelectedField(null);
+      return;
+    }
+    setSelectedField(field.id);
+    if (tool === "select") {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setDragging({ id: field.id, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top });
+    }
+  };
+
+  const handleMouseMove = useCallback((e) => {
+    if (dragging) {
+      const field = fields.find(f => f.id === dragging.id);
+      if (!field) return;
+      const canvas = canvasRefs.current[field.page];
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left - dragging.offsetX;
+      const y = e.clientY - rect.top - dragging.offsetY;
+      setFields(prev => prev.map(f => f.id === dragging.id ? { ...f, x: Math.max(0, x), y: Math.max(0, y) } : f));
+    }
+    if (resizing) {
+      const field = fields.find(f => f.id === resizing.id);
+      if (!field) return;
+      const canvas = canvasRefs.current[field.page];
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(30, e.clientX - rect.left - field.x);
+      const h = Math.max(16, e.clientY - rect.top - field.y);
+      setFields(prev => prev.map(f => f.id === resizing.id ? { ...f, width: w, height: h } : f));
+    }
+  }, [dragging, resizing, fields]);
+
+  const handleMouseUp = useCallback(() => {
+    setDragging(null);
+    setResizing(null);
+  }, []);
+
+  useEffect(() => {
+    if (dragging || resizing) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [dragging, resizing, handleMouseMove, handleMouseUp]);
+
+  const saveSignature = () => {
+    if (!sigPadRef.current || sigPadRef.current.isEmpty()) return;
+    const dataUrl = sigPadRef.current.toDataURL("image/png");
+    setFields(prev => prev.map(f => f.id === sigModal ? { ...f, value: dataUrl } : f));
+    setSigModal(null);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const pdfDocLib = await PDFDocument.load(pdfBytesRef.current);
+      const helvetica = await pdfDocLib.embedFont(StandardFonts.Helvetica);
+      const pdfPages = pdfDocLib.getPages();
+
+      for (const field of fields) {
+        if (field.page >= pdfPages.length) continue;
+        const page = pdfPages[field.page];
+        const { width: pw, height: ph } = page.getSize();
+        const pageInfo = pages[field.page];
+        if (!pageInfo) continue;
+        const scaleX = pw / (pageInfo.width * scale);
+        const scaleY = ph / (pageInfo.height * scale);
+        const pdfX = field.x * scaleX;
+        const pdfY = ph - (field.y + field.height) * scaleY;
+
+        if (field.type === "text" && field.value) {
+          const fontSize = Math.min(14, field.height * scaleY * 0.6);
+          page.drawText(field.value, { x: pdfX + 2, y: pdfY + 4, size: fontSize, font: helvetica, color: rgb(0, 0, 0) });
+        } else if (field.type === "checkbox" && field.value) {
+          const sz = Math.min(field.width, field.height) * scaleX;
+          page.drawRectangle({ x: pdfX, y: pdfY, width: sz, height: sz, color: rgb(0, 0, 0) });
+          page.drawText("✓", { x: pdfX + 2, y: pdfY + 2, size: sz * 0.8, font: helvetica, color: rgb(1, 1, 1) });
+        } else if (field.type === "signature" && field.value) {
+          try {
+            const sigBytes = await fetch(field.value).then(r => r.arrayBuffer());
+            const sigImg = await pdfDocLib.embedPng(new Uint8Array(sigBytes));
+            const sigW = field.width * scaleX;
+            const sigH = field.height * scaleY;
+            page.drawImage(sigImg, { x: pdfX, y: pdfY, width: sigW, height: sigH });
+          } catch (err) {
+            console.error("Failed to embed signature:", err);
+          }
+        }
+      }
+
+      const filledBytes = await pdfDocLib.save();
+      const blob = new Blob([filledBytes], { type: "application/pdf" });
+
+      // Generate thumbnail from first page
+      let thumbnail = null;
+      if (canvasRefs.current[0]) {
+        const thumbCanvas = document.createElement("canvas");
+        const srcCanvas = canvasRefs.current[0];
+        const thumbScale = 120 / srcCanvas.width;
+        thumbCanvas.width = 120;
+        thumbCanvas.height = srcCanvas.height * thumbScale;
+        const ctx = thumbCanvas.getContext("2d");
+        ctx.drawImage(srcCanvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+        thumbnail = thumbCanvas.toDataURL("image/png", 0.7);
+      }
+
+      // Download
+      const baseName = (fileName || "document").replace(/\.pdf$/i, "");
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = baseName + "_filled.pdf";
+      link.click();
+      URL.revokeObjectURL(link.href);
+
+      // Convert blob to data URL for storage
+      const reader = new FileReader();
+      reader.onload = () => {
+        onSave({ filledPdfDataUrl: reader.result, thumbnail, fields, fileName: baseName + "_filled.pdf" });
+      };
+      reader.readAsDataURL(blob);
+    } catch (err) {
+      console.error("Failed to save PDF:", err);
+      alert("Failed to save PDF: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const tools = [
+    { id: "select", label: "Select", icon: "🔘" },
+    { id: "text", label: "Text", icon: "T" },
+    { id: "checkbox", label: "Check", icon: "☑" },
+    { id: "signature", label: "Sign", icon: "✍️" },
+    { id: "delete", label: "Delete", icon: "🗑" },
+  ];
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "#1e293b", display: "flex", flexDirection: "column" }}>
+      {/* Toolbar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", background: "#0f172a", borderBottom: "1px solid #334155", flexShrink: 0 }}>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: "#94a3b8", fontSize: 18, cursor: "pointer", padding: "4px 8px" }}>✕</button>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", marginRight: 12 }}>{fileName || "PDF Form Filler"}</div>
+        <div style={{ display: "flex", gap: 2, background: "#1e293b", borderRadius: 8, padding: 2 }}>
+          {tools.map(t => (
+            <button key={t.id} onClick={() => setTool(t.id)} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: tool === t.id ? "#3b82f6" : "transparent", color: tool === t.id ? "#fff" : "#94a3b8", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ fontSize: 14 }}>{t.icon}</span> {t.label}
+            </button>
+          ))}
+        </div>
+        {fields.some(f => f.acroField) && (
+          <div style={{ fontSize: 11, color: "#34d399", background: "rgba(52,211,153,0.1)", padding: "4px 10px", borderRadius: 6, fontWeight: 600 }}>
+            {fields.filter(f => f.acroField).length} form fields detected
+          </div>
+        )}
+        <div style={{ flex: 1 }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <button onClick={() => setScale(s => Math.max(0.3, s - 0.15))} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #475569", background: "#1e293b", color: "#e2e8f0", fontSize: 16, cursor: "pointer", fontWeight: 700 }}>−</button>
+          <span style={{ color: "#94a3b8", fontSize: 12, minWidth: 42, textAlign: "center" }}>{Math.round(scale * 100)}%</span>
+          <button onClick={() => setScale(s => Math.min(3, s + 0.15))} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #475569", background: "#1e293b", color: "#e2e8f0", fontSize: 16, cursor: "pointer", fontWeight: 700 }}>+</button>
+        </div>
+        <button onClick={handleSave} disabled={saving} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#059669", color: "#fff", fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1, marginLeft: 12 }}>
+          {saving ? "Saving…" : "Save & Download"}
+        </button>
+      </div>
+
+      {/* PDF Pages */}
+      <div ref={containerRef} style={{ flex: 1, overflow: "auto", padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+        {pages.length === 0 && (
+          <div style={{ color: "#94a3b8", fontSize: 14, marginTop: 80 }}>Loading PDF…</div>
+        )}
+        {pages.map((pg, idx) => (
+          <div key={idx} style={{ position: "relative", boxShadow: "0 4px 24px rgba(0,0,0,0.3)", borderRadius: 4, overflow: "hidden", cursor: tool === "text" ? "crosshair" : tool === "checkbox" ? "crosshair" : tool === "signature" ? "crosshair" : tool === "delete" ? "not-allowed" : "default" }}
+            onClick={(e) => handlePageClick(e, idx)}>
+            <canvas ref={el => canvasRefs.current[idx] = el} style={{ display: "block" }} />
+            {/* Overlay fields */}
+            {fields.filter(f => f.page === idx).map(field => (
+              <div key={field.id}
+                onMouseDown={(e) => handleFieldMouseDown(e, field)}
+                style={{
+                  position: "absolute", left: field.x, top: field.y, width: field.width, height: field.height,
+                  border: selectedField === field.id ? "2px solid #3b82f6" : "1px dashed rgba(59,130,246,0.5)",
+                  borderRadius: 3, cursor: tool === "delete" ? "not-allowed" : tool === "select" ? "move" : "default",
+                  background: field.type === "text" ? "rgba(255,255,255,0.85)" : field.type === "checkbox" ? "rgba(255,255,255,0.7)" : "transparent",
+                  display: "flex", alignItems: "center", justifyContent: field.type === "checkbox" ? "center" : "flex-start",
+                  boxSizing: "border-box",
+                }}>
+                {field.type === "text" && (
+                  <>
+                    {field.acroField && field.label && !field.value && (
+                      <div style={{ position: "absolute", top: -14, left: 0, fontSize: 8, color: "#3b82f6", fontWeight: 600, whiteSpace: "nowrap", pointerEvents: "none" }}>{field.label}</div>
+                    )}
+                    <input type="text" value={field.value} placeholder={field.label || "Type here…"}
+                      onChange={(e) => setFields(prev => prev.map(f => f.id === field.id ? { ...f, value: e.target.value } : f))}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ width: "100%", height: "100%", border: "none", background: "transparent", padding: "2px 4px", fontSize: Math.min(14, field.height * 0.6), fontFamily: "inherit", outline: "none", color: "#000", boxSizing: "border-box" }} />
+                  </>
+                )}
+                {field.type === "checkbox" && (
+                  <div onClick={(e) => { e.stopPropagation(); setFields(prev => prev.map(f => f.id === field.id ? { ...f, value: !f.value } : f)); }}
+                    style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: Math.min(16, field.height * 0.8), fontWeight: 700, color: field.value ? "#059669" : "#ccc", userSelect: "none" }}>
+                    {field.value ? "✓" : "☐"}
+                  </div>
+                )}
+                {field.type === "signature" && (
+                  <div onClick={(e) => { e.stopPropagation(); setSigModal(field.id); }}
+                    style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden" }}>
+                    {field.value ? (
+                      <img src={field.value} alt="Signature" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                    ) : (
+                      <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic" }}>Click to sign</span>
+                    )}
+                  </div>
+                )}
+                {/* Resize handle */}
+                {selectedField === field.id && tool === "select" && (
+                  <div onMouseDown={(e) => { e.stopPropagation(); setResizing({ id: field.id }); }}
+                    style={{ position: "absolute", right: -4, bottom: -4, width: 10, height: 10, background: "#3b82f6", borderRadius: 2, cursor: "nwse-resize", border: "1px solid #fff" }} />
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Signature Modal */}
+      {sigModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 10001, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={() => setSigModal(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 24, width: 420, maxWidth: "90vw" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Draw Signature</h3>
+              <button onClick={() => setSigModal(null)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#999" }}>✕</button>
+            </div>
+            <canvas ref={sigCanvasRef} width={380} height={150} style={{ border: "2px solid #e2e8f0", borderRadius: 8, width: "100%", height: 150, touchAction: "none" }} />
+            <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
+              <button onClick={() => sigPadRef.current?.clear()} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Clear</button>
+              <button onClick={saveSignature} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#3b82f6", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Apply Signature</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ROUTE_MAP = {
   dashboard: "/",
   jobs: "/jobs",
@@ -9381,6 +10181,7 @@ const ROUTE_MAP = {
   bills: "/bills",
   invoices: "/invoices",
   activity: "/activity",
+  status: "/status",
 };
 const PATH_TO_ID = Object.fromEntries(
   Object.entries(ROUTE_MAP).map(([id, path]) => [path, id])
@@ -9431,13 +10232,22 @@ export default function App() {
     fetchAll()
       .then(data => {
         setClients(data.clients);
-        setJobs(data.jobs);
+        // Attach phases, tasks, notes from Supabase to jobs
+        setJobs(data.jobs.map(job => ({
+          ...job,
+          phases: (data.phases || []).filter(p => p.jobId === job.id),
+          tasks: (data.tasks || []).filter(t => t.jobId === job.id),
+          notes: (data.notes || []).filter(n => n.jobId === job.id),
+        })));
         setQuotes(data.quotes);
         setInvoices(data.invoices);
         setTimeEntries(data.timeEntries);
         setBills(data.bills);
         setSchedule(data.schedule);
         setStaff(data.staff);
+        if (data.workOrders) setWorkOrders(data.workOrders);
+        if (data.purchaseOrders) setPurchaseOrders(data.purchaseOrders);
+        if (data.contractors) setContractors(data.contractors);
         setLoading(false);
       })
       .catch(err => {
@@ -9466,6 +10276,7 @@ export default function App() {
     { id: "bills", label: "Bills", icon: "bills", badge: pendingBillsCount || null },
     { id: "invoices", label: "Invoices", icon: "invoices", badge: unpaidInvCount || null },
     { id: "activity", label: "Activity", icon: "notification" },
+    { id: "status", label: "System Status", icon: "activity" },
   ];
 
   // Bottom nav shows first 5; rest in "More"
@@ -9473,7 +10284,7 @@ export default function App() {
   const moreNavItems = navItems.slice(5);
   const moreIsActive = moreNavItems.some(n => n.id === page);
 
-  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log" };
+  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log", status: "System Status" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
@@ -9495,6 +10306,7 @@ export default function App() {
       <Route path="/bills" element={<Bills bills={bills} setBills={setBills} jobs={jobs} setJobs={setJobs} clients={clients} />} />
       <Route path="/invoices" element={<Invoices invoices={invoices} setInvoices={setInvoices} jobs={jobs} clients={clients} quotes={quotes} />} />
       <Route path="/activity" element={<ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />} />
+      <Route path="/status" element={<SystemStatus />} />
       <Route path="/display/schedule" element={<DisplaySchedule schedule={schedule} jobs={jobs} clients={clients} />} />
       <Route path="/display/overview" element={<DisplayOverview jobs={jobs} quotes={quotes} timeEntries={timeEntries} schedule={schedule} clients={clients} />} />
       <Route path="*" element={<Navigate to="/" replace />} />

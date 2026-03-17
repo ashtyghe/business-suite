@@ -51,8 +51,8 @@ async function getJob({ job_id }) {
 }
 
 async function getSchedule({ start_date, end_date, assignee }) {
-  // schedule_entries table may not exist — check first
-  const exists = await tableExists('schedule_entries');
+  // Try the schedule view (scheduling.entries) first, fall back to jobs
+  const exists = await tableExists('schedule');
   if (!exists) {
     // Fall back to jobs with scheduled dates
     let query = supabase.from('jobs')
@@ -77,25 +77,17 @@ async function getSchedule({ start_date, end_date, assignee }) {
     };
   }
 
-  let query = supabase.from('schedule_entries')
+  let query = supabase.from('schedule')
     .select('*')
-    .gte('date', start_date)
-    .lte('date', end_date)
-    .order('date', { ascending: true });
-  if (assignee) {
-    query = query.ilike('assignee', `%${assignee}%`);
-  }
+    .gte('entry_date', start_date)
+    .lte('entry_date', end_date)
+    .order('entry_date', { ascending: true });
   const { data, error } = await query;
   if (error) throw new Error(`Failed to get schedule: ${error.message}`);
   return { entries: data || [], count: (data || []).length };
 }
 
 async function checkContractorCompliance({ contractor_name }) {
-  const exists = await tableExists('contractors');
-  if (!exists) {
-    return { contractors: [], count: 0, note: 'Contractors table not found in database. Contractors are currently stored in the frontend app only.' };
-  }
-
   let query = supabase.from('contractors').select('*');
   if (contractor_name) {
     query = query.ilike('name', `%${contractor_name}%`);
@@ -103,14 +95,25 @@ async function checkContractorCompliance({ contractor_name }) {
   const { data, error } = await query;
   if (error) throw new Error(`Failed to check compliance: ${error.message}`);
 
+  // Fetch all contractor documents
+  const contractorIds = (data || []).map(c => c.id);
+  let docs = [];
+  if (contractorIds.length) {
+    const { data: docData, error: docErr } = await supabase
+      .from('contractor_documents')
+      .select('*')
+      .in('contractor_id', contractorIds);
+    if (!docErr) docs = docData || [];
+  }
+
   const today = new Date().toISOString().split('T')[0];
   const results = (data || []).map((contractor) => {
-    const documents = contractor.documents || [];
-    const expiredDocs = documents.filter((doc) => doc.expiry && doc.expiry < today);
+    const documents = docs.filter(d => d.contractor_id === contractor.id);
+    const expiredDocs = documents.filter((doc) => doc.expiry_date && doc.expiry_date < today);
     const expiringDocs = documents.filter((doc) => {
-      if (!doc.expiry) return false;
+      if (!doc.expiry_date) return false;
       const daysUntil = Math.ceil(
-        (new Date(doc.expiry) - new Date()) / (1000 * 60 * 60 * 24)
+        (new Date(doc.expiry_date) - new Date()) / (1000 * 60 * 60 * 24)
       );
       return daysUntil > 0 && daysUntil <= 30;
     });
@@ -124,10 +127,10 @@ async function checkContractorCompliance({ contractor_name }) {
       expired_documents: expiredDocs.length,
       expiring_soon: expiringDocs.length,
       is_compliant: expiredDocs.length === 0,
-      expired_details: expiredDocs.map((d) => d.name || d.type),
+      expired_details: expiredDocs.map((d) => d.title || d.doc_type),
       expiring_details: expiringDocs.map((d) => ({
-        name: d.name || d.type,
-        expiry: d.expiry,
+        name: d.title || d.doc_type,
+        expiry: d.expiry_date,
       })),
     };
   });
@@ -165,17 +168,12 @@ async function getPendingBills({ status = 'linked', supplier }) {
 }
 
 async function getWorkOrders({ status, assignee }) {
-  const exists = await tableExists('work_orders');
-  if (!exists) {
-    return { work_orders: [], count: 0, note: 'Work orders table not found in database. Work orders are currently stored in the frontend app only.' };
-  }
-
   let query = supabase
     .from('work_orders')
     .select('*')
     .order('due_date', { ascending: true });
   if (status) query = query.eq('status', status);
-  if (assignee) query = query.ilike('assignee', `%${assignee}%`);
+  if (assignee) query = query.ilike('contractor_name', `%${assignee}%`);
   const { data, error } = await query;
   if (error) throw new Error(`Failed to get work orders: ${error.message}`);
   return { work_orders: data || [], count: (data || []).length };
@@ -200,14 +198,15 @@ async function getQuotes({ job_id, status }) {
 // ─── WRITE HANDLERS ────────────────────────────────────────────────
 
 async function addScheduleEntry({ job_id, date, title, time, assignee }) {
-  const exists = await tableExists('schedule_entries');
-  if (!exists) {
-    return { success: false, error: 'Schedule entries table not found. Schedule is currently managed in the frontend app.' };
-  }
-
   const { data, error } = await supabase
-    .from('schedule_entries')
-    .insert({ job_id: job_id || null, date, title, time: time || null, assignee: assignee || null })
+    .from('schedule')
+    .insert({
+      job_id: job_id || null,
+      entry_date: date,
+      title: title || null,
+      start_time: time || null,
+      notes: assignee ? `Assigned to ${assignee}` : null,
+    })
     .select()
     .single();
   if (error) throw new Error(`Failed to add schedule entry: ${error.message}`);
@@ -215,26 +214,30 @@ async function addScheduleEntry({ job_id, date, title, time, assignee }) {
 }
 
 async function addJobNote({ job_id, note }) {
-  // Try by job_number first
-  let query = supabase.from('jobs').select('id, description');
+  // Resolve job_number to UUID if needed
+  let actualJobId = job_id;
   if (job_id && job_id.startsWith('J-')) {
-    query = query.eq('job_number', job_id);
-  } else {
-    query = query.eq('id', job_id);
+    const { data: job, error: jobErr } = await supabase
+      .from('jobs')
+      .select('id')
+      .eq('job_number', job_id)
+      .single();
+    if (jobErr) throw new Error(`Failed to find job ${job_id}: ${jobErr.message}`);
+    actualJobId = job.id;
   }
-  const { data: job, error: fetchError } = await query.single();
-  if (fetchError) throw new Error(`Failed to fetch job: ${fetchError.message}`);
 
-  const timestamp = new Date().toISOString();
-  const noteText = `\n\n[${timestamp} - via voice] ${note}`;
-  const updatedDesc = (job.description || '') + noteText;
-
-  const { error: updateError } = await supabase
-    .from('jobs')
-    .update({ description: updatedDesc })
-    .eq('id', job.id);
-  if (updateError) throw new Error(`Failed to add note: ${updateError.message}`);
-  return { success: true, job_id: job.id, note, timestamp };
+  const { data, error } = await supabase
+    .from('job_notes')
+    .insert({
+      job_id: actualJobId,
+      text: note,
+      category: 'general',
+      created_by: 'voice',
+    })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to add note: ${error.message}`);
+  return { success: true, job_id: actualJobId, note_id: data.id, note, timestamp: data.created_at };
 }
 
 async function updateJobStatus({ job_id, status }) {
@@ -258,14 +261,9 @@ async function updateJobStatus({ job_id, status }) {
 }
 
 async function updateWorkOrderStatus({ work_order_id, status }) {
-  const exists = await tableExists('work_orders');
-  if (!exists) {
-    return { success: false, error: 'Work orders table not found in database.' };
-  }
-
   const { data, error } = await supabase
     .from('work_orders')
-    .update({ status })
+    .update({ status, updated_at: new Date().toISOString() })
     .eq('id', work_order_id)
     .select('*')
     .single();

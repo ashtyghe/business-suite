@@ -26,7 +26,12 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    getSession().then(async (session) => {
+    // Race the session check against a timeout so the app never hangs
+    const sessionTimeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Session check timed out')), 5000)
+    );
+
+    Promise.race([getSession(), sessionTimeout]).then(async (session) => {
       const authUser = session?.user || null;
       setUser(authUser);
       await resolveStaff(authUser);
@@ -37,19 +42,24 @@ export function AuthProvider({ children }) {
     });
 
     const { data: { subscription } } = onAuthStateChange(async (event, session) => {
-      const authUser = session?.user || null;
-      setUser(authUser);
-      await resolveStaff(authUser);
-      setLoading(false);
+      try {
+        const authUser = session?.user || null;
+        setUser(authUser);
+        await resolveStaff(authUser);
 
-      // Handle session expiry / sign out events
-      if (event === 'SIGNED_OUT') {
-        setStaff(null);
-      }
-      if (event === 'TOKEN_REFRESHED' && !session) {
-        setSessionMessage('Your session has expired. Please sign in again.');
-        setUser(null);
-        setStaff(null);
+        // Handle session expiry / sign out events
+        if (event === 'SIGNED_OUT') {
+          setStaff(null);
+        }
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          setSessionMessage('Your session has expired. Please sign in again.');
+          setUser(null);
+          setStaff(null);
+        }
+      } catch (err) {
+        console.error('Auth state change error:', err.message);
+      } finally {
+        setLoading(false);
       }
     });
 

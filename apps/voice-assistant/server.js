@@ -63,8 +63,9 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// Health check
+// Health check (CORS enabled for frontend status page)
 app.get('/', (_req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
   res.json({ status: 'ok', service: 'FieldOps Voice Assistant' });
 });
 

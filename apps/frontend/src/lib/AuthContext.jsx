@@ -30,6 +30,9 @@ export function AuthProvider({ children }) {
       const authUser = session?.user || null;
       setUser(authUser);
       await resolveStaff(authUser);
+    }).catch((err) => {
+      console.error('Auth session check failed:', err.message);
+    }).finally(() => {
       setLoading(false);
     });
 

@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry } from './lib/db';
 import { extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord } from './lib/supabase';
 import { useAuth } from './lib/AuthContext';
+import { changePassword, adminResetUserPassword } from './lib/auth';
 import * as fabric from "fabric";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
@@ -9920,6 +9921,17 @@ const Settings = ({ staff = [], setStaff }) => {
       }
     };
 
+    const handleResetPassword = async (s) => {
+      if (!window.confirm(`Send a password reset email to ${s.email}?`)) return;
+      setUpdateError(null);
+      try {
+        await adminResetUserPassword(s.email);
+        alert(`Password reset email sent to ${s.email}`);
+      } catch (err) {
+        setUpdateError(`Failed to send reset: ${err.message}`);
+      }
+    };
+
     return (
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
@@ -10074,9 +10086,12 @@ const Settings = ({ staff = [], setStaff }) => {
                     </td>
                     <td style={{ padding: "12px 16px", textAlign: "right" }}>
                       {!isSelf && (
-                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
                           <button className="btn btn-xs btn-ghost" style={{ fontSize: 10 }} onClick={() => { setEditingId(s.id); setEditRole(s.role); }}>
                             Change Role
+                          </button>
+                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10 }} onClick={() => handleResetPassword(s)}>
+                            Reset Password
                           </button>
                           <button className="btn btn-xs btn-ghost" style={{ fontSize: 10, color: s.active ? "#dc2626" : "#059669" }} onClick={() => handleToggleActive(s)}>
                             {s.active ? "Deactivate" : "Activate"}
@@ -10700,6 +10715,59 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
   );
 };
 
+// ── Change Password Modal ────────────────────────────────────────────────────
+const ChangePasswordModal = ({ onClose }) => {
+  const [pw, setPw] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+
+  const save = async (e) => {
+    e.preventDefault();
+    setError(null);
+    if (pw.length < 6) { setError("Password must be at least 6 characters"); return; }
+    if (pw !== confirm) { setError("Passwords do not match"); return; }
+    setSaving(true);
+    try {
+      await changePassword(pw);
+      setSuccess(true);
+    } catch (err) { setError(err.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
+      <div style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: "100%", maxWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }} onClick={e => e.stopPropagation()}>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Change Password</div>
+        <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>Enter a new password for your account</div>
+        {success ? (
+          <>
+            <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 6, padding: "10px 14px", fontSize: 12, color: "#059669", marginBottom: 16 }}>Password updated successfully.</div>
+            <button className="btn btn-ghost btn-sm" onClick={onClose} style={{ width: "100%" }}>Close</button>
+          </>
+        ) : (
+          <form onSubmit={save}>
+            {error && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, padding: "10px 14px", fontSize: 12, color: "#dc2626", marginBottom: 8 }}>{error}</div>}
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>New Password</label>
+            <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="••••••••" required autoFocus
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Confirm Password</label>
+            <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="••••••••" required
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 16 }} />
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-sm" style={{ background: "#111", color: "#fff", border: "none", opacity: saving ? 0.6 : 1 }} disabled={saving}>
+                {saving ? "Saving…" : "Update Password"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const ROUTE_MAP = {
   dashboard: "/",
   jobs: "/jobs",
@@ -10731,6 +10799,8 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [hoverNav, setHoverNav] = useState(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [clients, setClients] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [quotes, setQuotes] = useState([]);
@@ -10938,8 +11008,25 @@ export default function App() {
             );
           })}
         </div>
-        <div style={{ padding: "16px 20px", borderTop: "1px solid #1e1e1e" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ padding: "16px 20px", borderTop: "1px solid #1e1e1e", position: "relative" }}>
+          {/* User menu popover */}
+          {showUserMenu && !auth.isLocalDev && (
+            <div style={{ position: "absolute", bottom: "100%", left: 12, right: 12, background: "#1e1e1e", borderRadius: 8, border: "1px solid #333", padding: 4, marginBottom: 4, zIndex: 10 }}>
+              <button onClick={() => { setShowChangePassword(true); setShowUserMenu(false); }}
+                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px", background: "transparent", border: "none", color: "#ccc", fontSize: 12, cursor: "pointer", borderRadius: 6, fontFamily: "'Open Sans', sans-serif", textAlign: "left" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#333"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                Change Password
+              </button>
+              <button onClick={() => { auth.signOut(); setShowUserMenu(false); }}
+                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px", background: "transparent", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer", borderRadius: 6, fontFamily: "'Open Sans', sans-serif", textAlign: "left" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#333"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg>
+                Sign Out
+              </button>
+            </div>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: auth.isLocalDev ? "default" : "pointer" }} onClick={() => !auth.isLocalDev && setShowUserMenu(v => !v)}>
             <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#fff", color: "#111", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
               {(auth.staff?.name || "AJ").split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase()}
             </div>
@@ -10948,9 +11035,9 @@ export default function App() {
               <div style={{ fontSize: 10, color: "#555", textTransform: "capitalize" }}>{auth.staff?.role || "Admin"}</div>
             </div>
             {!auth.isLocalDev && (
-              <button onClick={() => auth.signOut()} title="Sign out" style={{ background: "transparent", border: "none", color: "#555", cursor: "pointer", padding: 4, flexShrink: 0, transition: "color 0.15s" }} onMouseEnter={e => e.target.style.color = "#fff"} onMouseLeave={e => e.target.style.color = "#555"}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg>
-              </button>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={showUserMenu ? "#fff" : "#555"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transition: "transform 0.15s", transform: showUserMenu ? "rotate(180deg)" : "rotate(0)" }}>
+                <polyline points="18 15 12 9 6 15"/>
+              </svg>
             )}
           </div>
         </div>
@@ -11029,6 +11116,9 @@ export default function App() {
       </div>
       </>
       )}
+
+      {/* Change Password Modal */}
+      {showChangePassword && <ChangePasswordModal onClose={() => setShowChangePassword(false)} />}
     </div>
   );
 }

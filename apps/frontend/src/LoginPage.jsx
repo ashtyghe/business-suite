@@ -3,7 +3,7 @@ import { useAuth } from './lib/AuthContext';
 import { resetPassword } from './lib/auth';
 
 export default function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, sessionMessage, clearSessionMessage } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -90,6 +90,11 @@ export default function LoginPage() {
             <p style={styles.subtext}>Enter your credentials to access FieldOps</p>
 
             <form onSubmit={handleSubmit}>
+              {sessionMessage && (
+                <div style={styles.info} onClick={clearSessionMessage}>
+                  {sessionMessage}
+                </div>
+              )}
               {error && <div style={styles.error}>{error}</div>}
 
               <label style={styles.label}>Email</label>
@@ -167,6 +172,11 @@ const styles = {
     width: '100%', padding: '11px 16px', background: '#111', color: '#fff', border: 'none',
     borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 24,
     fontFamily: "'Open Sans', sans-serif", transition: 'opacity 0.15s',
+  },
+  info: {
+    background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6,
+    padding: '10px 14px', fontSize: 12, color: '#1d4ed8', marginBottom: 8,
+    cursor: 'pointer',
   },
   error: {
     background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6,

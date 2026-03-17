@@ -53,3 +53,17 @@ export async function resetPassword(email) {
   const { error } = await supabase.auth.resetPasswordForEmail(email);
   if (error) throw error;
 }
+
+// ── Change password (logged-in user) ─────────────────────────────────────
+export async function changePassword(newPassword) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
+// ── Admin: trigger password reset email for another user ─────────────────
+export async function adminResetUserPassword(email) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  if (error) throw error;
+}

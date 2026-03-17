@@ -92,7 +92,7 @@ Add email/password authentication for internal staff using Supabase Auth. Two ro
   - All policies check `auth.uid()` against `shared.staff.auth_user_id`
 - This is the server-side enforcement — frontend restrictions are UX only
 
-### Phase 4 — Session & Security Polish
+### Phase 4 — Session & Security Polish ✅
 
 **10. Session management**
 - Auto-refresh tokens (Supabase handles this, but confirm it's working)

@@ -9,6 +9,7 @@ export function AuthProvider({ children }) {
   const [staff, setStaff] = useState(null);      // Linked staff profile
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sessionMessage, setSessionMessage] = useState(null);
 
   // Resolve the staff profile for an auth user
   const resolveStaff = async (authUser) => {
@@ -32,11 +33,21 @@ export function AuthProvider({ children }) {
       setLoading(false);
     });
 
-    const { data: { subscription } } = onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = onAuthStateChange(async (event, session) => {
       const authUser = session?.user || null;
       setUser(authUser);
       await resolveStaff(authUser);
       setLoading(false);
+
+      // Handle session expiry / sign out events
+      if (event === 'SIGNED_OUT') {
+        setStaff(null);
+      }
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        setSessionMessage('Your session has expired. Please sign in again.');
+        setUser(null);
+        setStaff(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -77,6 +88,8 @@ export function AuthProvider({ children }) {
     currentUserName: staff?.name || 'Unknown',
     loading,
     error,
+    sessionMessage,
+    clearSessionMessage: () => setSessionMessage(null),
     signIn,
     signOut,
     // True when Supabase isn't configured (local dev mode with seed data)

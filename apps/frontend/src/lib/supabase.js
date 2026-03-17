@@ -42,6 +42,40 @@ export async function sendEmail(type, to, data) {
   return result;
 }
 
+export async function inviteUser(email, fullName, role, password) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.functions.invoke('invite-user', {
+    body: { email, fullName, role, password: password || undefined },
+  });
+  if (error) {
+    const msg = typeof error === 'object' && error.context
+      ? await error.context.text?.() || error.message
+      : error.message;
+    throw new Error(msg || 'Invite failed');
+  }
+  if (typeof data === 'string') {
+    try { return JSON.parse(data); } catch { return data; }
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+export async function updateStaffRecord(staffId, updates) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const dbUpdates = {};
+  if (updates.role !== undefined) dbUpdates.role = updates.role;
+  if (updates.active !== undefined) dbUpdates.active = updates.active;
+  if (updates.fullName !== undefined) dbUpdates.full_name = updates.fullName;
+  const { data, error } = await supabase
+    .from('staff')
+    .update(dbUpdates)
+    .eq('id', staffId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function extractBillFromImage(base64, mimeType) {
   if (!supabase) return null;
   const { data, error } = await supabase.functions.invoke('extract-bill', {

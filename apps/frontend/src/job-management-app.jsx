@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, Fragment, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry } from './lib/db';
-import { extractBillFromImage, extractDocumentFromImage, sendEmail } from './lib/supabase';
+import { extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord } from './lib/supabase';
 import { useAuth } from './lib/AuthContext';
 import * as fabric from "fabric";
 import * as pdfjsLib from "pdfjs-dist";
@@ -9638,7 +9638,8 @@ const DEFAULT_VOICE_SETTINGS = {
   confirmWrites: true,
 };
 
-const Settings = () => {
+const Settings = ({ staff = [], setStaff }) => {
+  const auth = useAuth();
   const [tab, setTab] = useState("integrations");
   const [voiceSettings, setVoiceSettings] = useState(() => {
     try {
@@ -9672,6 +9673,7 @@ const Settings = () => {
 
   const tabs = [
     { id: "integrations", label: "Integrations", icon: "send" },
+    ...(auth.isAdmin || auth.isLocalDev ? [{ id: "users", label: "Users", icon: "clients" }] : []),
   ];
 
   const OptionCard = ({ option, selected, onSelect }) => (
@@ -9843,6 +9845,234 @@ const Settings = () => {
     </div>
   );
 
+  const UserManagement = () => {
+    const [showInvite, setShowInvite] = useState(false);
+    const [inviteForm, setInviteForm] = useState({ fullName: "", email: "", role: "staff", password: "" });
+    const [inviteLoading, setInviteLoading] = useState(false);
+    const [inviteError, setInviteError] = useState(null);
+    const [inviteSuccess, setInviteSuccess] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [editRole, setEditRole] = useState("");
+    const [updateError, setUpdateError] = useState(null);
+
+    const handleInvite = async (e) => {
+      e.preventDefault();
+      setInviteError(null);
+      setInviteLoading(true);
+      try {
+        const result = await inviteUser(inviteForm.email, inviteForm.fullName, inviteForm.role, inviteForm.password || undefined);
+        setInviteSuccess(result.user);
+        setInviteForm({ fullName: "", email: "", role: "staff", password: "" });
+        // Add to local staff list
+        if (setStaff) {
+          setStaff(prev => [...prev, { id: result.user.id, name: result.user.fullName, email: result.user.email, role: result.user.role, active: true }]);
+        }
+      } catch (err) {
+        setInviteError(err.message);
+      } finally {
+        setInviteLoading(false);
+      }
+    };
+
+    const handleToggleActive = async (s) => {
+      setUpdateError(null);
+      try {
+        await updateStaffRecord(s.id, { active: !s.active });
+        if (setStaff) {
+          setStaff(prev => prev.map(st => st.id === s.id ? { ...st, active: !st.active } : st));
+        }
+      } catch (err) {
+        setUpdateError(`Failed to update ${s.name}: ${err.message}`);
+      }
+    };
+
+    const handleRoleChange = async (s) => {
+      setUpdateError(null);
+      try {
+        await updateStaffRecord(s.id, { role: editRole });
+        if (setStaff) {
+          setStaff(prev => prev.map(st => st.id === s.id ? { ...st, role: editRole } : st));
+        }
+        setEditingId(null);
+      } catch (err) {
+        setUpdateError(`Failed to update role: ${err.message}`);
+      }
+    };
+
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>User Management</div>
+            <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{staff.length} team member{staff.length !== 1 ? "s" : ""}</div>
+          </div>
+          <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11 }} onClick={() => { setShowInvite(true); setInviteSuccess(null); setInviteError(null); }}>
+            <Icon name="plus" size={12} /> Invite User
+          </button>
+        </div>
+
+        {updateError && (
+          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#dc2626" }}>
+            {updateError}
+          </div>
+        )}
+
+        {/* Invite form */}
+        {showInvite && (
+          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Invite New User</div>
+              <CloseBtn onClick={() => { setShowInvite(false); setInviteSuccess(null); }} />
+            </div>
+
+            {inviteSuccess ? (
+              <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: 16 }}>
+                <div style={{ fontWeight: 700, color: "#166534", marginBottom: 8, fontSize: 13 }}>
+                  <Icon name="check" size={14} /> User created successfully
+                </div>
+                <div style={{ display: "grid", gap: 6, fontSize: 12 }}>
+                  <div><span style={{ color: "#888" }}>Name:</span> <span style={{ fontWeight: 600 }}>{inviteSuccess.fullName}</span></div>
+                  <div><span style={{ color: "#888" }}>Email:</span> <span style={{ fontWeight: 600 }}>{inviteSuccess.email}</span></div>
+                  <div><span style={{ color: "#888" }}>Role:</span> <span style={{ fontWeight: 600, textTransform: "capitalize" }}>{inviteSuccess.role}</span></div>
+                  <div style={{ background: "#fff", border: "1px solid #bbf7d0", borderRadius: 6, padding: "10px 14px", marginTop: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 4, letterSpacing: "0.06em", textTransform: "uppercase" }}>Temporary Password</div>
+                    <div style={{ fontFamily: "monospace", fontSize: 15, fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>{inviteSuccess.temporaryPassword}</div>
+                    <div style={{ fontSize: 10, color: "#888", marginTop: 4 }}>Share this securely with the user. They should change it on first login.</div>
+                  </div>
+                </div>
+                <button className="btn btn-sm" style={{ marginTop: 12, fontSize: 11 }} onClick={() => { setInviteSuccess(null); }}>Invite Another</button>
+              </div>
+            ) : (
+              <form onSubmit={handleInvite}>
+                {inviteError && (
+                  <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#dc2626" }}>
+                    {inviteError}
+                  </div>
+                )}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Full Name</label>
+                    <input type="text" value={inviteForm.fullName} onChange={e => setInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="e.g. Tom Baker" required
+                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Email</label>
+                    <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="tom@company.com" required
+                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Role</label>
+                    <select value={inviteForm.role} onChange={e => setInviteForm(f => ({ ...f, role: e.target.value }))}
+                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", background: "#fff" }}>
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Password (optional)</label>
+                    <input type="text" value={inviteForm.password} onChange={e => setInviteForm(f => ({ ...f, password: e.target.value }))} placeholder="Auto-generated if blank"
+                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button type="button" className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => setShowInvite(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: inviteLoading ? 0.6 : 1 }} disabled={inviteLoading}>
+                    {inviteLoading ? "Creating..." : "Create User"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* Users list */}
+        <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: "#f8f8f8", borderBottom: "1px solid #e8e8e8" }}>
+                <th style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>User</th>
+                <th style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Email</th>
+                <th style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Role</th>
+                <th style={{ textAlign: "center", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Status</th>
+                <th style={{ textAlign: "right", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {staff.length === 0 && (
+                <tr><td colSpan={5} style={{ padding: 24, textAlign: "center", color: "#999" }}>No users found</td></tr>
+              )}
+              {staff.map(s => {
+                const initials = s.name.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
+                const isSelf = auth.staff?.id === s.id;
+                return (
+                  <tr key={s.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                    <td style={{ padding: "12px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: s.active ? "#111" : "#ddd", color: s.active ? "#fff" : "#999", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
+                          {initials}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, color: s.active ? "#111" : "#999" }}>{s.name}{isSelf ? " (you)" : ""}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: "12px 16px", color: "#666" }}>{s.email}</td>
+                    <td style={{ padding: "12px 16px" }}>
+                      {editingId === s.id ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <select value={editRole} onChange={e => setEditRole(e.target.value)}
+                            style={{ padding: "4px 8px", border: "1px solid #ddd", borderRadius: 4, fontSize: 12, fontFamily: "'Open Sans', sans-serif" }}>
+                            <option value="staff">Staff</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                          <button className="btn btn-xs" style={{ background: accent, color: "#fff", border: "none", fontSize: 10, padding: "3px 8px" }} onClick={() => handleRoleChange(s)}>Save</button>
+                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10, padding: "3px 8px" }} onClick={() => setEditingId(null)}>Cancel</button>
+                        </div>
+                      ) : (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+                          background: s.role === "admin" ? "#f5f3ff" : "#f0f9ff",
+                          color: s.role === "admin" ? "#7c3aed" : "#0284c7",
+                          textTransform: "capitalize",
+                        }}>
+                          {s.role}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+                        background: s.active ? "#ecfdf5" : "#f9fafb",
+                        color: s.active ? "#059669" : "#9ca3af",
+                      }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.active ? "#059669" : "#9ca3af" }} />
+                        {s.active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "12px 16px", textAlign: "right" }}>
+                      {!isSelf && (
+                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10 }} onClick={() => { setEditingId(s.id); setEditRole(s.role); }}>
+                            Change Role
+                          </button>
+                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10, color: s.active ? "#dc2626" : "#059669" }} onClick={() => handleToggleActive(s)}>
+                            {s.active ? "Deactivate" : "Activate"}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
       {/* Settings sub-navigation */}
@@ -9865,6 +10095,7 @@ const Settings = () => {
       </div>
 
       {tab === "integrations" && <VoiceIntegration />}
+      {tab === "users" && <UserManagement />}
     </div>
   );
 };
@@ -10593,7 +10824,7 @@ export default function App() {
       <Route path="/invoices" element={<Invoices invoices={invoices} setInvoices={setInvoices} jobs={jobs} clients={clients} quotes={quotes} />} />
       <Route path="/activity" element={<ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />} />
       <Route path="/status" element={<SystemStatus />} />
-      <Route path="/settings" element={<Settings />} />
+      <Route path="/settings" element={<Settings staff={staff} setStaff={setStaff} />} />
       <Route path="/display/schedule" element={<DisplaySchedule schedule={schedule} jobs={jobs} clients={clients} />} />
       <Route path="/display/overview" element={<DisplayOverview jobs={jobs} quotes={quotes} timeEntries={timeEntries} schedule={schedule} clients={clients} />} />
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -17,28 +17,48 @@ if (supabaseUrl && supabaseKey) {
   console.warn('Supabase credentials missing — tool calls will return mock data');
 }
 
-// ─── HELPER: check if table exists ──────────────────────────────────
+// ─── HELPERS ────────────────────────────────────────────────────────
 
 async function tableExists(tableName) {
   const { error } = await supabase.from(tableName).select('id').limit(1);
   return !error || error.code !== 'PGRST205';
 }
 
+async function resolveJobId(job_id) {
+  if (!job_id) return null;
+  if (job_id.startsWith('J-')) {
+    const { data: job, error } = await supabase
+      .from('jobs')
+      .select('id')
+      .eq('job_number', job_id)
+      .single();
+    if (error) throw new Error(`Failed to find job ${job_id}: ${error.message}`);
+    return job.id;
+  }
+  return job_id;
+}
+
+async function nextRef(table, prefix, startFrom) {
+  const { data: latest } = await supabase
+    .from(table)
+    .select('ref')
+    .order('created_at', { ascending: false })
+    .limit(1);
+  const lastNum = latest?.length ? parseInt(latest[0].ref.replace(`${prefix}-`, ''), 10) : startFrom;
+  return `${prefix}-${lastNum + 1}`;
+}
+
 // ─── READ HANDLERS ─────────────────────────────────────────────────
 
 async function listJobs({ status, limit = 20 }) {
-  // Actual schema: id, job_number, title, description, status, customer_id, site_address, scheduled_start, scheduled_end
-  let query = supabase.from('jobs').select('id, job_number, title, description, status, site_address, scheduled_start, scheduled_end').limit(limit);
-  if (status) {
-    query = query.eq('status', status);
-  }
+  let query = supabase.from('jobs').select('id, job_number, title, description, status, site_address, scheduled_start, scheduled_end, priority').limit(limit);
+  if (status) query = query.eq('status', status);
   const { data, error } = await query;
   if (error) throw new Error(`Failed to list jobs: ${error.message}`);
   return { jobs: (data || []).map(j => ({ ...j, ref: j.job_number })), count: (data || []).length };
 }
 
 async function getJob({ job_id }) {
-  // Try by ID first, then by job_number
   let query = supabase.from('jobs').select('*');
   if (job_id && job_id.startsWith('J-')) {
     query = query.eq('job_number', job_id);
@@ -51,10 +71,8 @@ async function getJob({ job_id }) {
 }
 
 async function getSchedule({ start_date, end_date, assignee }) {
-  // Try the schedule view (scheduling.entries) first, fall back to jobs
   const exists = await tableExists('schedule');
   if (!exists) {
-    // Fall back to jobs with scheduled dates
     let query = supabase.from('jobs')
       .select('id, job_number, title, status, site_address, scheduled_start, scheduled_end')
       .not('scheduled_start', 'is', null);
@@ -65,22 +83,15 @@ async function getSchedule({ start_date, end_date, assignee }) {
     if (error) throw new Error(`Failed to get schedule: ${error.message}`);
     return {
       entries: (data || []).map(j => ({
-        id: j.id,
-        title: j.title,
-        ref: j.job_number,
-        date: j.scheduled_start?.split('T')[0],
-        status: j.status,
-        location: j.site_address,
+        id: j.id, title: j.title, ref: j.job_number,
+        date: j.scheduled_start?.split('T')[0], status: j.status, location: j.site_address,
       })),
-      count: (data || []).length,
-      source: 'jobs',
+      count: (data || []).length, source: 'jobs',
     };
   }
 
-  let query = supabase.from('schedule')
-    .select('*')
-    .gte('entry_date', start_date)
-    .lte('entry_date', end_date)
+  let query = supabase.from('schedule').select('*')
+    .gte('entry_date', start_date).lte('entry_date', end_date)
     .order('entry_date', { ascending: true });
   const { data, error } = await query;
   if (error) throw new Error(`Failed to get schedule: ${error.message}`);
@@ -89,89 +100,59 @@ async function getSchedule({ start_date, end_date, assignee }) {
 
 async function checkContractorCompliance({ contractor_name }) {
   let query = supabase.from('contractors').select('*');
-  if (contractor_name) {
-    query = query.ilike('name', `%${contractor_name}%`);
-  }
+  if (contractor_name) query = query.ilike('name', `%${contractor_name}%`);
   const { data, error } = await query;
   if (error) throw new Error(`Failed to check compliance: ${error.message}`);
 
-  // Fetch all contractor documents
   const contractorIds = (data || []).map(c => c.id);
   let docs = [];
   if (contractorIds.length) {
     const { data: docData, error: docErr } = await supabase
-      .from('contractor_documents')
-      .select('*')
-      .in('contractor_id', contractorIds);
+      .from('contractor_documents').select('*').in('contractor_id', contractorIds);
     if (!docErr) docs = docData || [];
   }
 
   const today = new Date().toISOString().split('T')[0];
   const results = (data || []).map((contractor) => {
     const documents = docs.filter(d => d.contractor_id === contractor.id);
-    const expiredDocs = documents.filter((doc) => doc.expiry_date && doc.expiry_date < today);
-    const expiringDocs = documents.filter((doc) => {
-      if (!doc.expiry_date) return false;
-      const daysUntil = Math.ceil(
-        (new Date(doc.expiry_date) - new Date()) / (1000 * 60 * 60 * 24)
-      );
+    const expiredDocs = documents.filter(d => d.expiry_date && d.expiry_date < today);
+    const expiringDocs = documents.filter(d => {
+      if (!d.expiry_date) return false;
+      const daysUntil = Math.ceil((new Date(d.expiry_date) - new Date()) / (1000 * 60 * 60 * 24));
       return daysUntil > 0 && daysUntil <= 30;
     });
     return {
-      id: contractor.id,
-      name: contractor.name,
-      trade: contractor.trade,
-      phone: contractor.phone,
-      email: contractor.email,
-      total_documents: documents.length,
-      expired_documents: expiredDocs.length,
-      expiring_soon: expiringDocs.length,
-      is_compliant: expiredDocs.length === 0,
-      expired_details: expiredDocs.map((d) => d.title || d.doc_type),
-      expiring_details: expiringDocs.map((d) => ({
-        name: d.title || d.doc_type,
-        expiry: d.expiry_date,
-      })),
+      id: contractor.id, name: contractor.name, trade: contractor.trade,
+      phone: contractor.phone, email: contractor.email,
+      total_documents: documents.length, expired_documents: expiredDocs.length,
+      expiring_soon: expiringDocs.length, is_compliant: expiredDocs.length === 0,
+      expired_details: expiredDocs.map(d => d.title || d.doc_type),
+      expiring_details: expiringDocs.map(d => ({ name: d.title || d.doc_type, expiry: d.expiry_date })),
     };
   });
   return { contractors: results, count: results.length };
 }
 
 async function getPendingBills({ status = 'linked', supplier }) {
-  // Actual schema: id, job_id, supplier_name, invoice_number, invoice_date, subtotal, tax, total, status, category, notes
-  let query = supabase
-    .from('bills')
+  let query = supabase.from('bills')
     .select('id, job_id, supplier_name, invoice_number, invoice_date, subtotal, tax, total, status, category, notes')
-    .eq('status', status)
-    .order('invoice_date', { ascending: false });
-  if (supplier) {
-    query = query.ilike('supplier_name', `%${supplier}%`);
-  }
+    .eq('status', status).order('invoice_date', { ascending: false });
+  if (supplier) query = query.ilike('supplier_name', `%${supplier}%`);
   const { data, error } = await query;
   if (error) throw new Error(`Failed to get bills: ${error.message}`);
   const billTotal = (data || []).reduce((sum, b) => sum + (b.total || 0), 0);
   return {
     bills: (data || []).map(b => ({
-      id: b.id,
-      supplier: b.supplier_name,
-      invoice_number: b.invoice_number,
-      amount: b.total,
-      subtotal: b.subtotal,
-      tax: b.tax,
-      status: b.status,
-      date: b.invoice_date,
-      category: b.category,
+      id: b.id, supplier: b.supplier_name, invoice_number: b.invoice_number,
+      amount: b.total, subtotal: b.subtotal, tax: b.tax,
+      status: b.status, date: b.invoice_date, category: b.category,
     })),
-    count: (data || []).length,
-    total: billTotal,
+    count: (data || []).length, total: billTotal,
   };
 }
 
 async function getWorkOrders({ status, assignee }) {
-  let query = supabase
-    .from('work_orders')
-    .select('*')
-    .order('due_date', { ascending: true });
+  let query = supabase.from('work_orders').select('*').order('due_date', { ascending: true });
   if (status) query = query.eq('status', status);
   if (assignee) query = query.ilike('contractor_name', `%${assignee}%`);
   const { data, error } = await query;
@@ -180,22 +161,216 @@ async function getWorkOrders({ status, assignee }) {
 }
 
 async function getQuotes({ job_id, status }) {
-  // Actual schema: id, job_id, quote_number, status, tax_rate, notes
-  let query = supabase
-    .from('quotes')
+  let query = supabase.from('quotes')
     .select('id, job_id, quote_number, status, tax_rate, notes')
     .order('created_at', { ascending: false });
   if (job_id) query = query.eq('job_id', job_id);
   if (status) query = query.eq('status', status);
   const { data, error } = await query;
   if (error) throw new Error(`Failed to get quotes: ${error.message}`);
-  return {
-    quotes: (data || []).map(q => ({ ...q, ref: q.quote_number })),
-    count: (data || []).length,
-  };
+  return { quotes: (data || []).map(q => ({ ...q, ref: q.quote_number })), count: (data || []).length };
+}
+
+async function listCustomers({ limit = 50 }) {
+  const { data, error } = await supabase.from('customers').select('*').order('name').limit(limit);
+  if (error) throw new Error(`Failed to list customers: ${error.message}`);
+  return { customers: data || [], count: (data || []).length };
+}
+
+async function listContractors({ trade }) {
+  let query = supabase.from('contractors').select('*').eq('is_active', true).order('name');
+  if (trade) query = query.ilike('trade', `%${trade}%`);
+  const { data, error } = await query;
+  if (error) throw new Error(`Failed to list contractors: ${error.message}`);
+  return { contractors: data || [], count: (data || []).length };
+}
+
+async function listSuppliers({ limit = 50 }) {
+  const { data, error } = await supabase.from('suppliers').select('*').order('name').limit(limit);
+  if (error) throw new Error(`Failed to list suppliers: ${error.message}`);
+  return { suppliers: data || [], count: (data || []).length };
+}
+
+async function getPurchaseOrders({ status, supplier, job_id }) {
+  let query = supabase.from('purchase_orders').select('*').order('created_at', { ascending: false });
+  if (status) query = query.eq('status', status);
+  if (supplier) query = query.ilike('supplier_name', `%${supplier}%`);
+  if (job_id) {
+    const actualJobId = await resolveJobId(job_id);
+    if (actualJobId) query = query.eq('job_id', actualJobId);
+  }
+  const { data, error } = await query;
+  if (error) throw new Error(`Failed to get purchase orders: ${error.message}`);
+  return { purchase_orders: data || [], count: (data || []).length };
+}
+
+async function getInvoices({ status, job_id }) {
+  let query = supabase.from('invoices').select('*').order('created_at', { ascending: false });
+  if (status) query = query.eq('status', status);
+  if (job_id) {
+    const actualJobId = await resolveJobId(job_id);
+    if (actualJobId) query = query.eq('job_id', actualJobId);
+  }
+  const { data, error } = await query;
+  if (error) throw new Error(`Failed to get invoices: ${error.message}`);
+  return { invoices: data || [], count: (data || []).length };
 }
 
 // ─── WRITE HANDLERS ────────────────────────────────────────────────
+
+async function createJob({ title, description, customer_name, site_address, status, priority, scheduled_start, scheduled_end }) {
+  // Generate next job number
+  const { data: latest } = await supabase
+    .from('jobs').select('job_number').order('created_at', { ascending: false }).limit(1);
+  const lastNum = latest?.length ? parseInt(latest[0].job_number.replace('J-', ''), 10) : 0;
+  const job_number = `J-${String(lastNum + 1).padStart(4, '0')}`;
+
+  // Look up customer by name if provided
+  let customer_id = null;
+  if (customer_name) {
+    const { data: customers } = await supabase
+      .from('customers').select('id').ilike('name', `%${customer_name}%`).limit(1);
+    if (customers?.length) customer_id = customers[0].id;
+  }
+
+  const { data, error } = await supabase
+    .from('jobs')
+    .insert({
+      job_number,
+      title,
+      description: description || null,
+      customer_id,
+      site_address: site_address || null,
+      status: status || 'draft',
+      priority: priority || 'medium',
+      scheduled_start: scheduled_start || null,
+      scheduled_end: scheduled_end || null,
+    })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create job: ${error.message}`);
+  return { success: true, job: data, job_number };
+}
+
+async function updateJob({ job_id, title, description, site_address, status, priority, scheduled_start, scheduled_end }) {
+  const actualJobId = await resolveJobId(job_id);
+  const updates = {};
+  if (title !== undefined) updates.title = title;
+  if (description !== undefined) updates.description = description;
+  if (site_address !== undefined) updates.site_address = site_address;
+  if (status !== undefined) updates.status = status;
+  if (priority !== undefined) updates.priority = priority;
+  if (scheduled_start !== undefined) updates.scheduled_start = scheduled_start;
+  if (scheduled_end !== undefined) updates.scheduled_end = scheduled_end;
+
+  if (Object.keys(updates).length === 0) {
+    throw new Error('No fields to update');
+  }
+
+  const { data, error } = await supabase
+    .from('jobs').update(updates).eq('id', actualJobId).select('*').single();
+  if (error) throw new Error(`Failed to update job: ${error.message}`);
+  return { success: true, job: data };
+}
+
+async function createCustomer({ name, contact_name, email, phone, address }) {
+  const { data, error } = await supabase
+    .from('customers')
+    .insert({
+      name,
+      contact_name: contact_name || null,
+      email: email || null,
+      phone: phone || null,
+      address: address || null,
+    })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create customer: ${error.message}`);
+  return { success: true, customer: data };
+}
+
+async function updateCustomer({ customer_id, customer_name, name, contact_name, email, phone, address }) {
+  // Resolve by name if ID not provided
+  let id = customer_id;
+  if (!id && customer_name) {
+    const { data: customers } = await supabase
+      .from('customers').select('id').ilike('name', `%${customer_name}%`).limit(1);
+    if (!customers?.length) throw new Error(`Customer "${customer_name}" not found`);
+    id = customers[0].id;
+  }
+  if (!id) throw new Error('Either customer_id or customer_name is required');
+
+  const updates = {};
+  if (name !== undefined) updates.name = name;
+  if (contact_name !== undefined) updates.contact_name = contact_name;
+  if (email !== undefined) updates.email = email;
+  if (phone !== undefined) updates.phone = phone;
+  if (address !== undefined) updates.address = address;
+
+  if (Object.keys(updates).length === 0) throw new Error('No fields to update');
+
+  const { data, error } = await supabase
+    .from('customers').update(updates).eq('id', id).select('*').single();
+  if (error) throw new Error(`Failed to update customer: ${error.message}`);
+  return { success: true, customer: data };
+}
+
+async function createContractor({ name, contact, email, phone, trade, abn }) {
+  const { data, error } = await supabase
+    .from('contractors')
+    .insert({
+      name,
+      contact: contact || null,
+      email: email || null,
+      phone: phone || null,
+      trade: trade || null,
+      abn: abn || null,
+    })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create contractor: ${error.message}`);
+  return { success: true, contractor: data };
+}
+
+async function updateContractor({ contractor_id, contractor_name, name, contact, email, phone, trade, abn }) {
+  let id = contractor_id;
+  if (!id && contractor_name) {
+    const { data: contractors } = await supabase
+      .from('contractors').select('id').ilike('name', `%${contractor_name}%`).limit(1);
+    if (!contractors?.length) throw new Error(`Contractor "${contractor_name}" not found`);
+    id = contractors[0].id;
+  }
+  if (!id) throw new Error('Either contractor_id or contractor_name is required');
+
+  const updates = { updated_at: new Date().toISOString() };
+  if (name !== undefined) updates.name = name;
+  if (contact !== undefined) updates.contact = contact;
+  if (email !== undefined) updates.email = email;
+  if (phone !== undefined) updates.phone = phone;
+  if (trade !== undefined) updates.trade = trade;
+  if (abn !== undefined) updates.abn = abn;
+
+  const { data, error } = await supabase
+    .from('contractors').update(updates).eq('id', id).select('*').single();
+  if (error) throw new Error(`Failed to update contractor: ${error.message}`);
+  return { success: true, contractor: data };
+}
+
+async function createSupplier({ name, contact_name, email, phone, abn }) {
+  const { data, error } = await supabase
+    .from('suppliers')
+    .insert({
+      name,
+      contact_name: contact_name || null,
+      email: email || null,
+      phone: phone || null,
+      abn: abn || null,
+    })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create supplier: ${error.message}`);
+  return { success: true, supplier: data };
+}
 
 async function addScheduleEntry({ job_id, date, title, time, assignee }) {
   const { data, error } = await supabase
@@ -213,25 +388,14 @@ async function addScheduleEntry({ job_id, date, title, time, assignee }) {
   return { success: true, entry: data };
 }
 
-async function addJobNote({ job_id, note }) {
-  // Resolve job_number to UUID if needed
-  let actualJobId = job_id;
-  if (job_id && job_id.startsWith('J-')) {
-    const { data: job, error: jobErr } = await supabase
-      .from('jobs')
-      .select('id')
-      .eq('job_number', job_id)
-      .single();
-    if (jobErr) throw new Error(`Failed to find job ${job_id}: ${jobErr.message}`);
-    actualJobId = job.id;
-  }
-
+async function addJobNote({ job_id, note, category }) {
+  const actualJobId = await resolveJobId(job_id);
   const { data, error } = await supabase
     .from('job_notes')
     .insert({
       job_id: actualJobId,
       text: note,
-      category: 'general',
+      category: category || 'general',
       created_by: 'voice',
     })
     .select()
@@ -241,21 +405,10 @@ async function addJobNote({ job_id, note }) {
 }
 
 async function updateJobStatus({ job_id, status }) {
-  let query = supabase.from('jobs');
-  if (job_id && job_id.startsWith('J-')) {
-    const { data, error } = await query
-      .update({ status })
-      .eq('job_number', job_id)
-      .select('id, job_number, title, status')
-      .single();
-    if (error) throw new Error(`Failed to update job status: ${error.message}`);
-    return { success: true, job: data };
-  }
-  const { data, error } = await query
-    .update({ status })
-    .eq('id', job_id)
-    .select('id, job_number, title, status')
-    .single();
+  const actualJobId = await resolveJobId(job_id);
+  const { data, error } = await supabase
+    .from('jobs').update({ status }).eq('id', actualJobId)
+    .select('id, job_number, title, status').single();
   if (error) throw new Error(`Failed to update job status: ${error.message}`);
   return { success: true, job: data };
 }
@@ -272,50 +425,22 @@ async function updateWorkOrderStatus({ work_order_id, status }) {
 }
 
 async function createWorkOrder({ job_id, contractor_name, trade, scope_of_work, due_date, po_limit }) {
-  // Generate next WO ref
-  const { data: latest } = await supabase
-    .from('work_orders')
-    .select('ref')
-    .order('created_at', { ascending: false })
-    .limit(1);
-  const lastNum = latest?.length ? parseInt(latest[0].ref.replace('WO-', ''), 10) : 100;
-  const ref = `WO-${lastNum + 1}`;
+  const ref = await nextRef('work_orders', 'WO', 100);
+  const actualJobId = await resolveJobId(job_id);
 
-  // Resolve job_number to UUID if needed
-  let actualJobId = job_id || null;
-  if (job_id && job_id.startsWith('J-')) {
-    const { data: job, error: jobErr } = await supabase
-      .from('jobs')
-      .select('id')
-      .eq('job_number', job_id)
-      .single();
-    if (jobErr) throw new Error(`Failed to find job ${job_id}: ${jobErr.message}`);
-    actualJobId = job.id;
-  }
-
-  // Look up contractor if name provided
   let contractorId = null;
   if (contractor_name) {
     const { data: contractors } = await supabase
-      .from('contractors')
-      .select('id, name')
-      .ilike('name', `%${contractor_name}%`)
-      .limit(1);
+      .from('contractors').select('id, name').ilike('name', `%${contractor_name}%`).limit(1);
     if (contractors?.length) contractorId = contractors[0].id;
   }
 
   const { data, error } = await supabase
     .from('work_orders')
     .insert({
-      ref,
-      job_id: actualJobId,
-      contractor_id: contractorId,
-      contractor_name: contractor_name || null,
-      trade: trade || null,
-      scope_of_work,
-      due_date: due_date || null,
-      po_limit: po_limit || 0,
-      status: 'Draft',
+      ref, job_id: actualJobId, contractor_id: contractorId,
+      contractor_name: contractor_name || null, trade: trade || null,
+      scope_of_work, due_date: due_date || null, po_limit: po_limit || 0, status: 'Draft',
     })
     .select()
     .single();
@@ -323,25 +448,77 @@ async function createWorkOrder({ job_id, contractor_name, trade, scope_of_work, 
   return { success: true, work_order: data, ref };
 }
 
-async function logTimeEntry({ job_id, worker, hours, date, description }) {
-  // Actual schema: id, staff_id, job_id, entry_date, hours, notes
-  // Look up job by number if needed
-  let actualJobId = job_id;
-  if (job_id && job_id.startsWith('J-')) {
-    const { data: job, error: jobErr } = await supabase
-      .from('jobs')
-      .select('id')
-      .eq('job_number', job_id)
-      .single();
-    if (jobErr) throw new Error(`Failed to find job ${job_id}: ${jobErr.message}`);
-    actualJobId = job.id;
+async function createPurchaseOrder({ job_id, supplier_name, items, delivery_address, due_date, po_limit }) {
+  const ref = await nextRef('purchase_orders', 'PO', 200);
+  const actualJobId = await resolveJobId(job_id);
+
+  let supplierId = null;
+  if (supplier_name) {
+    const { data: suppliers } = await supabase
+      .from('suppliers').select('id, name').ilike('name', `%${supplier_name}%`).limit(1);
+    if (suppliers?.length) supplierId = suppliers[0].id;
   }
 
+  const { data, error } = await supabase
+    .from('purchase_orders')
+    .insert({
+      ref, job_id: actualJobId, supplier_id: supplierId,
+      supplier_name: supplier_name || null,
+      delivery_address: delivery_address || null,
+      due_date: due_date || null, po_limit: po_limit || 0,
+      notes: items, status: 'Draft',
+    })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create purchase order: ${error.message}`);
+
+  // Create line items from semicolon-separated items string
+  if (items) {
+    const lines = items.split(';').map(s => s.trim()).filter(Boolean);
+    for (const desc of lines) {
+      await supabase.from('purchase_order_lines').insert({
+        purchase_order_id: data.id,
+        description: desc,
+      });
+    }
+  }
+
+  return { success: true, purchase_order: data, ref };
+}
+
+async function createInvoice({ job_id, invoice_number, status, notes }) {
+  const actualJobId = await resolveJobId(job_id);
+
+  // Auto-generate invoice number if not provided
+  let invNumber = invoice_number;
+  if (!invNumber) {
+    const { data: latest } = await supabase
+      .from('invoices').select('invoice_number').order('created_at', { ascending: false }).limit(1);
+    const lastNum = latest?.length ? parseInt(latest[0].invoice_number.replace('INV-', ''), 10) : 0;
+    invNumber = `INV-${String(lastNum + 1).padStart(4, '0')}`;
+  }
+
+  const { data, error } = await supabase
+    .from('invoices')
+    .insert({
+      job_id: actualJobId,
+      invoice_number: invNumber,
+      status: status || 'draft',
+      notes: notes || null,
+    })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create invoice: ${error.message}`);
+  return { success: true, invoice: data, invoice_number: invNumber };
+}
+
+async function logTimeEntry({ job_id, worker, hours, date, description }) {
+  const actualJobId = await resolveJobId(job_id);
   const { data, error } = await supabase
     .from('time_entries')
     .insert({
       job_id: actualJobId,
-      staff_id: null, // TODO: look up staff by name if worker provided
+      staff_id: null,
       entry_date: date,
       hours,
       notes: description || (worker ? `Logged by ${worker}` : null),
@@ -355,6 +532,7 @@ async function logTimeEntry({ job_id, worker, hours, date, description }) {
 // ─── DISPATCH ──────────────────────────────────────────────────────
 
 const handlerMap = {
+  // Read
   list_jobs: listJobs,
   get_job: getJob,
   get_schedule: getSchedule,
@@ -362,11 +540,26 @@ const handlerMap = {
   get_pending_bills: getPendingBills,
   get_work_orders: getWorkOrders,
   get_quotes: getQuotes,
+  list_customers: listCustomers,
+  list_contractors: listContractors,
+  list_suppliers: listSuppliers,
+  get_purchase_orders: getPurchaseOrders,
+  get_invoices: getInvoices,
+  // Write
+  create_job: createJob,
+  update_job: updateJob,
+  create_customer: createCustomer,
+  update_customer: updateCustomer,
+  create_contractor: createContractor,
+  update_contractor: updateContractor,
+  create_supplier: createSupplier,
+  create_work_order: createWorkOrder,
+  create_purchase_order: createPurchaseOrder,
+  create_invoice: createInvoice,
   add_schedule_entry: addScheduleEntry,
   add_job_note: addJobNote,
   update_job_status: updateJobStatus,
   update_work_order_status: updateWorkOrderStatus,
-  create_work_order: createWorkOrder,
   log_time_entry: logTimeEntry,
 };
 

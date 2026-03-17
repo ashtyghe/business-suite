@@ -119,12 +119,12 @@ const tools = [
       properties: {
         status: {
           type: 'string',
-          enum: ['open', 'in-progress', 'completed', 'cancelled'],
+          enum: ['Draft', 'Approved', 'Sent', 'Viewed', 'Accepted', 'Completed', 'Billed', 'Cancelled'],
           description: 'Filter by work order status.',
         },
         assignee: {
           type: 'string',
-          description: 'Filter by assigned person.',
+          description: 'Filter by contractor name.',
         },
       },
       required: [],
@@ -153,7 +153,381 @@ const tools = [
     },
   },
 
+  {
+    type: 'function',
+    name: 'list_customers',
+    description:
+      'List all customers/clients. Use when someone asks about clients, customers, or who they work for.',
+    parameters: {
+      type: 'object',
+      properties: {
+        limit: {
+          type: 'number',
+          description: 'Maximum number of customers to return. Default 50.',
+        },
+      },
+      required: [],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'list_contractors',
+    description:
+      'List all contractors/subcontractors. Use when someone asks about their subbies or contractors.',
+    parameters: {
+      type: 'object',
+      properties: {
+        trade: {
+          type: 'string',
+          description: 'Filter by trade type, e.g. electrical, plumbing.',
+        },
+      },
+      required: [],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'list_suppliers',
+    description:
+      'List all suppliers. Use when someone asks about suppliers or material providers.',
+    parameters: {
+      type: 'object',
+      properties: {
+        limit: {
+          type: 'number',
+          description: 'Maximum number of suppliers to return. Default 50.',
+        },
+      },
+      required: [],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'get_purchase_orders',
+    description: 'Get purchase orders, optionally filtered by status or supplier.',
+    parameters: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['Draft', 'Approved', 'Sent', 'Viewed', 'Accepted', 'Completed', 'Billed', 'Cancelled'],
+          description: 'Filter by PO status.',
+        },
+        supplier: {
+          type: 'string',
+          description: 'Filter by supplier name.',
+        },
+        job_id: {
+          type: 'string',
+          description: 'Filter by job ID or job number.',
+        },
+      },
+      required: [],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'get_invoices',
+    description: 'Get invoices, optionally filtered by status or job.',
+    parameters: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['draft', 'sent', 'paid', 'overdue'],
+          description: 'Filter by invoice status.',
+        },
+        job_id: {
+          type: 'string',
+          description: 'Filter by job ID or job number.',
+        },
+      },
+      required: [],
+    },
+  },
+
   // ─── WRITE OPERATIONS ──────────────────────────────────────────────
+
+  {
+    type: 'function',
+    name: 'create_job',
+    description:
+      'Create a new job. Use when someone wants to add a new job, project, or piece of work.',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: {
+          type: 'string',
+          description: 'Title or name of the job.',
+        },
+        description: {
+          type: 'string',
+          description: 'Description of the work to be done.',
+        },
+        customer_name: {
+          type: 'string',
+          description: 'Name of the customer/client this job is for.',
+        },
+        site_address: {
+          type: 'string',
+          description: 'Site address where the work will be done.',
+        },
+        status: {
+          type: 'string',
+          enum: ['draft', 'scheduled', 'quoted', 'in_progress', 'completed'],
+          description: 'Initial status. Default is "draft".',
+        },
+        priority: {
+          type: 'string',
+          enum: ['low', 'medium', 'high', 'urgent'],
+          description: 'Priority level. Default is "medium".',
+        },
+        scheduled_start: {
+          type: 'string',
+          description: 'Scheduled start date in YYYY-MM-DD format.',
+        },
+        scheduled_end: {
+          type: 'string',
+          description: 'Scheduled end date in YYYY-MM-DD format.',
+        },
+      },
+      required: ['title'],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'update_job',
+    description:
+      'Update an existing job. Use when someone wants to change job details like title, description, address, priority, or dates.',
+    parameters: {
+      type: 'object',
+      properties: {
+        job_id: {
+          type: 'string',
+          description: 'The job ID or job number (e.g. J-0001) to update.',
+        },
+        title: { type: 'string', description: 'New title.' },
+        description: { type: 'string', description: 'New description.' },
+        site_address: { type: 'string', description: 'New site address.' },
+        status: {
+          type: 'string',
+          enum: ['draft', 'scheduled', 'quoted', 'in_progress', 'completed', 'cancelled'],
+          description: 'New status.',
+        },
+        priority: {
+          type: 'string',
+          enum: ['low', 'medium', 'high', 'urgent'],
+          description: 'New priority.',
+        },
+        scheduled_start: { type: 'string', description: 'New start date YYYY-MM-DD.' },
+        scheduled_end: { type: 'string', description: 'New end date YYYY-MM-DD.' },
+      },
+      required: ['job_id'],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'create_customer',
+    description:
+      'Create a new customer/client. Use when someone mentions a new client or customer to add to the system.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Customer/company name.' },
+        contact_name: { type: 'string', description: 'Primary contact person name.' },
+        email: { type: 'string', description: 'Email address.' },
+        phone: { type: 'string', description: 'Phone number.' },
+        address: { type: 'string', description: 'Business or billing address.' },
+      },
+      required: ['name'],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'update_customer',
+    description: 'Update an existing customer/client details.',
+    parameters: {
+      type: 'object',
+      properties: {
+        customer_id: { type: 'string', description: 'The customer ID to update.' },
+        customer_name: { type: 'string', description: 'Search by name if ID not known.' },
+        name: { type: 'string', description: 'New name.' },
+        contact_name: { type: 'string', description: 'New contact person.' },
+        email: { type: 'string', description: 'New email.' },
+        phone: { type: 'string', description: 'New phone.' },
+        address: { type: 'string', description: 'New address.' },
+      },
+      required: [],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'create_contractor',
+    description:
+      'Add a new contractor/subcontractor to the system. Use when someone mentions a new subbie or contractor.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Contractor or company name.' },
+        contact: { type: 'string', description: 'Contact person name.' },
+        email: { type: 'string', description: 'Email address.' },
+        phone: { type: 'string', description: 'Phone number.' },
+        trade: { type: 'string', description: 'Trade type, e.g. electrical, plumbing, carpentry.' },
+        abn: { type: 'string', description: 'Australian Business Number.' },
+      },
+      required: ['name'],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'update_contractor',
+    description: 'Update an existing contractor/subcontractor.',
+    parameters: {
+      type: 'object',
+      properties: {
+        contractor_id: { type: 'string', description: 'The contractor ID to update.' },
+        contractor_name: { type: 'string', description: 'Search by name if ID not known.' },
+        name: { type: 'string', description: 'New name.' },
+        contact: { type: 'string', description: 'New contact person.' },
+        email: { type: 'string', description: 'New email.' },
+        phone: { type: 'string', description: 'New phone.' },
+        trade: { type: 'string', description: 'New trade.' },
+        abn: { type: 'string', description: 'New ABN.' },
+      },
+      required: [],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'create_supplier',
+    description:
+      'Add a new supplier to the system. Use when someone mentions a new supplier or material provider.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Supplier or company name.' },
+        contact_name: { type: 'string', description: 'Contact person name.' },
+        email: { type: 'string', description: 'Email address.' },
+        phone: { type: 'string', description: 'Phone number.' },
+        abn: { type: 'string', description: 'Australian Business Number.' },
+      },
+      required: ['name'],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'create_work_order',
+    description:
+      'Create a new work order. Use when someone wants to raise a work order for a contractor or trade.',
+    parameters: {
+      type: 'object',
+      properties: {
+        job_id: {
+          type: 'string',
+          description: 'The job ID or job number (e.g. J-0001) this work order relates to.',
+        },
+        contractor_name: {
+          type: 'string',
+          description: 'Name of the contractor.',
+        },
+        trade: {
+          type: 'string',
+          description: 'Trade type, e.g. electrical, plumbing, carpentry.',
+        },
+        scope_of_work: {
+          type: 'string',
+          description: 'Description of the work to be done.',
+        },
+        due_date: {
+          type: 'string',
+          description: 'Due date in YYYY-MM-DD format.',
+        },
+        po_limit: {
+          type: 'number',
+          description: 'Purchase order limit in dollars.',
+        },
+      },
+      required: ['scope_of_work'],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'create_purchase_order',
+    description:
+      'Create a new purchase order. Use when someone wants to raise a PO for materials or supplies.',
+    parameters: {
+      type: 'object',
+      properties: {
+        job_id: {
+          type: 'string',
+          description: 'The job ID or job number this PO relates to.',
+        },
+        supplier_name: {
+          type: 'string',
+          description: 'Name of the supplier.',
+        },
+        items: {
+          type: 'string',
+          description: 'Description of items to order. For multiple items, separate with semicolons.',
+        },
+        delivery_address: {
+          type: 'string',
+          description: 'Delivery address for the order.',
+        },
+        due_date: {
+          type: 'string',
+          description: 'Due/delivery date in YYYY-MM-DD format.',
+        },
+        po_limit: {
+          type: 'number',
+          description: 'Purchase order dollar limit.',
+        },
+      },
+      required: ['items'],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'create_invoice',
+    description:
+      'Create a new invoice for a job. Use when someone wants to invoice a client or raise an invoice.',
+    parameters: {
+      type: 'object',
+      properties: {
+        job_id: {
+          type: 'string',
+          description: 'The job ID or job number to invoice.',
+        },
+        invoice_number: {
+          type: 'string',
+          description: 'Invoice number. Auto-generated if not provided.',
+        },
+        status: {
+          type: 'string',
+          enum: ['draft', 'sent', 'paid'],
+          description: 'Invoice status. Default "draft".',
+        },
+        notes: {
+          type: 'string',
+          description: 'Notes or description for the invoice.',
+        },
+      },
+      required: ['job_id'],
+    },
+  },
 
   {
     type: 'function',
@@ -198,11 +572,16 @@ const tools = [
       properties: {
         job_id: {
           type: 'string',
-          description: 'The job ID to add the note to.',
+          description: 'The job ID or job number to add the note to.',
         },
         note: {
           type: 'string',
           description: 'The note text to add.',
+        },
+        category: {
+          type: 'string',
+          enum: ['general', 'site_update', 'issue', 'inspection', 'delivery', 'safety'],
+          description: 'Note category. Default "general".',
         },
       },
       required: ['job_id', 'note'],
@@ -218,7 +597,7 @@ const tools = [
       properties: {
         job_id: {
           type: 'string',
-          description: 'The job ID to update.',
+          description: 'The job ID or job number to update.',
         },
         status: {
           type: 'string',
@@ -243,48 +622,11 @@ const tools = [
         },
         status: {
           type: 'string',
-          enum: ['open', 'in-progress', 'completed', 'cancelled'],
+          enum: ['Draft', 'Approved', 'Sent', 'Viewed', 'Accepted', 'Completed', 'Billed', 'Cancelled'],
           description: 'The new status.',
         },
       },
       required: ['work_order_id', 'status'],
-    },
-  },
-
-  {
-    type: 'function',
-    name: 'create_work_order',
-    description:
-      'Create a new work order. Use when someone wants to raise a work order for a contractor or trade.',
-    parameters: {
-      type: 'object',
-      properties: {
-        job_id: {
-          type: 'string',
-          description: 'The job ID or job number (e.g. J-0001) this work order relates to.',
-        },
-        contractor_name: {
-          type: 'string',
-          description: 'Name of the contractor.',
-        },
-        trade: {
-          type: 'string',
-          description: 'Trade type, e.g. electrical, plumbing, carpentry.',
-        },
-        scope_of_work: {
-          type: 'string',
-          description: 'Description of the work to be done.',
-        },
-        due_date: {
-          type: 'string',
-          description: 'Due date in YYYY-MM-DD format.',
-        },
-        po_limit: {
-          type: 'number',
-          description: 'Purchase order limit in dollars.',
-        },
-      },
-      required: ['scope_of_work'],
     },
   },
 

@@ -164,8 +164,56 @@ const SEED_REMINDERS = [
   { id: 8, text: "Submit BAS for Q3", type: "text", dueDate: "2026-03-08", status: "completed", jobId: null, createdAt: "2026-03-01T09:00:00Z" },
 ];
 
+const SEED_CALL_LOG = [
+  { id: 1, direction: "inbound", from: "James Hartwell", phone: "+61 412 345 678", date: "2026-03-14T09:15:00Z", duration: 185, status: "completed", actions: [
+    { type: "reminder", description: "Created reminder: Chase Tom for site photos from Level 3 fitout", time: "00:42", link: { page: "reminders" } },
+    { type: "note", description: "Client asked about timeline for electrical rough-in completion", time: "01:10", link: { page: "jobs" } },
+    { type: "schedule", description: "Scheduled site inspection for March 17 at 10am", time: "02:35", link: { page: "schedule" } },
+  ]},
+  { id: 2, direction: "inbound", from: "Sarah O'Brien", phone: "+61 421 987 654", date: "2026-03-13T14:30:00Z", duration: 127, status: "completed", actions: [
+    { type: "quote", description: "Requested quote for additional plumbing work in bathroom 3", time: "00:30", link: { page: "quotes" } },
+    { type: "note", description: "Mentioned potential water pressure issue on Level 2", time: "01:45", link: { page: "jobs" } },
+  ]},
+  { id: 3, direction: "outbound", to: "Mark Simmons", phone: "+61 433 111 222", date: "2026-03-13T11:00:00Z", duration: 95, status: "completed", actions: [
+    { type: "task", description: "Prompted to complete electrical rough-in sign-off for Job #1", time: "00:15", link: { page: "jobs" } },
+    { type: "confirmation", description: "Confirmed will complete by end of day Friday", time: "01:10" },
+  ]},
+  { id: 4, direction: "inbound", from: "Unknown Caller", phone: "+61 400 000 111", date: "2026-03-12T16:45:00Z", duration: 42, status: "missed", actions: []},
+  { id: 5, direction: "outbound", to: "Tom Richards", phone: "+61 455 666 777", date: "2026-03-12T10:20:00Z", duration: 210, status: "completed", actions: [
+    { type: "task", description: "Prompted to upload site photos for Level 3 fitout", time: "00:20", link: { page: "jobs" } },
+    { type: "reminder", description: "Set follow-up reminder for March 14 if photos not received", time: "02:50", link: { page: "reminders" } },
+    { type: "note", description: "Tom mentioned scaffolding needs inspection before Friday", time: "03:15", link: { page: "schedule" } },
+  ]},
+  { id: 6, direction: "inbound", from: "Council Planning Dept", phone: "+61 2 9000 5555", date: "2026-03-11T09:00:00Z", duration: 320, status: "completed", actions: [
+    { type: "note", description: "DA approval for 42 Park Rd expected by March 20", time: "01:00" },
+    { type: "reminder", description: "Created reminder: Follow up with council on DA approval", time: "04:50", link: { page: "reminders" } },
+  ]},
+  { id: 7, direction: "inbound", from: "James Hartwell", phone: "+61 412 345 678", date: "2026-03-10T08:30:00Z", duration: 156, status: "completed", actions: [
+    { type: "quote", description: "Approved Quote Q-0001 for Office Fitout Level 3", time: "00:45", link: { page: "quotes" } },
+    { type: "schedule", description: "Confirmed start date of March 12 for fitout works", time: "02:00", link: { page: "schedule" } },
+  ]},
+  { id: 8, direction: "outbound", to: "Sarah O'Brien", phone: "+61 421 987 654", date: "2026-03-09T15:10:00Z", duration: 0, status: "no_answer", actions: []},
+  { id: 9, direction: "inbound", from: "Bunnings Trade Desk", phone: "+61 2 8800 1234", date: "2026-03-07T13:20:00Z", duration: 88, status: "completed", actions: [
+    { type: "note", description: "Order BT-00412 ready for pickup — paint, brushes, drop sheets", time: "00:30", link: { page: "bills" } },
+  ]},
+  { id: 10, direction: "outbound", to: "Mark Simmons", phone: "+61 433 111 222", date: "2026-03-05T08:00:00Z", duration: 145, status: "completed", actions: [
+    { type: "task", description: "Prompted to submit timesheet for week ending March 2", time: "00:10", link: { page: "time" } },
+    { type: "confirmation", description: "Confirmed timesheet submitted", time: "01:55" },
+    { type: "note", description: "Requested day off on March 14 — approved", time: "02:20", link: { page: "schedule" } },
+  ]},
+];
+
 const SEED_INVOICES = [
   { id: 1, jobId: 4, number: "INV-0001", status: "paid", lineItems: [{ desc: "HVAC Quarterly Maintenance", qty: 1, unit: "lot", rate: 950 }, { desc: "Replacement Filters x6", qty: 6, unit: "ea", rate: 95 }], tax: 10, dueDate: "2026-02-17", notes: "Thank you for your business.", createdAt: "2026-01-20" },
+];
+
+const DEFAULT_COMPANY = { companyName: "FieldOps Pty Ltd", abn: "12 345 678 901", address: "22 King St, Sydney NSW 2000", phone: "02 9000 1234", email: "admin@fieldops.com" };
+const DEFAULT_COLUMNS = { description: true, qty: true, unit: true, unitPrice: true, lineTotal: true, gst: true };
+const SEED_TEMPLATES = [
+  { id: 1, name: "Default", type: "quote", isDefault: true, ...DEFAULT_COMPANY, logo: null, accentColor: "#111111", footer: "Thank you for your business.", terms: "This quote is valid for 30 days from the date of issue.", showGst: true, columns: { ...DEFAULT_COLUMNS }, emailSubject: "Quote {{number}} from {{companyName}}", emailBody: "Hi {{clientName}},\n\nPlease find attached quote {{number}} for {{jobTitle}}.\n\nTotal: {{total}} (inc. GST)\n\nIf you have any questions, please don't hesitate to get in touch.\n\nKind regards,\n{{companyName}}" },
+  { id: 2, name: "Default", type: "invoice", isDefault: true, ...DEFAULT_COMPANY, logo: null, accentColor: "#4f46e5", footer: "Thank you for your prompt payment.", terms: "Payment due within 14 days of invoice date. Please reference the invoice number with your payment.", showGst: true, columns: { ...DEFAULT_COLUMNS }, emailSubject: "Invoice {{number}} from {{companyName}}", emailBody: "Hi {{clientName}},\n\nPlease find attached invoice {{number}} for {{jobTitle}}.\n\nTotal: {{total}} (inc. GST)\nDue: {{dueDate}}\n\nKind regards,\n{{companyName}}" },
+  { id: 3, name: "Default", type: "work_order", isDefault: true, ...DEFAULT_COMPANY, logo: null, accentColor: "#2563eb", footer: "", terms: "Please confirm acceptance of this work order within 48 hours.", showGst: true, columns: { ...DEFAULT_COLUMNS }, emailSubject: "Work Order {{number}} from {{companyName}}", emailBody: "Hi {{clientName}},\n\nPlease find attached work order {{number}} for {{jobTitle}}.\n\nScope and pricing details are included in the attached document.\n\nPlease confirm your acceptance at your earliest convenience.\n\nKind regards,\n{{companyName}}" },
+  { id: 4, name: "Default", type: "purchase_order", isDefault: true, ...DEFAULT_COMPANY, logo: null, accentColor: "#059669", footer: "", terms: "Please deliver by the date specified. Reference this PO number on your invoice.", showGst: true, columns: { ...DEFAULT_COLUMNS }, emailSubject: "Purchase Order {{number}} from {{companyName}}", emailBody: "Hi {{clientName}},\n\nPlease find attached purchase order {{number}}.\n\nPlease confirm receipt and expected delivery date.\n\nKind regards,\n{{companyName}}" },
 ];
 
 const TEAM_DATA = [
@@ -312,6 +360,8 @@ const SECTION_COLORS = {
   reminders: { accent: "#f59e0b", light: "#fffbeb" },
   status: { accent: "#059669", light: "#ecfdf5" },
   settings: { accent: "#6b7280", light: "#f9fafb" },
+  files: { accent: "#8b5cf6", light: "#f5f3ff" },
+  calllog: { accent: "#0891b2", light: "#ecfeff" },
 };
 const hexToRgba = (hex, a) => {
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
@@ -5522,7 +5572,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
 };
 
 // ── Clients ───────────────────────────────────────────────────────────────────
-const Clients = ({ clients, setClients, jobs }) => {
+const Clients = ({ clients, setClients, jobs, templates = [] }) => {
   const [showModal, setShowModal] = useState(false);
   const [editClient, setEditClient] = useState(null);
   const [clientMode, setClientMode] = useState("edit");
@@ -5847,6 +5897,24 @@ const Clients = ({ clients, setClients, jobs }) => {
                   </div>
                 </div>
               ) : null}
+              {/* Template Preferences */}
+              <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 12, marginTop: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Template Preferences</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {[{ key: "quote", label: "Quotes" }, { key: "invoice", label: "Invoices" }, { key: "work_order", label: "Work Orders" }, { key: "purchase_order", label: "Purchase Orders" }].map(dt => {
+                    const opts = templates.filter(t => t.type === dt.key);
+                    const currentVal = form.templatePreferences?.[dt.key] || opts.find(t => t.isDefault)?.id || "";
+                    return (
+                      <div key={dt.key}>
+                        <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#999", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{dt.label}</label>
+                        <select value={currentVal} onChange={e => setForm(f => ({ ...f, templatePreferences: { ...(f.templatePreferences || {}), [dt.key]: Number(e.target.value) } }))} style={{ width: "100%", padding: "6px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 12, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }}>
+                          {opts.map(t => <option key={t.id} value={t.id}>{t.name}{t.isDefault ? " (Default)" : ""}</option>)}
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
               <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 12 }}>
                 <div style={{ display: "flex", gap: 8 }}>
                   <span className="chip">{clientJobCount} jobs</span>
@@ -6800,6 +6868,30 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
   const [futureForm, setFutureForm] = useState({ jobId: "", weekStart: "", title: "", assignedTo: [], notes: "" });
   const dragFutureRef = useRef(null);
 
+  // Weather data for Coffs Harbour NSW (-30.2963, 153.1157)
+  const [weather, setWeather] = useState({});
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=-30.2963&longitude=153.1157&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=Australia%2FSydney&forecast_days=14");
+        const data = await res.json();
+        if (data.daily) {
+          const w = {};
+          data.daily.time.forEach((date, i) => {
+            w[date] = {
+              maxTemp: data.daily.temperature_2m_max[i],
+              minTemp: data.daily.temperature_2m_min[i],
+              rain: data.daily.precipitation_sum[i],
+              rainChance: data.daily.precipitation_probability_max[i],
+            };
+          });
+          setWeather(w);
+        }
+      } catch (err) { console.error("Weather fetch failed:", err); }
+    };
+    fetchWeather();
+  }, []);
+
   const today = new Date().toISOString().slice(0, 10);
   const sorted = [...schedule].sort((a, b) => a.date > b.date ? 1 : -1);
   const displayed = sorted.filter(e => {
@@ -6885,6 +6977,7 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
     const isWeekend = dayName === "Sat" || dayName === "Sun";
     const dayEntries = allEntries.filter(e => e.date === dateStr);
     const counterRef = useRef(0);
+    const w = weather[dateStr];
     return (
       <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`}
         style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? accent : "#e5e5e5" }}
@@ -6893,9 +6986,23 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
         onDragLeave={e => { counterRef.current--; if (counterRef.current <= 0) { counterRef.current = 0; e.currentTarget.classList.remove("drag-over"); } }}
         onDrop={e => { counterRef.current = 0; handleDrop(dateStr, e); }}
       >
-        <div className="schedule-day-header" style={{ background: isToday ? accent : isPast ? "#e0e0e0" : "#f5f5f5", color: isToday ? "#fff" : isPast ? "#999" : "#333" }}>
-          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>{dayName}</span>
-          <span style={{ fontSize: isCompact ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</span>
+        <div className="schedule-day-header" style={{ background: isToday ? accent : isPast ? "#e0e0e0" : "#f5f5f5", color: isToday ? "#fff" : isPast ? "#999" : "#333", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>{dayName}</span>
+            <span style={{ fontSize: isCompact ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</span>
+          </div>
+          {w && !isCompact && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1, fontSize: 10, color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#bbb" : "#666" }}>
+              <span title="Temperature" style={{ fontWeight: 600 }}>{Math.round(w.minTemp)}–{Math.round(w.maxTemp)}°</span>
+              {w.rainChance > 0 && <span title="Chance of rain" style={{ color: isToday ? "rgba(255,255,255,0.85)" : w.rainChance >= 50 ? "#2563eb" : "#888" }}>💧{w.rainChance}%{w.rain > 0 ? ` ${w.rain}mm` : ""}</span>}
+            </div>
+          )}
+          {w && isCompact && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0, fontSize: 9, color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#bbb" : "#666" }}>
+              <span>{Math.round(w.maxTemp)}°</span>
+              {w.rainChance > 0 && <span>💧{w.rainChance}%</span>}
+            </div>
+          )}
         </div>
         <div className="schedule-day-body">
           {dayEntries.length === 0 && <div style={{ fontSize: 11, color: "#ccc", textAlign: "center", padding: isCompact ? "6px 0" : "12px 0" }}>—</div>}
@@ -9883,6 +9990,27 @@ const DisplaySchedule = ({ schedule, jobs, clients }) => {
   const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const accent = DS.accent;
 
+  // Weather data for Coffs Harbour NSW
+  const [weather, setWeather] = useState({});
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=-30.2963&longitude=153.1157&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=Australia%2FSydney&forecast_days=14");
+        const data = await res.json();
+        if (data.daily) {
+          const w = {};
+          data.daily.time.forEach((date, i) => {
+            w[date] = { maxTemp: data.daily.temperature_2m_max[i], minTemp: data.daily.temperature_2m_min[i], rain: data.daily.precipitation_sum[i], rainChance: data.daily.precipitation_probability_max[i] };
+          });
+          setWeather(w);
+        }
+      } catch (err) { console.error("Weather fetch failed:", err); }
+    };
+    fetchWeather();
+    const interval = setInterval(fetchWeather, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const DayCol = ({ dateStr, isLarge, isCompact }) => {
     const isToday = dateStr === today;
     const isPast = dateStr < today;
@@ -9891,6 +10019,7 @@ const DisplaySchedule = ({ schedule, jobs, clients }) => {
     const dayEntries = schedule.filter(e => e.date === dateStr);
     const headerBg = isToday ? accent : isPast ? "#e0e0e0" : isWeekend ? "#f8f8f8" : "#f5f5f5";
     const headerColor = isToday ? "#fff" : isPast ? "#bbb" : "#333";
+    const w = weather[dateStr];
     return (
       <div style={{ flex: isCompact ? undefined : 1, background: isToday ? "#ecfeff" : isPast ? "#fafafa" : isWeekend ? "#fafafa" : "#fff", border: `1px solid ${isToday ? accent : "#e5e5e5"}`, borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column", opacity: isPast ? 0.7 : 1 }}>
         <div style={{ background: headerBg, padding: isCompact ? "6px 10px" : isLarge ? "10px 16px" : "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
@@ -9898,7 +10027,19 @@ const DisplaySchedule = ({ schedule, jobs, clients }) => {
             <span style={{ fontSize: isCompact ? 11 : isLarge ? 14 : 11, fontWeight: 700, textTransform: "uppercase", color: headerColor }}>{DAY_NAMES[d.getDay()]}</span>
             <span style={{ fontSize: isCompact ? 14 : isLarge ? 25 : 18, fontWeight: 800, lineHeight: 1, color: headerColor }}>{d.getDate()}</span>
           </div>
-          <span style={{ fontSize: isCompact ? 10 : isLarge ? 14 : 11, color: isToday ? "rgba(255,255,255,0.7)" : isPast ? "#ccc" : "#aaa", fontWeight: 400 }}>{MONTH_SHORT[d.getMonth()]}</span>
+          {w && !isCompact ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1, fontSize: isLarge ? 13 : 11, color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#ccc" : "#666" }}>
+              <span style={{ fontWeight: 600 }}>{Math.round(w.minTemp)}–{Math.round(w.maxTemp)}°</span>
+              {w.rainChance > 0 && <span style={{ color: isToday ? "rgba(255,255,255,0.85)" : w.rainChance >= 50 ? "#2563eb" : "#888" }}>💧{w.rainChance}%{w.rain > 0 ? ` ${w.rain}mm` : ""}</span>}
+            </div>
+          ) : w && isCompact ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0, fontSize: 9, color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#ccc" : "#666" }}>
+              <span>{Math.round(w.maxTemp)}°</span>
+              {w.rainChance > 0 && <span>💧{w.rainChance}%</span>}
+            </div>
+          ) : (
+            <span style={{ fontSize: isCompact ? 10 : isLarge ? 14 : 11, color: isToday ? "rgba(255,255,255,0.7)" : isPast ? "#ccc" : "#aaa", fontWeight: 400 }}>{MONTH_SHORT[d.getMonth()]}</span>
+          )}
         </div>
         <div style={{ padding: isCompact ? "4px 8px" : isLarge ? "12px 14px" : "8px 10px", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: isCompact ? 4 : 8 }}>
           {dayEntries.length === 0 ? (
@@ -10133,9 +10274,24 @@ const DEFAULT_VOICE_SETTINGS = {
   confirmWrites: true,
 };
 
-const Settings = ({ staff = [], setStaff }) => {
+const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplates, companyInfo, setCompanyInfo }) => {
   const auth = useAuth();
-  const [tab, setTab] = useState("integrations");
+  const [tab, setTab] = useState("company");
+  // Template management state
+  const [docType, setDocType] = useState("quote");
+  const [editTemplate, setEditTemplate] = useState(null);
+  const [tplForm, setTplForm] = useState(null);
+  // Company info state
+  const [companyForm, setCompanyForm] = useState({ ...companyInfo });
+  const [companyDirty, setCompanyDirty] = useState(false);
+  const [companySaved, setCompanySaved] = useState(false);
+  const updateCompanyField = (key, value) => { setCompanyForm(f => ({ ...f, [key]: value })); setCompanyDirty(true); setCompanySaved(false); };
+  const saveCompanyInfo = () => {
+    setCompanyInfo(companyForm);
+    localStorage.setItem("fieldops_company_info", JSON.stringify(companyForm));
+    setCompanyDirty(false); setCompanySaved(true);
+    setTimeout(() => setCompanySaved(false), 2500);
+  };
   const [voiceSettings, setVoiceSettings] = useState(() => {
     try {
       const saved = localStorage.getItem("fieldops_voice_settings");
@@ -10187,8 +10343,10 @@ const Settings = ({ staff = [], setStaff }) => {
   const accent = SECTION_COLORS.settings.accent;
 
   const tabs = [
-    { id: "integrations", label: "Integrations", icon: "send" },
+    { id: "company", label: "Company", icon: "clients" },
+    { id: "integrations", label: "Inbound Calls", icon: "send" },
     { id: "outbound", label: "Outbound Calls", icon: "notification" },
+    { id: "templates", label: "Templates", icon: "quotes" },
     ...(auth.isAdmin || auth.isLocalDev ? [{ id: "users", label: "Users", icon: "clients" }] : []),
   ];
 
@@ -10429,27 +10587,54 @@ const Settings = ({ staff = [], setStaff }) => {
     </div>
   );
 
+  const PERMISSION_SECTIONS = [
+    { id: "dashboard", label: "Dashboard", actions: ["view"] },
+    { id: "actions", label: "Actions", actions: ["view"] },
+    { id: "schedule", label: "Schedule", actions: ["view", "create", "edit", "delete"] },
+    { id: "reminders", label: "Reminders", actions: ["view", "create", "edit", "delete"] },
+    { id: "jobs", label: "Jobs", actions: ["view", "create", "edit", "delete"] },
+    { id: "orders", label: "Orders", actions: ["view", "create", "edit", "delete", "approve", "send"] },
+    { id: "time", label: "Time Tracking", actions: ["view", "create", "edit", "delete"] },
+    { id: "bills", label: "Bills", actions: ["view", "create", "edit", "delete", "approve"] },
+    { id: "quotes", label: "Quotes", actions: ["view", "create", "edit", "delete", "send"] },
+    { id: "invoices", label: "Invoices", actions: ["view", "create", "edit", "delete", "send"] },
+    { id: "clients", label: "Clients", actions: ["view", "create", "edit", "delete"] },
+    { id: "contractors", label: "Contractors", actions: ["view", "create", "edit", "delete", "manage"] },
+    { id: "suppliers", label: "Suppliers", actions: ["view", "create", "edit", "delete"] },
+    { id: "settings", label: "Settings", actions: ["view", "edit"] },
+  ];
+  const ACTION_LABELS = { view: "View", create: "Create", edit: "Edit", delete: "Delete", approve: "Approve", send: "Send", manage: "Manage" };
+  const DEFAULT_PERMISSIONS = Object.fromEntries(PERMISSION_SECTIONS.map(s => [s.id, [...s.actions]]));
+  const countPerms = (perms) => { let total = 0, enabled = 0; PERMISSION_SECTIONS.forEach(s => { total += s.actions.length; enabled += (perms[s.id] || []).length; }); return { total, enabled }; };
+
   const UserManagement = () => {
     const [showInvite, setShowInvite] = useState(false);
-    const [inviteForm, setInviteForm] = useState({ fullName: "", email: "", role: "staff", password: "" });
+    const [inviteForm, setInviteForm] = useState({ fullName: "", email: "", password: "" });
     const [inviteLoading, setInviteLoading] = useState(false);
     const [inviteError, setInviteError] = useState(null);
     const [inviteSuccess, setInviteSuccess] = useState(null);
-    const [editingId, setEditingId] = useState(null);
-    const [editRole, setEditRole] = useState("");
     const [updateError, setUpdateError] = useState(null);
+    const [permEditId, setPermEditId] = useState(null);
+    const [permData, setPermData] = useState(null);
+
+    // Get permissions for a user — returns { sectionId: [actions], ... }
+    const getUserPerms = (userId) => {
+      try { const all = JSON.parse(localStorage.getItem("fieldops_user_permissions") || "{}"); return all[userId] || { ...DEFAULT_PERMISSIONS }; } catch { return { ...DEFAULT_PERMISSIONS }; }
+    };
+    const saveUserPerms = (userId, perms) => {
+      try { const all = JSON.parse(localStorage.getItem("fieldops_user_permissions") || "{}"); all[userId] = perms; localStorage.setItem("fieldops_user_permissions", JSON.stringify(all)); } catch {}
+    };
 
     const handleInvite = async (e) => {
       e.preventDefault();
       setInviteError(null);
       setInviteLoading(true);
       try {
-        const result = await inviteUser(inviteForm.email, inviteForm.fullName, inviteForm.role, inviteForm.password || undefined);
+        const result = await inviteUser(inviteForm.email, inviteForm.fullName, "staff", inviteForm.password || undefined);
         setInviteSuccess(result.user);
-        setInviteForm({ fullName: "", email: "", role: "staff", password: "" });
-        // Add to local staff list
+        setInviteForm({ fullName: "", email: "", password: "" });
         if (setStaff) {
-          setStaff(prev => [...prev, { id: result.user.id, name: result.user.fullName, email: result.user.email, role: result.user.role, active: true }]);
+          setStaff(prev => [...prev, { id: result.user.id, name: result.user.fullName, email: result.user.email, active: true }]);
         }
       } catch (err) {
         setInviteError(err.message);
@@ -10462,37 +10647,36 @@ const Settings = ({ staff = [], setStaff }) => {
       setUpdateError(null);
       try {
         await updateStaffRecord(s.id, { active: !s.active });
-        if (setStaff) {
-          setStaff(prev => prev.map(st => st.id === s.id ? { ...st, active: !st.active } : st));
-        }
-      } catch (err) {
-        setUpdateError(`Failed to update ${s.name}: ${err.message}`);
-      }
-    };
-
-    const handleRoleChange = async (s) => {
-      setUpdateError(null);
-      try {
-        await updateStaffRecord(s.id, { role: editRole });
-        if (setStaff) {
-          setStaff(prev => prev.map(st => st.id === s.id ? { ...st, role: editRole } : st));
-        }
-        setEditingId(null);
-      } catch (err) {
-        setUpdateError(`Failed to update role: ${err.message}`);
-      }
+        if (setStaff) { setStaff(prev => prev.map(st => st.id === s.id ? { ...st, active: !st.active } : st)); }
+      } catch (err) { setUpdateError(`Failed to update ${s.name}: ${err.message}`); }
     };
 
     const handleResetPassword = async (s) => {
       if (!window.confirm(`Send a password reset email to ${s.email}?`)) return;
       setUpdateError(null);
-      try {
-        await adminResetUserPassword(s.email);
-        alert(`Password reset email sent to ${s.email}`);
-      } catch (err) {
-        setUpdateError(`Failed to send reset: ${err.message}`);
-      }
+      try { await adminResetUserPassword(s.email); alert(`Password reset email sent to ${s.email}`); } catch (err) { setUpdateError(`Failed to send reset: ${err.message}`); }
     };
+
+    const openPermissions = (s) => { setPermEditId(s.id); setPermData(JSON.parse(JSON.stringify(getUserPerms(s.id)))); };
+    const toggleAction = (sectionId, action) => {
+      setPermData(prev => {
+        const current = prev[sectionId] || [];
+        const updated = current.includes(action) ? current.filter(a => a !== action) : [...current, action];
+        // If removing "view", remove all other actions too
+        if (action === "view" && !updated.includes("view")) return { ...prev, [sectionId]: [] };
+        // If adding any action, ensure "view" is included
+        if (action !== "view" && !updated.includes("view")) updated.push("view");
+        return { ...prev, [sectionId]: updated };
+      });
+    };
+    const toggleAllSection = (sectionId) => {
+      setPermData(prev => {
+        const sec = PERMISSION_SECTIONS.find(s => s.id === sectionId);
+        const current = prev[sectionId] || [];
+        return { ...prev, [sectionId]: current.length === sec.actions.length ? [] : [...sec.actions] };
+      });
+    };
+    const savePermissions = () => { saveUserPerms(permEditId, permData); setPermEditId(null); };
 
     return (
       <div>
@@ -10507,9 +10691,7 @@ const Settings = ({ staff = [], setStaff }) => {
         </div>
 
         {updateError && (
-          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#dc2626" }}>
-            {updateError}
-          </div>
+          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#dc2626" }}>{updateError}</div>
         )}
 
         {/* Invite form */}
@@ -10519,63 +10701,40 @@ const Settings = ({ staff = [], setStaff }) => {
               <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Invite New User</div>
               <CloseBtn onClick={() => { setShowInvite(false); setInviteSuccess(null); }} />
             </div>
-
             {inviteSuccess ? (
               <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: 16 }}>
-                <div style={{ fontWeight: 700, color: "#166534", marginBottom: 8, fontSize: 13 }}>
-                  <Icon name="check" size={14} /> User created successfully
-                </div>
+                <div style={{ fontWeight: 700, color: "#166534", marginBottom: 8, fontSize: 13 }}><Icon name="check" size={14} /> User created successfully</div>
                 <div style={{ display: "grid", gap: 6, fontSize: 12 }}>
                   <div><span style={{ color: "#888" }}>Name:</span> <span style={{ fontWeight: 600 }}>{inviteSuccess.fullName}</span></div>
                   <div><span style={{ color: "#888" }}>Email:</span> <span style={{ fontWeight: 600 }}>{inviteSuccess.email}</span></div>
-                  <div><span style={{ color: "#888" }}>Role:</span> <span style={{ fontWeight: 600, textTransform: "capitalize" }}>{inviteSuccess.role}</span></div>
                   <div style={{ background: "#fff", border: "1px solid #bbf7d0", borderRadius: 6, padding: "10px 14px", marginTop: 8 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 4, letterSpacing: "0.06em", textTransform: "uppercase" }}>Temporary Password</div>
                     <div style={{ fontFamily: "monospace", fontSize: 15, fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>{inviteSuccess.temporaryPassword}</div>
-                    <div style={{ fontSize: 10, color: "#888", marginTop: 4 }}>Share this securely with the user. They should change it on first login.</div>
+                    <div style={{ fontSize: 10, color: "#888", marginTop: 4 }}>Share this securely. They should change it on first login.</div>
                   </div>
                 </div>
-                <button className="btn btn-sm" style={{ marginTop: 12, fontSize: 11 }} onClick={() => { setInviteSuccess(null); }}>Invite Another</button>
+                <button className="btn btn-sm" style={{ marginTop: 12, fontSize: 11 }} onClick={() => setInviteSuccess(null)}>Invite Another</button>
               </div>
             ) : (
               <form onSubmit={handleInvite}>
-                {inviteError && (
-                  <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#dc2626" }}>
-                    {inviteError}
-                  </div>
-                )}
+                {inviteError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#dc2626" }}>{inviteError}</div>}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
                   <div>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Full Name</label>
-                    <input type="text" value={inviteForm.fullName} onChange={e => setInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="e.g. Tom Baker" required
-                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                    <input type="text" value={inviteForm.fullName} onChange={e => setInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="e.g. Tom Baker" required style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
                   </div>
                   <div>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Email</label>
-                    <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="tom@company.com" required
-                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                    <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="tom@company.com" required style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
                   </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Role</label>
-                    <select value={inviteForm.role} onChange={e => setInviteForm(f => ({ ...f, role: e.target.value }))}
-                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", background: "#fff" }}>
-                      <option value="staff">Staff</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Password (optional)</label>
-                    <input type="text" value={inviteForm.password} onChange={e => setInviteForm(f => ({ ...f, password: e.target.value }))} placeholder="Auto-generated if blank"
-                      style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
-                  </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Password (optional)</label>
+                  <input type="text" value={inviteForm.password} onChange={e => setInviteForm(f => ({ ...f, password: e.target.value }))} placeholder="Auto-generated if blank" style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
                 </div>
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                   <button type="button" className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => setShowInvite(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: inviteLoading ? 0.6 : 1 }} disabled={inviteLoading}>
-                    {inviteLoading ? "Creating..." : "Create User"}
-                  </button>
+                  <button type="submit" className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: inviteLoading ? 0.6 : 1 }} disabled={inviteLoading}>{inviteLoading ? "Creating..." : "Create User"}</button>
                 </div>
               </form>
             )}
@@ -10583,90 +10742,84 @@ const Settings = ({ staff = [], setStaff }) => {
         )}
 
         {/* Users list */}
-        <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: "#f8f8f8", borderBottom: "1px solid #e8e8e8" }}>
-                <th style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>User</th>
-                <th style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Email</th>
-                <th style={{ textAlign: "left", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Role</th>
-                <th style={{ textAlign: "center", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Status</th>
-                <th style={{ textAlign: "right", padding: "10px 16px", fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {staff.length === 0 && (
-                <tr><td colSpan={5} style={{ padding: 24, textAlign: "center", color: "#999" }}>No users found</td></tr>
-              )}
-              {staff.map(s => {
-                const initials = s.name.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
-                const isSelf = auth.staff?.id === s.id;
-                return (
-                  <tr key={s.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                    <td style={{ padding: "12px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: s.active ? "#111" : "#ddd", color: s.active ? "#fff" : "#999", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
-                          {initials}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 600, color: s.active ? "#111" : "#999" }}>{s.name}{isSelf ? " (you)" : ""}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: "12px 16px", color: "#666" }}>{s.email}</td>
-                    <td style={{ padding: "12px 16px" }}>
-                      {editingId === s.id ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <select value={editRole} onChange={e => setEditRole(e.target.value)}
-                            style={{ padding: "4px 8px", border: "1px solid #ddd", borderRadius: 4, fontSize: 12, fontFamily: "'Open Sans', sans-serif" }}>
-                            <option value="staff">Staff</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                          <button className="btn btn-xs" style={{ background: accent, color: "#fff", border: "none", fontSize: 10, padding: "3px 8px" }} onClick={() => handleRoleChange(s)}>Save</button>
-                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10, padding: "3px 8px" }} onClick={() => setEditingId(null)}>Cancel</button>
-                        </div>
-                      ) : (
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
-                          background: s.role === "admin" ? "#f5f3ff" : "#f0f9ff",
-                          color: s.role === "admin" ? "#7c3aed" : "#0284c7",
-                          textTransform: "capitalize",
-                        }}>
-                          {s.role}
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                      <span style={{
-                        display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
-                        background: s.active ? "#ecfdf5" : "#f9fafb",
-                        color: s.active ? "#059669" : "#9ca3af",
-                      }}>
-                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.active ? "#059669" : "#9ca3af" }} />
-                        {s.active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "12px 16px", textAlign: "right" }}>
-                      {!isSelf && (
-                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10 }} onClick={() => { setEditingId(s.id); setEditRole(s.role); }}>
-                            Change Role
-                          </button>
-                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10 }} onClick={() => handleResetPassword(s)}>
-                            Reset Password
-                          </button>
-                          <button className="btn btn-xs btn-ghost" style={{ fontSize: 10, color: s.active ? "#dc2626" : "#059669" }} onClick={() => handleToggleActive(s)}>
-                            {s.active ? "Deactivate" : "Activate"}
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {staff.length === 0 && <div style={{ textAlign: "center", padding: 24, color: "#999", fontSize: 13 }}>No users found</div>}
+          {staff.map(s => {
+            const initials = s.name?.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase() || "?";
+            const isSelf = auth.staff?.id === s.id;
+            const perms = getUserPerms(s.id);
+            const { total: permTotal, enabled: permEnabled } = countPerms(perms);
+            return (
+              <div key={s.id} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", opacity: s.active ? 1 : 0.5 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: s.active ? "#111" : "#ddd", color: s.active ? "#fff" : "#999", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, flexShrink: 0 }}>{initials}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{s.name}{isSelf ? " (you)" : ""}</div>
+                    <div style={{ fontSize: 11, color: "#888" }}>{s.email}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: permEnabled === permTotal ? "#059669" : "#f59e0b", background: "#f5f5f5", padding: "2px 8px", borderRadius: 4 }}>{permEnabled}/{permTotal} permissions</span>
+                    <button onClick={() => openPermissions(s)} style={{ padding: "4px 10px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", fontWeight: 600 }}>Permissions</button>
+                    {!isSelf && (
+                      <>
+                        <button onClick={() => handleResetPassword(s)} style={{ padding: "4px 10px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Reset PW</button>
+                        <button onClick={() => handleToggleActive(s)} style={{ padding: "4px 10px", background: "none", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", color: s.active ? "#dc2626" : "#059669" }}>{s.active ? "Deactivate" : "Activate"}</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
+
+        {/* Permissions modal */}
+        {permEditId && permData && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setPermEditId(null)}>
+            <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 560, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", maxHeight: "85vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Permissions</div>
+              <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>{staff.find(s => s.id === permEditId)?.name} — {(() => { const c = countPerms(permData); return `${c.enabled}/${c.total} enabled`; })()}</div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+                {PERMISSION_SECTIONS.map(sec => {
+                  const enabled = permData[sec.id] || [];
+                  const allOn = enabled.length === sec.actions.length;
+                  const anyOn = enabled.length > 0;
+                  return (
+                    <div key={sec.id} style={{ border: "1px solid #e8e8e8", borderRadius: 8, overflow: "hidden", background: anyOn ? "#fff" : "#fafafa" }}>
+                      {/* Section header */}
+                      <div onClick={() => toggleAllSection(sec.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", borderBottom: anyOn ? "1px solid #f0f0f0" : "none" }}>
+                        <input type="checkbox" checked={allOn} readOnly style={{ width: 15, height: 15, accentColor: "#059669", cursor: "pointer", pointerEvents: "none" }} />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: anyOn ? "#111" : "#999", flex: 1 }}>{sec.label}</span>
+                        <span style={{ fontSize: 10, color: "#aaa" }}>{enabled.length}/{sec.actions.length}</span>
+                      </div>
+                      {/* Action toggles */}
+                      {anyOn && (
+                        <div style={{ display: "flex", gap: 6, padding: "8px 14px 10px 40px", flexWrap: "wrap" }}>
+                          {sec.actions.map(action => {
+                            const isOn = enabled.includes(action);
+                            return (
+                              <button key={action} onClick={() => toggleAction(sec.id, action)} style={{
+                                padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: "pointer", border: "1px solid",
+                                fontFamily: "'Open Sans', sans-serif", transition: "all 0.15s",
+                                background: isOn ? "#ecfdf5" : "#fff", color: isOn ? "#059669" : "#999", borderColor: isOn ? "#bbf7d0" : "#e8e8e8",
+                              }}>{ACTION_LABELS[action]}</button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button onClick={() => setPermEditId(null)} style={{ padding: "8px 16px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
+                <button onClick={savePermissions} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Save Permissions</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -10692,6 +10845,53 @@ const Settings = ({ staff = [], setStaff }) => {
         ))}
       </div>
 
+      {tab === "company" && (
+        <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Company Information</div>
+              <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Your company details used across the app and document templates</div>
+            </div>
+            <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: companyDirty ? 1 : 0.5 }} onClick={saveCompanyInfo} disabled={!companyDirty}>
+              {companySaved ? "Saved!" : "Save Changes"}
+            </button>
+          </div>
+          {companySaved && (
+            <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+              <Icon name="check" size={14} /> Company information saved.
+            </div>
+          )}
+          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Company Name</label>
+                <input value={companyForm.companyName} onChange={e => updateCompanyField("companyName", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>ABN</label>
+                <input value={companyForm.abn} onChange={e => updateCompanyField("abn", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Address</label>
+              <input value={companyForm.address} onChange={e => updateCompanyField("address", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Phone</label>
+                <input value={companyForm.phone} onChange={e => updateCompanyField("phone", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Email</label>
+                <input value={companyForm.email} onChange={e => updateCompanyField("email", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          </div>
+          <div style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: 10, padding: "14px 20px", fontSize: 12, color: "#888" }}>
+            These details are used as defaults across the app. Document templates can override the email address per template in the Templates tab.
+          </div>
+        </div>
+      )}
       {tab === "integrations" && <VoiceIntegration />}
       {tab === "outbound" && (
         <div>
@@ -10823,7 +11023,672 @@ const Settings = ({ staff = [], setStaff }) => {
           )}
         </div>
       )}
+      {tab === "templates" && (() => {
+        const DOC_TYPES = [
+          { id: "quote", label: "Quotes" },
+          { id: "invoice", label: "Invoices" },
+          { id: "work_order", label: "Work Orders" },
+          { id: "purchase_order", label: "Purchase Orders" },
+        ];
+        const TEMPLATE_VARS = [
+          { var: "{{clientName}}", desc: "Client/recipient name" },
+          { var: "{{number}}", desc: "Document number (Q-0001)" },
+          { var: "{{total}}", desc: "Total amount inc. GST" },
+          { var: "{{subtotal}}", desc: "Subtotal before tax" },
+          { var: "{{dueDate}}", desc: "Due date" },
+          { var: "{{jobTitle}}", desc: "Job title" },
+          { var: "{{companyName}}", desc: "Your company name" },
+          { var: "{{date}}", desc: "Document date" },
+          { var: "{{type}}", desc: "Document type" },
+        ];
+        const typeTemplates = templates.filter(t => t.type === docType);
+
+        const openNewTemplate = () => {
+          const defaults = templates.find(t => t.type === docType && t.isDefault) || SEED_TEMPLATES.find(t => t.type === docType);
+          setTplForm({ ...defaults, id: null, name: "", isDefault: false });
+          setEditTemplate("new");
+        };
+        const openEditTemplate = (tpl) => { setTplForm({ ...tpl }); setEditTemplate(tpl.id); };
+        const saveTemplate = () => {
+          if (!tplForm.name.trim()) return;
+          const updated = editTemplate === "new"
+            ? [...templates, { ...tplForm, id: Date.now() }]
+            : templates.map(t => t.id === editTemplate ? { ...tplForm } : t);
+          setTemplates(updated);
+          localStorage.setItem("fieldops_templates", JSON.stringify(updated));
+          setEditTemplate(null);
+        };
+        const deleteTemplate = (id) => {
+          const updated = templates.filter(t => t.id !== id);
+          setTemplates(updated);
+          localStorage.setItem("fieldops_templates", JSON.stringify(updated));
+        };
+        const setDefault = (id) => {
+          const updated = templates.map(t => t.type === docType ? { ...t, isDefault: t.id === id } : t);
+          setTemplates(updated);
+          localStorage.setItem("fieldops_templates", JSON.stringify(updated));
+        };
+
+        if (editTemplate !== null && tplForm) {
+          // ── Template Editor ──
+          return (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                <button onClick={() => setEditTemplate(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#888", fontSize: 16, padding: 4 }}>&larr;</button>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>{editTemplate === "new" ? "New Template" : "Edit Template"}</div>
+                <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+                  <button onClick={() => setEditTemplate(null)} style={{ padding: "6px 14px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 12, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
+                  <button onClick={saveTemplate} style={{ padding: "6px 14px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Save Template</button>
+                </div>
+              </div>
+
+              {/* Template name */}
+              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Template Name</label>
+                <input value={tplForm.name} onChange={e => setTplForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Premium, Minimal, Branded" style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} autoFocus />
+              </div>
+
+              {/* Company Details (inherited from Settings > Company) */}
+              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Company Details</div>
+                  <span style={{ fontSize: 10, color: "#aaa" }}>From Settings &gt; Company</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+                  <div style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#aaa", textTransform: "uppercase", marginBottom: 2 }}>Company</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>{companyInfo.companyName}</div>
+                  </div>
+                  <div style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#aaa", textTransform: "uppercase", marginBottom: 2 }}>ABN</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>{companyInfo.abn}</div>
+                  </div>
+                  <div style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#aaa", textTransform: "uppercase", marginBottom: 2 }}>Address</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>{companyInfo.address}</div>
+                  </div>
+                  <div style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#aaa", textTransform: "uppercase", marginBottom: 2 }}>Phone</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>{companyInfo.phone}</div>
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Template Email <span style={{ fontWeight: 400, color: "#aaa", textTransform: "none" }}>(override per template)</span></label>
+                  <input value={tplForm.email} onChange={e => setTplForm(f => ({ ...f, email: e.target.value }))} style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                </div>
+              </div>
+
+              {/* Branding */}
+              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Branding</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Accent Colour</label>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <input type="color" value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} style={{ width: 36, height: 36, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", padding: 2 }} />
+                      <input value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} style={{ width: 90, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "monospace", boxSizing: "border-box" }} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Logo</label>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {tplForm.logo && <img src={tplForm.logo} alt="Logo" style={{ height: 32, borderRadius: 4 }} />}
+                      <input type="file" accept="image/*" onChange={e => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onload = () => setTplForm(f => ({ ...f, logo: reader.result })); reader.readAsDataURL(file); } }} style={{ fontSize: 12 }} />
+                      {tplForm.logo && <button onClick={() => setTplForm(f => ({ ...f, logo: null }))} style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 11 }}>Remove</button>}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <label style={{ fontSize: 13, fontWeight: 500, color: "#333" }}>Show GST</label>
+                  <button onClick={() => setTplForm(f => ({ ...f, showGst: !f.showGst }))} style={{ width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer", position: "relative", background: tplForm.showGst ? "#059669" : "#ccc" }}>
+                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: tplForm.showGst ? 19 : 3, transition: "left 0.2s", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Column Visibility */}
+              {(tplForm.type === "quote" || tplForm.type === "invoice") && (
+                <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Line Item Columns</div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {[{ id: "description", label: "Description", required: true }, { id: "qty", label: "Quantity" }, { id: "unit", label: "Unit" }, { id: "unitPrice", label: "Unit Price" }, { id: "lineTotal", label: "Line Total" }, { id: "gst", label: "GST" }].map(col => {
+                      const cols = tplForm.columns || DEFAULT_COLUMNS;
+                      const isOn = cols[col.id] !== false;
+                      return (
+                        <button key={col.id} onClick={() => !col.required && setTplForm(f => ({ ...f, columns: { ...(f.columns || DEFAULT_COLUMNS), [col.id]: !isOn } }))} style={{
+                          padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: col.required ? "default" : "pointer", border: "1px solid",
+                          fontFamily: "'Open Sans', sans-serif", transition: "all 0.15s", opacity: col.required ? 0.7 : 1,
+                          background: isOn ? "#ecfdf5" : "#fff", color: isOn ? "#059669" : "#999", borderColor: isOn ? "#bbf7d0" : "#e8e8e8",
+                        }}>{col.label}</button>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#999", marginTop: 8 }}>Toggle which columns appear on the document. Description is always shown.</div>
+                </div>
+              )}
+
+              {/* Document Preview */}
+              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Preview</div>
+                  <button onClick={() => {
+                    const el = document.getElementById("tpl-preview");
+                    if (!el) return;
+                    const w = window.open("", "_blank", "width=800,height=1000");
+                    w.document.write(`<html><head><title>${tplForm.type} Preview</title><style>body{margin:0;padding:40px;font-family:Arial,sans-serif;font-size:12px}@media print{body{padding:20px}}</style></head><body>${el.innerHTML}<script>setTimeout(()=>window.print(),300)</script></body></html>`);
+                    w.document.close();
+                  }} style={{ padding: "4px 12px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: 13 }}>&#8595;</span> Download PDF
+                  </button>
+                </div>
+                <div id="tpl-preview" style={{ border: "1px solid #e0e0e0", borderRadius: 8, padding: 24, background: "#fff", fontFamily: "Arial, sans-serif", fontSize: 12 }}>
+                  {/* Header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, paddingBottom: 16, borderBottom: `2px solid ${tplForm.accentColor}` }}>
+                    <div>
+                      {tplForm.logo && <img src={tplForm.logo} alt="Logo" style={{ height: 40, marginBottom: 8 }} />}
+                      <div style={{ fontSize: 16, fontWeight: 800, color: tplForm.accentColor }}>{companyInfo.companyName}</div>
+                      {companyInfo.abn && <div style={{ fontSize: 10, color: "#888" }}>ABN: {companyInfo.abn}</div>}
+                      <div style={{ fontSize: 10, color: "#888" }}>{companyInfo.address}</div>
+                      <div style={{ fontSize: 10, color: "#888" }}>{companyInfo.phone} | {tplForm.email}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: tplForm.accentColor, textTransform: "uppercase" }}>{tplForm.type === "work_order" ? "Work Order" : tplForm.type === "purchase_order" ? "Purchase Order" : tplForm.type.charAt(0).toUpperCase() + tplForm.type.slice(1)}</div>
+                      <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>#Q-0001</div>
+                      <div style={{ fontSize: 11, color: "#666" }}>Date: 18/03/2026</div>
+                    </div>
+                  </div>
+                  {/* Client */}
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", marginBottom: 4 }}>Bill To</div>
+                    <div style={{ fontWeight: 600 }}>Hartwell Properties</div>
+                    <div style={{ color: "#666" }}>22 King St, Sydney NSW 2000</div>
+                  </div>
+                  {/* Line items table */}
+                  {(() => {
+                    const cols = tplForm.columns || DEFAULT_COLUMNS;
+                    const colW = 80;
+                    const sampleItems = [
+                      { desc: "Labour — site preparation", qty: 8, unit: "hrs", rate: 95 },
+                      { desc: "Materials — timber framing", qty: 1, unit: "lot", rate: 2340 },
+                      { desc: "Subcontractor — electrical rough-in", qty: 1, unit: "lot", rate: 1850 },
+                    ];
+                    const subtotal = sampleItems.reduce((s, i) => s + i.qty * i.rate, 0);
+                    const gstAmt = tplForm.showGst ? subtotal * 0.1 : 0;
+                    return (
+                      <>
+                        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 12, fontSize: 11, tableLayout: "fixed" }}>
+                          <colgroup>
+                            <col />
+                            {cols.qty !== false && <col style={{ width: colW }} />}
+                            {cols.unit !== false && <col style={{ width: colW }} />}
+                            {cols.unitPrice !== false && <col style={{ width: colW }} />}
+                            {cols.lineTotal !== false && <col style={{ width: colW }} />}
+                          </colgroup>
+                          <thead>
+                            <tr style={{ background: tplForm.accentColor, color: "#fff" }}>
+                              <th style={{ padding: "6px 8px", textAlign: "left" }}>Description</th>
+                              {cols.qty !== false && <th style={{ padding: "6px 8px", textAlign: "right" }}>Qty</th>}
+                              {cols.unit !== false && <th style={{ padding: "6px 8px", textAlign: "center" }}>Unit</th>}
+                              {cols.unitPrice !== false && <th style={{ padding: "6px 8px", textAlign: "right" }}>Unit Price</th>}
+                              {cols.lineTotal !== false && <th style={{ padding: "6px 8px", textAlign: "right" }}>Total</th>}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sampleItems.map((item, i) => (
+                              <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+                                <td style={{ padding: "6px 8px" }}>{item.desc}</td>
+                                {cols.qty !== false && <td style={{ padding: "6px 8px", textAlign: "right" }}>{item.qty}</td>}
+                                {cols.unit !== false && <td style={{ padding: "6px 8px", textAlign: "center" }}>{item.unit}</td>}
+                                {cols.unitPrice !== false && <td style={{ padding: "6px 8px", textAlign: "right" }}>${item.rate.toLocaleString()}</td>}
+                                {cols.lineTotal !== false && <td style={{ padding: "6px 8px", textAlign: "right" }}>${(item.qty * item.rate).toLocaleString()}</td>}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                          <div style={{ width: 180 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 11 }}><span>Subtotal</span><span>${subtotal.toLocaleString()}</span></div>
+                            {tplForm.showGst && cols.gst !== false && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 11 }}><span>GST (10%)</span><span>${gstAmt.toLocaleString()}</span></div>}
+                            <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13, fontWeight: 800, borderTop: "2px solid #111", marginTop: 4 }}><span>Total</span><span>${(subtotal + gstAmt).toLocaleString()}</span></div>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                  {/* Terms & Footer */}
+                  {tplForm.terms && <div style={{ marginTop: 16, padding: "10px 12px", background: "#f8f8f8", borderRadius: 4, fontSize: 10, color: "#666" }}><strong>Terms:</strong> {tplForm.terms}</div>}
+                  {tplForm.footer && <div style={{ marginTop: 12, textAlign: "center", fontSize: 10, color: "#999" }}>{tplForm.footer}</div>}
+                </div>
+              </div>
+
+              {/* Footer & Terms */}
+              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Footer & Terms</div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Footer Text</label>
+                <input value={tplForm.footer} onChange={e => setTplForm(f => ({ ...f, footer: e.target.value }))} placeholder="e.g. Thank you for your business." style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Terms & Conditions</label>
+                <textarea value={tplForm.terms} onChange={e => setTplForm(f => ({ ...f, terms: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+
+              {/* Email Template */}
+              {(() => {
+                const sampleVars = { clientName: "James Hartwell", number: "Q-0001", total: "$5,445", subtotal: "$4,950", dueDate: "01/04/2026", jobTitle: "Office Fitout – Level 3", companyName: companyInfo.companyName, date: "18/03/2026", type: tplForm.type === "work_order" ? "work order" : tplForm.type === "purchase_order" ? "purchase order" : tplForm.type };
+                const replaceVars = (text) => text.replace(/\{\{(\w+)\}\}/g, (_, key) => sampleVars[key] || `{{${key}}}`);
+                return (
+                  <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Email Template</div>
+                      <button onClick={() => setTplForm(f => ({ ...f, _showEmailPreview: !f._showEmailPreview }))} style={{ padding: "4px 12px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>
+                        {tplForm._showEmailPreview ? "Edit" : "Preview"}
+                      </button>
+                    </div>
+                    {tplForm._showEmailPreview ? (
+                      <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden" }}>
+                        {/* Email header */}
+                        <div style={{ background: "#f8f8f8", padding: "12px 16px", borderBottom: "1px solid #e0e0e0" }}>
+                          <div style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 12 }}>
+                            <span style={{ fontWeight: 700, color: "#888", minWidth: 40 }}>From:</span>
+                            <span style={{ color: "#333" }}>{companyInfo.companyName} &lt;{tplForm.email}&gt;</span>
+                          </div>
+                          <div style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 12 }}>
+                            <span style={{ fontWeight: 700, color: "#888", minWidth: 40 }}>To:</span>
+                            <span style={{ color: "#333" }}>James Hartwell &lt;james@hartwell.com&gt;</span>
+                          </div>
+                          <div style={{ display: "flex", gap: 8, fontSize: 12 }}>
+                            <span style={{ fontWeight: 700, color: "#888", minWidth: 40 }}>Subject:</span>
+                            <span style={{ color: "#111", fontWeight: 600 }}>{replaceVars(tplForm.emailSubject)}</span>
+                          </div>
+                        </div>
+                        {/* Email body */}
+                        <div style={{ padding: "16px 20px", fontSize: 13, lineHeight: 1.6, color: "#333", whiteSpace: "pre-wrap", fontFamily: "Arial, sans-serif" }}>
+                          {replaceVars(tplForm.emailBody)}
+                        </div>
+                        {/* Attachment indicator */}
+                        <div style={{ padding: "10px 16px", borderTop: "1px solid #e0e0e0", background: "#fafafa", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 14 }}>&#128206;</span>
+                          <span style={{ fontSize: 11, color: "#666" }}>{tplForm.type === "work_order" ? "Work_Order" : tplForm.type === "purchase_order" ? "Purchase_Order" : tplForm.type.charAt(0).toUpperCase() + tplForm.type.slice(1)}_Q-0001.pdf</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Subject</label>
+                        <input value={tplForm.emailSubject} onChange={e => setTplForm(f => ({ ...f, emailSubject: e.target.value }))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Body</label>
+                        <textarea value={tplForm.emailBody} onChange={e => setTplForm(f => ({ ...f, emailBody: e.target.value }))} rows={6} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 12 }} />
+                        <div style={{ background: "#f8f8f8", borderRadius: 6, padding: "10px 14px" }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Available Variables</div>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {TEMPLATE_VARS.map(v => (
+                              <span key={v.var} title={v.desc} style={{ fontSize: 11, fontFamily: "monospace", background: "#fff", border: "1px solid #e0e0e0", padding: "2px 8px", borderRadius: 4, color: "#555", cursor: "help" }}>{v.var}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          );
+        }
+
+        // ── Template List ──
+        return (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Document & Email Templates</div>
+                <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Manage PDF layouts and email templates for each document type</div>
+              </div>
+              <button onClick={openNewTemplate} style={{ padding: "6px 14px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>+ New Template</button>
+            </div>
+
+            {/* Document type tabs */}
+            <div style={{ display: "flex", gap: 0, marginBottom: 20, border: "1px solid #ddd", borderRadius: 6, overflow: "hidden" }}>
+              {DOC_TYPES.map(dt => (
+                <button key={dt.id} onClick={() => setDocType(dt.id)} style={{ flex: 1, padding: "8px 12px", fontSize: 12, fontWeight: 600, border: "none", borderRight: "1px solid #ddd", cursor: "pointer", fontFamily: "'Open Sans', sans-serif", background: docType === dt.id ? accent : "#f5f5f5", color: docType === dt.id ? "#fff" : "#666" }}>{dt.label}</button>
+              ))}
+            </div>
+
+            {/* Templates for selected type */}
+            {typeTemplates.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 40, color: "#aaa", fontSize: 13 }}>No templates for this document type</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {typeTemplates.map(tpl => (
+                  <div key={tpl.id} onClick={() => openEditTemplate(tpl)} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "box-shadow 0.15s" }} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+                    {/* Colour swatch */}
+                    <div style={{ width: 8, height: 40, borderRadius: 4, background: tpl.accentColor, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{tpl.name}</div>
+                      <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{tpl.companyName} {tpl.logo ? "· Logo" : ""}</div>
+                    </div>
+                    {tpl.isDefault && <span style={{ fontSize: 10, fontWeight: 700, background: "#ecfdf5", color: "#059669", padding: "2px 8px", borderRadius: 4 }}>Default</span>}
+                    {!tpl.isDefault && (
+                      <button onClick={e => { e.stopPropagation(); setDefault(tpl.id); }} style={{ fontSize: 10, fontWeight: 600, background: "#f5f5f5", border: "1px solid #ddd", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", color: "#666" }}>Set Default</button>
+                    )}
+                    {!tpl.isDefault && (
+                      <button onClick={e => { e.stopPropagation(); deleteTemplate(tpl.id); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#ddd", fontSize: 13, padding: 4 }}>🗑</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
       {tab === "users" && <UserManagement />}
+    </div>
+  );
+};
+
+// ── Files Page ──────────────────────────────────────────────────────────────
+const FilesPage = ({ jobs = [], bills = [], contractors = [], quotes = [], invoices = [], workOrders = [], purchaseOrders = [] }) => {
+  const [search, setSearch] = useState("");
+  const [sortField, setSortField] = useState("date");
+  const [sortDir, setSortDir] = useState("desc");
+  const [filterSource, setFilterSource] = useState("all");
+  const [filterType, setFilterType] = useState("all");
+
+  // Aggregate files from all sources
+  const allFiles = useMemo(() => {
+    const files = [];
+
+    // Bills / receipts
+    bills.forEach(b => {
+      files.push({ id: `bill-${b.id}`, name: `${b.invoiceNo || "Bill"} — ${b.supplier}`, type: "Bill / Receipt", source: "Bills", date: b.capturedAt || b.date, size: null, status: b.status, linkedTo: b.jobId ? (jobs.find(j => j.id === b.jobId)?.title || `Job #${b.jobId}`) : null, icon: "bills" });
+    });
+
+    // Contractor documents
+    contractors.forEach(c => {
+      (c.documents || []).forEach(d => {
+        const typeLabels = { workers_comp: "Workers Comp", public_liability: "Public Liability", white_card: "White Card", trade_license: "Trade License", subcontractor_statement: "Subcontractor Statement", swms: "SWMS" };
+        files.push({ id: `cdoc-${d.id}`, name: `${typeLabels[d.type] || d.type} — ${c.name}`, type: "Compliance Doc", source: "Contractors", date: d.uploadedAt, size: null, status: d.expiryDate && new Date(d.expiryDate) < new Date() ? "expired" : "current", linkedTo: c.name, icon: "contractors" });
+      });
+    });
+
+    // Work order attachments
+    workOrders.forEach(wo => {
+      (wo.attachments || []).forEach((att, i) => {
+        files.push({ id: `wo-att-${wo.id}-${i}`, name: typeof att === "string" ? att : (att.name || `WO ${wo.ref} Attachment ${i + 1}`), type: "Work Order Attachment", source: "Orders", date: wo.issueDate, size: att.size || null, status: wo.status, linkedTo: `${wo.ref} — ${wo.contractorName}`, icon: "orders" });
+      });
+    });
+
+    // Purchase order attachments
+    purchaseOrders.forEach(po => {
+      (po.attachments || []).forEach((att, i) => {
+        files.push({ id: `po-att-${po.id}-${i}`, name: typeof att === "string" ? att : (att.name || `PO ${po.ref} Attachment ${i + 1}`), type: "Purchase Order Attachment", source: "Orders", date: po.issueDate, size: att.size || null, status: po.status, linkedTo: `${po.ref} — ${po.supplierName}`, icon: "orders" });
+      });
+    });
+
+    // Quotes (as generated documents)
+    quotes.forEach(q => {
+      files.push({ id: `quote-${q.id}`, name: `Quote ${q.ref || q.id} — ${q.clientName || "Client"}`, type: "Quote", source: "Quotes", date: q.date || q.createdAt, size: null, status: q.status, linkedTo: q.jobTitle || (q.jobId ? `Job #${q.jobId}` : null), icon: "quotes" });
+    });
+
+    // Invoices (as generated documents)
+    invoices.forEach(inv => {
+      files.push({ id: `inv-${inv.id}`, name: `Invoice ${inv.ref || inv.id} — ${inv.clientName || "Client"}`, type: "Invoice", source: "Invoices", date: inv.date || inv.createdAt, size: null, status: inv.status, linkedTo: inv.jobTitle || (inv.jobId ? `Job #${inv.jobId}` : null), icon: "invoices" });
+    });
+
+    return files;
+  }, [bills, contractors, workOrders, purchaseOrders, quotes, invoices, jobs]);
+
+  // Get unique sources and types for filters
+  const sources = useMemo(() => [...new Set(allFiles.map(f => f.source))].sort(), [allFiles]);
+  const types = useMemo(() => [...new Set(allFiles.map(f => f.type))].sort(), [allFiles]);
+
+  // Filter and search
+  const filtered = useMemo(() => {
+    let list = allFiles;
+    if (filterSource !== "all") list = list.filter(f => f.source === filterSource);
+    if (filterType !== "all") list = list.filter(f => f.type === filterType);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(f => f.name.toLowerCase().includes(q) || (f.linkedTo || "").toLowerCase().includes(q) || f.type.toLowerCase().includes(q) || f.source.toLowerCase().includes(q));
+    }
+    // Sort
+    list = [...list].sort((a, b) => {
+      let va, vb;
+      if (sortField === "date") { va = a.date || ""; vb = b.date || ""; }
+      else if (sortField === "name") { va = a.name.toLowerCase(); vb = b.name.toLowerCase(); }
+      else if (sortField === "type") { va = a.type; vb = b.type; }
+      else if (sortField === "source") { va = a.source; vb = b.source; }
+      else { va = a.date || ""; vb = b.date || ""; }
+      if (va < vb) return sortDir === "asc" ? -1 : 1;
+      if (va > vb) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }, [allFiles, filterSource, filterType, search, sortField, sortDir]);
+
+  const toggleSort = (field) => {
+    if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("desc"); }
+  };
+
+  const sortIcon = (field) => sortField === field ? (sortDir === "asc" ? " ▲" : " ▼") : "";
+
+  const statusColor = (status) => {
+    if (!status) return "#888";
+    const s = status.toLowerCase();
+    if (["expired", "overdue", "inbox"].includes(s)) return "#dc2626";
+    if (["approved", "current", "paid", "accepted", "sent"].includes(s)) return "#059669";
+    if (["draft", "pending"].includes(s)) return "#f59e0b";
+    if (["posted", "linked"].includes(s)) return "#2563eb";
+    return "#888";
+  };
+
+  const selectStyle = { padding: "7px 10px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 13, background: "#fff", color: "#333", fontFamily: "'Open Sans', sans-serif", minWidth: 120 };
+
+  return (
+    <div style={{ padding: 0 }}>
+      {/* Toolbar */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 18 }}>
+        <div style={{ position: "relative", flex: "1 1 220px", minWidth: 180 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search files..." style={{ ...selectStyle, width: "100%", paddingLeft: 32 }} />
+        </div>
+        <select value={filterSource} onChange={e => setFilterSource(e.target.value)} style={selectStyle}>
+          <option value="all">All Sources</option>
+          {sources.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select value={filterType} onChange={e => setFilterType(e.target.value)} style={selectStyle}>
+          <option value="all">All Types</option>
+          {types.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <div style={{ fontSize: 12, color: "#888" }}>{filtered.length} file{filtered.length !== 1 ? "s" : ""}</div>
+      </div>
+
+      {/* Table */}
+      <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e5e5", overflow: "hidden" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e5e5" }}>
+                <th onClick={() => toggleSort("name")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Name{sortIcon("name")}</th>
+                <th onClick={() => toggleSort("type")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Type{sortIcon("type")}</th>
+                <th onClick={() => toggleSort("source")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Source{sortIcon("source")}</th>
+                <th onClick={() => toggleSort("date")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Date{sortIcon("date")}</th>
+                <th style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", whiteSpace: "nowrap" }}>Linked To</th>
+                <th style={{ textAlign: "center", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", whiteSpace: "nowrap" }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#aaa" }}>No files found</td></tr>
+              ) : filtered.map(f => (
+                <tr key={f.id} style={{ borderBottom: "1px solid #f0f0f0" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
+                  onMouseLeave={e => e.currentTarget.style.background = ""}>
+                  <td style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+                    <Icon name={f.icon} size={14} />
+                    <span style={{ fontWeight: 500 }}>{f.name}</span>
+                  </td>
+                  <td style={{ padding: "10px 14px", color: "#666" }}>{f.type}</td>
+                  <td style={{ padding: "10px 14px", color: "#666" }}>{f.source}</td>
+                  <td style={{ padding: "10px 14px", color: "#666", whiteSpace: "nowrap" }}>{f.date || "—"}</td>
+                  <td style={{ padding: "10px 14px", color: "#888", fontSize: 12 }}>{f.linkedTo || "—"}</td>
+                  <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                    {f.status ? <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 600, background: statusColor(f.status) + "18", color: statusColor(f.status), textTransform: "capitalize" }}>{f.status}</span> : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Call Log Page ───────────────────────────────────────────────────────────
+const CallLog = ({ callLog = [], onNav }) => {
+  const [search, setSearch] = useState("");
+  const [filterDir, setFilterDir] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortField, setSortField] = useState("date");
+  const [sortDir, setSortDir] = useState("desc");
+  const [expandedId, setExpandedId] = useState(null);
+
+  const formatDuration = (secs) => {
+    if (!secs) return "0:00";
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const formatDate = (iso) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  const formatTime = (iso) => {
+    const d = new Date(iso);
+    return d.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: true });
+  };
+
+  const filtered = useMemo(() => {
+    let list = [...callLog];
+    if (filterDir !== "all") list = list.filter(c => c.direction === filterDir);
+    if (filterStatus !== "all") list = list.filter(c => c.status === filterStatus);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(c => (c.from || c.to || "").toLowerCase().includes(q) || (c.phone || "").includes(q) || (c.actions || []).some(a => a.description.toLowerCase().includes(q)));
+    }
+    list.sort((a, b) => {
+      let va, vb;
+      if (sortField === "date") { va = a.date; vb = b.date; }
+      else if (sortField === "name") { va = (a.from || a.to || "").toLowerCase(); vb = (b.from || b.to || "").toLowerCase(); }
+      else if (sortField === "duration") { va = a.duration; vb = b.duration; }
+      else { va = a.date; vb = b.date; }
+      if (va < vb) return sortDir === "asc" ? -1 : 1;
+      if (va > vb) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }, [callLog, filterDir, filterStatus, search, sortField, sortDir]);
+
+  const toggleSort = (field) => {
+    if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("desc"); }
+  };
+  const sortIcon = (field) => sortField === field ? (sortDir === "asc" ? " ▲" : " ▼") : "";
+
+  const statusLabel = { completed: "Completed", missed: "Missed", no_answer: "No Answer" };
+  const statusColor = (s) => s === "completed" ? "#059669" : s === "missed" ? "#dc2626" : "#f59e0b";
+  const dirIcon = (dir) => dir === "inbound" ? "↙" : "↗";
+  const dirColor = (dir) => dir === "inbound" ? "#2563eb" : "#7c3aed";
+  const actionTypeIcon = { reminder: "🔔", note: "📝", schedule: "📅", quote: "📄", task: "✅", confirmation: "✓" };
+
+  const selectStyle = { padding: "7px 10px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 13, background: "#fff", color: "#333", fontFamily: "'Open Sans', sans-serif", minWidth: 120 };
+
+  return (
+    <div style={{ padding: 0 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 18 }}>
+        <div style={{ position: "relative", flex: "1 1 220px", minWidth: 180 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search calls..." style={{ ...selectStyle, width: "100%", paddingLeft: 32 }} />
+        </div>
+        <select value={filterDir} onChange={e => setFilterDir(e.target.value)} style={selectStyle}>
+          <option value="all">All Directions</option>
+          <option value="inbound">Inbound</option>
+          <option value="outbound">Outbound</option>
+        </select>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={selectStyle}>
+          <option value="all">All Statuses</option>
+          <option value="completed">Completed</option>
+          <option value="missed">Missed</option>
+          <option value="no_answer">No Answer</option>
+        </select>
+        <div style={{ fontSize: 12, color: "#888" }}>{filtered.length} call{filtered.length !== 1 ? "s" : ""}</div>
+      </div>
+
+      <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e5e5", overflow: "hidden" }}>
+        {/* Header */}
+        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 140px 100px 90px 90px", padding: "10px 14px", background: "#f9fafb", borderBottom: "2px solid #e5e5e5", gap: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555" }}></div>
+          <div onClick={() => toggleSort("name")} style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none" }}>Contact{sortIcon("name")}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555" }}>Phone</div>
+          <div onClick={() => toggleSort("date")} style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none" }}>Date{sortIcon("date")}</div>
+          <div onClick={() => toggleSort("duration")} style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none" }}>Duration{sortIcon("duration")}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", textAlign: "center" }}>Status</div>
+        </div>
+        {/* Rows */}
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 40, color: "#aaa" }}>No calls found</div>
+        ) : filtered.map(call => (
+          <div key={call.id}>
+            <div
+              onClick={() => setExpandedId(expandedId === call.id ? null : call.id)}
+              style={{ display: "grid", gridTemplateColumns: "40px 1fr 140px 100px 90px 90px", padding: "12px 14px", borderBottom: "1px solid #f0f0f0", cursor: "pointer", gap: 8, alignItems: "center", transition: "background 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
+              onMouseLeave={e => e.currentTarget.style.background = expandedId === call.id ? "#f9fafb" : ""}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: dirColor(call.direction) }}>{dirIcon(call.direction)}</span>
+              </div>
+              <div>
+                <div style={{ fontWeight: 500, fontSize: 13 }}>{call.from || call.to}</div>
+                <div style={{ fontSize: 11, color: "#888" }}>{call.direction === "inbound" ? "Inbound" : "Outbound"}{call.actions?.length ? ` · ${call.actions.length} action${call.actions.length > 1 ? "s" : ""}` : ""}</div>
+              </div>
+              <div style={{ fontSize: 12, color: "#666" }}>{call.phone}</div>
+              <div>
+                <div style={{ fontSize: 12, color: "#333" }}>{formatDate(call.date)}</div>
+                <div style={{ fontSize: 11, color: "#888" }}>{formatTime(call.date)}</div>
+              </div>
+              <div style={{ fontSize: 13, color: "#333", fontVariantNumeric: "tabular-nums" }}>{formatDuration(call.duration)}</div>
+              <div style={{ textAlign: "center" }}>
+                <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 600, background: statusColor(call.status) + "18", color: statusColor(call.status) }}>{statusLabel[call.status] || call.status}</span>
+              </div>
+            </div>
+            {/* Expanded actions */}
+            {expandedId === call.id && call.actions?.length > 0 && (
+              <div style={{ padding: "0 14px 14px 54px", background: "#f9fafb", borderBottom: "1px solid #e5e5e5" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#888", marginBottom: 8 }}>Actions from this call</div>
+                {call.actions.map((a, i) => (
+                  <div key={i}
+                    onClick={a.link ? (e) => { e.stopPropagation(); onNav && onNav(a.link.page); } : undefined}
+                    style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 10px", margin: "0 -10px", borderRadius: 6, borderBottom: i < call.actions.length - 1 ? "1px solid #eee" : "none", cursor: a.link ? "pointer" : "default", transition: "background 0.15s" }}
+                    onMouseEnter={e => { if (a.link) e.currentTarget.style.background = "#eef2ff"; }}
+                    onMouseLeave={e => { if (a.link) e.currentTarget.style.background = ""; }}
+                  >
+                    <span style={{ fontSize: 14, minWidth: 20, textAlign: "center" }}>{actionTypeIcon[a.type] || "•"}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, color: a.link ? "#2563eb" : "#333" }}>{a.description}</div>
+                    </div>
+                    {a.link && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2, flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>}
+                    <div style={{ fontSize: 11, color: "#999", whiteSpace: "nowrap" }}>{a.time}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {expandedId === call.id && (!call.actions || call.actions.length === 0) && (
+              <div style={{ padding: "12px 14px 12px 54px", background: "#f9fafb", borderBottom: "1px solid #e5e5e5", fontSize: 13, color: "#999", fontStyle: "italic" }}>No actions recorded for this call</div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -11477,6 +12342,8 @@ const ROUTE_MAP = {
   activity: "/activity",
   status: "/status",
   settings: "/settings",
+  files: "/files",
+  calllog: "/call-log",
 };
 const PATH_TO_ID = Object.fromEntries(
   Object.entries(ROUTE_MAP).map(([id, path]) => [path, id])
@@ -11507,6 +12374,13 @@ export default function App() {
   const [contractors, setContractors] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [reminders, setReminders] = useState(SEED_REMINDERS);
+  const [callLog] = useState(SEED_CALL_LOG);
+  const [templates, setTemplates] = useState(() => {
+    try { const saved = localStorage.getItem("fieldops_templates"); return saved ? JSON.parse(saved) : SEED_TEMPLATES; } catch { return SEED_TEMPLATES; }
+  });
+  const [companyInfo, setCompanyInfo] = useState(() => {
+    try { const saved = localStorage.getItem("fieldops_company_info"); return saved ? JSON.parse(saved) : { ...DEFAULT_COMPANY }; } catch { return { ...DEFAULT_COMPANY }; }
+  });
   const [workOrders, setWorkOrders] = useState(SEED_WO);
   const [purchaseOrders, setPurchaseOrders] = useState(SEED_PO);
   const [loading, setLoading] = useState(true);
@@ -11571,22 +12445,29 @@ export default function App() {
   const totalActionsCount = overdueRemindersCount + ordersOverdueCount + pendingBillsCount + unpaidInvCount + contractorComplianceIssues + overdueJobsCount + draftQuotesCount + woAwaitingCount;
 
   const navItems = [
+    // Top (no section header) — 0..3
     { id: "dashboard", label: "Dashboard", icon: "dashboard" },
     { id: "actions", label: "Actions", icon: "notification", badge: totalActionsCount || null, badgeColor: "#dc2626" },
+    { id: "schedule", label: "Schedule", icon: "schedule" },
+    { id: "reminders", label: "Reminders", icon: "notification", badge: overdueRemindersCount || null, badgeColor: "#dc2626" },
+    // Main — 4..5
     { id: "jobs", label: "Jobs", icon: "jobs", badge: activeJobsCount || null },
     { id: "orders", label: "Orders", icon: "orders", badge: ordersOverdueCount || null },
+    // Finance — 6..9
+    { id: "time", label: "Time", icon: "time" },
+    { id: "bills", label: "Bills", icon: "bills", badge: pendingBillsCount || null },
+    { id: "quotes", label: "Quotes", icon: "quotes" },
+    { id: "invoices", label: "Invoices", icon: "invoices", badge: unpaidInvCount || null },
+    // Partners — 10..12
     { id: "clients", label: "Clients", icon: "clients" },
     { id: "contractors", label: "Contractors", icon: "contractors", badge: contractorComplianceIssues || null, badgeColor: "#dc2626" },
     { id: "suppliers", label: "Suppliers", icon: "suppliers" },
-    { id: "schedule", label: "Schedule", icon: "schedule" },
-    { id: "quotes", label: "Quotes", icon: "quotes" },
-    { id: "time", label: "Time", icon: "time" },
-    { id: "bills", label: "Bills", icon: "bills", badge: pendingBillsCount || null },
-    { id: "invoices", label: "Invoices", icon: "invoices", badge: unpaidInvCount || null },
-    { id: "reminders", label: "Reminders", icon: "notification", badge: overdueRemindersCount || null, badgeColor: "#dc2626" },
+    // System — 13+
+    ...((auth.isAdmin || auth.isLocalDev) ? [{ id: "settings", label: "Settings", icon: "settings" }] : []),
+    { id: "files", label: "Files", icon: "quotes" },
+    { id: "calllog", label: "Call Log", icon: "send" },
     { id: "activity", label: "Activity", icon: "notification" },
     { id: "status", label: "System Status", icon: "activity" },
-    ...((auth.isAdmin || auth.isLocalDev) ? [{ id: "settings", label: "Settings", icon: "settings" }] : []),
   ];
 
   // Bottom nav shows first 5; rest in "More"
@@ -11594,7 +12475,7 @@ export default function App() {
   const moreNavItems = navItems.slice(5);
   const moreIsActive = moreNavItems.some(n => n.id === page);
 
-  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", actions: "Actions", reminders: "Reminders", activity: "Activity Log", status: "System Status", settings: "Settings" };
+  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", actions: "Actions", reminders: "Reminders", activity: "Activity Log", status: "System Status", settings: "Settings", files: "Files", calllog: "Call Log" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
@@ -11607,7 +12488,7 @@ export default function App() {
       <Route path="/" element={<Dashboard jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} workOrders={workOrders} purchaseOrders={purchaseOrders} contractors={contractors} suppliers={suppliers} onNav={navigate} />} />
       <Route path="/jobs" element={<Jobs jobs={jobs} setJobs={setJobs} clients={clients} quotes={quotes} setQuotes={setQuotes} invoices={invoices} setInvoices={setInvoices} timeEntries={timeEntries} setTimeEntries={setTimeEntries} bills={bills} setBills={setBills} schedule={schedule} setSchedule={setSchedule} staff={staff} workOrders={workOrders} setWorkOrders={setWorkOrders} purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders} />} />
       <Route path="/orders" element={<OrdersPage workOrders={workOrders} setWorkOrders={setWorkOrders} purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders} jobs={jobs} />} />
-      <Route path="/clients" element={<Clients clients={clients} setClients={setClients} jobs={jobs} />} />
+      <Route path="/clients" element={<Clients clients={clients} setClients={setClients} jobs={jobs} templates={templates} />} />
       <Route path="/contractors" element={<Contractors contractors={contractors} setContractors={setContractors} workOrders={workOrders} bills={bills} />} />
       <Route path="/suppliers" element={<Suppliers suppliers={suppliers} setSuppliers={setSuppliers} purchaseOrders={purchaseOrders} bills={bills} />} />
       <Route path="/schedule" element={<Schedule schedule={schedule} setSchedule={setSchedule} futureSchedule={futureSchedule} setFutureSchedule={setFutureSchedule} jobs={jobs} clients={clients} staff={staff} />} />
@@ -11619,7 +12500,9 @@ export default function App() {
       <Route path="/reminders" element={<Reminders reminders={reminders} setReminders={setReminders} jobs={jobs} />} />
       <Route path="/activity" element={<ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />} />
       <Route path="/status" element={<SystemStatus />} />
-      <Route path="/settings" element={(auth.isAdmin || auth.isLocalDev) ? <Settings staff={staff} setStaff={setStaff} /> : <Navigate to="/" replace />} />
+      <Route path="/settings" element={(auth.isAdmin || auth.isLocalDev) ? <Settings staff={staff} setStaff={setStaff} templates={templates} setTemplates={setTemplates} companyInfo={companyInfo} setCompanyInfo={setCompanyInfo} /> : <Navigate to="/" replace />} />
+      <Route path="/call-log" element={<CallLog callLog={callLog} onNav={navigate} />} />
+      <Route path="/files" element={<FilesPage jobs={jobs} bills={bills} contractors={contractors} quotes={quotes} invoices={invoices} workOrders={workOrders} purchaseOrders={purchaseOrders} />} />
       <Route path="/display/schedule" element={<DisplaySchedule schedule={schedule} jobs={jobs} clients={clients} />} />
       <Route path="/display/overview" element={<DisplayOverview jobs={jobs} quotes={quotes} timeEntries={timeEntries} schedule={schedule} clients={clients} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -11676,8 +12559,20 @@ export default function App() {
           </button>
         </div>
         <div className="jm-nav">
+          {/* Top — Dashboard, Actions, Schedule, Reminders (no section header) */}
+          {navItems.slice(0, 4).map(n => {
+            const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
+            return (
+            <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
+              onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
+              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
+              <Icon name={n.icon} size={15} />{n.label}
+              {n.badge ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
+            </div>
+            );
+          })}
           <div className="jm-nav-section">Main</div>
-          {navItems.slice(0, 8).map(n => {
+          {navItems.slice(4, 6).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -11689,7 +12584,19 @@ export default function App() {
             );
           })}
           <div className="jm-nav-section">Finance</div>
-          {navItems.slice(8, 12).map(n => {
+          {navItems.slice(6, 10).map(n => {
+            const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
+            return (
+            <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
+              onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
+              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
+              <Icon name={n.icon} size={15} />{n.label}
+              {n.badge ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
+            </div>
+            );
+          })}
+          <div className="jm-nav-section">Partners</div>
+          {navItems.slice(10, 13).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -11701,7 +12608,7 @@ export default function App() {
             );
           })}
           <div className="jm-nav-section">System</div>
-          {navItems.slice(12).map(n => {
+          {navItems.slice(13).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.activity)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}

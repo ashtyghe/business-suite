@@ -5,6 +5,10 @@ import LoginPage from './LoginPage'
 function AppShell() {
   const { user, loading, isLocalDev } = useAuth();
 
+  // Display pages are public — no auth required
+  const isDisplay = window.location.pathname.startsWith("/display/");
+  if (isDisplay) return <JobManagementApp />;
+
   // Local dev without Supabase — skip auth, show app with seed data
   if (isLocalDev) return <JobManagementApp />;
 

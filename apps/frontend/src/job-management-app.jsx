@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, Fragment, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry } from './lib/db';
-import { extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord } from './lib/supabase';
+import { supabase, extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord } from './lib/supabase';
 import { useAuth } from './lib/AuthContext';
 import { changePassword, adminResetUserPassword } from './lib/auth';
 import * as fabric from "fabric";
@@ -153,6 +153,17 @@ const SEED_BILLS = [
   { id: 11, jobId: 3, supplier: "Precision Carpentry", invoiceNo: "PC-2201", date: "2026-02-28", amount: 5500.00, amountExGst: 5000.00, gstAmount: 500.00, hasGst: true, category: "Subcontractor", description: "Custom joinery – master bedroom wardrobe", status: "posted", markup: 0, notes: "", capturedAt: "2026-02-28" },
 ];
 
+const SEED_REMINDERS = [
+  { id: 1, text: "Chase Tom for site photos from Level 3 fitout", type: "text", dueDate: "2026-03-14", status: "pending", jobId: 1, createdAt: "2026-03-10T08:00:00Z" },
+  { id: 2, text: "HVAC maintenance prep", type: "checklist", items: [{ id: 1, text: "Order replacement filters", done: false }, { id: 2, text: "Book technician for Thursday", done: true }, { id: 3, text: "Notify tenant of scheduled downtime", done: false }], dueDate: "2026-03-15", status: "pending", jobId: 4, createdAt: "2026-03-11T09:30:00Z" },
+  { id: 3, text: "Follow up with council on DA approval", type: "text", dueDate: "2026-03-12", status: "pending", jobId: null, createdAt: "2026-03-08T14:00:00Z" },
+  { id: 4, text: "Send updated quote to Hartwell Properties", type: "text", dueDate: "2026-03-17", status: "pending", jobId: 1, createdAt: "2026-03-12T10:00:00Z" },
+  { id: 5, text: "Kitchen demo day prep", type: "checklist", items: [{ id: 1, text: "Book skip bin", done: false }, { id: 2, text: "Confirm demolition crew", done: false }, { id: 3, text: "Disconnect plumbing", done: true }], dueDate: "2026-03-19", status: "pending", jobId: 3, createdAt: "2026-03-13T07:45:00Z" },
+  { id: 6, text: "Review contractor insurance docs before they expire", type: "text", dueDate: "2026-03-10", status: "pending", jobId: null, createdAt: "2026-03-05T11:00:00Z" },
+  { id: 7, text: "Roof delivery checklist", type: "checklist", items: [{ id: 1, text: "Confirm delivery time with supplier", done: true }, { id: 2, text: "Clear site access for truck", done: true }], dueDate: "2026-03-11", status: "completed", jobId: 2, createdAt: "2026-03-07T08:30:00Z" },
+  { id: 8, text: "Submit BAS for Q3", type: "text", dueDate: "2026-03-08", status: "completed", jobId: null, createdAt: "2026-03-01T09:00:00Z" },
+];
+
 const SEED_INVOICES = [
   { id: 1, jobId: 4, number: "INV-0001", status: "paid", lineItems: [{ desc: "HVAC Quarterly Maintenance", qty: 1, unit: "lot", rate: 950 }, { desc: "Replacement Filters x6", qty: 6, unit: "ea", rate: 95 }], tax: 10, dueDate: "2026-02-17", notes: "Thank you for your business.", createdAt: "2026-01-20" },
 ];
@@ -297,6 +308,8 @@ const SECTION_COLORS = {
   orders:    { accent: "#2563eb", light: "#eff6ff" },
   contractors: { accent: "#0d9488", light: "#f0fdfa" },
   suppliers: { accent: "#d97706", light: "#fffbeb" },
+  actions:   { accent: "#ef4444", light: "#fef2f2" },
+  reminders: { accent: "#f59e0b", light: "#fffbeb" },
   status: { accent: "#059669", light: "#ecfdf5" },
   settings: { accent: "#6b7280", light: "#f9fafb" },
 };
@@ -1974,8 +1987,67 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
   const billStatusColors = { inbox: "#888", linked: "#2563eb", approved: "#059669", posted: "#111" };
   const billStatusLabels = { inbox: "Inbox", linked: "Linked", approved: "Approved", posted: "Posted" };
 
+  // ── AI Business Insight ──
+  const [aiInsight, setAiInsight] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
+
+  const generateInsight = async () => {
+    setAiLoading(true);
+    setAiError(null);
+    const kpiData = {
+      totalQuoted, revenueCollected, outstandingInv, outstandingInvCount,
+      unpostedBills: unpostedBills.length, unpostedBillsTotal,
+      activeJobs, completedJobs, overdueJobs,
+      activeWOs, overdueWOs, woAwaitingAcceptance, activePOs, overduePOs,
+      totalHours, billableHours, billableRatio, margin,
+      pipelineTotal, quoteDrafts, todayScheduleCount: todaySchedule.length,
+      contractorComplianceIssues: contractors.reduce((sum, c) => sum + getContractorComplianceCount(c), 0),
+      actionItemsCount: actionItems.length,
+      actionItemsSummary: actionItems.map(a => a.label).join(", "),
+    };
+    try {
+      if (!supabase) throw new Error("Supabase not configured — add VITE_SUPABASE_URL to enable AI insights");
+      const { data, error } = await supabase.functions.invoke("ai-insight", {
+        body: { kpis: kpiData },
+      });
+      if (error) {
+        const msg = typeof error === "object" && error.context
+          ? await error.context.text?.() || error.message
+          : error.message;
+        throw new Error(msg || "AI insight failed");
+      }
+      const result = typeof data === "string" ? JSON.parse(data) : data;
+      setAiInsight(result?.insight || "No insight generated.");
+    } catch (err) {
+      setAiError(err.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  useEffect(() => { generateInsight(); }, []);
+
   return (
     <div>
+      {/* ── AI Business Insight ── */}
+      <div style={{ background: "linear-gradient(135deg, #111 0%, #1e293b 100%)", borderRadius: 12, padding: "20px 24px", marginBottom: 20, color: "#fff" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: aiInsight || aiLoading || aiError ? 12 : 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 16 }}>&#10024;</span>
+            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.03em" }}>AI Business Insight</span>
+          </div>
+          <button onClick={generateInsight} disabled={aiLoading} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, padding: "4px 12px", fontSize: 11, fontWeight: 600, color: "#fff", cursor: "pointer", opacity: aiLoading ? 0.5 : 1, fontFamily: "'Open Sans', sans-serif" }}>
+            {aiLoading ? "Analysing..." : "Refresh"}
+          </button>
+        </div>
+        {aiLoading && <div style={{ fontSize: 13, color: "#94a3b8" }}>Analysing your business data...</div>}
+        {aiError && <div style={{ fontSize: 12, color: "#f87171" }}>Failed to generate insight: {aiError}</div>}
+        {aiInsight && !aiLoading && (
+          <div style={{ fontSize: 13, lineHeight: 1.6, color: "#e2e8f0", whiteSpace: "pre-wrap" }}>{aiInsight}</div>
+        )}
+      </div>
+
       {/* ── ROW 1: Financial Hero Strip (full width) ── */}
       <div className="stat-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 24 }}>
         <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.quotes.accent}`, cursor: "pointer" }} onClick={() => onNav("quotes")}>
@@ -9251,6 +9323,350 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
   );
 };
 
+// ── Actions Page ────────────────────────────────────────────────────────────
+const Actions = ({ jobs, quotes, invoices, bills, workOrders, purchaseOrders, contractors, reminders, onNav }) => {
+  const today = new Date().toISOString().split("T")[0];
+  const accent = SECTION_COLORS.actions.accent;
+
+  // Build action items per category
+  const categories = [
+    {
+      id: "overdue-reminders", label: "Overdue Reminders", color: "#f59e0b", nav: "reminders",
+      items: reminders.filter(r => r.status === "pending" && r.dueDate < today).map(r => {
+        const job = r.jobId ? jobs.find(j => j.id === r.jobId) : null;
+        return { id: `rem-${r.id}`, title: r.text, sub: job?.title, detail: `Due ${r.dueDate}`, severity: "high" };
+      }),
+    },
+    {
+      id: "overdue-jobs", label: "Overdue Jobs", color: "#111", nav: "jobs",
+      items: jobs.filter(j => j.dueDate && daysUntil(j.dueDate) < 0 && j.status !== "completed" && j.status !== "cancelled").map(j => {
+        const client = SEED_CLIENTS.find(c => c.id === j.clientId);
+        const days = Math.abs(daysUntil(j.dueDate));
+        return { id: `job-${j.id}`, title: j.title, sub: client?.name, detail: `${days} day${days !== 1 ? "s" : ""} overdue`, severity: "high" };
+      }),
+    },
+    {
+      id: "overdue-orders", label: "Overdue Orders", color: "#2563eb", nav: "orders",
+      items: [...workOrders, ...purchaseOrders].filter(o => !ORDER_TERMINAL.includes(o.status) && daysUntil(o.dueDate) < 0).map(o => {
+        const job = o.jobId ? jobs.find(j => j.id === o.jobId) : null;
+        const days = Math.abs(daysUntil(o.dueDate));
+        return { id: `ord-${o.id}`, title: `${o.ref} — ${o.contractorName || o.supplierName || ""}`, sub: job?.title, detail: `${days} day${days !== 1 ? "s" : ""} overdue`, severity: "high" };
+      }),
+    },
+    {
+      id: "wo-awaiting", label: "Awaiting Acceptance", color: "#2563eb", nav: "orders",
+      items: workOrders.filter(wo => wo.status === "Sent").map(wo => {
+        const job = wo.jobId ? jobs.find(j => j.id === wo.jobId) : null;
+        const days = wo.issueDate ? Math.abs(daysUntil(wo.issueDate)) : null;
+        return { id: `woa-${wo.id}`, title: `${wo.ref} — ${wo.contractorName || ""}`, sub: job?.title, detail: days ? `Sent ${days} day${days !== 1 ? "s" : ""} ago` : "Sent", severity: "medium" };
+      }),
+    },
+    {
+      id: "bills", label: "Bills to Process", color: "#dc2626", nav: "bills",
+      items: bills.filter(b => b.status === "inbox" || b.status === "linked" || b.status === "approved").map(b => {
+        const job = b.jobId ? jobs.find(j => j.id === b.jobId) : null;
+        return { id: `bill-${b.id}`, title: `${b.supplier} — ${b.invoiceNo || ""}`, sub: job?.title, detail: `$${(b.amount || 0).toLocaleString()} · ${b.status}`, severity: b.status === "inbox" ? "medium" : "low" };
+      }),
+    },
+    {
+      id: "invoices", label: "Unpaid Invoices", color: "#4f46e5", nav: "invoices",
+      items: invoices.filter(i => i.status !== "paid" && i.status !== "void").map(inv => {
+        const job = inv.jobId ? jobs.find(j => j.id === inv.jobId) : null;
+        const total = (inv.lineItems || []).reduce((s, li) => s + (li.qty || 0) * (li.rate || 0), 0);
+        const isOverdue = inv.dueDate && daysUntil(inv.dueDate) < 0;
+        return { id: `inv-${inv.id}`, title: `${inv.number}`, sub: job?.title, detail: `$${total.toLocaleString()} · ${isOverdue ? "Overdue" : inv.status}`, severity: isOverdue ? "high" : "medium" };
+      }),
+    },
+    {
+      id: "compliance", label: "Compliance Issues", color: "#0d9488", nav: "contractors",
+      items: contractors.flatMap(c => {
+        const issues = [];
+        COMPLIANCE_DOC_TYPES.forEach(dt => {
+          const doc = (c.documents || []).find(d => d.type === dt.id);
+          const status = getComplianceStatus(doc);
+          if (status === "expired" || status === "missing") {
+            issues.push({ id: `comp-${c.id}-${dt.id}`, title: c.name, sub: dt.label, detail: status === "expired" ? "Expired" : "Missing", severity: status === "expired" ? "high" : "medium" });
+          }
+        });
+        return issues;
+      }),
+    },
+    {
+      id: "draft-quotes", label: "Draft Quotes", color: "#ca8a04", nav: "quotes",
+      items: quotes.filter(q => q.status === "draft").map(q => {
+        const job = q.jobId ? jobs.find(j => j.id === q.jobId) : null;
+        const total = (q.lineItems || []).reduce((s, li) => s + (li.qty || 0) * (li.rate || 0), 0);
+        return { id: `qt-${q.id}`, title: `${q.number}`, sub: job?.title, detail: `$${total.toLocaleString()} · Ready to send`, severity: "low" };
+      }),
+    },
+  ].filter(c => c.items.length > 0);
+
+  const totalCount = categories.reduce((s, c) => s + c.items.length, 0);
+
+  return (
+    <div>
+      {/* Summary */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "20px 24px", marginBottom: 20, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <span style={{ fontSize: 28, fontWeight: 800, color: totalCount > 0 ? accent : "#059669" }}>{totalCount}</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#666" }}>{totalCount === 1 ? "item needs attention" : "items need attention"}</span>
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginLeft: "auto" }}>
+          {categories.map(c => (
+            <span key={c.id} style={{ fontSize: 11, fontWeight: 600, background: hexToRgba(c.color, 0.1), color: c.color, padding: "3px 10px", borderRadius: 12 }}>{c.items.length} {c.label}</span>
+          ))}
+        </div>
+      </div>
+
+      {totalCount === 0 ? (
+        <div style={{ textAlign: "center", padding: 60, color: "#aaa", fontSize: 14 }}>All clear — nothing needs attention right now.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {categories.map(cat => (
+            <div key={cat.id}>
+              {/* Category header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <div style={{ width: 4, height: 18, borderRadius: 2, background: cat.color }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{cat.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: cat.color, borderRadius: 10, padding: "1px 8px", minWidth: 18, textAlign: "center" }}>{cat.items.length}</span>
+              </div>
+              {/* Items */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {cat.items.map(item => (
+                  <div key={item.id} onClick={() => onNav(cat.nav)} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "box-shadow 0.15s" }} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+                    {/* Severity dot */}
+                    <div style={{ width: 8, height: 8, borderRadius: 4, background: item.severity === "high" ? "#dc2626" : item.severity === "medium" ? "#f59e0b" : "#94a3b8", flexShrink: 0 }} />
+                    {/* Content */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</div>
+                      {item.sub && <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{item.sub}</div>}
+                    </div>
+                    {/* Detail */}
+                    <div style={{ fontSize: 11, fontWeight: 600, color: item.severity === "high" ? "#dc2626" : "#888", flexShrink: 0, textAlign: "right" }}>{item.detail}</div>
+                    {/* Arrow */}
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#ccc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="7 4 13 10 7 16"/></svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Reminders Page ──────────────────────────────────────────────────────────
+const Reminders = ({ reminders, setReminders, jobs }) => {
+  const today = new Date().toISOString().split("T")[0];
+  const accent = SECTION_COLORS.reminders.accent;
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [showModal, setShowModal] = useState(false);
+  const [editReminder, setEditReminder] = useState(null);
+  const [form, setForm] = useState({ text: "", type: "text", dueDate: today, jobId: "", items: [] });
+  const [newItemText, setNewItemText] = useState("");
+
+  const overdueCount = reminders.filter(r => r.status === "pending" && r.dueDate < today).length;
+  const dueTodayCount = reminders.filter(r => r.status === "pending" && r.dueDate === today).length;
+  const upcomingCount = reminders.filter(r => r.status === "pending" && r.dueDate > today).length;
+  const completedCount = reminders.filter(r => r.status === "completed").length;
+
+  const filtered = reminders.filter(r => {
+    const matchSearch = !search || r.text.toLowerCase().includes(search.toLowerCase()) || (r.items || []).some(i => i.text.toLowerCase().includes(search.toLowerCase()));
+    const matchStatus = filterStatus === "all" || (filterStatus === "overdue" ? (r.status === "pending" && r.dueDate < today) : r.status === filterStatus);
+    return matchSearch && matchStatus;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    const aOverdue = a.status === "pending" && a.dueDate < today ? 0 : 1;
+    const bOverdue = b.status === "pending" && b.dueDate < today ? 0 : 1;
+    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+    const aDone = a.status !== "pending" ? 1 : 0;
+    const bDone = b.status !== "pending" ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    return a.dueDate > b.dueDate ? 1 : -1;
+  });
+
+  const openNew = () => { setEditReminder(null); setForm({ text: "", type: "text", dueDate: today, jobId: "", items: [] }); setNewItemText(""); setShowModal(true); };
+  const openEdit = (r) => { setEditReminder(r); setForm({ text: r.text, type: r.type, dueDate: r.dueDate, jobId: r.jobId || "", items: r.items ? r.items.map(i => ({ ...i })) : [] }); setNewItemText(""); setShowModal(true); };
+  const saveReminder = () => {
+    if (!form.text.trim() || !form.dueDate) return;
+    const data = { text: form.text, type: form.type, dueDate: form.dueDate, jobId: form.jobId || null };
+    if (form.type === "checklist") data.items = form.items;
+    if (editReminder) {
+      setReminders(rs => rs.map(r => r.id === editReminder.id ? { ...r, ...data } : r));
+    } else {
+      setReminders(rs => [...rs, { id: Date.now(), ...data, status: "pending", createdAt: new Date().toISOString() }]);
+    }
+    setShowModal(false);
+  };
+  const toggleComplete = (id) => setReminders(rs => rs.map(r => r.id === id ? { ...r, status: r.status === "completed" ? "pending" : "completed" } : r));
+  const toggleChecklistItem = (reminderId, itemId) => setReminders(rs => rs.map(r => r.id === reminderId ? { ...r, items: (r.items || []).map(i => i.id === itemId ? { ...i, done: !i.done } : i) } : r));
+  const dismissReminder = (id) => setReminders(rs => rs.map(r => r.id === id ? { ...r, status: "dismissed" } : r));
+  const deleteReminder = (id) => setReminders(rs => rs.filter(r => r.id !== id));
+  const addFormItem = () => {
+    if (!newItemText.trim()) return;
+    setForm(f => ({ ...f, items: [...f.items, { id: Date.now(), text: newItemText.trim(), done: false }] }));
+    setNewItemText("");
+  };
+  const removeFormItem = (itemId) => setForm(f => ({ ...f, items: f.items.filter(i => i.id !== itemId) }));
+  const toggleFormItem = (itemId) => setForm(f => ({ ...f, items: f.items.map(i => i.id === itemId ? { ...i, done: !i.done } : i) }));
+
+  const dueDateColor = (d, status) => {
+    if (status !== "pending") return "#aaa";
+    if (d < today) return "#dc2626";
+    if (d === today) return "#f59e0b";
+    return "#666";
+  };
+  const dueDateLabel = (d, status) => {
+    if (status !== "pending") return d;
+    if (d < today) return `Overdue — ${d}`;
+    if (d === today) return "Due today";
+    const diff = Math.ceil((new Date(d) - new Date(today)) / 86400000);
+    return diff === 1 ? "Due tomorrow" : `Due in ${diff} days`;
+  };
+
+  const stats = [
+    { label: "Overdue", count: overdueCount, color: "#dc2626" },
+    { label: "Due Today", count: dueTodayCount, color: "#f59e0b" },
+    { label: "Upcoming", count: upcomingCount, color: "#2563eb" },
+    { label: "Completed", count: completedCount, color: "#059669" },
+  ];
+
+  return (
+    <div>
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 20 }}>
+        {stats.map(s => (
+          <div key={s.label} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", borderLeft: `4px solid ${s.color}` }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: s.color }}>{s.count}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reminders..." style={{ flex: 1, minWidth: 180, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif" }} />
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif" }}>
+          <option value="all">All</option>
+          <option value="overdue">Overdue</option>
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+          <option value="dismissed">Dismissed</option>
+        </select>
+        <button onClick={openNew} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>+ New Reminder</button>
+      </div>
+
+      {/* List */}
+      {sorted.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 40, color: "#aaa", fontSize: 13 }}>No reminders found</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {sorted.map(r => {
+            const job = r.jobId ? jobs.find(j => j.id === r.jobId) : null;
+            const isOverdue = r.status === "pending" && r.dueDate < today;
+            const checklistProgress = r.type === "checklist" && r.items?.length ? `${r.items.filter(i => i.done).length}/${r.items.length}` : null;
+            return (
+              <div key={r.id} onClick={() => openEdit(r)} style={{ background: "#fff", border: `1px solid ${isOverdue ? "#fecaca" : "#e8e8e8"}`, borderRadius: 10, padding: "14px 18px", opacity: r.status !== "pending" ? 0.6 : 1, cursor: "pointer", transition: "box-shadow 0.15s" }} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  {/* Round checkbox */}
+                  <button onClick={e => { e.stopPropagation(); toggleComplete(r.id); }} style={{ width: 22, height: 22, borderRadius: 11, border: r.status === "completed" ? `2px solid ${accent}` : "2px solid #ccc", background: r.status === "completed" ? accent : "transparent", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
+                    {r.status === "completed" && <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>✓</span>}
+                  </button>
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: r.status === "completed" ? "#aaa" : "#111", textDecoration: r.status === "completed" ? "line-through" : "none" }}>{r.text}</div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: dueDateColor(r.dueDate, r.status) }}>{dueDateLabel(r.dueDate, r.status)}</span>
+                      {checklistProgress && <span style={{ fontSize: 10, fontWeight: 600, background: "#f0f0f0", padding: "2px 8px", borderRadius: 4, color: "#555" }}>{checklistProgress} done</span>}
+                      {job && <span style={{ fontSize: 10, fontWeight: 600, background: "#f0f0f0", padding: "2px 8px", borderRadius: 4, color: "#555" }}>{job.title}</span>}
+                      {r.status === "dismissed" && <span style={{ fontSize: 10, fontWeight: 600, background: "#f5f5f5", padding: "2px 8px", borderRadius: 4, color: "#999" }}>Dismissed</span>}
+                    </div>
+                  </div>
+                  {/* Actions */}
+                  <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                    {r.status === "pending" && <button onClick={() => dismissReminder(r.id)} title="Dismiss" style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 13, padding: 4 }}>✕</button>}
+                    <button onClick={() => deleteReminder(r.id)} title="Delete" style={{ background: "none", border: "none", cursor: "pointer", color: "#ddd", fontSize: 13, padding: 4 }}>🗑</button>
+                  </div>
+                </div>
+                {/* Checklist items inline */}
+                {r.type === "checklist" && r.items?.length > 0 && r.status === "pending" && (
+                  <div onClick={e => e.stopPropagation()} style={{ marginTop: 10, marginLeft: 34, display: "flex", flexDirection: "column", gap: 6 }}>
+                    {r.items.map(item => (
+                      <label key={item.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: item.done ? "#aaa" : "#333" }}>
+                        <input type="checkbox" checked={item.done} onChange={() => toggleChecklistItem(r.id, item.id)} style={{ width: 15, height: 15, accentColor: accent, cursor: "pointer" }} />
+                        <span style={{ textDecoration: item.done ? "line-through" : "none" }}>{item.text}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Add/Edit Modal */}
+      {showModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowModal(false)}>
+          <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 440, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{editReminder ? "Edit Reminder" : "New Reminder"}</div>
+
+            {/* Type toggle */}
+            <div style={{ display: "flex", gap: 0, marginBottom: 16, border: "1px solid #ddd", borderRadius: 6, overflow: "hidden" }}>
+              <button onClick={() => setForm(f => ({ ...f, type: "text" }))} style={{ flex: 1, padding: "8px 12px", fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", fontFamily: "'Open Sans', sans-serif", background: form.type === "text" ? accent : "#f5f5f5", color: form.type === "text" ? "#fff" : "#666" }}>Text</button>
+              <button onClick={() => setForm(f => ({ ...f, type: "checklist" }))} style={{ flex: 1, padding: "8px 12px", fontSize: 12, fontWeight: 600, border: "none", borderLeft: "1px solid #ddd", cursor: "pointer", fontFamily: "'Open Sans', sans-serif", background: form.type === "checklist" ? accent : "#f5f5f5", color: form.type === "checklist" ? "#fff" : "#666" }}>Checklist</button>
+            </div>
+
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{form.type === "checklist" ? "Title" : "Reminder"}</label>
+            {form.type === "text" ? (
+              <textarea value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="What do you need to remember?" rows={3} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 16 }} autoFocus />
+            ) : (
+              <>
+                <input value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="e.g. Site prep checklist" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} autoFocus />
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Items</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+                  {form.items.map(item => (
+                    <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <input type="checkbox" checked={item.done} onChange={() => toggleFormItem(item.id)} style={{ width: 15, height: 15, accentColor: accent, cursor: "pointer" }} />
+                      <span style={{ flex: 1, fontSize: 13, color: item.done ? "#aaa" : "#333", textDecoration: item.done ? "line-through" : "none" }}>{item.text}</span>
+                      <button onClick={() => removeFormItem(item.id)} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 13, padding: 2 }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+                  <input value={newItemText} onChange={e => setNewItemText(e.target.value)} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addFormItem())} placeholder="Add an item..." style={{ flex: 1, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  <button onClick={addFormItem} style={{ padding: "8px 12px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Add</button>
+                </div>
+              </>
+            )}
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Due Date</label>
+                <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Link to Job</label>
+                <select value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value ? Number(e.target.value) : "" }))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }}>
+                  <option value="">None</option>
+                  {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowModal(false)} style={{ padding: "8px 16px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
+              <button onClick={saveReminder} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>{editReminder ? "Save" : "Create"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Global Activity Log Page ──────────────────────────────────────────────────
 const ActivityPage = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedule }) => {
   const [filterType, setFilterType] = useState("all");
@@ -10793,6 +11209,8 @@ const ROUTE_MAP = {
   time: "/time",
   bills: "/bills",
   invoices: "/invoices",
+  actions: "/actions",
+  reminders: "/reminders",
   activity: "/activity",
   status: "/status",
   settings: "/settings",
@@ -10825,6 +11243,7 @@ export default function App() {
   const [staff, setStaff] = useState([]);
   const [contractors, setContractors] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [reminders, setReminders] = useState(SEED_REMINDERS);
   const [workOrders, setWorkOrders] = useState(SEED_WO);
   const [purchaseOrders, setPurchaseOrders] = useState(SEED_PO);
   const [loading, setLoading] = useState(true);
@@ -10882,9 +11301,15 @@ export default function App() {
   const activeJobsCount = jobs.filter(j => j.status === "in_progress").length;
   const ordersOverdueCount = [...workOrders, ...purchaseOrders].filter(o => !ORDER_TERMINAL.includes(o.status) && daysUntil(o.dueDate) < 0).length;
   const contractorComplianceIssues = contractors.reduce((sum, c) => sum + getContractorComplianceCount(c), 0);
+  const overdueRemindersCount = reminders.filter(r => r.status === "pending" && r.dueDate < new Date().toISOString().split("T")[0]).length;
+  const overdueJobsCount = jobs.filter(j => j.dueDate && daysUntil(j.dueDate) < 0 && j.status !== "completed" && j.status !== "cancelled").length;
+  const draftQuotesCount = quotes.filter(q => q.status === "draft").length;
+  const woAwaitingCount = workOrders.filter(wo => wo.status === "Sent").length;
+  const totalActionsCount = overdueRemindersCount + ordersOverdueCount + pendingBillsCount + unpaidInvCount + contractorComplianceIssues + overdueJobsCount + draftQuotesCount + woAwaitingCount;
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "dashboard" },
+    { id: "actions", label: "Actions", icon: "notification", badge: totalActionsCount || null, badgeColor: "#dc2626" },
     { id: "jobs", label: "Jobs", icon: "jobs", badge: activeJobsCount || null },
     { id: "orders", label: "Orders", icon: "orders", badge: ordersOverdueCount || null },
     { id: "clients", label: "Clients", icon: "clients" },
@@ -10895,6 +11320,7 @@ export default function App() {
     { id: "time", label: "Time", icon: "time" },
     { id: "bills", label: "Bills", icon: "bills", badge: pendingBillsCount || null },
     { id: "invoices", label: "Invoices", icon: "invoices", badge: unpaidInvCount || null },
+    { id: "reminders", label: "Reminders", icon: "notification", badge: overdueRemindersCount || null, badgeColor: "#dc2626" },
     { id: "activity", label: "Activity", icon: "notification" },
     { id: "status", label: "System Status", icon: "activity" },
     ...((auth.isAdmin || auth.isLocalDev) ? [{ id: "settings", label: "Settings", icon: "settings" }] : []),
@@ -10905,7 +11331,7 @@ export default function App() {
   const moreNavItems = navItems.slice(5);
   const moreIsActive = moreNavItems.some(n => n.id === page);
 
-  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", activity: "Activity Log", status: "System Status", settings: "Settings" };
+  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", actions: "Actions", reminders: "Reminders", activity: "Activity Log", status: "System Status", settings: "Settings" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
@@ -10926,6 +11352,8 @@ export default function App() {
       <Route path="/time" element={<TimeTracking timeEntries={timeEntries} setTimeEntries={setTimeEntries} jobs={jobs} setJobs={setJobs} clients={clients} staff={staff} />} />
       <Route path="/bills" element={<Bills bills={bills} setBills={setBills} jobs={jobs} setJobs={setJobs} clients={clients} />} />
       <Route path="/invoices" element={<Invoices invoices={invoices} setInvoices={setInvoices} jobs={jobs} clients={clients} quotes={quotes} />} />
+      <Route path="/actions" element={<Actions jobs={jobs} quotes={quotes} invoices={invoices} bills={bills} workOrders={workOrders} purchaseOrders={purchaseOrders} contractors={contractors} reminders={reminders} onNav={navigate} />} />
+      <Route path="/reminders" element={<Reminders reminders={reminders} setReminders={setReminders} jobs={jobs} />} />
       <Route path="/activity" element={<ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />} />
       <Route path="/status" element={<SystemStatus />} />
       <Route path="/settings" element={(auth.isAdmin || auth.isLocalDev) ? <Settings staff={staff} setStaff={setStaff} /> : <Navigate to="/" replace />} />
@@ -10986,7 +11414,7 @@ export default function App() {
         </div>
         <div className="jm-nav">
           <div className="jm-nav-section">Main</div>
-          {navItems.slice(0, 7).map(n => {
+          {navItems.slice(0, 8).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -10998,7 +11426,7 @@ export default function App() {
             );
           })}
           <div className="jm-nav-section">Finance</div>
-          {navItems.slice(7, 11).map(n => {
+          {navItems.slice(8, 12).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -11010,13 +11438,14 @@ export default function App() {
             );
           })}
           <div className="jm-nav-section">System</div>
-          {navItems.slice(11).map(n => {
+          {navItems.slice(12).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.activity)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
               onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
               style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
               <Icon name={n.icon} size={15} />{n.label}
+              {n.badge ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
             </div>
             );
           })}
@@ -11117,8 +11546,8 @@ export default function App() {
             className={`jm-bottom-nav-item ${moreIsActive ? "active" : ""}`}
             onClick={e => { e.stopPropagation(); setMoreOpen(o => !o); }}
           >
-            {(pendingBillsCount + unpaidInvCount) > 0 && !moreIsActive
-              ? <span className="bnav-badge">{pendingBillsCount + unpaidInvCount}</span>
+            {(pendingBillsCount + unpaidInvCount + overdueRemindersCount) > 0 && !moreIsActive
+              ? <span className="bnav-badge" style={overdueRemindersCount > 0 ? { background: "#dc2626", color: "#fff" } : undefined}>{pendingBillsCount + unpaidInvCount + overdueRemindersCount}</span>
               : null}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
               <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>

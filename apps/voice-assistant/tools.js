@@ -662,6 +662,90 @@ const tools = [
       required: ['job_id', 'worker', 'hours', 'date'],
     },
   },
+
+  // ─── REMINDERS ────────────────────────────────────────────────────
+
+  {
+    type: 'function',
+    name: 'create_reminder',
+    description:
+      'Create a personal reminder with a due date. Use when someone says "remind me to..." or "set a reminder for...".',
+    parameters: {
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          description: 'The reminder text.',
+        },
+        due_date: {
+          type: 'string',
+          description: 'Due date in YYYY-MM-DD format.',
+        },
+        type: {
+          type: 'string',
+          enum: ['text', 'checkbox'],
+          description: 'Reminder type. Default "text".',
+        },
+        job_id: {
+          type: 'string',
+          description: 'Optional job ID or job number to link this reminder to.',
+        },
+      },
+      required: ['text', 'due_date'],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'list_reminders',
+    description:
+      'List reminders, optionally filtered by status. Use when someone asks about their reminders, what is due, or what is overdue.',
+    parameters: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['pending', 'completed', 'dismissed'],
+          description: 'Filter by status. Omit for all.',
+        },
+        overdue_only: {
+          type: 'boolean',
+          description: 'If true, only return overdue reminders (pending with past due date).',
+        },
+      },
+      required: [],
+    },
+  },
+
+  {
+    type: 'function',
+    name: 'update_reminder',
+    description:
+      'Update or complete a reminder. Use when someone wants to mark a reminder as done, change the text, or reschedule.',
+    parameters: {
+      type: 'object',
+      properties: {
+        reminder_id: {
+          type: 'string',
+          description: 'The reminder ID to update.',
+        },
+        text: {
+          type: 'string',
+          description: 'New reminder text.',
+        },
+        due_date: {
+          type: 'string',
+          description: 'New due date in YYYY-MM-DD format.',
+        },
+        status: {
+          type: 'string',
+          enum: ['pending', 'completed', 'dismissed'],
+          description: 'New status. Use "completed" to mark as done.',
+        },
+      },
+      required: ['reminder_id'],
+    },
+  },
 ];
 
 module.exports = { tools };

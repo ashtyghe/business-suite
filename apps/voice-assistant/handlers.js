@@ -529,6 +529,53 @@ async function logTimeEntry({ job_id, worker, hours, date, description }) {
   return { success: true, entry: { ...data, worker: worker || 'Unknown' } };
 }
 
+// ─── REMINDERS ────────────────────────────────────────────────────
+
+async function createReminder({ text, due_date, type, job_id }) {
+  const actualJobId = job_id ? await resolveJobId(job_id) : null;
+  const { data, error } = await supabase
+    .from('reminders')
+    .insert({
+      text,
+      due_date,
+      type: type || 'text',
+      job_id: actualJobId,
+      status: 'pending',
+    })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create reminder: ${error.message}`);
+  return { success: true, reminder: data };
+}
+
+async function listReminders({ status, overdue_only } = {}) {
+  let query = supabase.from('reminders').select('*').order('due_date', { ascending: true }).limit(20);
+  if (status) query = query.eq('status', status);
+  if (overdue_only) {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.eq('status', 'pending').lt('due_date', today);
+  }
+  const { data, error } = await query;
+  if (error) throw new Error(`Failed to list reminders: ${error.message}`);
+  return { reminders: data || [], count: (data || []).length };
+}
+
+async function updateReminder({ reminder_id, text, due_date, status }) {
+  const updates = {};
+  if (text !== undefined) updates.text = text;
+  if (due_date !== undefined) updates.due_date = due_date;
+  if (status !== undefined) updates.status = status;
+  if (Object.keys(updates).length === 0) throw new Error('No fields to update');
+  const { data, error } = await supabase
+    .from('reminders')
+    .update(updates)
+    .eq('id', reminder_id)
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to update reminder: ${error.message}`);
+  return { success: true, reminder: data };
+}
+
 // ─── DISPATCH ──────────────────────────────────────────────────────
 
 const handlerMap = {
@@ -561,6 +608,10 @@ const handlerMap = {
   update_job_status: updateJobStatus,
   update_work_order_status: updateWorkOrderStatus,
   log_time_entry: logTimeEntry,
+  // Reminders
+  create_reminder: createReminder,
+  list_reminders: listReminders,
+  update_reminder: updateReminder,
 };
 
 /**

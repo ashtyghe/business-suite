@@ -6,8 +6,14 @@ const http = require('http');
 const { tools } = require('./tools');
 const { handleToolCall } = require('./handlers');
 
+const twilio = require('twilio');
+
 const PORT = parseInt(process.env.PORT, 10) || 3001;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+const twilioClient = TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN ? twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) : null;
 const OPENAI_REALTIME_URL =
   'wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview';
 
@@ -93,6 +99,120 @@ app.post('/settings', (req, res) => {
   res.json({ ok: true, settings: currentSettings });
 });
 
+// ─── OUTBOUND CALL SETTINGS & ENDPOINTS ──────────────────────────
+
+let outboundSettings = {
+  enabled: false,
+  name: 'Iris',
+  voice: 'sage',
+  personality: 'Professional and direct. Explain the urgent items clearly and ask if they can action them. Be respectful of their time.',
+  greetingStyle: 'Greet the person by name and explain you are calling from FieldOps about items that need their attention.',
+  team: [],
+  callRules: {
+    minSeverity: 'high',
+    maxCallsPerDay: 3,
+    callWindowStart: '07:00',
+    callWindowEnd: '18:00',
+  },
+};
+
+// Pending outbound call context (set before Twilio connects)
+let pendingOutboundContext = null;
+
+function buildOutboundPrompt(settings, tasks, teamMemberName) {
+  const s = settings || outboundSettings;
+  return `You are ${s.name}, an AI assistant for FieldOps — a construction and trades business management app. You are making an OUTBOUND call to a team member about urgent tasks.
+
+About this call:
+- You are calling ${teamMemberName}
+- This is an outbound call — YOU initiated it, so introduce yourself and explain why you're calling
+- Be respectful of their time — keep it brief and actionable
+
+Personality:
+${s.personality || 'Professional and direct.'}
+
+Greeting:
+${s.greetingStyle || 'Greet them by name and explain the urgent items.'}
+
+Tasks requiring attention:
+${tasks.map((t, i) => `${i + 1}. ${t.title}${t.detail ? ` — ${t.detail}` : ''}${t.sub ? ` (${t.sub})` : ''}`).join('\n')}
+
+Instructions:
+- Greet ${teamMemberName} by name
+- Explain you're calling from FieldOps about ${tasks.length} item${tasks.length > 1 ? 's' : ''} that need${tasks.length === 1 ? 's' : ''} attention
+- Go through each task briefly
+- Ask if they can action them or if they need help
+- Thank them and wrap up quickly
+
+Today's date is ${new Date().toISOString().split('T')[0]}.`;
+}
+
+app.get('/outbound-settings', (_req, res) => {
+  res.json(outboundSettings);
+});
+
+app.post('/outbound-settings', (req, res) => {
+  const allowed = ['enabled', 'name', 'voice', 'personality', 'greetingStyle', 'team', 'callRules'];
+  for (const key of allowed) {
+    if (req.body[key] !== undefined) {
+      outboundSettings[key] = req.body[key];
+    }
+  }
+  console.log('Outbound settings updated');
+  res.json({ ok: true, settings: outboundSettings });
+});
+
+// Initiate an outbound call
+app.post('/outbound-call', async (req, res) => {
+  const { to, tasks, teamMemberName } = req.body;
+  if (!twilioClient) {
+    return res.status(500).json({ error: 'Twilio not configured. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN.' });
+  }
+  if (!to || !tasks || !teamMemberName) {
+    return res.status(400).json({ error: 'Missing required fields: to, tasks, teamMemberName' });
+  }
+
+  // Store context for when the call connects
+  pendingOutboundContext = { tasks, teamMemberName, settings: { ...outboundSettings } };
+
+  const host = req.headers.host;
+  const protocol = req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const twimlUrl = `${protocol}://${host}/outbound-twiml`;
+
+  try {
+    const call = await twilioClient.calls.create({
+      to,
+      from: TWILIO_PHONE_NUMBER,
+      url: twimlUrl,
+    });
+    console.log(`Outbound call initiated to ${to} (${teamMemberName}), SID: ${call.sid}`);
+    res.json({ ok: true, callSid: call.sid });
+  } catch (err) {
+    console.error('Outbound call failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// TwiML for outbound calls — connects to the same media stream
+app.post('/outbound-twiml', (req, res) => {
+  const host = req.headers.host;
+  const protocol = req.headers['x-forwarded-proto'] === 'https' ? 'wss' : 'ws';
+  const wsUrl = `${protocol}://${host}/media-stream`;
+
+  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Connect>
+    <Stream url="${wsUrl}">
+      <Parameter name="callDirection" value="outbound" />
+    </Stream>
+  </Connect>
+</Response>`;
+
+  res.type('text/xml').send(twiml);
+});
+
+// ─── INBOUND CALL ─────────────────────────────────────────────────
+
 // Twilio incoming call webhook — returns TwiML to connect to media stream
 app.post('/incoming-call', (req, res) => {
   console.log('Incoming call from:', req.body.From || 'unknown');
@@ -124,6 +244,8 @@ wss.on('connection', (twilioWs, req) => {
 
   let streamSid = null;
   let callSid = null;
+  let callDirection = 'inbound';
+  let outboundContext = null;
   let openaiWs = null;
   let openaiReady = false;
   const audioQueue = []; // Buffer audio until OpenAI is ready
@@ -160,12 +282,17 @@ wss.on('connection', (twilioWs, req) => {
   // ── Configure OpenAI session once connected ────────────────────
 
   function configureSession() {
-    const settings = currentSettings;
+    const isOutbound = callDirection === 'outbound' && outboundContext;
+    const settings = isOutbound ? outboundContext.settings : currentSettings;
+    const instructions = isOutbound
+      ? buildOutboundPrompt(settings, outboundContext.tasks, outboundContext.teamMemberName)
+      : buildSystemPrompt(settings);
+
     const sessionConfig = {
       type: 'session.update',
       session: {
         voice: settings.voice || 'sage',
-        instructions: buildSystemPrompt(settings),
+        instructions,
         input_audio_format: 'g711_ulaw',
         output_audio_format: 'g711_ulaw',
         input_audio_transcription: {
@@ -190,12 +317,15 @@ wss.on('connection', (twilioWs, req) => {
     }
 
     // Send initial greeting prompt
+    const greetingInstructions = isOutbound
+      ? `You are calling ${outboundContext.teamMemberName}. Introduce yourself as ${settings.name || 'Iris'} from FieldOps. Explain you're calling about ${outboundContext.tasks.length} urgent item${outboundContext.tasks.length > 1 ? 's' : ''} that need${outboundContext.tasks.length === 1 ? 's' : ''} attention. Be professional and warm.`
+      : `Greet the caller following your greeting style instructions. Introduce yourself as ${settings.name || 'Iris'}. Keep it short, fun, and natural. Ask what you can help with.`;
+
     sendToOpenAI({
       type: 'response.create',
       response: {
         modalities: ['text', 'audio'],
-        instructions:
-          `Greet the caller following your greeting style instructions. Introduce yourself as ${settings.name || 'Iris'}. Keep it short, fun, and natural. Ask what you can help with.`,
+        instructions: greetingInstructions,
       },
     });
   }
@@ -318,7 +448,16 @@ wss.on('connection', (twilioWs, req) => {
       case 'start':
         streamSid = msg.start.streamSid;
         callSid = msg.start.callSid;
-        console.log(`Stream started — SID: ${streamSid}, Call: ${callSid}`);
+        // Detect outbound call via stream parameter
+        const params = msg.start.customParameters || {};
+        if (params.callDirection === 'outbound' && pendingOutboundContext) {
+          callDirection = 'outbound';
+          outboundContext = pendingOutboundContext;
+          pendingOutboundContext = null;
+          console.log(`Outbound stream started to ${outboundContext.teamMemberName} — SID: ${streamSid}`);
+        } else {
+          console.log(`Inbound stream started — SID: ${streamSid}, Call: ${callSid}`);
+        }
         connectOpenAI();
         break;
 

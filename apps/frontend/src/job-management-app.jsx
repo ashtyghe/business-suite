@@ -1991,6 +1991,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
   const [aiInsight, setAiInsight] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
+  const [aiExpanded, setAiExpanded] = useState(false);
 
   const generateInsight = async () => {
     setAiLoading(true);
@@ -2030,23 +2031,64 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
 
   return (
     <div>
-      {/* ── AI Business Insight ── */}
-      <div style={{ background: "linear-gradient(135deg, #111 0%, #1e293b 100%)", borderRadius: 12, padding: "20px 24px", marginBottom: 20, color: "#fff" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: aiInsight || aiLoading || aiError ? 12 : 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 16 }}>&#10024;</span>
-            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.03em" }}>AI Business Insight</span>
+      {/* ── AI Business Insight (collapsible) ── */}
+      {(() => {
+        // Parse insight text into cards: split on bullet points (• or - or numbered)
+        const insightCards = aiInsight ? aiInsight.split(/\n/).filter(l => l.trim()).reduce((cards, line) => {
+          const trimmed = line.trim();
+          const bulletMatch = trimmed.match(/^[•\-\*]\s*\*?\*?(.+?)\*?\*?:\s*(.+)/) || trimmed.match(/^[•\-\*]\s*\*?\*?(.+?)\*?\*?\s*[—–-]\s*(.+)/) || trimmed.match(/^\d+\.\s*\*?\*?(.+?)\*?\*?:\s*(.+)/);
+          if (bulletMatch) {
+            cards.push({ heading: bulletMatch[1].replace(/\*+/g, "").trim(), detail: bulletMatch[2].replace(/\*+/g, "").trim() });
+          } else if (trimmed.match(/^[•\-\*\d]/)) {
+            const clean = trimmed.replace(/^[•\-\*\d.]+\s*/, "").replace(/\*+/g, "");
+            const colonSplit = clean.indexOf(":") > 0 && clean.indexOf(":") < 60 ? [clean.slice(0, clean.indexOf(":")), clean.slice(clean.indexOf(":") + 1)] : null;
+            if (colonSplit) {
+              cards.push({ heading: colonSplit[0].trim(), detail: colonSplit[1].trim() });
+            } else {
+              cards.push({ heading: clean.length > 60 ? clean.slice(0, 60) + "..." : clean, detail: clean.length > 60 ? clean : "" });
+            }
+          }
+          return cards;
+        }, []) : [];
+
+        return (
+          <div style={{ background: "linear-gradient(135deg, #111 0%, #1e293b 100%)", borderRadius: 12, marginBottom: 20, color: "#fff", overflow: "hidden" }}>
+            {/* Header — always visible, click to toggle */}
+            <div onClick={() => setAiExpanded(e => !e)} style={{ padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>&#10024;</span>
+                <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.03em" }}>AI Business Insight</span>
+                {insightCards.length > 0 && !aiExpanded && <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 4 }}>{insightCards.length} insights</span>}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button onClick={e => { e.stopPropagation(); generateInsight(); }} disabled={aiLoading} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, padding: "4px 12px", fontSize: 11, fontWeight: 600, color: "#fff", cursor: "pointer", opacity: aiLoading ? 0.5 : 1, fontFamily: "'Open Sans', sans-serif" }}>
+                  {aiLoading ? "Analysing..." : "Refresh"}
+                </button>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" style={{ transition: "transform 0.2s", transform: aiExpanded ? "rotate(180deg)" : "rotate(0deg)" }}><polyline points="5 8 10 13 15 8"/></svg>
+              </div>
+            </div>
+            {/* Expandable content */}
+            {aiExpanded && (
+              <div style={{ padding: "0 24px 20px" }}>
+                {aiLoading && <div style={{ fontSize: 13, color: "#94a3b8" }}>Analysing your business data...</div>}
+                {aiError && <div style={{ fontSize: 12, color: "#f87171" }}>Failed to generate insight: {aiError}</div>}
+                {insightCards.length > 0 && !aiLoading ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
+                    {insightCards.map((card, i) => (
+                      <div key={i} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "14px 16px" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{card.heading}</div>
+                        {card.detail && <div style={{ fontSize: 12, lineHeight: 1.5, color: "#94a3b8" }}>{card.detail}</div>}
+                      </div>
+                    ))}
+                  </div>
+                ) : (!aiLoading && !aiError && aiInsight && (
+                  <div style={{ fontSize: 13, lineHeight: 1.6, color: "#e2e8f0", whiteSpace: "pre-wrap" }}>{aiInsight}</div>
+                ))}
+              </div>
+            )}
           </div>
-          <button onClick={generateInsight} disabled={aiLoading} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, padding: "4px 12px", fontSize: 11, fontWeight: 600, color: "#fff", cursor: "pointer", opacity: aiLoading ? 0.5 : 1, fontFamily: "'Open Sans', sans-serif" }}>
-            {aiLoading ? "Analysing..." : "Refresh"}
-          </button>
-        </div>
-        {aiLoading && <div style={{ fontSize: 13, color: "#94a3b8" }}>Analysing your business data...</div>}
-        {aiError && <div style={{ fontSize: 12, color: "#f87171" }}>Failed to generate insight: {aiError}</div>}
-        {aiInsight && !aiLoading && (
-          <div style={{ fontSize: 13, lineHeight: 1.6, color: "#e2e8f0", whiteSpace: "pre-wrap" }}>{aiInsight}</div>
-        )}
-      </div>
+        );
+      })()}
 
       {/* ── ROW 1: Financial Hero Strip (full width) ── */}
       <div className="stat-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 24 }}>
@@ -9402,6 +9444,25 @@ const Actions = ({ jobs, quotes, invoices, bills, workOrders, purchaseOrders, co
   ].filter(c => c.items.length > 0);
 
   const totalCount = categories.reduce((s, c) => s + c.items.length, 0);
+  const highSeverityItems = categories.flatMap(c => c.items.filter(i => i.severity === "high"));
+
+  const [callStatus, setCallStatus] = useState(null);
+  const triggerOutboundCall = async (member, tasks) => {
+    const voiceServerUrl = import.meta.env.VITE_VOICE_SERVER_URL;
+    if (!voiceServerUrl) { setCallStatus("Configure VITE_VOICE_SERVER_URL"); setTimeout(() => setCallStatus(null), 3000); return; }
+    setCallStatus(`Calling ${member.name}...`);
+    try {
+      const res = await fetch(`${voiceServerUrl}/outbound-call`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: member.phone, teamMemberName: member.name, tasks }) });
+      const data = await res.json();
+      setCallStatus(data.ok ? `Call to ${member.name} initiated` : `Failed: ${data.error}`);
+    } catch (err) { setCallStatus(`Failed: ${err.message}`); }
+    setTimeout(() => setCallStatus(null), 5000);
+  };
+
+  // Load outbound team from localStorage
+  const outboundTeam = (() => {
+    try { const s = localStorage.getItem("fieldops_outbound_settings"); return s ? JSON.parse(s).team?.filter(m => m.callEnabled) || [] : []; } catch { return []; }
+  })();
 
   return (
     <div>
@@ -9411,12 +9472,24 @@ const Actions = ({ jobs, quotes, invoices, bills, workOrders, purchaseOrders, co
           <span style={{ fontSize: 28, fontWeight: 800, color: totalCount > 0 ? accent : "#059669" }}>{totalCount}</span>
           <span style={{ fontSize: 14, fontWeight: 600, color: "#666" }}>{totalCount === 1 ? "item needs attention" : "items need attention"}</span>
         </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginLeft: "auto" }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginLeft: "auto", alignItems: "center" }}>
           {categories.map(c => (
             <span key={c.id} style={{ fontSize: 11, fontWeight: 600, background: hexToRgba(c.color, 0.1), color: c.color, padding: "3px 10px", borderRadius: 12 }}>{c.items.length} {c.label}</span>
           ))}
+          {outboundTeam.length > 0 && highSeverityItems.length > 0 && (
+            <div style={{ position: "relative", display: "inline-block" }}>
+              <select onChange={e => { const m = outboundTeam.find(t => t.id === Number(e.target.value)); if (m) triggerOutboundCall(m, highSeverityItems); e.target.value = ""; }} style={{ padding: "4px 10px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", appearance: "none", paddingRight: 24 }} defaultValue="">
+                <option value="" disabled>Call Team...</option>
+                {outboundTeam.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+              <svg style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="#fff" strokeWidth="2.5"><polyline points="5 8 10 13 15 8"/></svg>
+            </div>
+          )}
         </div>
       </div>
+      {callStatus && (
+        <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#1d4ed8" }}>{callStatus}</div>
+      )}
 
       {totalCount === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: "#aaa", fontSize: 14 }}>All clear — nothing needs attention right now.</div>
@@ -10115,8 +10188,68 @@ const Settings = ({ staff = [], setStaff }) => {
 
   const tabs = [
     { id: "integrations", label: "Integrations", icon: "send" },
+    { id: "outbound", label: "Outbound Calls", icon: "notification" },
     ...(auth.isAdmin || auth.isLocalDev ? [{ id: "users", label: "Users", icon: "clients" }] : []),
   ];
+
+  // Outbound call settings state
+  const [outboundSettings, setOutboundSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem("fieldops_outbound_settings");
+      return saved ? JSON.parse(saved) : {
+        enabled: false, name: "Iris", voice: "sage",
+        personality: "Professional and direct. Explain the urgent items clearly and ask if they can action them. Be respectful of their time.",
+        greetingStyle: "Greet the person by name and explain you are calling from FieldOps about items that need their attention.",
+        team: [
+          { id: 1, name: "Tom Baker", phone: "+61400000001", role: "Site Manager", callEnabled: true },
+          { id: 2, name: "Sarah Lee", phone: "+61400000002", role: "Project Manager", callEnabled: true },
+        ],
+        callRules: { minSeverity: "high", maxCallsPerDay: 3, callWindowStart: "07:00", callWindowEnd: "18:00" },
+      };
+    } catch { return { enabled: false, name: "Iris", voice: "sage", personality: "", greetingStyle: "", team: [], callRules: { minSeverity: "high", maxCallsPerDay: 3, callWindowStart: "07:00", callWindowEnd: "18:00" } }; }
+  });
+  const [outboundDirty, setOutboundDirty] = useState(false);
+  const [outboundSaved, setOutboundSaved] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [editTeamMember, setEditTeamMember] = useState(null);
+  const [teamForm, setTeamForm] = useState({ name: "", phone: "", role: "" });
+  const [testCallStatus, setTestCallStatus] = useState(null);
+
+  const updateOutbound = (key, value) => { setOutboundSettings(prev => ({ ...prev, [key]: value })); setOutboundDirty(true); setOutboundSaved(false); };
+  const updateCallRule = (key, value) => { setOutboundSettings(prev => ({ ...prev, callRules: { ...prev.callRules, [key]: value } })); setOutboundDirty(true); setOutboundSaved(false); };
+  const saveOutboundSettings = async () => {
+    localStorage.setItem("fieldops_outbound_settings", JSON.stringify(outboundSettings));
+    const voiceServerUrl = import.meta.env.VITE_VOICE_SERVER_URL;
+    if (voiceServerUrl) {
+      try { await fetch(`${voiceServerUrl}/outbound-settings`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(outboundSettings) }); } catch (err) { console.warn("Could not sync outbound settings:", err.message); }
+    }
+    setOutboundSaved(true); setOutboundDirty(false);
+    setTimeout(() => setOutboundSaved(false), 2500);
+  };
+  const openNewTeamMember = () => { setEditTeamMember(null); setTeamForm({ name: "", phone: "", role: "" }); setShowTeamModal(true); };
+  const openEditTeamMember = (m) => { setEditTeamMember(m); setTeamForm({ name: m.name, phone: m.phone, role: m.role }); setShowTeamModal(true); };
+  const saveTeamMember = () => {
+    if (!teamForm.name.trim() || !teamForm.phone.trim()) return;
+    if (editTeamMember) {
+      updateOutbound("team", outboundSettings.team.map(m => m.id === editTeamMember.id ? { ...m, ...teamForm } : m));
+    } else {
+      updateOutbound("team", [...outboundSettings.team, { id: Date.now(), ...teamForm, callEnabled: true }]);
+    }
+    setShowTeamModal(false);
+  };
+  const removeTeamMember = (id) => updateOutbound("team", outboundSettings.team.filter(m => m.id !== id));
+  const toggleTeamMemberCall = (id) => updateOutbound("team", outboundSettings.team.map(m => m.id === id ? { ...m, callEnabled: !m.callEnabled } : m));
+  const triggerTestCall = async (member) => {
+    const voiceServerUrl = import.meta.env.VITE_VOICE_SERVER_URL;
+    if (!voiceServerUrl) { setTestCallStatus("Configure VITE_VOICE_SERVER_URL"); return; }
+    setTestCallStatus(`Calling ${member.name}...`);
+    try {
+      const res = await fetch(`${voiceServerUrl}/outbound-call`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: member.phone, teamMemberName: member.name, tasks: [{ title: "Test call", detail: "This is a test call from FieldOps" }] }) });
+      const data = await res.json();
+      setTestCallStatus(data.ok ? `Call initiated (${data.callSid?.slice(-6)})` : `Failed: ${data.error}`);
+    } catch (err) { setTestCallStatus(`Failed: ${err.message}`); }
+    setTimeout(() => setTestCallStatus(null), 5000);
+  };
 
   const OptionCard = ({ option, selected, onSelect }) => (
     <div
@@ -10560,6 +10693,136 @@ const Settings = ({ staff = [], setStaff }) => {
       </div>
 
       {tab === "integrations" && <VoiceIntegration />}
+      {tab === "outbound" && (
+        <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Outbound Call Assistant</div>
+              <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Configure AI-powered outbound calls to team members about urgent tasks</div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: outboundDirty ? 1 : 0.5 }} onClick={saveOutboundSettings} disabled={!outboundDirty}>
+                {outboundSaved ? "Saved!" : "Save Changes"}
+              </button>
+            </div>
+          </div>
+
+          {outboundSaved && (
+            <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+              <Icon name="check" size={14} /> Outbound settings saved.
+            </div>
+          )}
+          {testCallStatus && (
+            <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#1d4ed8" }}>{testCallStatus}</div>
+          )}
+
+          {/* Enable toggle */}
+          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Enable Outbound Calls</div>
+              <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Allow the AI assistant to make outbound calls to team members</div>
+            </div>
+            <button onClick={() => updateOutbound("enabled", !outboundSettings.enabled)} style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s", background: outboundSettings.enabled ? "#059669" : "#ccc" }}>
+              <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, transition: "left 0.2s", left: outboundSettings.enabled ? 23 : 3, boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+            </button>
+          </div>
+
+          {/* AI Personality */}
+          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>AI Personality</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Name</label>
+                <input value={outboundSettings.name} onChange={e => updateOutbound("name", e.target.value)} placeholder="e.g. Iris" style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Voice</label>
+                <select value={outboundSettings.voice} onChange={e => updateOutbound("voice", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }}>
+                  {VOICE_OPTIONS.voices.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}
+                </select>
+              </div>
+            </div>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Greeting Style</label>
+            <textarea value={outboundSettings.greetingStyle} onChange={e => updateOutbound("greetingStyle", e.target.value)} rows={2} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 12 }} />
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Personality</label>
+            <textarea value={outboundSettings.personality} onChange={e => updateOutbound("personality", e.target.value)} rows={2} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }} />
+          </div>
+
+          {/* Team Contacts */}
+          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Team Contacts</div>
+              <button onClick={openNewTeamMember} style={{ padding: "4px 12px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>+ Add</button>
+            </div>
+            {outboundSettings.team.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 20, color: "#aaa", fontSize: 13 }}>No team members added</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {outboundSettings.team.map(m => (
+                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", border: "1px solid #e8e8e8", borderRadius: 8 }}>
+                    <button onClick={() => toggleTeamMemberCall(m.id)} style={{ width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer", position: "relative", background: m.callEnabled ? "#059669" : "#ccc", flexShrink: 0 }}>
+                      <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: m.callEnabled ? 19 : 3, transition: "left 0.2s", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }} />
+                    </button>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>{m.name}</div>
+                      <div style={{ fontSize: 11, color: "#888" }}>{m.phone} {m.role ? `· ${m.role}` : ""}</div>
+                    </div>
+                    <button onClick={() => triggerTestCall(m)} style={{ padding: "4px 10px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Test Call</button>
+                    <button onClick={() => openEditTeamMember(m)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 13, padding: 4 }}>✎</button>
+                    <button onClick={() => removeTeamMember(m.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ddd", fontSize: 13, padding: 4 }}>🗑</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Call Rules */}
+          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 16 }}>Call Rules</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Min. Severity</label>
+                <select value={outboundSettings.callRules.minSeverity} onChange={e => updateCallRule("minSeverity", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }}>
+                  <option value="high">High only</option>
+                  <option value="medium">Medium and above</option>
+                  <option value="low">All severities</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Max Calls / Day</label>
+                <input type="number" min={1} max={10} value={outboundSettings.callRules.maxCallsPerDay} onChange={e => updateCallRule("maxCallsPerDay", Number(e.target.value))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Call Window Start</label>
+                <input type="time" value={outboundSettings.callRules.callWindowStart} onChange={e => updateCallRule("callWindowStart", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Call Window End</label>
+                <input type="time" value={outboundSettings.callRules.callWindowEnd} onChange={e => updateCallRule("callWindowEnd", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Team member modal */}
+          {showTeamModal && (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowTeamModal(false)}>
+              <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }} onClick={e => e.stopPropagation()}>
+                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{editTeamMember ? "Edit Team Member" : "Add Team Member"}</div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Name</label>
+                <input value={teamForm.name} onChange={e => setTeamForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Tom Baker" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} autoFocus />
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Phone</label>
+                <input value={teamForm.phone} onChange={e => setTeamForm(f => ({ ...f, phone: e.target.value }))} placeholder="+61400000000" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Role</label>
+                <input value={teamForm.role} onChange={e => setTeamForm(f => ({ ...f, role: e.target.value }))} placeholder="e.g. Site Manager" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 20 }} />
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button onClick={() => setShowTeamModal(false)} style={{ padding: "8px 16px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
+                  <button onClick={saveTeamMember} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>{editTeamMember ? "Save" : "Add"}</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {tab === "users" && <UserManagement />}
     </div>
   );

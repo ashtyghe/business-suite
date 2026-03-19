@@ -651,7 +651,7 @@ const injectStyles = () => {
     .modal-footer { padding: 16px 24px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-    .tabs { display: flex; gap: 2px; border-bottom: 1px solid #e8e8e8; margin-bottom: 20px; }
+    .tabs { display: flex; gap: 2px; border-bottom: 1px solid #e8e8e8; margin-bottom: 20px; overflow-y: hidden; }
     .tab { padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer; color: #999; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
     .tab:hover { color: #333; }
     .tab.active { color: #111; border-bottom-color: var(--section-accent, #111); }
@@ -1467,7 +1467,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
   const statusStripEl = (
     <div style={{ padding: "12px 20px", background: lightTint, flexShrink: 0 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 4, overflowX: "auto", overflowY: "hidden" }}>
           {availableTransitions.map(s => (
             <button key={s} onClick={() => handleTransition(s)} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 8, border: ORDER_STATUS_TRIGGERS[s] ? "1px solid #fcd34d" : "1px solid #cbd5e1", background: ORDER_STATUS_TRIGGERS[s] ? "#fef3c7" : "#fff", color: ORDER_STATUS_TRIGGERS[s] ? "#92400e" : "#475569", cursor: "pointer" }}>
               {ORDER_STATUS_TRIGGERS[s] && <OrderIcon name="zap" size={10} />}{s}
@@ -1847,7 +1847,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
       const partyName = o._type === "wo" ? o.contractorName : o.supplierName;
       const jd = orderJobDisplay(jobs.find(j => j.id === o.jobId));
       const q = search.toLowerCase();
-      const matchSearch = !search || o.ref.toLowerCase().includes(q) || (partyName || "").toLowerCase().includes(q) || (jd?.name || "").toLowerCase().includes(q);
+      const matchSearch = !search || o.ref.toLowerCase().includes(q) || (partyName || "").toLowerCase().includes(q) || (jd?.name || "").toLowerCase().includes(q) || (o.description || "").toLowerCase().includes(q) || (o.notes || "").toLowerCase().includes(q) || (o.items || []).some(i => (i.description || "").toLowerCase().includes(q)) || (o.status || "").toLowerCase().includes(q);
       const matchStatus = filterStatus === "All" || o.status === filterStatus;
       const matchType = filterType === "all" || o._type === filterType;
       return matchSearch && matchStatus && matchType;
@@ -3561,9 +3561,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
   const jobStatusStrip = detailMode === "view" ? (
     <div style={{ flexShrink: 0 }}>
-      <div style={{ padding: "10px 20px", background: jobLight, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      <div style={{ padding: "10px 20px", background: jobLight, display: "flex", alignItems: "center", gap: 6, overflowX: "auto", overflowY: "hidden" }}>
         {["draft","scheduled","in_progress","completed","cancelled"].filter(s => s !== job.status).map(s => (
-          <button key={s} className="btn btn-xs" style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#475569", borderRadius: 8 }} onClick={() => {
+          <button key={s} className="btn btn-xs" style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#475569", borderRadius: 8, whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => {
             const updated = { ...job, status: s, activityLog: addLog(job.activityLog, `Status → ${s.replace("_"," ")}`) };
             setJobs(js => js.map(j => j.id === job.id ? updated : j));
           }}>{s.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</button>
@@ -4950,7 +4950,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         mode={inlineQuoteMode} setMode={setInlineQuoteMode}
         showToggle={true}
         statusStrip={inlineQuoteMode === "edit" ?
-          <div style={{ padding: "8px 20px", background: SECTION_COLORS.quotes.light, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ padding: "8px 20px", background: SECTION_COLORS.quotes.light, display: "flex", alignItems: "center", gap: 6, overflowX: "auto", overflowY: "hidden" }}>
             {["draft","sent","accepted","declined"].filter(s => s !== editingQuote.status).map(s => (
               <button key={s} className="btn btn-xs" style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#475569", borderRadius: 8 }}
                 onClick={() => setEditingQuote(q => ({ ...q, status: s }))}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>
@@ -5061,7 +5061,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         mode={inlineInvMode} setMode={setInlineInvMode}
         showToggle={true}
         statusStrip={inlineInvMode === "edit" ?
-          <div style={{ padding: "8px 20px", background: SECTION_COLORS.invoices.light, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ padding: "8px 20px", background: SECTION_COLORS.invoices.light, display: "flex", alignItems: "center", gap: 6, overflowX: "auto", overflowY: "hidden" }}>
             {["draft","sent","paid","overdue","void"].filter(s => s !== editingInvoice.status).map(s => (
               <button key={s} className="btn btn-xs" style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#475569", borderRadius: 8 }}
                 onClick={() => setEditingInvoice(i => ({ ...i, status: s }))}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>
@@ -5193,8 +5193,18 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
   const filtered = jobs.filter(j => {
     const q = search.toLowerCase();
     const client = clients.find(c => c.id === j.clientId);
-    return (filterStatus === "all" || j.status === filterStatus) &&
-      (j.title.toLowerCase().includes(q) || client?.name.toLowerCase().includes(q));
+    const sites = client?.sites || [];
+    const matchSearch = !search ||
+      j.title.toLowerCase().includes(q) ||
+      (client?.name || "").toLowerCase().includes(q) ||
+      (j.description || "").toLowerCase().includes(q) ||
+      (j.status || "").toLowerCase().includes(q) ||
+      (j.priority || "").toLowerCase().includes(q) ||
+      (j.tags || []).some(t => t.toLowerCase().includes(q)) ||
+      (j.assignedTo || []).some(n => n.toLowerCase().includes(q)) ||
+      (client?.address || "").toLowerCase().includes(q) ||
+      sites.some(s => (s.name || "").toLowerCase().includes(q) || (s.address || "").toLowerCase().includes(q));
+    return (filterStatus === "all" || j.status === filterStatus) && matchSearch;
   });
 
   const openNew = () => { setEditJob(null); setJobMode("edit"); setForm({ title: "", clientId: clients[0]?.id || "", siteId: null, status: "draft", priority: "medium", description: "", startDate: "", dueDate: "", assignedTo: [], tags: "", estimate: { labour: 0, materials: 0, subcontractors: 0, other: 0 } }); setShowModal(true); };
@@ -5635,7 +5645,18 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
 
   const filtered = clients.filter(c => {
     const q = search.toLowerCase();
-    const matchSearch = c.name.toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q);
+    const sites = c.sites || [];
+    const matchSearch = !search ||
+      c.name.toLowerCase().includes(q) ||
+      (c.email || "").toLowerCase().includes(q) ||
+      (c.phone || "").toLowerCase().includes(q) ||
+      (c.address || "").toLowerCase().includes(q) ||
+      (c.mainContact?.name || "").toLowerCase().includes(q) ||
+      (c.mainContact?.phone || "").toLowerCase().includes(q) ||
+      (c.mainContact?.email || "").toLowerCase().includes(q) ||
+      (c.accountsContact?.name || "").toLowerCase().includes(q) ||
+      (c.accountsContact?.email || "").toLowerCase().includes(q) ||
+      sites.some(s => (s.name || "").toLowerCase().includes(q) || (s.address || "").toLowerCase().includes(q) || (s.contactName || "").toLowerCase().includes(q) || (s.contactPhone || "").toLowerCase().includes(q));
     const clientJobs = jobs.filter(j => j.clientId === c.id);
     const isActive = clientJobs.some(j => ["in_progress", "scheduled", "quoted", "draft"].includes(j.status));
     const matchStatus = filterStatus === "all" || (filterStatus === "active" ? isActive : !isActive);
@@ -6093,7 +6114,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
 
   const filtered = contractors.filter(c => {
     const q = search.toLowerCase();
-    const matchSearch = !search || c.name.toLowerCase().includes(q) || (c.contact || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q) || (c.trade || "").toLowerCase().includes(q);
+    const matchSearch = !search || c.name.toLowerCase().includes(q) || (c.contact || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q) || (c.trade || "").toLowerCase().includes(q) || (c.phone || "").toLowerCase().includes(q) || (c.abn || "").toLowerCase().includes(q) || (c.notes || "").toLowerCase().includes(q) || (c.complianceDocs || []).some(d => (d.name || d.type || "").toLowerCase().includes(q));
     const matchTrade = filterTrade === "all" || c.trade === filterTrade;
     if (!matchSearch || !matchTrade) return false;
     if (filterCompliance === "all") return true;
@@ -6576,7 +6597,7 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
 
   const filtered = suppliers.filter(s => {
     const q = search.toLowerCase();
-    return !search || s.name.toLowerCase().includes(q) || (s.contact || "").toLowerCase().includes(q) || (s.email || "").toLowerCase().includes(q);
+    return !search || s.name.toLowerCase().includes(q) || (s.contact || "").toLowerCase().includes(q) || (s.email || "").toLowerCase().includes(q) || (s.phone || "").toLowerCase().includes(q) || (s.abn || "").toLowerCase().includes(q) || (s.notes || "").toLowerCase().includes(q) || (s.address || "").toLowerCase().includes(q);
   });
 
   const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", abn: "", notes: "" }); setShowModal(true); };
@@ -6947,10 +6968,14 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
     const q = search.toLowerCase();
     const job = jobs.find(j => j.id === e.jobId);
     const client = clients.find(c => c.id === job?.clientId);
+    const site = job?.siteId ? (client?.sites || []).find(s => s.id === job.siteId) : null;
     return (job?.title || "").toLowerCase().includes(q) ||
       (client?.name || "").toLowerCase().includes(q) ||
       (e.notes || "").toLowerCase().includes(q) ||
-      (e.assignedTo || []).some(n => n.toLowerCase().includes(q));
+      (e.assignedTo || []).some(n => n.toLowerCase().includes(q)) ||
+      (site?.name || "").toLowerCase().includes(q) ||
+      (site?.address || "").toLowerCase().includes(q) ||
+      (client?.address || "").toLowerCase().includes(q);
   });
 
   const openNew = () => {
@@ -7428,7 +7453,10 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
     const matchSearch = !search ||
       (q.number || "").toLowerCase().includes(query) ||
       (job?.title || "").toLowerCase().includes(query) ||
-      (client?.name || "").toLowerCase().includes(query);
+      (client?.name || "").toLowerCase().includes(query) ||
+      (q.notes || "").toLowerCase().includes(query) ||
+      (q.items || []).some(i => (i.description || "").toLowerCase().includes(query)) ||
+      String(q.total || "").includes(query);
     const matchStatus = filterStatus === "all" || q.status === filterStatus;
     return matchSearch && matchStatus;
   });
@@ -8093,9 +8121,12 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
     if (!search) return true;
     const q = search.toLowerCase();
     const job = jobs.find(j => j.id === t.jobId);
+    const client = job ? clients.find(c => c.id === job.clientId) : null;
     return (t.description || "").toLowerCase().includes(q) ||
       (t.worker || "").toLowerCase().includes(q) ||
-      (job?.title || "").toLowerCase().includes(q);
+      (job?.title || "").toLowerCase().includes(q) ||
+      (client?.name || "").toLowerCase().includes(q) ||
+      (t.date || "").includes(q);
   };
   const workerEntries = (selectedWorker === "all" ? timeEntries : timeEntries.filter(t => t.worker === selectedWorker)).filter(searchFilter);
   const now = new Date();
@@ -8840,11 +8871,16 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
   // ── Filtered list view
   const filtered = bills.filter(b => {
     const job = jobs.find(j => j.id === b.jobId);
+    const q = search.toLowerCase();
     const matchSearch = !search ||
-      b.supplier.toLowerCase().includes(search.toLowerCase()) ||
-      (b.invoiceNo||"").toLowerCase().includes(search.toLowerCase()) ||
-      (b.description||"").toLowerCase().includes(search.toLowerCase()) ||
-      (job?.title||"").toLowerCase().includes(search.toLowerCase());
+      b.supplier.toLowerCase().includes(q) ||
+      (b.invoiceNo||"").toLowerCase().includes(q) ||
+      (b.description||"").toLowerCase().includes(q) ||
+      (job?.title||"").toLowerCase().includes(q) ||
+      (b.notes||"").toLowerCase().includes(q) ||
+      (b.category||"").toLowerCase().includes(q) ||
+      (b.lineItems || []).some(i => (i.description || "").toLowerCase().includes(q)) ||
+      String(b.amount || "").includes(q);
     const matchStatus   = filterStatus === "all"   || b.status === filterStatus;
     const matchCategory = filterCategory === "all" || b.category === filterCategory;
     const matchJob      = filterJob === "all"      || String(b.jobId) === filterJob;
@@ -9252,7 +9288,11 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
     const matchSearch = !search ||
       (inv.number || "").toLowerCase().includes(q) ||
       (job?.title || "").toLowerCase().includes(q) ||
-      (client?.name || "").toLowerCase().includes(q);
+      (client?.name || "").toLowerCase().includes(q) ||
+      (inv.notes || "").toLowerCase().includes(q) ||
+      (inv.items || []).some(i => (i.description || "").toLowerCase().includes(q)) ||
+      (inv.dueDate || "").includes(q) ||
+      String(inv.total || "").includes(q);
     const matchStatus = filterStatus === "all" || inv.status === filterStatus;
     return matchSearch && matchStatus;
   });
@@ -9717,7 +9757,10 @@ const Reminders = ({ reminders, setReminders, jobs }) => {
   const completedCount = reminders.filter(r => r.status === "completed").length;
 
   const filtered = reminders.filter(r => {
-    const matchSearch = !search || r.text.toLowerCase().includes(search.toLowerCase()) || (r.items || []).some(i => i.text.toLowerCase().includes(search.toLowerCase()));
+    const q = search.toLowerCase();
+    const linkedJob = r.jobId ? jobs.find(j => j.id === r.jobId) : null;
+    const linkedClient = r.clientId ? clients.find(c => c.id === r.clientId) : null;
+    const matchSearch = !search || r.text.toLowerCase().includes(q) || (r.items || []).some(i => i.text.toLowerCase().includes(q)) || (linkedJob?.title || "").toLowerCase().includes(q) || (linkedClient?.name || "").toLowerCase().includes(q);
     const matchStatus = filterStatus === "all" || (filterStatus === "overdue" ? (r.status === "pending" && r.dueDate < today) : r.status === filterStatus);
     return matchSearch && matchStatus;
   });
@@ -11819,7 +11862,7 @@ const CallLog = ({ callLog = [], onNav }) => {
     if (filterStatus !== "all") list = list.filter(c => c.status === filterStatus);
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(c => (c.from || c.to || "").toLowerCase().includes(q) || (c.phone || "").includes(q) || (c.actions || []).some(a => a.description.toLowerCase().includes(q)));
+      list = list.filter(c => (c.from || c.to || "").toLowerCase().includes(q) || (c.phone || "").includes(q) || (c.actions || []).some(a => a.description.toLowerCase().includes(q)) || (c.notes || "").toLowerCase().includes(q) || (c.summary || "").toLowerCase().includes(q));
     }
     list.sort((a, b) => {
       let va, vb;

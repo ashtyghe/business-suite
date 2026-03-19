@@ -108,8 +108,33 @@ Deno.serve(async (req: Request) => {
     return json({ error: `Staff record failed: ${staffError.message}` }, 500);
   }
 
+  // Send welcome email via Resend
+  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+  let emailSent = false;
+  if (RESEND_API_KEY) {
+    try {
+      // Call the send-email function internally via fetch
+      const sendRes = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")!}`,
+        },
+        body: JSON.stringify({
+          type: "invite",
+          to: email,
+          data: { fullName, email, role: role || "staff", temporaryPassword: tempPassword },
+        }),
+      });
+      emailSent = sendRes.ok;
+    } catch {
+      // Non-fatal — account was still created
+    }
+  }
+
   return json({
     success: true,
+    emailSent,
     user: {
       id: staffRow.id,
       authUserId: authData.user.id,

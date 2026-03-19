@@ -27,6 +27,7 @@ function normalizeCustomer(row, allSites) {
     email: row.email || '',
     phone: row.phone || '',
     address: row.address || '',
+    xeroContactId: row.xero_contact_id || null,
     sites: allSites.filter(s => s.customer_id === row.id).map(normalizeSite),
   };
 }
@@ -91,6 +92,10 @@ function normalizeInvoice(row) {
     createdAt: row.created_at ? row.created_at.slice(0, 10) : '',
     fromQuoteId: row.from_quote_id || null,
     lineItems: (row.line_items || []).map(normalizeLineItem),
+    xeroInvoiceId: row.xero_invoice_id || null,
+    xeroSyncStatus: row.xero_sync_status || null,
+    xeroLastSyncedAt: row.xero_last_synced_at || null,
+    xeroSkip: row.xero_skip || false,
   };
 }
 
@@ -121,6 +126,10 @@ function normalizeBill(row) {
     markup: Number(row.markup || 0),
     notes: row.notes || '',
     capturedAt: row.created_at ? row.created_at.slice(0, 10) : '',
+    xeroBillId: row.xero_bill_id || null,
+    xeroSyncStatus: row.xero_sync_status || null,
+    xeroLastSyncedAt: row.xero_last_synced_at || null,
+    xeroSkip: row.xero_skip || false,
   };
 }
 

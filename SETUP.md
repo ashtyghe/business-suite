@@ -75,18 +75,27 @@ business-suite/
 └── SETUP.md                             # This file
 ```
 
+## Xero Integration Setup
+
+The Xero integration requires these Supabase Edge Function secrets:
+
+```bash
+supabase secrets set XERO_CLIENT_ID=your_client_id
+supabase secrets set XERO_CLIENT_SECRET=your_client_secret
+```
+
+Get these from the [Xero Developer Portal](https://developer.xero.com/app/manage) after creating an app. The redirect URI should be your app's URL (e.g. `https://your-app.netlify.app/`).
+
 ## Key Architecture Notes
 
-- **Single-file app**: All UI is in `job-management-app.jsx` — components, styles, and logic
+- **Single-file app**: All UI is in `job-management-app.jsx` — components, styles, and logic (~12,700 lines)
 - **Styling**: Custom CSS via `injectStyles()` function + inline styles (no Tailwind)
 - **CSS variables**: `--section-accent` cascades accent colors per section
 - **SECTION_COLORS**: Constants mapping section IDs to `{accent, light}` hex pairs
 - **SectionDrawer**: Reusable drawer component with View/Edit toggle
 - **Backend**: Supabase (hosted) for database + auth + edge functions
-
-## Current Branch
-
-Work is on `claude/loving-mayer`, merged into `main`.
+- **Auth**: Supabase Auth with email/password, admin/staff roles
+- **Xero**: Two-way sync via edge functions, OAuth 2.0 + PKCE
 
 ## Deployment
 

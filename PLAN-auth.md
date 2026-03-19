@@ -1,13 +1,17 @@
-# Authentication Implementation Plan
+# Authentication Implementation Plan ✅ COMPLETED
 
 ## Overview
 Add email/password authentication for internal staff using Supabase Auth. Two roles: **Admin** (full access) and **Staff** (restricted to own work).
 
+**Status:** All phases implemented. Bug fix applied to `AuthContext.jsx` to handle session expiry correctly (was getting stuck on loading page instead of showing login).
+
 ---
 
-## Current State
-- No auth — app loads straight to Dashboard
-- Hardcoded `CURRENT_USER = "Alex Jones"` for activity logging
+## Current State (Post-Implementation)
+- Auth fully working — login/logout, session management, role-based access
+- `AuthContext.jsx` provides `{ user, staff, role, loading, signIn, signOut }` via React context
+- `App.jsx` guards on both `user` AND `staff` being present before showing app
+- Session expiry correctly redirects to login page (fixed SIGNED_OUT / stale token handling)
 - `shared.staff` table already has `auth_user_id UUID REFERENCES auth.users(id)` column (unused)
 - Supabase Auth service is running but not integrated
 - All RLS policies are wide open (`USING (true)`)

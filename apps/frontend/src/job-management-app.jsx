@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, Fragment, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry } from './lib/db';
-import { supabase, extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord } from './lib/supabase';
+import { supabase, extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord, xeroOAuth, xeroSyncInvoice, xeroSyncBill, xeroSyncContact, xeroPollUpdates } from './lib/supabase';
 import { useAuth } from './lib/AuthContext';
 import { changePassword, adminResetUserPassword } from './lib/auth';
 import * as fabric from "fabric";
@@ -904,6 +904,23 @@ const StatusBadge = ({ status }) => {
   return (
     <span className="badge" style={{ background: STATUS_BG[status] || "#f0f0f0", color: STATUS_TEXT[status] || "#666" }}>
       {labels[status] || status}
+    </span>
+  );
+};
+
+// ── Xero Sync Badge ─────────────────────────────────────────────────────────
+const XeroSyncBadge = ({ syncStatus, xeroId }) => {
+  if (!syncStatus && !xeroId) return null;
+  const colors = {
+    synced: { bg: "#ecfdf5", text: "#16a34a", label: "Synced" },
+    pending: { bg: "#fffbeb", text: "#d97706", label: "Pending" },
+    error: { bg: "#fef2f2", text: "#dc2626", label: "Error" },
+  };
+  const c = colors[syncStatus] || (xeroId ? colors.synced : { bg: "#f5f5f5", text: "#888", label: "Not synced" });
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 6px", borderRadius: 4, fontSize: 9, fontWeight: 700, background: c.bg, color: c.text, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.text }} />
+      Xero
     </span>
   );
 };
@@ -3822,8 +3839,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                         </div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                           <StatusBadge status={inv.status} />
+                          <XeroSyncBadge syncStatus={inv.xeroSyncStatus} xeroId={inv.xeroInvoiceId} />
                           {inv.status !== "paid" && inv.status !== "void" && (
                             <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.invoices.accent }} onClick={() => markInvPaid(inv.id)}>Mark Paid</button>
+                          )}
+                          {!inv.xeroInvoiceId && inv.status !== "draft" && (
+                            <button className="btn btn-ghost btn-xs" style={{ color: "#0369a1" }} onClick={() => xeroSyncInvoice("push", inv.id)} title="Send to Xero"><Icon name="send" size={11} /> Xero</button>
                           )}
                           <button className="btn btn-ghost btn-xs" onClick={() => { setEditingInvoice(inv); setInlineInvMode("view"); }}><Icon name="edit" size={11} /></button>
                           <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => delInvoice(inv.id)}><Icon name="trash" size={11} /></button>
@@ -3967,9 +3988,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                                 ? <span style={{ color: "#555" }}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span>
                                 : <span style={{ color: "#ddd" }}>—</span>}
                             </td>
-                            <td><BillStatusBadge status={b.status} /></td>
+                            <td><BillStatusBadge status={b.status} /> <XeroSyncBadge syncStatus={b.xeroSyncStatus} xeroId={b.xeroBillId} /></td>
                             <td>
                               <div style={{ display: "flex", gap: 4 }}>
+                                {!b.xeroBillId && (b.status === "approved" || b.status === "posted") && (
+                                  <button className="btn btn-ghost btn-xs" style={{ color: "#0369a1" }} title="Send to Xero" onClick={() => xeroSyncBill("push", b.id)}><Icon name="send" size={11} /></button>
+                                )}
                                 {b.status === "linked" && (
                                   <button className="btn btn-ghost btn-xs" style={{ color: "#1e7e34" }} title="Approve"
                                     onClick={async () => {
@@ -8838,6 +8862,10 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
     try {
       const saved = await updateBill(id, { ...bill, status });
       setBills(bs => bs.map(b => b.id === saved.id ? saved : b));
+      // Auto-sync to Xero when bill is approved or posted
+      if ((status === "approved" || status === "posted") && !saved.xeroBillId) {
+        xeroSyncBill("push", id).catch(() => {});
+      }
     } catch (err) { console.error('Failed to update bill status:', err); }
   };
 
@@ -8859,6 +8887,10 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
       const saved = await updateBill(billId, { ...bill, status: "posted", jobId, category, markup });
       setBills(bs => bs.map(b => b.id === billId ? saved : b));
       setJobs(js => js.map(j => j.id === jobId ? { ...j, activityLog: addLog(j.activityLog, `Bill posted: ${bill.supplier} ${fmt(onCharge)} (ex-GST + ${markup}% markup)`) } : j));
+      // Auto-sync to Xero
+      if (!saved.xeroBillId) {
+        xeroSyncBill("push", billId).catch(() => {});
+      }
     } catch (err) { console.error('Failed to post bill:', err); }
     setPostBill(null);
   };
@@ -9063,12 +9095,13 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                         <td style={{ fontSize: 12 }}>
                           {b.markup > 0 ? <span style={{ color: "#555" }}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span> : <span style={{ color: "#ddd" }}>—</span>}
                         </td>
-                        <td><BillStatusBadge status={b.status} /></td>
+                        <td><BillStatusBadge status={b.status} /> <XeroSyncBadge syncStatus={b.xeroSyncStatus} xeroId={b.xeroBillId} /></td>
                         <td>
                           <div style={{ display: "flex", gap: 4, flexWrap: "nowrap" }}>
                             {b.status === "inbox"    && <button className="btn btn-ghost btn-xs" title="Link" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}><Icon name="arrow_right" size={11} /></button>}
                             {canApprove && b.status === "linked"   && <button className="btn btn-ghost btn-xs" style={{ color: "#1e7e34" }} title="Approve" onClick={() => setStatus(b.id, "approved")}><Icon name="check" size={11} /></button>}
                             {canApprove && b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} title="Post to Job" onClick={() => setPostBill(b)}>Post →</button>}
+                            {!b.xeroBillId && (b.status === "approved" || b.status === "posted") && <button className="btn btn-ghost btn-xs" style={{ color: "#0369a1" }} title="Send to Xero" onClick={() => xeroSyncBill("push", b.id)}><Icon name="send" size={11} /></button>}
                             <button className="btn btn-ghost btn-xs" onClick={() => openEdit(b)}><Icon name="edit" size={11} /></button>
                             {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={11} /></button>}
                           </div>
@@ -9161,6 +9194,10 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
         setEditInvoice(saved);
         setForm(saved);
         setInvMode("view");
+        // Auto-sync to Xero when invoice status changes to "sent"
+        if (data.status === "sent" && editInvoice.status !== "sent") {
+          xeroSyncInvoice("push", editInvoice.id).catch(() => {});
+        }
       } else {
         const saved = await createInvoice(data);
         setInvoices(is => [...is, saved]);
@@ -9179,6 +9216,10 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
     try {
       const saved = await updateInvoice(id, { ...inv, status: "paid" });
       setInvoices(is => is.map(i => i.id === saved.id ? saved : i));
+      // Auto-sync to Xero if connected and invoice is synced
+      if (saved.xeroInvoiceId) {
+        xeroSyncInvoice("push", id).catch(() => {});
+      }
     } catch (err) { console.error('Failed to mark invoice paid:', err); }
   };
 
@@ -9344,7 +9385,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                     <td><span style={{ fontWeight: 700, fontFamily: "monospace", fontSize: 13 }}>{inv.number}</span>{fromQuote && <div style={{ fontSize: 10, color: "#bbb", marginTop: 2 }}>from {fromQuote.number}</div>}</td>
                     <td style={{ fontWeight: 600, fontSize: 13 }}>{job?.title}</td>
                     <td style={{ fontSize: 13, color: "#666" }}>{client?.name}</td>
-                    <td><StatusBadge status={inv.status} /></td>
+                    <td><StatusBadge status={inv.status} /> <XeroSyncBadge syncStatus={inv.xeroSyncStatus} xeroId={inv.xeroInvoiceId} /></td>
                     <td>{fmt(sub)}</td>
                     <td>{fmt(sub * inv.tax / 100)}</td>
                     <td style={{ fontWeight: 700 }}>{fmt(sub * (1 + inv.tax / 100))}</td>
@@ -9352,6 +9393,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                     <td onClick={e => e.stopPropagation()}>
                       <div style={{ display: "flex", gap: 4 }}>
                         {inv.status !== "paid" && inv.status !== "void" && <button className="btn btn-ghost btn-xs" style={{ color: "#2a7" }} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>}
+                        {!inv.xeroInvoiceId && inv.status !== "draft" && <button className="btn btn-ghost btn-xs" style={{ color: "#0369a1" }} onClick={() => xeroSyncInvoice("push", inv.id).then(() => refreshData?.())} title="Send to Xero"><Icon name="send" size={12} /></button>}
                         <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(inv.id)}><Icon name="trash" size={12} /></button>
                       </div>
                     </td>
@@ -10274,6 +10316,185 @@ const DEFAULT_VOICE_SETTINGS = {
   confirmWrites: true,
 };
 
+// ── Xero Settings Tab (extracted as a proper component to follow Rules of Hooks) ──
+const XeroSettingsTab = ({ accent }) => {
+  const [xeroStatus, setXeroStatus] = useState(null);
+  const [xeroLoading, setXeroLoading] = useState(true);
+  const [xeroError, setXeroError] = useState(null);
+  const [xeroSyncing, setXeroSyncing] = useState(false);
+  const [xeroSyncResult, setXeroSyncResult] = useState(null);
+  const [xeroMatchResults, setXeroMatchResults] = useState(null);
+  const [xeroDryRun, setXeroDryRun] = useState(null);
+  const [xeroSetupStep, setXeroSetupStep] = useState(0);
+  const [xeroSyncLog, setXeroSyncLog] = useState([]);
+  const [xeroPollResult, setXeroPollResult] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const status = await xeroOAuth("status");
+        setXeroStatus(status);
+        if (status?.connected) {
+          const { data } = await supabase?.from("xero_sync_log").select("*").order("created_at", { ascending: false }).limit(10) || {};
+          setXeroSyncLog(data || []);
+        }
+      } catch (e) {
+        setXeroError(e.message);
+      } finally {
+        setXeroLoading(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (!code) return;
+    const codeVerifier = sessionStorage.getItem("xero_code_verifier");
+    const redirectUri = sessionStorage.getItem("xero_redirect_uri");
+    if (!codeVerifier || !redirectUri) return;
+    window.history.replaceState({}, "", window.location.pathname);
+    sessionStorage.removeItem("xero_code_verifier");
+    sessionStorage.removeItem("xero_redirect_uri");
+    (async () => {
+      try {
+        const result = await xeroOAuth("callback", { code, codeVerifier, redirectUri });
+        if (result.chooseTenant) {
+          const tenant = result.tenants[0];
+          const selected = await xeroOAuth("selectTenant", { tenantId: tenant.tenantId, tenantName: tenant.tenantName, tokens: result.tokens });
+          setXeroStatus({ connected: true, tenantName: selected.tenantName });
+        } else {
+          setXeroStatus({ connected: true, tenantName: result.tenantName });
+        }
+        setXeroSetupStep(1);
+      } catch (e) {
+        setXeroError(e.message);
+      }
+    })();
+  }, []);
+
+  const handleConnect = async () => {
+    setXeroError(null);
+    try {
+      const redirectUri = `${window.location.origin}${window.location.pathname}`;
+      const result = await xeroOAuth("authorize", { redirectUri });
+      sessionStorage.setItem("xero_code_verifier", result.codeVerifier);
+      sessionStorage.setItem("xero_redirect_uri", redirectUri);
+      window.location.href = result.authUrl;
+    } catch (e) { setXeroError(e.message); }
+  };
+
+  const handleDisconnect = async () => {
+    if (!confirm("Disconnect from Xero? Existing sync data will be preserved.")) return;
+    setXeroError(null);
+    try { await xeroOAuth("disconnect"); setXeroStatus({ connected: false }); } catch (e) { setXeroError(e.message); }
+  };
+
+  const runContactMatch = async () => {
+    setXeroSyncing(true);
+    try { setXeroMatchResults(await xeroSyncContact("match")); } catch (e) { setXeroError(e.message); } finally { setXeroSyncing(false); }
+  };
+
+  const confirmMatches = async (matches) => {
+    try {
+      const confirmed = matches.filter(m => m.confirmed && m.xeroMatch);
+      await xeroSyncContact("confirmMatches", null, null, { matches: confirmed.map(m => ({ entityType: m.entityType, entityId: m.entityId, xeroContactId: m.xeroMatch.contactId })) });
+      setXeroSetupStep(2);
+    } catch (e) { setXeroError(e.message); }
+  };
+
+  const runDryRun = async () => {
+    setXeroSyncing(true);
+    try { const inv = await xeroSyncInvoice("dry_run"); const bill = await xeroSyncBill("dry_run"); setXeroDryRun({ invoices: inv, bills: bill }); } catch (e) { setXeroError(e.message); } finally { setXeroSyncing(false); }
+  };
+
+  const runBulkSync = async (type) => {
+    setXeroSyncing(true); setXeroSyncResult(null);
+    try { const result = type === "invoices" ? await xeroSyncInvoice("bulk_push") : await xeroSyncBill("bulk_push"); setXeroSyncResult({ type, ...result }); } catch (e) { setXeroError(e.message); } finally { setXeroSyncing(false); }
+  };
+
+  const handlePoll = async () => {
+    setXeroSyncing(true);
+    try { setXeroPollResult(await xeroPollUpdates()); } catch (e) { setXeroError(e.message); } finally { setXeroSyncing(false); }
+  };
+
+  if (xeroLoading) return <div style={{ padding: 40, textAlign: "center", color: "#888" }}>Loading Xero status...</div>;
+
+  const cardStyle = { background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 };
+  const labelStyle = { display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 };
+  const btnStyle = { padding: "8px 16px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "'Open Sans', sans-serif" };
+
+  return (
+    <div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: "#111", marginBottom: 4 }}>Xero Accounting Integration</div>
+      <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>Sync invoices, bills, and contacts with your Xero organisation</div>
+      {xeroError && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#dc2626", display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="notification" size={14} /> {xeroError}
+          <button onClick={() => setXeroError(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#dc2626", fontSize: 14 }}>&times;</button>
+        </div>
+      )}
+      <div style={cardStyle}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 8, background: xeroStatus?.connected ? "#ecfdf5" : "#f8f8f8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: xeroStatus?.connected ? "#16a34a" : "#888" }}>X</div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{xeroStatus?.connected ? `Connected to ${xeroStatus.tenantName}` : "Not connected"}</div>
+              <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{xeroStatus?.connected ? `Connected ${xeroStatus.connectedAt ? new Date(xeroStatus.connectedAt).toLocaleDateString() : ""}` : "Connect to your Xero organisation to start syncing"}</div>
+            </div>
+          </div>
+          {xeroStatus?.connected
+            ? <button onClick={handleDisconnect} style={{ ...btnStyle, background: "#fee2e2", color: "#dc2626" }}>Disconnect</button>
+            : <button onClick={handleConnect} style={{ ...btnStyle, background: accent, color: "#fff" }}>Connect to Xero</button>}
+        </div>
+      </div>
+      {xeroStatus?.connected && xeroSetupStep > 0 && xeroSetupStep <= 4 && (
+        <div style={{ ...cardStyle, border: `2px solid ${accent}` }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 4 }}>Setup Wizard — Step {xeroSetupStep} of 4</div>
+          <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>
+            {xeroSetupStep === 1 && "Match your existing contacts with Xero to avoid duplicates"}
+            {xeroSetupStep === 2 && "Review account code mappings for invoices and bills"}
+            {xeroSetupStep === 3 && "Mark items that are already in Xero to skip during sync"}
+            {xeroSetupStep === 4 && "Preview what will be synced before running"}
+          </div>
+          {xeroSetupStep === 1 && (<div>{!xeroMatchResults ? <button onClick={runContactMatch} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Matching..." : "Run Contact Matching"}</button> : (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>Found {xeroMatchResults.xeroContactCount} contacts in Xero. {xeroMatchResults.matches?.length || 0} FieldOps contacts to review.</div>{(xeroMatchResults.matches || []).map((m, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid #f0f0f0", fontSize: 12 }}><input type="checkbox" checked={m.confirmed || false} onChange={() => { const updated = [...xeroMatchResults.matches]; updated[i] = { ...updated[i], confirmed: !updated[i].confirmed }; setXeroMatchResults({ ...xeroMatchResults, matches: updated }); }} /><div style={{ flex: 1 }}><span style={{ fontWeight: 600 }}>{m.name}</span><span style={{ color: "#888", marginLeft: 8 }}>({m.entityType})</span></div><div style={{ flex: 1, color: m.xeroMatch ? "#16a34a" : "#888" }}>{m.xeroMatch ? `→ ${m.xeroMatch.name} (${m.xeroMatch.confidence})` : "No match — will create new"}</div></div>))}<div style={{ display: "flex", gap: 8, marginTop: 12 }}><button onClick={() => confirmMatches(xeroMatchResults.matches)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Confirm & Continue</button><button onClick={() => setXeroSetupStep(2)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip</button></div></div>)}</div>)}
+          {xeroSetupStep === 2 && (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>These account codes determine where synced items land in your Xero chart of accounts.</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}><div><label style={labelStyle}>Invoice Account</label><input defaultValue="200 — Sales" readOnly style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, background: "#f8f8f8", boxSizing: "border-box" }} /></div><div><label style={labelStyle}>Bill Account (Default)</label><input defaultValue="400 — General Expenses" readOnly style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, background: "#f8f8f8", boxSizing: "border-box" }} /></div></div><button onClick={() => setXeroSetupStep(3)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue</button></div>)}
+          {xeroSetupStep === 3 && (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>If any invoices or bills have already been entered in Xero manually, mark them here to prevent duplicates.</div><div style={{ display: "flex", gap: 8 }}><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue to Preview</button><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip — None to mark</button></div></div>)}
+          {xeroSetupStep === 4 && (<div>{!xeroDryRun ? <button onClick={runDryRun} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Checking..." : "Preview Sync"}</button> : (<div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 12 }}><div style={{ background: "#f0fdf4", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#16a34a" }}>{xeroDryRun.invoices?.wouldSync || 0}</div><div style={{ fontSize: 11, color: "#666" }}>Invoices to sync</div></div><div style={{ background: "#eff6ff", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#2563eb" }}>{xeroDryRun.bills?.wouldSync || 0}</div><div style={{ fontSize: 11, color: "#666" }}>Bills to sync</div></div></div><div style={{ display: "flex", gap: 8 }}><button onClick={() => { runBulkSync("invoices"); runBulkSync("bills"); setXeroSetupStep(0); }} style={{ ...btnStyle, background: accent, color: "#fff" }}>Start Sync</button><button onClick={() => setXeroSetupStep(0)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Close Wizard</button></div></div>)}</div>)}
+        </div>
+      )}
+      {xeroStatus?.connected && xeroSetupStep === 0 && (
+        <>
+          <div style={cardStyle}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 16 }}>Sync Actions</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button onClick={() => runBulkSync("invoices")} disabled={xeroSyncing} style={{ ...btnStyle, background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }}>{xeroSyncing ? "Syncing..." : "Sync All Invoices"}</button>
+              <button onClick={() => runBulkSync("bills")} disabled={xeroSyncing} style={{ ...btnStyle, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe" }}>{xeroSyncing ? "Syncing..." : "Sync All Bills"}</button>
+              <button onClick={handlePoll} disabled={xeroSyncing} style={{ ...btnStyle, background: "#faf5ff", color: "#7c3aed", border: "1px solid #ddd6fe" }}>{xeroSyncing ? "Checking..." : "Check for Updates"}</button>
+              <button onClick={() => setXeroSetupStep(1)} style={{ ...btnStyle, background: "#f8f8f8", color: "#666" }}>Re-run Setup Wizard</button>
+            </div>
+            {xeroSyncResult && <div style={{ marginTop: 12, background: xeroSyncResult.errors > 0 ? "#fffbeb" : "#f0fdf4", borderRadius: 8, padding: 12, fontSize: 12 }}><span style={{ fontWeight: 600 }}>{xeroSyncResult.type}:</span> {xeroSyncResult.synced} synced, {xeroSyncResult.errors} errors, {xeroSyncResult.total} total</div>}
+            {xeroPollResult && <div style={{ marginTop: 12, background: "#f0fdf4", borderRadius: 8, padding: 12, fontSize: 12 }}><span style={{ fontWeight: 600 }}>Updates:</span> {xeroPollResult.invoices?.updated || 0} invoices, {xeroPollResult.bills?.updated || 0} bills updated</div>}
+          </div>
+          {xeroSyncLog.length > 0 && (
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 12 }}>Recent Sync Activity</div>
+              {xeroSyncLog.map((log, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < xeroSyncLog.length - 1 ? "1px solid #f0f0f0" : "none", fontSize: 12 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: log.status === "success" ? "#16a34a" : log.status === "error" ? "#dc2626" : "#f59e0b" }} />
+                  <div style={{ flex: 1 }}><span style={{ fontWeight: 600 }}>{log.entity_type}</span><span style={{ color: "#888", marginLeft: 4 }}>{log.direction}</span></div>
+                  <div style={{ color: log.status === "error" ? "#dc2626" : "#888", fontSize: 11 }}>{log.error_message ? log.error_message.slice(0, 50) : log.status}</div>
+                  <div style={{ color: "#aaa", fontSize: 10 }}>{log.created_at ? new Date(log.created_at).toLocaleString() : ""}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
 const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplates, companyInfo, setCompanyInfo }) => {
   const auth = useAuth();
   const [tab, setTab] = useState("company");
@@ -10347,6 +10568,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
     { id: "integrations", label: "Inbound Calls", icon: "send" },
     { id: "outbound", label: "Outbound Calls", icon: "notification" },
     { id: "templates", label: "Templates", icon: "quotes" },
+    ...(auth.isAdmin || auth.isLocalDev ? [{ id: "xero", label: "Xero", icon: "send" }] : []),
     ...(auth.isAdmin || auth.isLocalDev ? [{ id: "users", label: "Users", icon: "clients" }] : []),
   ];
 
@@ -11377,6 +11599,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           </div>
         );
       })()}
+      {tab === "xero" && <XeroSettingsTab accent={accent} />}
       {tab === "users" && <UserManagement />}
     </div>
   );

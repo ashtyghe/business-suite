@@ -76,6 +76,44 @@ export async function updateStaffRecord(staffId, updates) {
   return data;
 }
 
+// ── Xero integration ──────────────────────────────────────────────────────
+
+async function xeroInvoke(fnName, body) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.functions.invoke(fnName, { body });
+  if (error) {
+    const msg = typeof error === 'object' && error.context
+      ? await error.context.text?.() || error.message
+      : error.message;
+    throw new Error(msg || 'Xero operation failed');
+  }
+  if (typeof data === 'string') {
+    try { return JSON.parse(data); } catch { return data; }
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+export async function xeroOAuth(action, params = {}) {
+  return xeroInvoke('xero-oauth', { action, ...params });
+}
+
+export async function xeroSyncInvoice(action, invoiceId) {
+  return xeroInvoke('xero-sync-invoices', { action, invoiceId });
+}
+
+export async function xeroSyncBill(action, billId) {
+  return xeroInvoke('xero-sync-bills', { action, billId });
+}
+
+export async function xeroSyncContact(action, entityType, entityId, extra = {}) {
+  return xeroInvoke('xero-sync-contacts', { action, entityType, entityId, ...extra });
+}
+
+export async function xeroPollUpdates() {
+  return xeroInvoke('xero-poll-updates', {});
+}
+
 export async function extractBillFromImage(base64, mimeType) {
   if (!supabase) return null;
   const { data, error } = await supabase.functions.invoke('extract-bill', {

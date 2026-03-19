@@ -3,7 +3,7 @@ import JobManagementApp from './job-management-app'
 import LoginPage from './LoginPage'
 
 function AppShell() {
-  const { user, loading, isLocalDev } = useAuth();
+  const { user, staff, loading, isLocalDev } = useAuth();
 
   // Display pages are public — no auth required
   const isDisplay = window.location.pathname.startsWith("/display/");
@@ -22,8 +22,8 @@ function AppShell() {
     );
   }
 
-  // Not logged in — show login page
-  if (!user) return <LoginPage />;
+  // Not logged in or staff profile missing — show login page
+  if (!user || !staff) return <LoginPage />;
 
   // Authenticated — show app
   return <JobManagementApp />;

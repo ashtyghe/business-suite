@@ -37,19 +37,36 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = onAuthStateChange(async (event, session) => {
       try {
         const authUser = session?.user || null;
-        setUser(authUser);
-        await resolveStaff(authUser);
 
-        if (event === 'SIGNED_OUT') {
-          setStaff(null);
-        }
-        if (event === 'TOKEN_REFRESHED' && !session) {
-          setSessionMessage('Your session has expired. Please sign in again.');
+        if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
           setUser(null);
+          setStaff(null);
+          if (event === 'TOKEN_REFRESHED') {
+            setSessionMessage('Your session has expired. Please sign in again.');
+          }
+          return;
+        }
+
+        setUser(authUser);
+        if (authUser) {
+          const profile = await getStaffProfile(authUser.id);
+          setStaff(profile);
+          // If session exists but staff profile can't be fetched (e.g. expired
+          // token), treat as logged out so the login page shows instead of a
+          // broken app shell.
+          if (!profile) {
+            setUser(null);
+            setSessionMessage('Your session has expired. Please sign in again.');
+            try { await authSignOut(); } catch (_) { /* ignore */ }
+          }
+        } else {
           setStaff(null);
         }
       } catch (err) {
         console.error('Auth state change error:', err.message);
+        // On any error during auth resolution, clear state so login page shows
+        setUser(null);
+        setStaff(null);
       } finally {
         clearTimeout(timeout);
         setLoading(false);

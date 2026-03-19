@@ -59,6 +59,16 @@ The goal is to replace or integrate these tools with a custom suite of apps that
   - Activity log throughout (jobs, quotes, invoices, bills)
   - Schedule view showing site and contact details
   - Sidebar badges for actionable items
+  - **Authentication** — Supabase Auth with email/password, admin/staff roles, RLS policies
+  - **Xero Integration** — Two-way sync of invoices, bills, and contacts with Xero accounting. Includes:
+    - OAuth 2.0 + PKCE connection flow (Settings > Xero tab)
+    - Contact fuzzy-matching to prevent duplicates
+    - Push invoices/bills to Xero on status change (auto) or manually
+    - Pull payment status from Xero (polling)
+    - Dry-run preview before first sync
+    - Configurable account code mappings
+    - "Already in Xero" skip flags to prevent duplicate entries
+    - Sync status badges on invoice/bill rows
 
 ---
 
@@ -100,17 +110,38 @@ The goal is to replace or integrate these tools with a custom suite of apps that
 
 ---
 
-## File Structure (Target)
+## File Structure
 
 ```
 business-suite/
 ├── CONTEXT.md                  ← this file
-├── timesheet-app.html          ← Timesheet PWA
-├── bill-capture-app.jsx        ← Bill Capture React component
-├── job-management-app.jsx      ← FieldOps Job Management React component
-├── supabase/
-│   └── functions/
-│       └── anthropic-proxy/    ← Edge function for Anthropic API calls
+├── SETUP.md                    ← dev setup guide
+├── PLAN-auth.md                ← auth implementation plan (completed)
+├── apps/
+│   ├── frontend/               ← React 18 + Vite frontend
+│   │   ├── src/
+│   │   │   ├── job-management-app.jsx  ← Main app (~12,700 lines)
+│   │   │   ├── App.jsx                 ← Auth wrapper + routing
+│   │   │   ├── LoginPage.jsx           ← Login form
+│   │   │   └── lib/
+│   │   │       ├── supabase.js         ← Supabase client + edge function wrappers
+│   │   │       ├── db.js              ← CRUD operations + normalizers
+│   │   │       ├── auth.js            ← Auth helper functions
+│   │   │       └── AuthContext.jsx    ← React auth context provider
+│   │   └── vite.config.js
+│   └── api/
+│       └── supabase/
+│           ├── functions/
+│           │   ├── _shared/xero-client.ts    ← Shared Xero API client
+│           │   ├── extract-bill/             ← AI bill extraction
+│           │   ├── invite-user/              ← Admin user creation
+│           │   ├── ai-insight/               ← Business analytics AI
+│           │   ├── xero-oauth/               ← Xero OAuth flow
+│           │   ├── xero-sync-contacts/       ← Contact sync with matching
+│           │   ├── xero-sync-invoices/       ← Invoice sync with dry-run
+│           │   ├── xero-sync-bills/          ← Bill sync with dry-run
+│           │   └── xero-poll-updates/        ← Poll Xero for payment updates
+│           └── migrations/                   ← PostgreSQL schema migrations
 └── (future apps)
     ├── scheduling-dashboard/
     └── dam/

@@ -4,12 +4,7 @@ import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, u
 import { supabase, extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord, xeroOAuth, xeroSyncInvoice, xeroSyncBill, xeroSyncContact, xeroPollUpdates } from './lib/supabase';
 import { useAuth } from './lib/AuthContext';
 import { changePassword, adminResetUserPassword } from './lib/auth';
-import * as fabric from "fabric";
-import * as pdfjsLib from "pdfjs-dist";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import SignaturePad from "signature_pad";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+// Heavy libraries loaded dynamically where used (fabric, pdfjs-dist, pdf-lib, signature_pad)
 
 // ── Google Font ──────────────────────────────────────────────────────────────
 const fontLink = document.createElement("link");
@@ -2629,13 +2624,26 @@ const PhotoMarkupEditor = ({ imageSrc, onSave, onClose }) => {
   const canvasRef = useRef(null);
   const fabricRef = useRef(null);
   const containerRef = useRef(null);
+  const fabricModRef = useRef(null);
   const [tool, setTool] = useState("pen");
   const [color, setColor] = useState("#dc2626");
   const [brushSize, setBrushSize] = useState(3);
+  const [fabricLoaded, setFabricLoaded] = useState(false);
 
   useEffect(() => {
-    if (!canvasRef.current || fabricRef.current) return;
-    const cvs = new fabric.Canvas(canvasRef.current, { isDrawingMode: true, selection: true });
+    let disposed = false;
+    import("fabric").then((mod) => {
+      if (disposed) return;
+      fabricModRef.current = mod;
+      setFabricLoaded(true);
+    });
+    return () => { disposed = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!fabricLoaded || !canvasRef.current || fabricRef.current) return;
+    const fb = fabricModRef.current;
+    const cvs = new fb.Canvas(canvasRef.current, { isDrawingMode: true, selection: true });
     fabricRef.current = cvs;
 
     // Load the background image
@@ -2649,25 +2657,25 @@ const PhotoMarkupEditor = ({ imageSrc, onSave, onClose }) => {
       const w = Math.round(img.width * scale);
       const h = Math.round(img.height * scale);
       cvs.setDimensions({ width: w, height: h });
-      const bgImg = new fabric.FabricImage(img, { scaleX: scale, scaleY: scale });
+      const bgImg = new fb.FabricImage(img, { scaleX: scale, scaleY: scale });
       cvs.backgroundImage = bgImg;
       cvs.renderAll();
     };
     img.src = imageSrc;
 
-    cvs.freeDrawingBrush = new fabric.PencilBrush(cvs);
+    cvs.freeDrawingBrush = new fb.PencilBrush(cvs);
     cvs.freeDrawingBrush.color = color;
     cvs.freeDrawingBrush.width = brushSize;
 
     return () => { cvs.dispose(); fabricRef.current = null; };
-  }, [imageSrc]);
+  }, [imageSrc, fabricLoaded]);
 
   useEffect(() => {
     const cvs = fabricRef.current;
     if (!cvs) return;
     if (tool === "pen") {
       cvs.isDrawingMode = true;
-      cvs.freeDrawingBrush = new fabric.PencilBrush(cvs);
+      cvs.freeDrawingBrush = new (fabricModRef.current.PencilBrush)(cvs);
       cvs.freeDrawingBrush.color = color;
       cvs.freeDrawingBrush.width = brushSize;
     } else {
@@ -2676,38 +2684,38 @@ const PhotoMarkupEditor = ({ imageSrc, onSave, onClose }) => {
   }, [tool, color, brushSize]);
 
   const addArrow = () => {
-    const cvs = fabricRef.current; if (!cvs) return;
+    const cvs = fabricRef.current; const fb = fabricModRef.current; if (!cvs || !fb) return;
     setTool("select");
-    const line = new fabric.Line([50, 100, 200, 100], { stroke: color, strokeWidth: brushSize, selectable: true });
-    const head = new fabric.Triangle({ width: 14, height: 14, fill: color, left: 200, top: 100, angle: 90, originX: "center", originY: "center", selectable: false });
-    const group = new fabric.Group([line, head], { left: 50, top: 80 });
+    const line = new fb.Line([50, 100, 200, 100], { stroke: color, strokeWidth: brushSize, selectable: true });
+    const head = new fb.Triangle({ width: 14, height: 14, fill: color, left: 200, top: 100, angle: 90, originX: "center", originY: "center", selectable: false });
+    const group = new fb.Group([line, head], { left: 50, top: 80 });
     cvs.add(group);
     cvs.setActiveObject(group);
     cvs.renderAll();
   };
 
   const addRect = () => {
-    const cvs = fabricRef.current; if (!cvs) return;
+    const cvs = fabricRef.current; const fb = fabricModRef.current; if (!cvs || !fb) return;
     setTool("select");
-    const rect = new fabric.Rect({ left: 60, top: 60, width: 150, height: 100, fill: "transparent", stroke: color, strokeWidth: brushSize, rx: 4, ry: 4 });
+    const rect = new fb.Rect({ left: 60, top: 60, width: 150, height: 100, fill: "transparent", stroke: color, strokeWidth: brushSize, rx: 4, ry: 4 });
     cvs.add(rect);
     cvs.setActiveObject(rect);
     cvs.renderAll();
   };
 
   const addCircle = () => {
-    const cvs = fabricRef.current; if (!cvs) return;
+    const cvs = fabricRef.current; const fb = fabricModRef.current; if (!cvs || !fb) return;
     setTool("select");
-    const circle = new fabric.Circle({ left: 80, top: 80, radius: 50, fill: "transparent", stroke: color, strokeWidth: brushSize });
+    const circle = new fb.Circle({ left: 80, top: 80, radius: 50, fill: "transparent", stroke: color, strokeWidth: brushSize });
     cvs.add(circle);
     cvs.setActiveObject(circle);
     cvs.renderAll();
   };
 
   const addText = () => {
-    const cvs = fabricRef.current; if (!cvs) return;
+    const cvs = fabricRef.current; const fb = fabricModRef.current; if (!cvs || !fb) return;
     setTool("select");
-    const text = new fabric.IText("Note", { left: 60, top: 60, fontSize: 20, fontFamily: "Open Sans, sans-serif", fontWeight: "700", fill: color, editable: true });
+    const text = new fb.IText("Note", { left: 60, top: 60, fontSize: 20, fontFamily: "Open Sans, sans-serif", fontWeight: "700", fill: color, editable: true });
     cvs.add(text);
     cvs.setActiveObject(text);
     cvs.renderAll();
@@ -2796,6 +2804,7 @@ const PLAN_LINE_WIDTHS = [1, 2, 3, 5, 8];
 const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
   const canvasRef = useRef(null);
   const fabricRef = useRef(null);
+  const fabricModRef = useRef(null);
   const containerRef = useRef(null);
   const [tool, setTool] = useState("line");
   const [color, setColor] = useState("#111111");
@@ -2809,14 +2818,26 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
   const [cursorInfo, setCursorInfo] = useState(null); // { angle, length, x, y }
   const drawStateRef = useRef(null); // { startX, startY, tempLine }
   const labelGroupsRef = useRef([]); // track measurement labels
+  const [fabricLoaded, setFabricLoaded] = useState(false);
+
+  useEffect(() => {
+    let disposed = false;
+    import("fabric").then((mod) => {
+      if (disposed) return;
+      fabricModRef.current = mod;
+      setFabricLoaded(true);
+    });
+    return () => { disposed = true; };
+  }, []);
 
   // Initialize canvas
   useEffect(() => {
-    if (!canvasRef.current || fabricRef.current) return;
+    if (!fabricLoaded || !canvasRef.current || fabricRef.current) return;
+    const fb = fabricModRef.current;
     const container = containerRef.current;
     const w = container ? container.clientWidth - 40 : 1200;
     const h = window.innerHeight * 0.72;
-    const cvs = new fabric.Canvas(canvasRef.current, {
+    const cvs = new fb.Canvas(canvasRef.current, {
       width: w, height: h, selection: true, isDrawingMode: false,
       backgroundColor: "#ffffff"
     });
@@ -2831,7 +2852,7 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
       img.crossOrigin = "anonymous";
       img.onload = () => {
         const scaleF = Math.min(w / img.width, h / img.height, 1);
-        const bgImg = new fabric.FabricImage(img, { scaleX: scaleF, scaleY: scaleF });
+        const bgImg = new fb.FabricImage(img, { scaleX: scaleF, scaleY: scaleF });
         cvs.backgroundImage = bgImg;
         drawGrid(cvs, w, h);
         cvs.renderAll();
@@ -2848,7 +2869,7 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
       if (cvs.__snapGrid) { sx = Math.round(sx / PLAN_GRID_SIZE) * PLAN_GRID_SIZE; sy = Math.round(sy / PLAN_GRID_SIZE) * PLAN_GRID_SIZE; }
       if (cvs.__snapEndpoints) { const sn = findNearestEndpoint(cvs, sx, sy, 12); if (sn) { sx = sn.x; sy = sn.y; } }
       const isWall = cvs.__activeTool === "wall";
-      const tempLine = new fabric.Line([sx, sy, sx, sy], {
+      const tempLine = new fb.Line([sx, sy, sx, sy], {
         stroke: cvs.__activeColor || "#111", strokeWidth: isWall ? Math.max((cvs.__lineWidth || 2) * 2, 6) : (cvs.__lineWidth || 2),
         selectable: false, evented: false, _isPlanLine: true, _isWall: isWall
       });
@@ -2897,21 +2918,21 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
       line.set({ selectable: true, evented: true, hasControls: true, hasBorders: true });
       // Add endpoint circles
       const dotOpts = { radius: 3, fill: cvs.__activeColor || "#111", stroke: "#fff", strokeWidth: 1, selectable: false, evented: false, _isPlanDot: true, _parentLine: line };
-      const dot1 = new fabric.Circle({ ...dotOpts, left: x1 - 3, top: y1 - 3 });
-      const dot2 = new fabric.Circle({ ...dotOpts, left: x2 - 3, top: y2 - 3 });
+      const dot1 = new fb.Circle({ ...dotOpts, left: x1 - 3, top: y1 - 3 });
+      const dot2 = new fb.Circle({ ...dotOpts, left: x2 - 3, top: y2 - 3 });
       cvs.add(dot1, dot2);
       // Add length label
       if (cvs.__showLengths) {
         const lengthMm = Math.round((lengthPx / (cvs.__scale || 50)) * 1000);
         const midX = (x1 + x2) / 2, midY = (y1 + y2) / 2;
         let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-        const labelText = new fabric.FabricText(lengthMm + "mm", {
+        const labelText = new fb.FabricText(lengthMm + "mm", {
           left: midX, top: midY - 12, fontSize: 11, fontFamily: "'Open Sans', monospace",
           fill: "#555", fontWeight: "600", originX: "center", originY: "center",
           selectable: false, evented: false, _isPlanLabel: true, _parentLine: line,
           angle: (angle > 90 || angle < -90) ? angle + 180 : angle
         });
-        const labelBg = new fabric.Rect({
+        const labelBg = new fb.Rect({
           left: midX, top: midY - 12, width: labelText.width + 8, height: 16,
           fill: "rgba(255,255,255,0.88)", rx: 3, ry: 3, originX: "center", originY: "center",
           selectable: false, evented: false, _isPlanLabel: true, _parentLine: line,
@@ -2925,7 +2946,7 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
     });
 
     return () => { cvs.dispose(); fabricRef.current = null; };
-  }, [existingSrc]);
+  }, [existingSrc, fabricLoaded]);
 
   // Sync tool options to canvas
   useEffect(() => {
@@ -2942,7 +2963,7 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
 
     if (tool === "pen") {
       cvs.isDrawingMode = true;
-      cvs.freeDrawingBrush = new fabric.PencilBrush(cvs);
+      cvs.freeDrawingBrush = new (fabricModRef.current.PencilBrush)(cvs);
       cvs.freeDrawingBrush.color = color;
       cvs.freeDrawingBrush.width = lineWidth;
     } else {
@@ -2959,15 +2980,16 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
   }, [tool, color, lineWidth, snapGrid, snapEndpoints, showLengths, constrainAngle, angleStep, scale]);
 
   const drawGrid = (cvs, w, h) => {
+    const fb = fabricModRef.current; if (!fb) return;
     // Remove old grid
     cvs.getObjects().filter(o => o._isGrid).forEach(o => cvs.remove(o));
     for (let x = 0; x <= w; x += PLAN_GRID_SIZE) {
       const isMajor = x % (PLAN_GRID_SIZE * 5) === 0;
-      cvs.add(new fabric.Line([x, 0, x, h], { stroke: isMajor ? "#d4d4d4" : "#ececec", strokeWidth: isMajor ? 0.8 : 0.4, selectable: false, evented: false, _isGrid: true }));
+      cvs.add(new fb.Line([x, 0, x, h], { stroke: isMajor ? "#d4d4d4" : "#ececec", strokeWidth: isMajor ? 0.8 : 0.4, selectable: false, evented: false, _isGrid: true }));
     }
     for (let y = 0; y <= h; y += PLAN_GRID_SIZE) {
       const isMajor = y % (PLAN_GRID_SIZE * 5) === 0;
-      cvs.add(new fabric.Line([0, y, w, y], { stroke: isMajor ? "#d4d4d4" : "#ececec", strokeWidth: isMajor ? 0.8 : 0.4, selectable: false, evented: false, _isGrid: true }));
+      cvs.add(new fb.Line([0, y, w, y], { stroke: isMajor ? "#d4d4d4" : "#ececec", strokeWidth: isMajor ? 0.8 : 0.4, selectable: false, evented: false, _isGrid: true }));
     }
     // Send grid to back
     cvs.getObjects().filter(o => o._isGrid).forEach(o => cvs.sendObjectToBack(o));
@@ -3002,29 +3024,29 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
   };
 
   const addRect = () => {
-    const cvs = fabricRef.current; if (!cvs) return;
+    const cvs = fabricRef.current; const fb = fabricModRef.current; if (!cvs || !fb) return;
     setTool("select");
-    const rect = new fabric.Rect({ left: 100, top: 100, width: 200, height: 150, fill: "transparent", stroke: color, strokeWidth: lineWidth, rx: 0, ry: 0 });
+    const rect = new fb.Rect({ left: 100, top: 100, width: 200, height: 150, fill: "transparent", stroke: color, strokeWidth: lineWidth, rx: 0, ry: 0 });
     cvs.add(rect); cvs.setActiveObject(rect); cvs.renderAll();
   };
 
   const addText = () => {
-    const cvs = fabricRef.current; if (!cvs) return;
+    const cvs = fabricRef.current; const fb = fabricModRef.current; if (!cvs || !fb) return;
     setTool("select");
-    const text = new fabric.IText("Label", { left: 100, top: 100, fontSize: 16, fontFamily: "'Open Sans', sans-serif", fontWeight: "600", fill: color, editable: true });
+    const text = new fb.IText("Label", { left: 100, top: 100, fontSize: 16, fontFamily: "'Open Sans', sans-serif", fontWeight: "600", fill: color, editable: true });
     cvs.add(text); cvs.setActiveObject(text); cvs.renderAll();
   };
 
   const addDimension = () => {
-    const cvs = fabricRef.current; if (!cvs) return;
+    const cvs = fabricRef.current; const fb = fabricModRef.current; if (!cvs || !fb) return;
     setTool("select");
     const x1 = 100, y1 = 200, x2 = 300, y2 = 200;
-    const mainLine = new fabric.Line([x1, y1, x2, y2], { stroke: "#555", strokeWidth: 1, strokeDashArray: [4, 3], _isDimension: true });
-    const tick1 = new fabric.Line([x1, y1 - 6, x1, y1 + 6], { stroke: "#555", strokeWidth: 1 });
-    const tick2 = new fabric.Line([x2, y2 - 6, x2, y2 + 6], { stroke: "#555", strokeWidth: 1 });
+    const mainLine = new fb.Line([x1, y1, x2, y2], { stroke: "#555", strokeWidth: 1, strokeDashArray: [4, 3], _isDimension: true });
+    const tick1 = new fb.Line([x1, y1 - 6, x1, y1 + 6], { stroke: "#555", strokeWidth: 1 });
+    const tick2 = new fb.Line([x2, y2 - 6, x2, y2 + 6], { stroke: "#555", strokeWidth: 1 });
     const lengthMm = Math.round((Math.abs(x2 - x1) / scale) * 1000);
-    const label = new fabric.FabricText(lengthMm + "mm", { left: (x1 + x2) / 2, top: y1 - 14, fontSize: 12, fill: "#555", fontWeight: "600", fontFamily: "monospace", originX: "center" });
-    const group = new fabric.Group([mainLine, tick1, tick2, label], { left: x1, top: y1 - 14 });
+    const label = new fb.FabricText(lengthMm + "mm", { left: (x1 + x2) / 2, top: y1 - 14, fontSize: 12, fill: "#555", fontWeight: "600", fontFamily: "monospace", originX: "center" });
+    const group = new fb.Group([mainLine, tick1, tick2, label], { left: x1, top: y1 - 14 });
     cvs.add(group); cvs.setActiveObject(group); cvs.renderAll();
   };
 
@@ -12110,6 +12132,8 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
   const [saving, setSaving] = useState(false);
   const [fitWidth, setFitWidth] = useState(true);
   const pdfBytesRef = useRef(pdfData);
+  const pdfLibRef = useRef(null); // { PDFDocument, rgb, StandardFonts }
+  const sigPadClassRef = useRef(null); // SignaturePad constructor
 
   // Load PDF and detect existing form fields
   useEffect(() => {
@@ -12117,6 +12141,8 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
     let cancelled = false;
     const load = async () => {
       try {
+        const pdfjsLib = await import("pdfjs-dist");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
         const doc = await pdfjsLib.getDocument({ data: new Uint8Array(pdfData) }).promise;
         setPdfDoc(doc);
         const pgs = [];
@@ -12210,10 +12236,19 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
   // Signature pad setup
   useEffect(() => {
     if (sigModal && sigCanvasRef.current && !sigPadRef.current) {
-      sigPadRef.current = new SignaturePad(sigCanvasRef.current, {
-        backgroundColor: "rgba(255,255,255,0)",
-        penColor: "#000",
-      });
+      const initSigPad = async () => {
+        if (!sigPadClassRef.current) {
+          const mod = await import("signature_pad");
+          sigPadClassRef.current = mod.default;
+        }
+        if (sigCanvasRef.current && !sigPadRef.current) {
+          sigPadRef.current = new sigPadClassRef.current(sigCanvasRef.current, {
+            backgroundColor: "rgba(255,255,255,0)",
+            penColor: "#000",
+          });
+        }
+      };
+      initSigPad();
     }
     if (!sigModal) {
       sigPadRef.current = null;
@@ -12305,8 +12340,12 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
   const handleSave = async () => {
     setSaving(true);
     try {
-      const pdfDocLib = await PDFDocument.load(pdfBytesRef.current);
-      const helvetica = await pdfDocLib.embedFont(StandardFonts.Helvetica);
+      if (!pdfLibRef.current) {
+        pdfLibRef.current = await import("pdf-lib");
+      }
+      const { PDFDocument: PDFDoc, rgb: pdfRgb, StandardFonts: Fonts } = pdfLibRef.current;
+      const pdfDocLib = await PDFDoc.load(pdfBytesRef.current);
+      const helvetica = await pdfDocLib.embedFont(Fonts.Helvetica);
       const pdfPages = pdfDocLib.getPages();
 
       for (const field of fields) {
@@ -12322,11 +12361,11 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
 
         if (field.type === "text" && field.value) {
           const fontSize = Math.min(14, field.height * scaleY * 0.6);
-          page.drawText(field.value, { x: pdfX + 2, y: pdfY + 4, size: fontSize, font: helvetica, color: rgb(0, 0, 0) });
+          page.drawText(field.value, { x: pdfX + 2, y: pdfY + 4, size: fontSize, font: helvetica, color: pdfRgb(0, 0, 0) });
         } else if (field.type === "checkbox" && field.value) {
           const sz = Math.min(field.width, field.height) * scaleX;
-          page.drawRectangle({ x: pdfX, y: pdfY, width: sz, height: sz, color: rgb(0, 0, 0) });
-          page.drawText("✓", { x: pdfX + 2, y: pdfY + 2, size: sz * 0.8, font: helvetica, color: rgb(1, 1, 1) });
+          page.drawRectangle({ x: pdfX, y: pdfY, width: sz, height: sz, color: pdfRgb(0, 0, 0) });
+          page.drawText("✓", { x: pdfX + 2, y: pdfY + 2, size: sz * 0.8, font: helvetica, color: pdfRgb(1, 1, 1) });
         } else if (field.type === "signature" && field.value) {
           try {
             const sigBytes = await fetch(field.value).then(r => r.arrayBuffer());

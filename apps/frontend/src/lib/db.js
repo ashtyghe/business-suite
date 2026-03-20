@@ -161,6 +161,7 @@ function normalizeStaff(row) {
     id: row.id,
     name: row.full_name,
     email: row.email,
+    phone: row.phone || '',
     role: row.role,
     active: row.active,
   };

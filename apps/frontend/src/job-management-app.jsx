@@ -11369,7 +11369,7 @@ const CallerMemory = () => {
       <div style={{ background: hexToRgba(accent, 0.06), border: `1px solid ${hexToRgba(accent, 0.15)}`, borderRadius: 10, padding: "14px 18px", marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
         <Icon name="info" size={16} style={{ color: accent, marginTop: 1, flexShrink: 0 }} />
         <div style={{ fontSize: 12, color: "#666", lineHeight: 1.5 }}>
-          <strong style={{ color: "#333" }}>Caller Memory</strong> gives your voice assistant context from previous calls. Key points are stored per phone number — limited to {CALLER_NOTES_MAX} notes per caller, auto-pruned after {CALLER_NOTES_MAX_AGE_DAYS} days.
+          <strong style={{ color: "#333" }}>Caller Memory</strong> gives your voice assistant context from previous calls. Key points are stored per phone number and linked to your account via your phone number in Settings → Users. Limited to {CALLER_NOTES_MAX} notes per caller, auto-pruned after {CALLER_NOTES_MAX_AGE_DAYS} days.
         </div>
       </div>
 
@@ -11921,13 +11921,15 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
 
   const UserManagement = () => {
     const [showInvite, setShowInvite] = useState(false);
-    const [inviteForm, setInviteForm] = useState({ fullName: "", email: "", password: "" });
+    const [inviteForm, setInviteForm] = useState({ fullName: "", email: "", phone: "", password: "" });
     const [inviteLoading, setInviteLoading] = useState(false);
     const [inviteError, setInviteError] = useState(null);
     const [inviteSuccess, setInviteSuccess] = useState(null);
     const [updateError, setUpdateError] = useState(null);
     const [permEditId, setPermEditId] = useState(null);
     const [permData, setPermData] = useState(null);
+    const [editPhoneId, setEditPhoneId] = useState(null);
+    const [editPhoneVal, setEditPhoneVal] = useState("");
 
     // Get permissions for a user — returns { sectionId: [actions], ... }
     const getUserPerms = (userId) => {
@@ -11943,10 +11945,14 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
       setInviteLoading(true);
       try {
         const result = await inviteUser(inviteForm.email, inviteForm.fullName, "staff", inviteForm.password || undefined);
-        setInviteSuccess(result.user);
-        setInviteForm({ fullName: "", email: "", password: "" });
+        // Save phone number if provided
+        if (inviteForm.phone.trim() && result.user?.id) {
+          try { await updateStaffRecord(result.user.id, { phone: inviteForm.phone.trim() }); } catch {}
+        }
+        setInviteSuccess({ ...result.user, phone: inviteForm.phone });
+        setInviteForm({ fullName: "", email: "", phone: "", password: "" });
         if (setStaff) {
-          setStaff(prev => [...prev, { id: result.user.id, name: result.user.fullName, email: result.user.email, active: true }]);
+          setStaff(prev => [...prev, { id: result.user.id, name: result.user.fullName, email: result.user.email, phone: inviteForm.phone.trim(), active: true }]);
         }
       } catch (err) {
         setInviteError(err.message);
@@ -11967,6 +11973,16 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
       if (!window.confirm(`Send a password reset email to ${s.email}?`)) return;
       setUpdateError(null);
       try { await adminResetUserPassword(s.email); alert(`Password reset email sent to ${s.email}`); } catch (err) { setUpdateError(`Failed to send reset: ${err.message}`); }
+    };
+
+    const handleSavePhone = async (s) => {
+      setUpdateError(null);
+      try {
+        await updateStaffRecord(s.id, { phone: editPhoneVal.trim() });
+        if (setStaff) { setStaff(prev => prev.map(st => st.id === s.id ? { ...st, phone: editPhoneVal.trim() } : st)); }
+        setEditPhoneId(null);
+        setEditPhoneVal("");
+      } catch (err) { setUpdateError(`Failed to update phone: ${err.message}`); }
     };
 
     const openPermissions = (s) => { setPermEditId(s.id); setPermData(JSON.parse(JSON.stringify(getUserPerms(s.id)))); };
@@ -12040,6 +12056,11 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                     <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="tom@company.com" required style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
                   </div>
                 </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Phone Number</label>
+                  <input type="tel" value={inviteForm.phone} onChange={e => setInviteForm(f => ({ ...f, phone: e.target.value }))} placeholder="0412 345 678" style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  <div style={{ fontSize: 10, color: "#aaa", marginTop: 4 }}>Used by the voice assistant to route calls to this user's caller memory</div>
+                </div>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Password (optional)</label>
                   <input type="text" value={inviteForm.password} onChange={e => setInviteForm(f => ({ ...f, password: e.target.value }))} placeholder="Auto-generated if blank" style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
@@ -12067,7 +12088,20 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: s.active ? "#111" : "#ddd", color: s.active ? "#fff" : "#999", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, flexShrink: 0 }}>{initials}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{s.name}{isSelf ? " (you)" : ""}</div>
-                    <div style={{ fontSize: 11, color: "#888" }}>{s.email}</div>
+                    <div style={{ fontSize: 11, color: "#888", display: "flex", alignItems: "center", gap: 8 }}>
+                      <span>{s.email}</span>
+                      {editPhoneId === s.id ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <input type="tel" value={editPhoneVal} onChange={e => setEditPhoneVal(e.target.value)} placeholder="0412 345 678" autoFocus onKeyDown={e => { if (e.key === "Enter") handleSavePhone(s); if (e.key === "Escape") setEditPhoneId(null); }} style={{ width: 130, padding: "2px 6px", border: "1px solid #ccc", borderRadius: 4, fontSize: 11, fontFamily: "'Open Sans', sans-serif" }} />
+                          <button onClick={() => handleSavePhone(s)} style={{ background: "none", border: "none", cursor: "pointer", color: "#059669", fontSize: 11, fontWeight: 600, fontFamily: "'Open Sans', sans-serif" }}>Save</button>
+                          <button onClick={() => setEditPhoneId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#999", fontSize: 11, fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
+                        </span>
+                      ) : (
+                        <span onClick={() => { setEditPhoneId(s.id); setEditPhoneVal(s.phone || ""); }} style={{ cursor: "pointer", color: s.phone ? "#555" : "#ccc", borderBottom: "1px dashed #ccc" }} title="Click to edit phone">
+                          {s.phone || "Add phone"}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
                     <span style={{ fontSize: 10, fontWeight: 600, color: permEnabled === permTotal ? "#059669" : "#f59e0b", background: "#f5f5f5", padding: "2px 8px", borderRadius: 4 }}>{permEnabled}/{permTotal} permissions</span>

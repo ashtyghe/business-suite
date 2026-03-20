@@ -66,6 +66,7 @@ export async function updateStaffRecord(staffId, updates) {
   if (updates.role !== undefined) dbUpdates.role = updates.role;
   if (updates.active !== undefined) dbUpdates.active = updates.active;
   if (updates.fullName !== undefined) dbUpdates.full_name = updates.fullName;
+  if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
   const { data, error } = await supabase
     .from('staff')
     .update(dbUpdates)

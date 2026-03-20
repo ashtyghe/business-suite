@@ -10907,21 +10907,51 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
     setCompanyDirty(false); setCompanySaved(true);
     setTimeout(() => setCompanySaved(false), 2500);
   };
-  const [voiceSettings, setVoiceSettings] = useState(() => {
-    try {
-      const saved = localStorage.getItem("fieldops_voice_settings");
-      if (!saved) return DEFAULT_VOICE_SETTINGS;
-      const parsed = JSON.parse(saved);
-      // Migrate old localKnowledge key to generalKnowledge
-      if (parsed.localKnowledge && !parsed.generalKnowledge) {
-        parsed.generalKnowledge = parsed.localKnowledge;
-        delete parsed.localKnowledge;
-      }
-      return { ...DEFAULT_VOICE_SETTINGS, ...parsed };
-    } catch { return DEFAULT_VOICE_SETTINGS; }
-  });
+  const [voiceSettings, setVoiceSettings] = useState(DEFAULT_VOICE_SETTINGS);
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [voiceLoading, setVoiceLoading] = useState(true);
+
+  // Load inbound voice settings from DB, falling back to localStorage then defaults
+  useEffect(() => {
+    let cancelled = false;
+    const loadInbound = async () => {
+      setVoiceLoading(true);
+      try {
+        if (supabase && auth.user) {
+          const { data } = await supabase.from('voice_settings')
+            .select('settings').eq('user_id', auth.user.id).eq('type', 'inbound').single();
+          if (!cancelled && data?.settings) {
+            setVoiceSettings({ ...DEFAULT_VOICE_SETTINGS, ...data.settings });
+            setVoiceLoading(false);
+            return;
+          }
+        }
+        // Fallback: migrate from localStorage
+        try {
+          const local = localStorage.getItem("fieldops_voice_settings");
+          if (local) {
+            const parsed = JSON.parse(local);
+            if (parsed.localKnowledge && !parsed.generalKnowledge) {
+              parsed.generalKnowledge = parsed.localKnowledge;
+              delete parsed.localKnowledge;
+            }
+            if (!cancelled) setVoiceSettings({ ...DEFAULT_VOICE_SETTINGS, ...parsed });
+          }
+        } catch {}
+      } catch (err) {
+        console.warn("Could not load inbound voice settings from DB:", err.message);
+        // Fallback to localStorage
+        try {
+          const local = localStorage.getItem("fieldops_voice_settings");
+          if (local && !cancelled) setVoiceSettings({ ...DEFAULT_VOICE_SETTINGS, ...JSON.parse(local) });
+        } catch {}
+      }
+      if (!cancelled) setVoiceLoading(false);
+    };
+    loadInbound();
+    return () => { cancelled = true; };
+  }, [auth.user?.id]);
 
   const updateVoice = (key, value) => {
     setVoiceSettings(prev => ({ ...prev, [key]: value }));
@@ -10930,6 +10960,17 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
   };
 
   const saveVoiceSettings = async () => {
+    // Save to database
+    if (supabase && auth.user) {
+      try {
+        await supabase.from('voice_settings').upsert({
+          user_id: auth.user.id, type: 'inbound', settings: voiceSettings, updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id,type' });
+      } catch (err) {
+        console.warn("Could not save inbound voice settings to DB:", err.message);
+      }
+    }
+    // Keep localStorage as fallback
     localStorage.setItem("fieldops_voice_settings", JSON.stringify(voiceSettings));
     // Push settings to voice server so they apply on next call
     const voiceServerUrl = import.meta.env.VITE_VOICE_SERVER_URL;
@@ -10967,23 +11008,53 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
   ];
 
   // Outbound call settings state
-  const [outboundSettings, setOutboundSettings] = useState(() => {
-    try {
-      const saved = localStorage.getItem("fieldops_outbound_settings");
-      return saved ? JSON.parse(saved) : {
-        enabled: false, name: "Iris", voice: "sage",
-        personality: "Professional and direct. Explain the urgent items clearly and ask if they can action them. Be respectful of their time.",
-        greetingStyle: "Greet the person by name and explain you are calling from FieldOps about items that need their attention.",
-        team: [
-          { id: 1, name: "Tom Baker", phone: "+61400000001", role: "Site Manager", callEnabled: true },
-          { id: 2, name: "Sarah Lee", phone: "+61400000002", role: "Project Manager", callEnabled: true },
-        ],
-        callRules: { minSeverity: "high", maxCallsPerDay: 3, callWindowStart: "07:00", callWindowEnd: "18:00" },
-      };
-    } catch { return { enabled: false, name: "Iris", voice: "sage", personality: "", greetingStyle: "", team: [], callRules: { minSeverity: "high", maxCallsPerDay: 3, callWindowStart: "07:00", callWindowEnd: "18:00" } }; }
-  });
+  const DEFAULT_OUTBOUND_SETTINGS = useMemo(() => ({
+    enabled: false, name: "Iris", voice: "sage",
+    personality: "Professional and direct. Explain the urgent items clearly and ask if they can action them. Be respectful of their time.",
+    greetingStyle: "Greet the person by name and explain you are calling from FieldOps about items that need their attention.",
+    team: [
+      { id: 1, name: "Tom Baker", phone: "+61400000001", role: "Site Manager", callEnabled: true },
+      { id: 2, name: "Sarah Lee", phone: "+61400000002", role: "Project Manager", callEnabled: true },
+    ],
+    callRules: { minSeverity: "high", maxCallsPerDay: 3, callWindowStart: "07:00", callWindowEnd: "18:00" },
+  }), []);
+  const [outboundSettings, setOutboundSettings] = useState(DEFAULT_OUTBOUND_SETTINGS);
   const [outboundDirty, setOutboundDirty] = useState(false);
   const [outboundSaved, setOutboundSaved] = useState(false);
+  const [outboundLoading, setOutboundLoading] = useState(true);
+
+  // Load outbound voice settings from DB, falling back to localStorage then defaults
+  useEffect(() => {
+    let cancelled = false;
+    const loadOutbound = async () => {
+      setOutboundLoading(true);
+      try {
+        if (supabase && auth.user) {
+          const { data } = await supabase.from('voice_settings')
+            .select('settings').eq('user_id', auth.user.id).eq('type', 'outbound').single();
+          if (!cancelled && data?.settings) {
+            setOutboundSettings({ ...DEFAULT_OUTBOUND_SETTINGS, ...data.settings });
+            setOutboundLoading(false);
+            return;
+          }
+        }
+        // Fallback: migrate from localStorage
+        try {
+          const local = localStorage.getItem("fieldops_outbound_settings");
+          if (local && !cancelled) setOutboundSettings(JSON.parse(local));
+        } catch {}
+      } catch (err) {
+        console.warn("Could not load outbound voice settings from DB:", err.message);
+        try {
+          const local = localStorage.getItem("fieldops_outbound_settings");
+          if (local && !cancelled) setOutboundSettings(JSON.parse(local));
+        } catch {}
+      }
+      if (!cancelled) setOutboundLoading(false);
+    };
+    loadOutbound();
+    return () => { cancelled = true; };
+  }, [auth.user?.id, DEFAULT_OUTBOUND_SETTINGS]);
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [editTeamMember, setEditTeamMember] = useState(null);
   const [teamForm, setTeamForm] = useState({ name: "", phone: "", role: "" });
@@ -10992,6 +11063,17 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
   const updateOutbound = (key, value) => { setOutboundSettings(prev => ({ ...prev, [key]: value })); setOutboundDirty(true); setOutboundSaved(false); };
   const updateCallRule = (key, value) => { setOutboundSettings(prev => ({ ...prev, callRules: { ...prev.callRules, [key]: value } })); setOutboundDirty(true); setOutboundSaved(false); };
   const saveOutboundSettings = async () => {
+    // Save to database
+    if (supabase && auth.user) {
+      try {
+        await supabase.from('voice_settings').upsert({
+          user_id: auth.user.id, type: 'outbound', settings: outboundSettings, updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id,type' });
+      } catch (err) {
+        console.warn("Could not save outbound voice settings to DB:", err.message);
+      }
+    }
+    // Keep localStorage as fallback
     localStorage.setItem("fieldops_outbound_settings", JSON.stringify(outboundSettings));
     const voiceServerUrl = import.meta.env.VITE_VOICE_SERVER_URL;
     if (voiceServerUrl) {

@@ -12710,28 +12710,35 @@ export default function App() {
       setLoading(false);
       return;
     }
+    // Safety timeout — if data fetch hangs, show app with empty data
+    const safetyTimeout = setTimeout(() => {
+      console.warn('Data fetch timeout — showing app with available data');
+      setLoading(false);
+    }, 20000);
     fetchAll()
       .then(data => {
-        setClients(data.clients);
+        clearTimeout(safetyTimeout);
+        setClients(data.clients || []);
         // Attach phases, tasks, notes from Supabase to jobs
-        setJobs(data.jobs.map(job => ({
+        setJobs((data.jobs || []).map(job => ({
           ...job,
           phases: (data.phases || []).filter(p => p.jobId === job.id),
           tasks: (data.tasks || []).filter(t => t.jobId === job.id),
           notes: (data.notes || []).filter(n => n.jobId === job.id),
         })));
-        setQuotes(data.quotes);
-        setInvoices(data.invoices);
-        setTimeEntries(data.timeEntries);
-        setBills(data.bills);
-        setSchedule(data.schedule);
-        setStaff(data.staff);
+        setQuotes(data.quotes || []);
+        setInvoices(data.invoices || []);
+        setTimeEntries(data.timeEntries || []);
+        setBills(data.bills || []);
+        setSchedule(data.schedule || []);
+        setStaff(data.staff || []);
         if (data.workOrders) setWorkOrders(data.workOrders);
         if (data.purchaseOrders) setPurchaseOrders(data.purchaseOrders);
         if (data.contractors) setContractors(data.contractors);
         setLoading(false);
       })
       .catch(err => {
+        clearTimeout(safetyTimeout);
         console.error('Failed to load data:', err);
         setDbError(err.message);
         setLoading(false);

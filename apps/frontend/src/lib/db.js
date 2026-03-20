@@ -2,10 +2,22 @@ import { supabase } from './supabase';
 
 // ── Query helper ───────────────────────────────────────────────────────────
 
-async function q(promise) {
-  const { data, error } = await promise;
-  if (error) throw error;
-  return data;
+async function q(promise, fallback = []) {
+  try {
+    const result = await Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 15000)),
+    ]);
+    const { data, error } = result;
+    if (error) {
+      console.warn('DB query error:', error.message);
+      return fallback;
+    }
+    return data;
+  } catch (err) {
+    console.warn('DB query failed:', err.message);
+    return fallback;
+  }
 }
 
 // ── Normalizers (DB → frontend shape) ─────────────────────────────────────

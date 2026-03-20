@@ -71,6 +71,8 @@ export default function LoginPage() {
                   onChange={e => setResetEmail(e.target.value)}
                   placeholder="you@company.com"
                   style={styles.input}
+                  name="email"
+                  autoComplete="username"
                   required autoFocus
                 />
                 <button type="submit" style={{ ...styles.button, opacity: resetLoading ? 0.6 : 1 }} disabled={resetLoading}>
@@ -89,7 +91,7 @@ export default function LoginPage() {
             <div style={styles.heading}>Sign in</div>
             <p style={styles.subtext}>Enter your credentials to access FieldOps</p>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} autoComplete="on">
               {sessionMessage && (
                 <div style={styles.info} onClick={clearSessionMessage}>
                   {sessionMessage}
@@ -103,6 +105,8 @@ export default function LoginPage() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@company.com"
                 style={styles.input}
+                name="email"
+                autoComplete="username"
                 required autoFocus
               />
 
@@ -112,6 +116,8 @@ export default function LoginPage() {
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
                 style={styles.input}
+                name="password"
+                autoComplete="current-password"
                 required
               />
 

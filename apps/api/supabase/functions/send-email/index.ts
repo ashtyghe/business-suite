@@ -372,14 +372,14 @@ Deno.serve(async (req: Request) => {
     return json({ error: "RESEND_API_KEY not configured" }, 500);
   }
 
-  let body: { type: string; to: string; data: Record<string, unknown> };
+  let body: { type: string; to: string; cc?: string; data: Record<string, unknown>; attachments?: { filename: string; content: string }[] };
   try {
     body = await req.json();
   } catch {
     return json({ error: "Invalid JSON body" }, 400);
   }
 
-  const { type, to, data } = body;
+  const { type, to, cc, data, attachments } = body;
   if (!type || !to) {
     return json({ error: "type and to are required" }, 400);
   }
@@ -389,6 +389,21 @@ Deno.serve(async (req: Request) => {
     return json({ error: `Unknown email type: ${type}` }, 400);
   }
 
+  // Build Resend payload
+  const resendPayload: Record<string, unknown> = {
+    from: FROM_EMAIL,
+    to: [to],
+    subject: email.subject,
+    html: email.html,
+  };
+  if (cc) resendPayload.cc = [cc];
+  if (attachments && attachments.length > 0) {
+    resendPayload.attachments = attachments.map(a => ({
+      filename: a.filename,
+      content: a.content,  // base64 encoded
+    }));
+  }
+
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -396,12 +411,7 @@ Deno.serve(async (req: Request) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [to],
-        subject: email.subject,
-        html: email.html,
-      }),
+      body: JSON.stringify(resendPayload),
     });
 
     if (!res.ok) {

@@ -25,10 +25,13 @@ export async function extractDocumentFromImage(base64, mimeType, docType) {
   return data;
 }
 
-export async function sendEmail(type, to, data) {
+export async function sendEmail(type, to, data, { cc, attachments } = {}) {
   if (!supabase) throw new Error('Supabase not configured');
+  const payload = { type, to, data };
+  if (cc) payload.cc = cc;
+  if (attachments?.length) payload.attachments = attachments;
   const { data: result, error } = await supabase.functions.invoke('send-email', {
-    body: { type, to, data },
+    body: payload,
   });
   if (error) {
     const msg = typeof error === 'object' && error.context

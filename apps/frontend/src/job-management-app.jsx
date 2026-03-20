@@ -4,6 +4,7 @@ import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, u
 import { supabase, extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord, xeroOAuth, xeroSyncInvoice, xeroSyncBill, xeroSyncContact, xeroPollUpdates, xeroFetchAccounts, xeroGetMappings, xeroSaveMappings } from './lib/supabase';
 import { useAuth } from './lib/AuthContext';
 import { changePassword, adminResetUserPassword } from './lib/auth';
+import { buildQuotePdfHtml, buildInvoicePdfHtml, buildOrderPdfHtml, htmlToPdfBase64 } from './lib/pdf';
 // Heavy libraries loaded dynamically where used (fabric, pdfjs-dist, pdf-lib, signature_pad)
 
 // ── Google Font ──────────────────────────────────────────────────────────────
@@ -1210,57 +1211,64 @@ const printOrderPdf = (type, order, jobs) => {
 };
 
 // ── Orders: Email Modal ───────────────────────────────────────────────────────
-const OrderEmailModal = ({ type, order, jobs, onClose, onSent }) => {
+const OrderEmailModal = ({ type, order, jobs, companyInfo, onClose, onSent }) => {
   const isWO = type === "wo";
   const partyEmail = isWO ? order.contractorEmail : order.supplierEmail;
   const partyName = isWO ? order.contractorName : order.supplierName;
   const partyContact = isWO ? order.contractorContact : order.supplierContact;
   const jd = orderJobDisplay(jobs.find(j => j.id === order.jobId));
+  const job = jobs.find(j => j.id === order.jobId);
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
   const docType = isWO ? "work_order" : "purchase_order";
   const acceptUrl = order.acceptToken
     ? `${supabaseUrl}/functions/v1/accept-document?token=${order.acceptToken}&type=${docType}`
-    : `${window.location.origin}${window.location.pathname}#accept/${order.ref}`;
-  const viewUrl = `${window.location.origin}${window.location.pathname}#view/${order.ref}`;
+    : null;
   const [includeAcceptLink, setIncludeAcceptLink] = useState(true);
-  const [includeViewLink, setIncludeViewLink] = useState(true);
-  const buildBody = (wa, wv) => {
-    const greeting = `Hi ${partyContact || partyName || "there"},`;
-    const intro = isWO ? `Please find attached Work Order ${order.ref}${jd ? " for " + jd.name : ""}.` : `Please find attached Purchase Order ${order.ref}${jd ? " for " + jd.name : ""}.`;
-    const viewBlock = wv ? `\n\n📄 View document online:\n${viewUrl}` : "";
-    const acceptBlock = wa ? `\n\n✅ To accept this ${isWO ? "work order" : "purchase order"}, click below:\n${acceptUrl}` : "";
-    return `${greeting}\n\n${intro}${viewBlock}${acceptBlock}\n\nKind regards`;
-  };
-  const defaultSubject = `${isWO?"Work Order":"Purchase Order"} ${order.ref}${jd?" — "+jd.ref:""}`;
+  const [includePdf, setIncludePdf] = useState(true);
   const [to, setTo] = useState(partyEmail || "");
   const [cc, setCc] = useState("");
-  const [subject, setSubject] = useState(defaultSubject);
-  const [body, setBody] = useState(() => buildBody(true, true));
-  const [includePdf, setIncludePdf] = useState(true);
-  const [selectedAttachments, setSelectedAttachments] = useState((order.attachments || []).map(a => a.id));
+  const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const attachments = order.attachments || [];
-  const toggleAtt = (id) => setSelectedAttachments(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
-  const handleToggleAccept = (val) => { setIncludeAcceptLink(val); setBody(buildBody(val, includeViewLink)); };
-  const handleToggleView = (val) => { setIncludeViewLink(val); setBody(buildBody(includeAcceptLink, val)); };
-  const handleSend = () => {
-    const mailtoBody = encodeURIComponent(body);
-    window.location.href = `mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(cc)}&subject=${encodeURIComponent(subject)}&body=${mailtoBody}`;
-    if (onSent) onSent(`Emailed to ${to}${cc ? ", cc: " + cc : ""}${includeAcceptLink ? " · acceptance link included" : ""}`);
-    setSent(true);
-  };
+  const [sendError, setSendError] = useState(null);
   const accent = isWO ? "#2563eb" : "#059669";
   const ToggleBtn = ({ on, onChange, accentCol }) => (
     <button className={`order-toggle ${on ? "on" : ""}`} style={{ background: on ? (accentCol || accent) : "#e2e8f0" }} onClick={() => onChange(!on)}>
       <div className="order-toggle-knob" />
     </button>
   );
+  const handleSend = async () => {
+    if (!to) return;
+    setSending(true); setSendError(null);
+    try {
+      // Generate PDF attachment
+      let attachments = [];
+      if (includePdf) {
+        const pdfHtml = buildOrderPdfHtml({ type, order, job, company: companyInfo, acceptUrl: includeAcceptLink ? acceptUrl : null });
+        try {
+          const pdfBase64 = await htmlToPdfBase64(pdfHtml, `${order.ref}.pdf`);
+          attachments.push({ filename: `${order.ref}.pdf`, content: pdfBase64 });
+        } catch (e) { console.warn("PDF generation failed:", e); }
+      }
+      // Send via Resend
+      const emailData = {
+        number: order.ref,
+        jobTitle: jd?.name || "",
+        acceptUrl: includeAcceptLink ? acceptUrl : undefined,
+        ...(isWO ? { contractorName: partyContact || partyName } : { supplierName: partyContact || partyName }),
+      };
+      await sendEmail(docType, to, emailData, { cc: cc || undefined, attachments });
+      if (onSent) onSent(`Emailed to ${to}${cc ? ", cc: " + cc : ""}${includeAcceptLink ? " · acceptance link included" : ""}`);
+      setSent(true);
+    } catch (err) {
+      setSendError(err.message || "Failed to send email");
+    } finally { setSending(false); }
+  };
   if (sent) return (
     <div className="order-email-overlay">
       <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxWidth: 400, width: "100%", padding: 32, textAlign: "center" }}>
         <div style={{ width: 56, height: 56, background: "#d1fae5", borderRadius: 28, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}><OrderIcon name="check" size={24} cls="" /></div>
-        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Email Client Opened</h3>
-        <p style={{ fontSize: 13, color: "#64748b", marginBottom: 24 }}>Your email client has been opened with the draft pre-filled.</p>
+        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Email Sent</h3>
+        <p style={{ fontSize: 13, color: "#64748b", marginBottom: 24 }}>{isWO ? "Work order" : "Purchase order"} {order.ref} has been sent to {to}.</p>
         <button className="btn btn-primary" style={{ background: accent }} onClick={onClose}>Done</button>
       </div>
     </div>
@@ -1276,54 +1284,44 @@ const OrderEmailModal = ({ type, order, jobs, onClose, onSent }) => {
           <button onClick={onClose} style={{ padding: 6, background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, cursor: "pointer", color: "#fff" }}><OrderIcon name="x" size={16} /></button>
         </div>
         <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+          {sendError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#dc2626" }}>{sendError}</div>}
           <div className="grid-2">
             <div className="form-group"><label className="form-label">To</label><input className="form-control" type="email" placeholder="recipient@example.com" value={to} onChange={e => setTo(e.target.value)} />{partyName && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>{partyName}</div>}</div>
             <div className="form-group"><label className="form-label">CC <span style={{ fontWeight: 400, color: "#cbd5e1", textTransform: "none" }}>optional</span></label><input className="form-control" type="text" placeholder="cc@example.com" value={cc} onChange={e => setCc(e.target.value)} /></div>
           </div>
-          <div className="form-group"><label className="form-label">Subject</label><input className="form-control" value={subject} onChange={e => setSubject(e.target.value)} /></div>
           <div style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
-            <div style={{ padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#475569" }}>Include in Email</div>
+            <div style={{ padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#475569" }}>Email Options</div>
             <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <ToggleBtn on={includeViewLink} onChange={handleToggleView} />
+                <ToggleBtn on={includePdf} onChange={v => setIncludePdf(v)} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 13, fontWeight: 500 }}>📄 View Document Link</span><button onClick={() => printOrderPdf(type, order, jobs)} style={{ fontSize: 11, color: "#2563eb", background: "none", border: "none", cursor: "pointer" }}>Preview PDF</button></div>
-                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{viewUrl}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: "#ef4444", background: "#fef2f2", padding: "2px 6px", borderRadius: 4 }}>PDF</span>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>Attach {order.ref}.pdf</span>
+                    <button onClick={() => printOrderPdf(type, order, jobs)} style={{ fontSize: 11, color: "#2563eb", background: "none", border: "none", cursor: "pointer" }}>Preview</button>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>Professional PDF with all document details attached to the email</div>
                 </div>
               </div>
-              <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16, display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <ToggleBtn on={includeAcceptLink} onChange={handleToggleAccept} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>✅ Acceptance Link</div>
-                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>Recipient clicks to accept — logs acceptance automatically</div>
+              {acceptUrl && (
+                <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16, display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <ToggleBtn on={includeAcceptLink} onChange={v => setIncludeAcceptLink(v)} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>✅ Accept Button</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>HTML button in email + link on PDF — recipient clicks to accept</div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
-          <div className="form-group"><label className="form-label">Message</label><textarea className="form-control" rows={8} style={{ fontFamily: "monospace", fontSize: 12, color: "#475569", height: "auto" }} value={body} onChange={e => setBody(e.target.value)} /></div>
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
-            <div style={{ padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#475569", display: "flex", alignItems: "center", gap: 6 }}><OrderIcon name="paperclip" size={12} /> File Attachments</div>
-            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <ToggleBtn on={includePdf} onChange={v => setIncludePdf(v)} />
-                <span style={{ fontSize: 10, fontWeight: 800, color: "#ef4444", background: "#fef2f2", padding: "2px 6px", borderRadius: 4 }}>PDF</span>
-                <span style={{ fontSize: 13, fontWeight: 500 }}>{order.ref}.pdf</span>
-              </div>
-              {attachments.map(f => (
-                <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <ToggleBtn on={selectedAttachments.includes(f.id)} onChange={() => toggleAtt(f.id)} />
-                  {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 24, height: 24, borderRadius: 4, objectFit: "cover" }} /> : <FileIconBadge name={f.name} />}
-                  <span style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
-                  <span style={{ fontSize: 11, color: "#94a3b8", flexShrink: 0 }}>{fmtFileSize(f.size)}</span>
-                </div>
-              ))}
-            </div>
+          <div style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 16px", fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
+            <strong style={{ color: "#334155" }}>Email preview:</strong> Branded HTML email with {isWO ? "work order" : "purchase order"} details, {includePdf ? "PDF attachment" : "no attachment"}{includeAcceptLink && acceptUrl ? ", and Accept button" : ""}. Sent from <strong>FieldOps</strong> via Resend.
           </div>
         </div>
         <div style={{ padding: "16px 24px", borderTop: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" style={{ background: accent }} disabled={!to} onClick={handleSend}>
-            <OrderIcon name="send" size={14} /> Send {isWO ? "to Contractor" : "to Supplier"}
+          <button className="btn btn-primary" style={{ background: accent, opacity: sending ? 0.6 : 1 }} disabled={!to || sending} onClick={handleSend}>
+            <OrderIcon name="send" size={14} /> {sending ? "Sending..." : `Send ${isWO ? "to Contractor" : "to Supplier"}`}
           </button>
         </div>
       </div>
@@ -1369,7 +1367,7 @@ const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mode, setM
 );
 
 // ── Orders: Order Drawer ──────────────────────────────────────────────────────
-const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTransition, jobs, presetJobId }) => {
+const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTransition, jobs, presetJobId, companyInfo }) => {
   const isWO = type === "wo";
   const parties = isWO ? ORDER_CONTRACTORS : ORDER_SUPPLIERS;
   const isNew = !order;
@@ -1468,7 +1466,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
   const accent = isWO ? SECTION_COLORS.wo.accent : SECTION_COLORS.po.accent;
   const lightTint = isWO ? SECTION_COLORS.wo.light : SECTION_COLORS.po.light;
 
-  if (showEmail) return <OrderEmailModal type={type} order={form} jobs={jobs} onClose={() => setShowEmail(false)}
+  if (showEmail) return <OrderEmailModal type={type} order={form} jobs={jobs} companyInfo={companyInfo} onClose={() => setShowEmail(false)}
     onSent={(detail) => {
       let u = orderAddLog(form, "Emailed", detail, false);
       if (form.status === "Approved") u = applyTransition(u, "Sent");
@@ -1841,7 +1839,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
 };
 
 // ── Orders: Orders Page ───────────────────────────────────────────────────────
-const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs }) => {
+const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs, companyInfo }) => {
   const auth = useAuth();
   const canDeleteOrder = auth.isAdmin || auth.isLocalDev;
   const [modal, setModal] = useState(null);
@@ -1988,7 +1986,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
           </table>
         </div>
       )}
-      {modal && <OrderDrawer type={modal.type} order={modal.order} initialMode={modal.order ? (modal.mode || "view") : "edit"} onSave={handleSave} onClose={() => setModal(null)} jobs={jobs} onTransition={(updated) => { (modal.type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.map(o => o.id === updated.id ? updated : o)); setModal(m => m ? { ...m, order: updated } : null); }} />}
+      {modal && <OrderDrawer type={modal.type} order={modal.order} initialMode={modal.order ? (modal.mode || "view") : "edit"} onSave={handleSave} onClose={() => setModal(null)} jobs={jobs} companyInfo={companyInfo} onTransition={(updated) => { (modal.type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.map(o => o.id === updated.id ? updated : o)); setModal(m => m ? { ...m, order: updated } : null); }} />}
     </div>
   );
 };
@@ -7600,7 +7598,13 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
       const acceptUrl = q.acceptToken ? `${supabaseUrl}/functions/v1/accept-document?token=${q.acceptToken}&type=quote` : undefined;
-      await sendEmail("quote", client.email, { ...q, clientName: client.name, jobTitle: job?.title, jobReference: job?.title, acceptUrl });
+      const tpl = templates.find(t => t.type === "quote" && t.isDefault) || templates.find(t => t.type === "quote");
+      // Generate PDF
+      const pdfHtml = buildQuotePdfHtml({ quote: q, job, client, company: companyInfo, template: tpl, acceptUrl });
+      let pdfBase64;
+      try { pdfBase64 = await htmlToPdfBase64(pdfHtml, `${q.number}.pdf`); } catch (e) { console.warn("PDF generation failed:", e); }
+      const attachments = pdfBase64 ? [{ filename: `${q.number}.pdf`, content: pdfBase64 }] : [];
+      await sendEmail("quote", client.email, { ...q, clientName: client.name, jobTitle: job?.title, jobReference: job?.title, acceptUrl }, { attachments });
       setEmailStatus({ type: "success", msg: `Quote sent to ${client.email}` });
       setTimeout(() => setEmailStatus(null), 4000);
     } catch (err) {
@@ -9342,7 +9346,12 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
     if (!window.confirm(`Send invoice ${inv.number} to ${client.name} (${client.email})?`)) return;
     setEmailSending(true); setEmailStatus(null);
     try {
-      await sendEmail("invoice", client.email, { ...inv, clientName: client.name, jobTitle: job?.title });
+      const tpl = templates.find(t => t.type === "invoice" && t.isDefault) || templates.find(t => t.type === "invoice");
+      const pdfHtml = buildInvoicePdfHtml({ invoice: inv, job, client, company: companyInfo, template: tpl });
+      let pdfBase64;
+      try { pdfBase64 = await htmlToPdfBase64(pdfHtml, `${inv.number}.pdf`); } catch (e) { console.warn("PDF generation failed:", e); }
+      const attachments = pdfBase64 ? [{ filename: `${inv.number}.pdf`, content: pdfBase64 }] : [];
+      await sendEmail("invoice", client.email, { ...inv, clientName: client.name, jobTitle: job?.title }, { attachments });
       setEmailStatus({ type: "success", msg: `Invoice sent to ${client.email}` });
       setTimeout(() => setEmailStatus(null), 4000);
     } catch (err) {
@@ -13866,7 +13875,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Dashboard jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} workOrders={workOrders} purchaseOrders={purchaseOrders} contractors={contractors} suppliers={suppliers} onNav={navigate} />} />
       <Route path="/jobs" element={<Jobs jobs={jobs} setJobs={setJobs} clients={clients} quotes={quotes} setQuotes={setQuotes} invoices={invoices} setInvoices={setInvoices} timeEntries={timeEntries} setTimeEntries={setTimeEntries} bills={bills} setBills={setBills} schedule={schedule} setSchedule={setSchedule} staff={staff} workOrders={workOrders} setWorkOrders={setWorkOrders} purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders} />} />
-      <Route path="/orders" element={<OrdersPage workOrders={workOrders} setWorkOrders={setWorkOrders} purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders} jobs={jobs} />} />
+      <Route path="/orders" element={<OrdersPage workOrders={workOrders} setWorkOrders={setWorkOrders} purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders} jobs={jobs} companyInfo={companyInfo} />} />
       <Route path="/clients" element={<Clients clients={clients} setClients={setClients} jobs={jobs} templates={templates} />} />
       <Route path="/contractors" element={<Contractors contractors={contractors} setContractors={setContractors} workOrders={workOrders} bills={bills} />} />
       <Route path="/suppliers" element={<Suppliers suppliers={suppliers} setSuppliers={setSuppliers} purchaseOrders={purchaseOrders} bills={bills} />} />

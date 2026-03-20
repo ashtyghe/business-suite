@@ -130,6 +130,23 @@ function divider(): string {
   return `<hr style="border:none;border-top:1px solid #eeeeee;margin:20px 0;">`;
 }
 
+function acceptButton(label: string, url: string, color: string): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="background:${color};border-radius:8px;">
+              <a href="${url}" target="_blank" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.02em;">${label}</a>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:8px 0 0 0;font-size:11px;color:#999999;">or copy this link: <a href="${url}" style="color:#999999;word-break:break-all;">${url}</a></p>
+      </td>
+    </tr>
+  </table>`;
+}
+
 function noticeBox(text: string, bgColor = "#fffbeb", borderColor = "#fbbf24", textColor = "#92400e"): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
     <tr><td style="background:${bgColor};border:1px solid ${borderColor};border-radius:6px;padding:12px 16px;font-size:13px;color:${textColor};line-height:1.5;">
@@ -166,7 +183,7 @@ function buildEmail(
         : `Quote ${vars.number || ""} from FieldOps`;
       if (data.emailBody) return customBodyEmail("#111111", subject);
 
-      const content = [
+      const contentParts = [
         greeting(vars.clientName || "there"),
         paragraph(`Please find attached your quote for <strong style="color:#333333;">${esc(vars.jobTitle || "your project")}</strong>.`),
         detailsBox([
@@ -175,11 +192,16 @@ function buildEmail(
           ["Reference", vars.jobReference || ""],
         ]),
         amountHighlight("Total (inc. GST)", total, "#111111"),
+      ];
+      if (data.acceptUrl) {
+        contentParts.push(acceptButton("Accept Quote", data.acceptUrl as string, "#111111"));
+      }
+      contentParts.push(
         paragraph("If you have any questions or would like to discuss the scope of work, please don't hesitate to get in touch."),
         paragraph("This quote is valid for 30 days from the date of issue."),
         closing(),
-      ].join("\n");
-      return { subject, html: emailLayout("#111111", content) };
+      );
+      return { subject, html: emailLayout("#111111", contentParts.join("\n")) };
     }
 
     case "invoice": {
@@ -212,7 +234,7 @@ function buildEmail(
         : `Work Order ${vars.number || ""} from FieldOps`;
       if (data.emailBody) return customBodyEmail("#2563eb", subject);
 
-      const content = [
+      const contentParts = [
         greeting(recipient),
         paragraph(`We have a new work order for you${vars.jobTitle ? ` regarding <strong style="color:#333333;">${esc(vars.jobTitle)}</strong>` : ""}.`),
         detailsBox([
@@ -220,10 +242,14 @@ function buildEmail(
           ["Job", vars.jobTitle || ""],
         ]),
         paragraph("The full scope of work and pricing details are included in the attached document."),
-        paragraph("<strong style='color:#333333;'>Please confirm your acceptance</strong> at your earliest convenience so we can schedule the works accordingly."),
-        closing(),
-      ].join("\n");
-      return { subject, html: emailLayout("#2563eb", content) };
+      ];
+      if (data.acceptUrl) {
+        contentParts.push(acceptButton("Accept Work Order", data.acceptUrl as string, "#2563eb"));
+      } else {
+        contentParts.push(paragraph("<strong style='color:#333333;'>Please confirm your acceptance</strong> at your earliest convenience so we can schedule the works accordingly."));
+      }
+      contentParts.push(closing());
+      return { subject, html: emailLayout("#2563eb", contentParts.join("\n")) };
     }
 
     case "purchase_order": {
@@ -233,17 +259,21 @@ function buildEmail(
         : `Purchase Order ${vars.number || ""} from FieldOps`;
       if (data.emailBody) return customBodyEmail("#059669", subject);
 
-      const content = [
+      const contentParts = [
         greeting(recipient),
         paragraph("Please find attached our purchase order for your review."),
         detailsBox([
           ["PO Number", vars.number || ""],
           ["Job", vars.jobTitle || ""],
         ]),
-        paragraph("Please confirm receipt and provide an <strong style='color:#333333;'>expected delivery date</strong> at your earliest convenience."),
-        closing(),
-      ].join("\n");
-      return { subject, html: emailLayout("#059669", content) };
+      ];
+      if (data.acceptUrl) {
+        contentParts.push(acceptButton("Accept Purchase Order", data.acceptUrl as string, "#059669"));
+      } else {
+        contentParts.push(paragraph("Please confirm receipt and provide an <strong style='color:#333333;'>expected delivery date</strong> at your earliest convenience."));
+      }
+      contentParts.push(closing());
+      return { subject, html: emailLayout("#059669", contentParts.join("\n")) };
     }
 
     case "payment_reminder": {

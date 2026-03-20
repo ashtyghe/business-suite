@@ -89,6 +89,9 @@ function normalizeQuote(row) {
     notes: row.notes || '',
     createdAt: row.created_at ? row.created_at.slice(0, 10) : '',
     lineItems: (row.line_items || []).map(normalizeLineItem),
+    acceptToken: row.accept_token || null,
+    acceptedAt: row.accepted_at || null,
+    acceptedBy: row.accepted_by || null,
   };
 }
 
@@ -245,6 +248,9 @@ function normalizeWorkOrder(row) {
     internalNotes: row.internal_notes || '',
     attachments: [],  // populated after fetch
     auditLog: [],     // populated from audit_log table
+    acceptToken: row.accept_token || null,
+    acceptedAt: row.accepted_at || null,
+    acceptedBy: row.accepted_by || null,
   };
 }
 
@@ -268,6 +274,9 @@ function normalizePurchaseOrder(row) {
     lines: [],        // populated after fetch
     attachments: [],  // populated after fetch
     auditLog: [],     // populated from audit_log table
+    acceptToken: row.accept_token || null,
+    acceptedAt: row.accepted_at || null,
+    acceptedBy: row.accepted_by || null,
   };
 }
 

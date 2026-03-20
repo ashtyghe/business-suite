@@ -1,10 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "FieldOps <notifications@c8c.com.au>";
 
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://fieldops.netlify.app";
+
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, apikey, x-client-info",
@@ -151,6 +155,24 @@ Deno.serve(async (req: Request) => {
   }
   if (req.method !== "POST") {
     return json({ error: "Method not allowed" }, 405);
+  }
+
+  // Verify the caller is authenticated by checking their JWT
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return json({ error: "Missing Authorization header" }, 401);
+  }
+
+  const anonClient = createClient(
+    SUPABASE_URL,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } }
+  );
+  const {
+    data: { user: caller },
+  } = await anonClient.auth.getUser();
+  if (!caller) {
+    return json({ error: "Invalid or expired token" }, 401);
   }
 
   if (!RESEND_API_KEY) {

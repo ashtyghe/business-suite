@@ -114,6 +114,18 @@ export async function xeroPollUpdates() {
   return xeroInvoke('xero-poll-updates', {});
 }
 
+export async function xeroFetchAccounts() {
+  return xeroInvoke('xero-chart-of-accounts', { action: 'pull' });
+}
+
+export async function xeroGetMappings() {
+  return xeroInvoke('xero-chart-of-accounts', { action: 'getMappings' });
+}
+
+export async function xeroSaveMappings(mappings) {
+  return xeroInvoke('xero-chart-of-accounts', { action: 'saveMappings', mappings });
+}
+
 export async function extractBillFromImage(base64, mimeType) {
   if (!supabase) return null;
   const { data, error } = await supabase.functions.invoke('extract-bill', {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, Fragment, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry } from './lib/db';
-import { supabase, extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord, xeroOAuth, xeroSyncInvoice, xeroSyncBill, xeroSyncContact, xeroPollUpdates } from './lib/supabase';
+import { supabase, extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord, xeroOAuth, xeroSyncInvoice, xeroSyncBill, xeroSyncContact, xeroPollUpdates, xeroFetchAccounts, xeroGetMappings, xeroSaveMappings } from './lib/supabase';
 import { useAuth } from './lib/AuthContext';
 import { changePassword, adminResetUserPassword } from './lib/auth';
 // Heavy libraries loaded dynamically where used (fabric, pdfjs-dist, pdf-lib, signature_pad)
@@ -10382,6 +10382,147 @@ const DEFAULT_VOICE_SETTINGS = {
 };
 
 // ── Xero Settings Tab (extracted as a proper component to follow Rules of Hooks) ──
+const BILL_CATEGORIES = ["Materials", "Subcontractor", "Plant & Equipment", "Labour", "Other"];
+
+const XeroAccountMappingSection = ({ accent, xeroAccounts, setXeroAccounts, mappings, setMappings, onSaved, compact }) => {
+  const [fetchingAccounts, setFetchingAccounts] = useState(false);
+  const [savingMappings, setSavingMappings] = useState(false);
+  const [mappingSaved, setMappingSaved] = useState(false);
+  const [mappingError, setMappingError] = useState(null);
+
+  const cardStyle = { background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 };
+  const labelStyle = { display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 };
+  const btnStyle = { padding: "8px 16px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "'Open Sans', sans-serif" };
+  const selectStyle = { width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, background: "#fff", boxSizing: "border-box", fontFamily: "'Open Sans', sans-serif" };
+
+  const revenueAccounts = (xeroAccounts || []).filter(a => a.type === "REVENUE");
+  const expenseAccounts = (xeroAccounts || []).filter(a => a.type === "EXPENSE");
+
+  const getMappingValue = (entityType, category = "") => {
+    const m = mappings.find(x => x.entity_type === entityType && (x.category || "") === category);
+    return m ? m.xero_account_code : "";
+  };
+
+  const setMappingValue = (entityType, category, accountCode) => {
+    const accountList = entityType === "invoice" ? revenueAccounts : expenseAccounts;
+    const account = accountList.find(a => a.code === accountCode);
+    const accountName = account ? account.name : "";
+    const existing = mappings.findIndex(x => x.entity_type === entityType && (x.category || "") === (category || ""));
+    if (existing >= 0) {
+      const updated = [...mappings];
+      updated[existing] = { ...updated[existing], xero_account_code: accountCode, xero_account_name: accountName };
+      setMappings(updated);
+    } else {
+      setMappings([...mappings, { entity_type: entityType, category: category || "", xero_account_code: accountCode, xero_account_name: accountName }]);
+    }
+  };
+
+  const handleFetchAccounts = async () => {
+    setFetchingAccounts(true);
+    setMappingError(null);
+    try {
+      const result = await xeroFetchAccounts();
+      setXeroAccounts(result.accounts || []);
+    } catch (e) {
+      setMappingError(e.message);
+    } finally {
+      setFetchingAccounts(false);
+    }
+  };
+
+  const handleSaveMappings = async () => {
+    const toSave = mappings.filter(m => m.xero_account_code);
+    if (toSave.length === 0) {
+      setMappingError("Select at least one account mapping before saving");
+      return;
+    }
+    setSavingMappings(true);
+    setMappingError(null);
+    try {
+      await xeroSaveMappings(toSave);
+      setMappingSaved(true);
+      setTimeout(() => setMappingSaved(false), 2500);
+      if (onSaved) onSaved();
+    } catch (e) {
+      setMappingError(e.message);
+    } finally {
+      setSavingMappings(false);
+    }
+  };
+
+  const renderAccountSelect = (entityType, category, label, accountList) => (
+    <div key={`${entityType}-${category}`}>
+      <label style={labelStyle}>{label}</label>
+      <select
+        value={getMappingValue(entityType, category)}
+        onChange={e => setMappingValue(entityType, category, e.target.value)}
+        style={selectStyle}
+      >
+        <option value="">— Select account —</option>
+        {accountList.map(a => (
+          <option key={a.code} value={a.code}>{a.code} — {a.name}</option>
+        ))}
+      </select>
+    </div>
+  );
+
+  return (
+    <div>
+      {mappingError && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#dc2626", display: "flex", alignItems: "center", gap: 8 }}>
+          {mappingError}
+          <button onClick={() => setMappingError(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#dc2626", fontSize: 14 }}>&times;</button>
+        </div>
+      )}
+      {mappingSaved && (
+        <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#166534" }}>
+          Account mappings saved successfully.
+        </div>
+      )}
+
+      {(!xeroAccounts || xeroAccounts.length === 0) ? (
+        <div>
+          <div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>Pull your Chart of Accounts from Xero to configure which accounts invoices and bills sync to.</div>
+          <button onClick={handleFetchAccounts} disabled={fetchingAccounts} style={{ ...btnStyle, background: accent, color: "#fff" }}>
+            {fetchingAccounts ? "Fetching..." : "Fetch Accounts from Xero"}
+          </button>
+        </div>
+      ) : (
+        <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: "#666" }}>{xeroAccounts.length} accounts loaded from Xero ({revenueAccounts.length} revenue, {expenseAccounts.length} expense)</div>
+            <button onClick={handleFetchAccounts} disabled={fetchingAccounts} style={{ ...btnStyle, background: "#f8f8f8", color: "#666", fontSize: 11, padding: "6px 12px" }}>
+              {fetchingAccounts ? "Refreshing..." : "Refresh Accounts"}
+            </button>
+          </div>
+
+          {/* Revenue Accounts (Invoices) */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#111", marginBottom: 10 }}>Revenue Accounts (Invoices)</div>
+            <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "1fr 1fr", gap: 12 }}>
+              {renderAccountSelect("invoice", "", "Default Invoice Account", revenueAccounts)}
+            </div>
+          </div>
+
+          {/* Expense Accounts (Bills) */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#111", marginBottom: 10 }}>Expense Accounts (Bills)</div>
+            <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "1fr 1fr", gap: 12 }}>
+              {BILL_CATEGORIES.map(cat =>
+                renderAccountSelect("bill", cat, cat, expenseAccounts)
+              )}
+            </div>
+          </div>
+
+          <button onClick={handleSaveMappings} disabled={savingMappings} style={{ ...btnStyle, background: accent, color: "#fff" }}>
+            {savingMappings ? "Saving..." : "Save Mappings"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const XeroSettingsTab = ({ accent }) => {
   const [xeroStatus, setXeroStatus] = useState(null);
   const [xeroLoading, setXeroLoading] = useState(true);
@@ -10393,6 +10534,9 @@ const XeroSettingsTab = ({ accent }) => {
   const [xeroSetupStep, setXeroSetupStep] = useState(0);
   const [xeroSyncLog, setXeroSyncLog] = useState([]);
   const [xeroPollResult, setXeroPollResult] = useState(null);
+  const [xeroAccounts, setXeroAccounts] = useState([]);
+  const [mappings, setMappings] = useState([]);
+  const [mappingsLoaded, setMappingsLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -10402,6 +10546,12 @@ const XeroSettingsTab = ({ accent }) => {
         if (status?.connected) {
           const { data } = await supabase?.from("xero_sync_log").select("*").order("created_at", { ascending: false }).limit(10) || {};
           setXeroSyncLog(data || []);
+          // Load existing mappings
+          try {
+            const result = await xeroGetMappings();
+            setMappings(result.mappings || []);
+            setMappingsLoaded(true);
+          } catch { /* mappings table may not exist yet */ }
         }
       } catch (e) {
         setXeroError(e.message);
@@ -10489,6 +10639,12 @@ const XeroSettingsTab = ({ accent }) => {
   const labelStyle = { display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 };
   const btnStyle = { padding: "8px 16px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "'Open Sans', sans-serif" };
 
+  // Build current mapping summary for display
+  const getMappingSummary = (entityType, category = "") => {
+    const m = mappings.find(x => x.entity_type === entityType && (x.category || "") === category);
+    return m ? `${m.xero_account_code} — ${m.xero_account_name}` : null;
+  };
+
   return (
     <div>
       <div style={{ fontSize: 16, fontWeight: 700, color: "#111", marginBottom: 4 }}>Xero Accounting Integration</div>
@@ -10518,18 +10674,72 @@ const XeroSettingsTab = ({ accent }) => {
           <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 4 }}>Setup Wizard — Step {xeroSetupStep} of 4</div>
           <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>
             {xeroSetupStep === 1 && "Match your existing contacts with Xero to avoid duplicates"}
-            {xeroSetupStep === 2 && "Review account code mappings for invoices and bills"}
+            {xeroSetupStep === 2 && "Map your Xero account codes for invoices and bills"}
             {xeroSetupStep === 3 && "Mark items that are already in Xero to skip during sync"}
             {xeroSetupStep === 4 && "Preview what will be synced before running"}
           </div>
           {xeroSetupStep === 1 && (<div>{!xeroMatchResults ? <button onClick={runContactMatch} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Matching..." : "Run Contact Matching"}</button> : (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>Found {xeroMatchResults.xeroContactCount} contacts in Xero. {xeroMatchResults.matches?.length || 0} FieldOps contacts to review.</div>{(xeroMatchResults.matches || []).map((m, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid #f0f0f0", fontSize: 12 }}><input type="checkbox" checked={m.confirmed || false} onChange={() => { const updated = [...xeroMatchResults.matches]; updated[i] = { ...updated[i], confirmed: !updated[i].confirmed }; setXeroMatchResults({ ...xeroMatchResults, matches: updated }); }} /><div style={{ flex: 1 }}><span style={{ fontWeight: 600 }}>{m.name}</span><span style={{ color: "#888", marginLeft: 8 }}>({m.entityType})</span></div><div style={{ flex: 1, color: m.xeroMatch ? "#16a34a" : "#888" }}>{m.xeroMatch ? `→ ${m.xeroMatch.name} (${m.xeroMatch.confidence})` : "No match — will create new"}</div></div>))}<div style={{ display: "flex", gap: 8, marginTop: 12 }}><button onClick={() => confirmMatches(xeroMatchResults.matches)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Confirm & Continue</button><button onClick={() => setXeroSetupStep(2)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip</button></div></div>)}</div>)}
-          {xeroSetupStep === 2 && (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>These account codes determine where synced items land in your Xero chart of accounts.</div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}><div><label style={labelStyle}>Invoice Account</label><input defaultValue="200 — Sales" readOnly style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, background: "#f8f8f8", boxSizing: "border-box" }} /></div><div><label style={labelStyle}>Bill Account (Default)</label><input defaultValue="400 — General Expenses" readOnly style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, background: "#f8f8f8", boxSizing: "border-box" }} /></div></div><button onClick={() => setXeroSetupStep(3)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue</button></div>)}
+          {xeroSetupStep === 2 && (
+            <div>
+              <XeroAccountMappingSection
+                accent={accent}
+                xeroAccounts={xeroAccounts}
+                setXeroAccounts={setXeroAccounts}
+                mappings={mappings}
+                setMappings={setMappings}
+                onSaved={() => {}}
+                compact={false}
+              />
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <button onClick={() => setXeroSetupStep(3)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue</button>
+                <button onClick={() => setXeroSetupStep(3)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip</button>
+              </div>
+            </div>
+          )}
           {xeroSetupStep === 3 && (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>If any invoices or bills have already been entered in Xero manually, mark them here to prevent duplicates.</div><div style={{ display: "flex", gap: 8 }}><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue to Preview</button><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip — None to mark</button></div></div>)}
           {xeroSetupStep === 4 && (<div>{!xeroDryRun ? <button onClick={runDryRun} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Checking..." : "Preview Sync"}</button> : (<div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 12 }}><div style={{ background: "#f0fdf4", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#16a34a" }}>{xeroDryRun.invoices?.wouldSync || 0}</div><div style={{ fontSize: 11, color: "#666" }}>Invoices to sync</div></div><div style={{ background: "#eff6ff", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#2563eb" }}>{xeroDryRun.bills?.wouldSync || 0}</div><div style={{ fontSize: 11, color: "#666" }}>Bills to sync</div></div></div><div style={{ display: "flex", gap: 8 }}><button onClick={() => { runBulkSync("invoices"); runBulkSync("bills"); setXeroSetupStep(0); }} style={{ ...btnStyle, background: accent, color: "#fff" }}>Start Sync</button><button onClick={() => setXeroSetupStep(0)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Close Wizard</button></div></div>)}</div>)}
         </div>
       )}
       {xeroStatus?.connected && xeroSetupStep === 0 && (
         <>
+          {/* Account Mapping Section */}
+          <div style={cardStyle}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 4 }}>Account Mapping</div>
+            <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>Configure which Xero accounts invoices and bills are posted to</div>
+            {/* Current mappings summary */}
+            {mappings.length > 0 && !xeroAccounts.length && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {getMappingSummary("invoice") && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#16a34a" }} />
+                      <span style={{ fontWeight: 600, minWidth: 140 }}>Invoices:</span>
+                      <span style={{ color: "#333" }}>{getMappingSummary("invoice")}</span>
+                    </div>
+                  )}
+                  {BILL_CATEGORIES.map(cat => {
+                    const summary = getMappingSummary("bill", cat);
+                    return summary ? (
+                      <div key={cat} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2563eb" }} />
+                        <span style={{ fontWeight: 600, minWidth: 140 }}>Bills ({cat}):</span>
+                        <span style={{ color: "#333" }}>{summary}</span>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+            <XeroAccountMappingSection
+              accent={accent}
+              xeroAccounts={xeroAccounts}
+              setXeroAccounts={setXeroAccounts}
+              mappings={mappings}
+              setMappings={setMappings}
+              compact={false}
+            />
+          </div>
+
           <div style={cardStyle}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 16 }}>Sync Actions</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -12710,35 +12920,28 @@ export default function App() {
       setLoading(false);
       return;
     }
-    // Safety timeout — if data fetch hangs, show app with empty data
-    const safetyTimeout = setTimeout(() => {
-      console.warn('Data fetch timeout — showing app with available data');
-      setLoading(false);
-    }, 20000);
     fetchAll()
       .then(data => {
-        clearTimeout(safetyTimeout);
-        setClients(data.clients || []);
+        setClients(data.clients);
         // Attach phases, tasks, notes from Supabase to jobs
-        setJobs((data.jobs || []).map(job => ({
+        setJobs(data.jobs.map(job => ({
           ...job,
           phases: (data.phases || []).filter(p => p.jobId === job.id),
           tasks: (data.tasks || []).filter(t => t.jobId === job.id),
           notes: (data.notes || []).filter(n => n.jobId === job.id),
         })));
-        setQuotes(data.quotes || []);
-        setInvoices(data.invoices || []);
-        setTimeEntries(data.timeEntries || []);
-        setBills(data.bills || []);
-        setSchedule(data.schedule || []);
-        setStaff(data.staff || []);
+        setQuotes(data.quotes);
+        setInvoices(data.invoices);
+        setTimeEntries(data.timeEntries);
+        setBills(data.bills);
+        setSchedule(data.schedule);
+        setStaff(data.staff);
         if (data.workOrders) setWorkOrders(data.workOrders);
         if (data.purchaseOrders) setPurchaseOrders(data.purchaseOrders);
         if (data.contractors) setContractors(data.contractors);
         setLoading(false);
       })
       .catch(err => {
-        clearTimeout(safetyTimeout);
         console.error('Failed to load data:', err);
         setDbError(err.message);
         setLoading(false);

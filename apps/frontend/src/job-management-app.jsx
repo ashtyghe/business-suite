@@ -1182,28 +1182,9 @@ const OrderAuditLog = ({ log }) => {
 };
 
 // ── Orders: PDF + Acceptance Page ─────────────────────────────────────────────
-const buildOrderPdfHtml = (type, order, jobs) => {
-  const isWO = type === "wo";
-  const jd = orderJobDisplay(jobs.find(j => j.id === order.jobId));
-  const partyName = isWO ? order.contractorName : order.supplierName;
-  const partyEmail = isWO ? order.contractorEmail : order.supplierEmail;
-  const partyContact = isWO ? order.contractorContact : order.supplierContact;
-  const accentColor = isWO ? "#2563eb" : "#059669";
-  const title = isWO ? "WORK ORDER" : "PURCHASE ORDER";
-  const linesHtml = (!isWO && order.lines && order.lines.length > 0) ? `<table style="width:100%;border-collapse:collapse;margin-top:16px;font-size:13px;"><thead><tr style="border-bottom:2px solid #e2e8f0;"><th style="text-align:left;padding:8px 4px;color:#94a3b8;font-size:11px;text-transform:uppercase;">Description</th><th style="text-align:center;padding:8px 4px;color:#94a3b8;font-size:11px;text-transform:uppercase;width:60px;">Qty</th><th style="text-align:center;padding:8px 4px;color:#94a3b8;font-size:11px;text-transform:uppercase;width:60px;">Unit</th></tr></thead><tbody>${order.lines.map(l => `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:10px 4px;color:#334155;">${l.desc||"—"}</td><td style="padding:10px 4px;text-align:center;color:#475569;">${l.qty}</td><td style="padding:10px 4px;text-align:center;color:#94a3b8;">${l.unit}</td></tr>`).join("")}</tbody></table>` : "";
-  const poLimitHtml = order.poLimit ? `<div style="display:flex;justify-content:space-between;align-items:center;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px 16px;margin-top:16px;"><span style="font-size:13px;font-weight:600;color:#92400e;">PO Limit</span><span style="font-size:18px;font-weight:800;color:#b45309;">$${parseFloat(order.poLimit).toLocaleString("en-AU",{minimumFractionDigits:2})}</span></div>` : "";
-  const scopeHtml = isWO && order.scopeOfWork ? `<div style="background:#eff6ff;border-radius:8px;padding:16px;margin-top:16px;"><p style="font-size:11px;font-weight:700;color:${accentColor};text-transform:uppercase;margin:0 0 8px;">Scope of Work</p><p style="font-size:13px;color:#334155;white-space:pre-line;line-height:1.6;margin:0;">${order.scopeOfWork}</p></div>` : "";
-  const deliveryHtml = !isWO && order.deliveryAddress ? `<div style="background:#ecfdf5;border-radius:8px;padding:12px 16px;margin-top:16px;"><p style="font-size:11px;font-weight:700;color:${accentColor};text-transform:uppercase;margin:0 0 4px;">Delivery Address</p><p style="font-size:13px;color:#334155;margin:0;">${order.deliveryAddress}</p></div>` : "";
-  const notesHtml = order.notes ? `<div style="border-top:1px solid #e2e8f0;margin-top:20px;padding-top:16px;"><p style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 6px;">Notes / Terms</p><p style="font-size:13px;color:#475569;white-space:pre-line;margin:0;">${order.notes}</p></div>` : "";
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-  const docType = isWO ? "work_order" : "purchase_order";
-  const acceptHtml = order.acceptToken
-    ? `<div style="text-align:center;margin:32px 0 24px;"><a href="${supabaseUrl}/functions/v1/accept-document?token=${order.acceptToken}&type=${docType}" style="display:inline-block;padding:14px 40px;background:${accentColor};color:#fff;font-size:15px;font-weight:700;text-decoration:none;border-radius:8px;">Accept ${title.charAt(0) + title.slice(1).toLowerCase()}</a><p style="font-size:11px;color:#94a3b8;margin-top:8px;">Click the button above or scan the link to accept this ${title.toLowerCase()}</p></div>`
-    : "";
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title} ${order.ref}</title><style>*{box-sizing:border-box;}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:32px;color:#1e293b;font-size:14px;}@media print{.no-print{display:none !important;}}</style></head><body><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:20px;border-bottom:3px solid ${accentColor};"><div><p style="font-size:26px;font-weight:900;color:#0f172a;margin:0;">${title}</p><p style="color:#94a3b8;margin:4px 0 0;font-size:14px;">${order.ref}</p></div><div style="text-align:right;font-size:13px;color:#475569;"><p style="margin:0;"><strong>Issue Date:</strong> ${orderFmtDate(order.issueDate)}</p><p style="margin:4px 0 0;"><strong>${isWO?"Due Date":"Delivery"}:</strong> ${orderFmtDate(order.dueDate)}</p>${jd?`<p style="margin:4px 0 0;"><strong>Job:</strong> ${jd.ref}</p>`:""}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px;"><div><p style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 8px;">${isWO?"Contractor":"Supplier"}</p><p style="font-weight:700;font-size:15px;margin:0 0 4px;">${partyName||"—"}</p><p style="color:#475569;margin:0 0 2px;font-size:13px;">${partyContact||""}</p><p style="color:#475569;margin:0;font-size:13px;">${partyEmail||""}</p></div>${jd?`<div><p style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 8px;">Linked Job</p><p style="font-weight:700;font-size:14px;margin:0 0 2px;">${jd.ref}</p><p style="color:#475569;font-size:13px;margin:0;">${jd.name}</p></div>`:""}</div>${scopeHtml}${deliveryHtml}${linesHtml}${poLimitHtml}${notesHtml}${acceptHtml}<div style="margin-top:40px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:center;">Generated ${new Date().toLocaleDateString("en-AU")} · FieldOps Order Management</div></body></html>`;
-};
 const printOrderPdf = (type, order, jobs) => {
-  const html = buildOrderPdfHtml(type, order, jobs);
+  const job = jobs.find(j => j.id === order.jobId);
+  const html = buildOrderPdfHtml({ type, order, job });
   const win = window.open("", "_blank", "width=900,height=700");
   if (!win) { alert("Please allow pop-ups to generate PDF."); return; }
   win.document.write(html); win.document.close(); win.focus();
@@ -10534,8 +10515,6 @@ const DEFAULT_OUTBOUND_SETTINGS = {
 };
 
 // ── Xero Settings Tab (extracted as a proper component to follow Rules of Hooks) ──
-const BILL_CATEGORIES = ["Materials", "Subcontractor", "Plant & Equipment", "Labour", "Other"];
-
 const XeroAccountMappingSection = ({ accent, xeroAccounts, setXeroAccounts, mappings, setMappings, onSaved, compact }) => {
   const [fetchingAccounts, setFetchingAccounts] = useState(false);
   const [savingMappings, setSavingMappings] = useState(false);
@@ -12188,6 +12167,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
         )}
       </div>
     );
+  };
 
   return (
     <div>

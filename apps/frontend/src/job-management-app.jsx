@@ -11047,7 +11047,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
     </div>
   );
 
-  const VoiceIntegration = () => (
+  const voiceIntegrationContent = (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
@@ -11438,7 +11438,6 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
         )}
       </div>
     );
-  };
 
   return (
     <div>
@@ -11508,7 +11507,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           </div>
         </div>
       )}
-      {tab === "integrations" && <VoiceIntegration />}
+      {tab === "integrations" && voiceIntegrationContent}
       {tab === "outbound" && (
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>

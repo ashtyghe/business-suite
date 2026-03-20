@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { getSession, onAuthStateChange, signIn as authSignIn, signOut as authSignOut, getStaffProfile } from './auth';
 import { supabase } from './supabase';
 
@@ -10,13 +10,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sessionMessage, setSessionMessage] = useState(null);
-
-  // Resolve the staff profile for an auth user
-  const resolveStaff = async (authUser) => {
-    if (!authUser) { setStaff(null); return; }
-    const profile = await getStaffProfile(authUser.id);
-    setStaff(profile);
-  };
+  // Track when signIn() is handling auth — so onAuthStateChange skips redundant work
+  const signInActiveRef = useRef(false);
 
   // Initial session check — use onAuthStateChange only (not getSession)
   // to avoid Supabase lock contention ("Lock broken by another request")
@@ -33,41 +28,59 @@ export function AuthProvider({ children }) {
     }, 5000);
 
     // onAuthStateChange fires INITIAL_SESSION on setup, which gives us
-    // the current session without a separate getSession() call
-    const { data: { subscription } } = onAuthStateChange(async (event, session) => {
-      try {
-        const authUser = session?.user || null;
+    // the current session without a separate getSession() call.
+    //
+    // IMPORTANT: We must NOT make Supabase DB calls (like getStaffProfile)
+    // directly inside this callback — doing so causes navigator lock
+    // contention ("Lock broken by another request with the 'steal' option").
+    // Instead, we defer the profile fetch with setTimeout(0).
+    const { data: { subscription } } = onAuthStateChange((event, session) => {
+      const authUser = session?.user || null;
 
-        if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
-          setUser(null);
-          setStaff(null);
-          if (event === 'TOKEN_REFRESHED') {
-            setSessionMessage('Your session has expired. Please sign in again.');
-          }
-          return;
-        }
-
-        setUser(authUser);
-        if (authUser) {
-          const profile = await getStaffProfile(authUser.id);
-          setStaff(profile);
-          // If session exists but staff profile can't be fetched (e.g. expired
-          // token), treat as logged out so the login page shows instead of a
-          // broken app shell.
-          if (!profile) {
-            setUser(null);
-            setSessionMessage('Your session has expired. Please sign in again.');
-            try { await authSignOut(); } catch (_) { /* ignore */ }
-          }
-        } else {
-          setStaff(null);
-        }
-      } catch (err) {
-        console.error('Auth state change error:', err.message);
-        // On any error during auth resolution, clear state so login page shows
+      if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
         setUser(null);
         setStaff(null);
-      } finally {
+        if (event === 'TOKEN_REFRESHED') {
+          setSessionMessage('Your session has expired. Please sign in again.');
+        }
+        clearTimeout(timeout);
+        setLoading(false);
+        return;
+      }
+
+      // If signIn() is actively handling this auth event, let it manage state
+      if (signInActiveRef.current && event === 'SIGNED_IN') {
+        clearTimeout(timeout);
+        setLoading(false);
+        return;
+      }
+
+      setUser(authUser);
+
+      if (authUser) {
+        // Defer the profile fetch to release the auth lock first
+        setTimeout(async () => {
+          try {
+            const profile = await getStaffProfile(authUser.id);
+            setStaff(profile);
+            if (!profile) {
+              setUser(null);
+              setSessionMessage('Your session has expired. Please sign in again.');
+              try { await authSignOut(); } catch (_) { /* ignore */ }
+            }
+          } catch (err) {
+            console.error('Staff profile fetch error:', err.message);
+            setUser(null);
+            setStaff(null);
+            setSessionMessage('Unable to load your profile. Please try again.');
+            try { await authSignOut(); } catch (_) { /* ignore */ }
+          } finally {
+            clearTimeout(timeout);
+            setLoading(false);
+          }
+        }, 0);
+      } else {
+        setStaff(null);
         clearTimeout(timeout);
         setLoading(false);
       }
@@ -81,6 +94,7 @@ export function AuthProvider({ children }) {
 
   const signIn = async (email, password) => {
     setError(null);
+    signInActiveRef.current = true;
     try {
       const data = await authSignIn(email, password);
       // Check that the staff profile exists and is active
@@ -93,10 +107,15 @@ export function AuthProvider({ children }) {
         await authSignOut();
         throw new Error('Your account has been deactivated. Contact your admin.');
       }
+      // Set state directly — don't rely on onAuthStateChange
+      setUser(data.user);
+      setStaff(profile);
       return data;
     } catch (err) {
       setError(err.message);
       throw err;
+    } finally {
+      signInActiveRef.current = false;
     }
   };
 

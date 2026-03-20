@@ -357,6 +357,7 @@ const SECTION_COLORS = {
   settings: { accent: "#6b7280", light: "#f9fafb" },
   files: { accent: "#8b5cf6", light: "#f5f3ff" },
   calllog: { accent: "#0891b2", light: "#ecfeff" },
+  assistant: { accent: "#6366f1", light: "#eef2ff" },
 };
 const hexToRgba = (hex, a) => {
   const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
@@ -10500,6 +10501,17 @@ const DEFAULT_VOICE_SETTINGS = {
   confirmWrites: true,
 };
 
+const DEFAULT_OUTBOUND_SETTINGS = {
+  enabled: false, name: "Iris", voice: "sage",
+  personality: "Professional and direct. Explain the urgent items clearly and ask if they can action them. Be respectful of their time.",
+  greetingStyle: "Greet the person by name and explain you are calling from FieldOps about items that need their attention.",
+  team: [
+    { id: 1, name: "Tom Baker", phone: "+61400000001", role: "Site Manager", callEnabled: true },
+    { id: 2, name: "Sarah Lee", phone: "+61400000002", role: "Project Manager", callEnabled: true },
+  ],
+  callRules: { minSeverity: "high", maxCallsPerDay: 3, callWindowStart: "07:00", callWindowEnd: "18:00" },
+};
+
 // ── Xero Settings Tab (extracted as a proper component to follow Rules of Hooks) ──
 const BILL_CATEGORIES = ["Materials", "Subcontractor", "Plant & Equipment", "Labour", "Other"];
 
@@ -10889,6 +10901,294 @@ const XeroSettingsTab = ({ accent }) => {
   );
 };
 
+// ── My Assistant (per-user personalisation) ─────────────────────────────────
+const MyAssistant = () => {
+  const auth = useAuth();
+  const accent = SECTION_COLORS.assistant?.accent || "#6366f1";
+
+  const [defaults, setDefaults] = useState({ inbound: DEFAULT_VOICE_SETTINGS, outbound: DEFAULT_OUTBOUND_SETTINGS });
+  const [personalised, setPersonalised] = useState({ inbound: false, outbound: false });
+  const [inboundSettings, setInboundSettings] = useState(DEFAULT_VOICE_SETTINGS);
+  const [outboundSettings, setOutboundSettings] = useState(DEFAULT_OUTBOUND_SETTINGS);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("inbound");
+  const [dirty, setDirty] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Load: 1) admin defaults, 2) user overrides
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      let inDef = DEFAULT_VOICE_SETTINGS;
+      let outDef = DEFAULT_OUTBOUND_SETTINGS;
+
+      // Load admin defaults
+      if (supabase && auth.user) {
+        try {
+          const { data: defs } = await supabase.from('voice_settings_defaults').select('*');
+          const inRow = defs?.find(d => d.type === 'inbound');
+          const outRow = defs?.find(d => d.type === 'outbound');
+          if (inRow?.settings) inDef = { ...DEFAULT_VOICE_SETTINGS, ...inRow.settings };
+          if (outRow?.settings) outDef = { ...DEFAULT_OUTBOUND_SETTINGS, ...outRow.settings };
+        } catch (err) {
+          console.warn("Could not load voice defaults:", err.message);
+        }
+      }
+      if (!cancelled) setDefaults({ inbound: inDef, outbound: outDef });
+
+      // Load user overrides
+      if (supabase && auth.user) {
+        try {
+          const { data: userSettings } = await supabase.from('voice_settings')
+            .select('*').eq('user_id', auth.user.id);
+
+          const userIn = userSettings?.find(s => s.type === 'inbound');
+          const userOut = userSettings?.find(s => s.type === 'outbound');
+
+          if (!cancelled) {
+            setPersonalised({
+              inbound: userIn?.personalised || false,
+              outbound: userOut?.personalised || false,
+            });
+            setInboundSettings(userIn?.personalised ? { ...DEFAULT_VOICE_SETTINGS, ...userIn.settings } : inDef);
+            setOutboundSettings(userOut?.personalised ? { ...DEFAULT_OUTBOUND_SETTINGS, ...userOut.settings } : outDef);
+          }
+        } catch (err) {
+          console.warn("Could not load user voice settings:", err.message);
+          if (!cancelled) {
+            setInboundSettings(inDef);
+            setOutboundSettings(outDef);
+          }
+        }
+      } else {
+        // localStorage fallback
+        try {
+          const localIn = localStorage.getItem("fieldops_voice_settings");
+          if (localIn) {
+            const parsed = JSON.parse(localIn);
+            if (!cancelled) setInboundSettings({ ...DEFAULT_VOICE_SETTINGS, ...parsed });
+          }
+        } catch {}
+        try {
+          const localOut = localStorage.getItem("fieldops_outbound_settings");
+          if (localOut && !cancelled) setOutboundSettings({ ...DEFAULT_OUTBOUND_SETTINGS, ...JSON.parse(localOut) });
+        } catch {}
+      }
+
+      if (!cancelled) setLoading(false);
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [auth.user?.id]);
+
+  // Toggle personalisation
+  const togglePersonalised = async (type) => {
+    const newVal = !personalised[type];
+    setPersonalised(prev => ({ ...prev, [type]: newVal }));
+
+    if (!newVal) {
+      // Turning off: revert to admin defaults
+      if (type === 'inbound') setInboundSettings({ ...defaults.inbound });
+      else setOutboundSettings({ ...defaults.outbound });
+    }
+
+    // Save the toggle state
+    if (supabase && auth.user) {
+      const settings = type === 'inbound' ? inboundSettings : outboundSettings;
+      try {
+        await supabase.from('voice_settings').upsert({
+          user_id: auth.user.id, type, personalised: newVal,
+          settings: newVal ? settings : {}, updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id,type' });
+      } catch (err) {
+        console.warn("Could not save personalisation toggle:", err.message);
+      }
+    }
+    setDirty(false);
+    setSaved(false);
+  };
+
+  // Save personalised settings
+  const saveSettings = async (type) => {
+    const settings = type === 'inbound' ? inboundSettings : outboundSettings;
+    if (supabase && auth.user) {
+      try {
+        await supabase.from('voice_settings').upsert({
+          user_id: auth.user.id, type, personalised: true,
+          settings, updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id,type' });
+      } catch (err) {
+        console.warn("Could not save personalised voice settings:", err.message);
+      }
+    }
+    localStorage.setItem(type === 'inbound' ? "fieldops_voice_settings" : "fieldops_outbound_settings", JSON.stringify(settings));
+    setSaved(true); setDirty(false);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const updateInbound = (key, value) => { setInboundSettings(prev => ({ ...prev, [key]: value })); setDirty(true); setSaved(false); };
+  const updateOutbound = (key, value) => { setOutboundSettings(prev => ({ ...prev, [key]: value })); setDirty(true); setSaved(false); };
+
+  const cardStyle = { background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 };
+  const labelStyle = { display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 };
+  const inputStyle = { width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" };
+  const textareaStyle = { width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" };
+  const disabledInputStyle = { ...inputStyle, background: "#f5f5f5", color: "#999", cursor: "not-allowed" };
+  const disabledTextareaStyle = { ...textareaStyle, background: "#f5f5f5", color: "#999", cursor: "not-allowed" };
+
+  if (loading) return <div style={{ textAlign: "center", padding: 40, color: "#888" }}>Loading...</div>;
+
+  const isPersonalised = personalised[activeTab];
+  const currentSettings = activeTab === 'inbound' ? inboundSettings : outboundSettings;
+  const currentDefaults = defaults[activeTab];
+  const updateFn = activeTab === 'inbound' ? updateInbound : updateOutbound;
+
+  return (
+    <div>
+      {/* Tab navigation */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #e8e8e8", paddingBottom: 0 }}>
+        {[{ id: "inbound", label: "Inbound" }, { id: "outbound", label: "Outbound" }].map(t => (
+          <button key={t.id} onClick={() => { setActiveTab(t.id); setDirty(false); setSaved(false); }} className="btn" style={{
+            display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", fontSize: 13, fontWeight: 600,
+            border: "none", borderBottom: activeTab === t.id ? `2px solid ${accent}` : "2px solid transparent",
+            borderRadius: 0, background: "transparent", color: activeTab === t.id ? "#111" : "#888",
+            cursor: "pointer", transition: "all 0.15s",
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* Personalisation toggle */}
+      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Personalise my {activeTab} assistant</div>
+          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+            {isPersonalised ? "Your custom settings are active." : "When off, the company default settings apply. Turn on to customise your own assistant."}
+          </div>
+        </div>
+        <button onClick={() => togglePersonalised(activeTab)} style={{
+          width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s",
+          background: isPersonalised ? accent : "#ccc",
+        }}>
+          <div style={{
+            width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, transition: "left 0.2s",
+            left: isPersonalised ? 23 : 3, boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+          }} />
+        </button>
+      </div>
+
+      {/* Saved banner */}
+      {saved && (
+        <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="check" size={14} /> Settings saved. Changes will apply to the next call.
+        </div>
+      )}
+
+      {!isPersonalised && (
+        <div style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: 10, padding: "14px 20px", marginBottom: 16, fontSize: 12, color: "#888" }}>
+          Company Defaults — these settings are managed by your admin.
+        </div>
+      )}
+
+      {/* Assistant Name */}
+      <div style={cardStyle}>
+        <div style={labelStyle}>Assistant Name</div>
+        {isPersonalised ? (
+          <input type="text" value={currentSettings.name} onChange={e => updateFn("name", e.target.value)} placeholder="e.g. Iris, Billy, Sage" style={{ ...inputStyle, maxWidth: 300 }} />
+        ) : (
+          <input type="text" value={currentDefaults.name} disabled style={{ ...disabledInputStyle, maxWidth: 300 }} />
+        )}
+        <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>The name your assistant introduces itself as on calls</div>
+      </div>
+
+      {/* Voice Selection */}
+      <div style={cardStyle}>
+        <div style={labelStyle}>Voice</div>
+        {activeTab === 'inbound' ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8, opacity: isPersonalised ? 1 : 0.6, pointerEvents: isPersonalised ? "auto" : "none" }}>
+            {VOICE_OPTIONS.voices.map(v => (
+              <VoiceOptionCard key={v.id} option={v} selected={(isPersonalised ? currentSettings : currentDefaults).voice === v.id} onSelect={() => updateFn("voice", v.id)} accent={accent} />
+            ))}
+          </div>
+        ) : (
+          isPersonalised ? (
+            <select value={currentSettings.voice} onChange={e => updateFn("voice", e.target.value)} style={{ ...inputStyle, maxWidth: 400 }}>
+              {VOICE_OPTIONS.voices.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}
+            </select>
+          ) : (
+            <select value={currentDefaults.voice} disabled style={{ ...disabledInputStyle, maxWidth: 400 }}>
+              {VOICE_OPTIONS.voices.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}
+            </select>
+          )
+        )}
+      </div>
+
+      {/* Greeting Style */}
+      <div style={cardStyle}>
+        <div style={labelStyle}>Greeting Style</div>
+        {isPersonalised ? (
+          <textarea value={currentSettings.greetingStyle} onChange={e => updateFn("greetingStyle", e.target.value)} placeholder={VOICE_OPTIONS.greetingStylePlaceholder} rows={3} style={textareaStyle} />
+        ) : (
+          <textarea value={currentDefaults.greetingStyle || ""} disabled rows={3} style={disabledTextareaStyle} />
+        )}
+      </div>
+
+      {/* Personality */}
+      <div style={cardStyle}>
+        <div style={labelStyle}>Personality</div>
+        {isPersonalised ? (
+          <textarea value={currentSettings.personality} onChange={e => updateFn("personality", e.target.value)} placeholder={VOICE_OPTIONS.personalityPlaceholder} rows={3} style={textareaStyle} />
+        ) : (
+          <textarea value={currentDefaults.personality || ""} disabled rows={3} style={disabledTextareaStyle} />
+        )}
+      </div>
+
+      {/* General Knowledge — inbound only */}
+      {activeTab === 'inbound' && (
+        <div style={cardStyle}>
+          <div style={labelStyle}>General Knowledge</div>
+          {isPersonalised ? (
+            <textarea value={currentSettings.generalKnowledge} onChange={e => updateFn("generalKnowledge", e.target.value)} placeholder={VOICE_OPTIONS.generalKnowledgePlaceholder} rows={3} style={textareaStyle} />
+          ) : (
+            <textarea value={currentDefaults.generalKnowledge || ""} disabled rows={3} style={disabledTextareaStyle} />
+          )}
+          <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>Any background knowledge your assistant should have — local area, industry, etc.</div>
+        </div>
+      )}
+
+      {/* Save button — only when personalised and dirty */}
+      {isPersonalised && dirty && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+          <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 12, fontWeight: 600 }} onClick={() => saveSettings(activeTab)}>
+            Save Changes
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const VoiceOptionCard = ({ option, selected, onSelect, accent }) => (
+  <div
+    onClick={onSelect}
+    style={{
+      padding: "12px 16px", borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
+      border: selected ? `2px solid ${accent}` : "2px solid #e8e8e8",
+      background: selected ? hexToRgba(accent, 0.06) : "#fff",
+    }}
+  >
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{
+        width: 16, height: 16, borderRadius: "50%", border: selected ? `5px solid ${accent}` : "2px solid #ccc",
+        background: "#fff", flexShrink: 0,
+      }} />
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#111" : "#333" }}>{option.label}</div>
+        <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{option.desc}</div>
+      </div>
+    </div>
+  </div>
+);
+
 const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplates, companyInfo, setCompanyInfo }) => {
   const auth = useAuth();
   const [tab, setTab] = useState("company");
@@ -10912,15 +11212,15 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
   const [dirty, setDirty] = useState(false);
   const [voiceLoading, setVoiceLoading] = useState(true);
 
-  // Load inbound voice settings from DB, falling back to localStorage then defaults
+  // Load inbound voice defaults from voice_settings_defaults table (admin = company defaults)
   useEffect(() => {
     let cancelled = false;
     const loadInbound = async () => {
       setVoiceLoading(true);
       try {
         if (supabase && auth.user) {
-          const { data } = await supabase.from('voice_settings')
-            .select('settings').eq('user_id', auth.user.id).eq('type', 'inbound').single();
+          const { data } = await supabase.from('voice_settings_defaults')
+            .select('settings').eq('type', 'inbound').single();
           if (!cancelled && data?.settings) {
             setVoiceSettings({ ...DEFAULT_VOICE_SETTINGS, ...data.settings });
             setVoiceLoading(false);
@@ -10940,7 +11240,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           }
         } catch {}
       } catch (err) {
-        console.warn("Could not load inbound voice settings from DB:", err.message);
+        console.warn("Could not load inbound voice defaults from DB:", err.message);
         // Fallback to localStorage
         try {
           const local = localStorage.getItem("fieldops_voice_settings");
@@ -10960,14 +11260,14 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
   };
 
   const saveVoiceSettings = async () => {
-    // Save to database
+    // Save to voice_settings_defaults (company defaults)
     if (supabase && auth.user) {
       try {
-        await supabase.from('voice_settings').upsert({
-          user_id: auth.user.id, type: 'inbound', settings: voiceSettings, updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id,type' });
+        await supabase.from('voice_settings_defaults').upsert({
+          type: 'inbound', settings: voiceSettings, updated_at: new Date().toISOString()
+        }, { onConflict: 'type' });
       } catch (err) {
-        console.warn("Could not save inbound voice settings to DB:", err.message);
+        console.warn("Could not save inbound voice defaults to DB:", err.message);
       }
     }
     // Keep localStorage as fallback
@@ -11008,30 +11308,20 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
   ];
 
   // Outbound call settings state
-  const DEFAULT_OUTBOUND_SETTINGS = useMemo(() => ({
-    enabled: false, name: "Iris", voice: "sage",
-    personality: "Professional and direct. Explain the urgent items clearly and ask if they can action them. Be respectful of their time.",
-    greetingStyle: "Greet the person by name and explain you are calling from FieldOps about items that need their attention.",
-    team: [
-      { id: 1, name: "Tom Baker", phone: "+61400000001", role: "Site Manager", callEnabled: true },
-      { id: 2, name: "Sarah Lee", phone: "+61400000002", role: "Project Manager", callEnabled: true },
-    ],
-    callRules: { minSeverity: "high", maxCallsPerDay: 3, callWindowStart: "07:00", callWindowEnd: "18:00" },
-  }), []);
   const [outboundSettings, setOutboundSettings] = useState(DEFAULT_OUTBOUND_SETTINGS);
   const [outboundDirty, setOutboundDirty] = useState(false);
   const [outboundSaved, setOutboundSaved] = useState(false);
   const [outboundLoading, setOutboundLoading] = useState(true);
 
-  // Load outbound voice settings from DB, falling back to localStorage then defaults
+  // Load outbound voice defaults from voice_settings_defaults table (admin = company defaults)
   useEffect(() => {
     let cancelled = false;
     const loadOutbound = async () => {
       setOutboundLoading(true);
       try {
         if (supabase && auth.user) {
-          const { data } = await supabase.from('voice_settings')
-            .select('settings').eq('user_id', auth.user.id).eq('type', 'outbound').single();
+          const { data } = await supabase.from('voice_settings_defaults')
+            .select('settings').eq('type', 'outbound').single();
           if (!cancelled && data?.settings) {
             setOutboundSettings({ ...DEFAULT_OUTBOUND_SETTINGS, ...data.settings });
             setOutboundLoading(false);
@@ -11044,7 +11334,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           if (local && !cancelled) setOutboundSettings(JSON.parse(local));
         } catch {}
       } catch (err) {
-        console.warn("Could not load outbound voice settings from DB:", err.message);
+        console.warn("Could not load outbound voice defaults from DB:", err.message);
         try {
           const local = localStorage.getItem("fieldops_outbound_settings");
           if (local && !cancelled) setOutboundSettings(JSON.parse(local));
@@ -11054,7 +11344,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
     };
     loadOutbound();
     return () => { cancelled = true; };
-  }, [auth.user?.id, DEFAULT_OUTBOUND_SETTINGS]);
+  }, [auth.user?.id]);
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [editTeamMember, setEditTeamMember] = useState(null);
   const [teamForm, setTeamForm] = useState({ name: "", phone: "", role: "" });
@@ -11063,14 +11353,14 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
   const updateOutbound = (key, value) => { setOutboundSettings(prev => ({ ...prev, [key]: value })); setOutboundDirty(true); setOutboundSaved(false); };
   const updateCallRule = (key, value) => { setOutboundSettings(prev => ({ ...prev, callRules: { ...prev.callRules, [key]: value } })); setOutboundDirty(true); setOutboundSaved(false); };
   const saveOutboundSettings = async () => {
-    // Save to database
+    // Save to voice_settings_defaults (company defaults)
     if (supabase && auth.user) {
       try {
-        await supabase.from('voice_settings').upsert({
-          user_id: auth.user.id, type: 'outbound', settings: outboundSettings, updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id,type' });
+        await supabase.from('voice_settings_defaults').upsert({
+          type: 'outbound', settings: outboundSettings, updated_at: new Date().toISOString()
+        }, { onConflict: 'type' });
       } catch (err) {
-        console.warn("Could not save outbound voice settings to DB:", err.message);
+        console.warn("Could not save outbound voice defaults to DB:", err.message);
       }
     }
     // Keep localStorage as fallback
@@ -11107,34 +11397,13 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
     setTimeout(() => setTestCallStatus(null), 5000);
   };
 
-  const OptionCard = ({ option, selected, onSelect }) => (
-    <div
-      onClick={onSelect}
-      style={{
-        padding: "12px 16px", borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
-        border: selected ? `2px solid ${accent}` : "2px solid #e8e8e8",
-        background: selected ? hexToRgba(accent, 0.06) : "#fff",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{
-          width: 16, height: 16, borderRadius: "50%", border: selected ? `5px solid ${accent}` : "2px solid #ccc",
-          background: selected ? "#fff" : "#fff", flexShrink: 0,
-        }} />
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#111" : "#333" }}>{option.label}</div>
-          <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{option.desc}</div>
-        </div>
-      </div>
-    </div>
-  );
-
   const voiceIntegrationContent = (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
           <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Voice Assistant</div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Configure your Iris voice assistant — powered by OpenAI Realtime + Twilio</div>
+          <div style={{ fontSize: 11, color: "#b0b0b0", marginTop: 4 }}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={resetVoiceSettings} style={{ fontSize: 11 }}>Reset Defaults</button>
@@ -11167,7 +11436,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Voice</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
           {VOICE_OPTIONS.voices.map(v => (
-            <OptionCard key={v.id} option={v} selected={voiceSettings.voice === v.id} onSelect={() => updateVoice("voice", v.id)} />
+            <VoiceOptionCard key={v.id} option={v} selected={voiceSettings.voice === v.id} onSelect={() => updateVoice("voice", v.id)} accent={accent} />
           ))}
         </div>
       </div>
@@ -11596,6 +11865,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
             <div>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Outbound Call Assistant</div>
               <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Configure AI-powered outbound calls to team members about urgent tasks</div>
+              <div style={{ fontSize: 11, color: "#b0b0b0", marginTop: 4 }}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: outboundDirty ? 1 : 0.5 }} onClick={saveOutboundSettings} disabled={!outboundDirty}>
@@ -13059,6 +13329,7 @@ const ROUTE_MAP = {
   settings: "/settings",
   files: "/files",
   calllog: "/call-log",
+  assistant: "/my-assistant",
 };
 const PATH_TO_ID = Object.fromEntries(
   Object.entries(ROUTE_MAP).map(([id, path]) => [path, id])
@@ -13165,19 +13436,20 @@ export default function App() {
     { id: "actions", label: "Actions", icon: "notification", badge: totalActionsCount || null, badgeColor: "#dc2626" },
     { id: "schedule", label: "Schedule", icon: "schedule" },
     { id: "reminders", label: "Reminders", icon: "notification", badge: overdueRemindersCount || null, badgeColor: "#dc2626" },
-    // Main — 4..5
+    { id: "assistant", label: "My Assistant", icon: "send" },
+    // Main — 5..6
     { id: "jobs", label: "Jobs", icon: "jobs", badge: activeJobsCount || null },
     { id: "orders", label: "Orders", icon: "orders", badge: ordersOverdueCount || null },
-    // Finance — 6..9
+    // Finance — 7..10
     { id: "time", label: "Time", icon: "time" },
     { id: "bills", label: "Bills", icon: "bills", badge: pendingBillsCount || null },
     { id: "quotes", label: "Quotes", icon: "quotes" },
     { id: "invoices", label: "Invoices", icon: "invoices", badge: unpaidInvCount || null },
-    // Partners — 10..12
+    // Partners — 11..13
     { id: "clients", label: "Clients", icon: "clients" },
     { id: "contractors", label: "Contractors", icon: "contractors", badge: contractorComplianceIssues || null, badgeColor: "#dc2626" },
     { id: "suppliers", label: "Suppliers", icon: "suppliers" },
-    // System — 13+
+    // System — 14+
     ...((auth.isAdmin || auth.isLocalDev) ? [{ id: "settings", label: "Settings", icon: "settings" }] : []),
     { id: "files", label: "Files", icon: "quotes" },
     { id: "calllog", label: "Call Log", icon: "send" },
@@ -13185,12 +13457,12 @@ export default function App() {
     { id: "status", label: "System Status", icon: "activity" },
   ];
 
-  // Bottom nav shows first 5; rest in "More"
-  const bottomNavItems = navItems.slice(0, 5);
-  const moreNavItems = navItems.slice(5);
+  // Bottom nav shows first 6; rest in "More"
+  const bottomNavItems = navItems.slice(0, 6);
+  const moreNavItems = navItems.slice(6);
   const moreIsActive = moreNavItems.some(n => n.id === page);
 
-  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", actions: "Actions", reminders: "Reminders", activity: "Activity Log", status: "System Status", settings: "Settings", files: "Files", calllog: "Call Log" };
+  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", actions: "Actions", reminders: "Reminders", activity: "Activity Log", status: "System Status", settings: "Settings", files: "Files", calllog: "Call Log", assistant: "My Assistant" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
@@ -13216,6 +13488,7 @@ export default function App() {
       <Route path="/activity" element={<ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />} />
       <Route path="/status" element={<SystemStatus />} />
       <Route path="/settings" element={(auth.isAdmin || auth.isLocalDev) ? <Settings staff={staff} setStaff={setStaff} templates={templates} setTemplates={setTemplates} companyInfo={companyInfo} setCompanyInfo={setCompanyInfo} /> : <Navigate to="/" replace />} />
+      <Route path="/my-assistant" element={<MyAssistant />} />
       <Route path="/call-log" element={<CallLog callLog={callLog} onNav={navigate} />} />
       <Route path="/files" element={<FilesPage jobs={jobs} bills={bills} contractors={contractors} quotes={quotes} invoices={invoices} workOrders={workOrders} purchaseOrders={purchaseOrders} />} />
       <Route path="/display/schedule" element={<DisplaySchedule schedule={schedule} jobs={jobs} clients={clients} />} />
@@ -13274,8 +13547,8 @@ export default function App() {
           </button>
         </div>
         <div className="jm-nav">
-          {/* Top — Dashboard, Actions, Schedule, Reminders (no section header) */}
-          {navItems.slice(0, 4).map(n => {
+          {/* Top — Dashboard, Actions, Schedule, Reminders, My Assistant (no section header) */}
+          {navItems.slice(0, 5).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -13287,7 +13560,7 @@ export default function App() {
             );
           })}
           <div className="jm-nav-section">Main</div>
-          {navItems.slice(4, 6).map(n => {
+          {navItems.slice(5, 7).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -13299,7 +13572,7 @@ export default function App() {
             );
           })}
           <div className="jm-nav-section">Finance</div>
-          {navItems.slice(6, 10).map(n => {
+          {navItems.slice(7, 11).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -13311,7 +13584,7 @@ export default function App() {
             );
           })}
           <div className="jm-nav-section">Partners</div>
-          {navItems.slice(10, 13).map(n => {
+          {navItems.slice(11, 14).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -13323,7 +13596,7 @@ export default function App() {
             );
           })}
           <div className="jm-nav-section">System</div>
-          {navItems.slice(13).map(n => {
+          {navItems.slice(14).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.activity)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}

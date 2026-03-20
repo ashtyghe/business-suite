@@ -20,6 +20,13 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signIn(email, password);
+      // Prompt browser (Chrome, Safari, etc.) to save credentials for Face ID / autofill
+      if (window.PasswordCredential) {
+        try {
+          const cred = new PasswordCredential({ id: email, password, name: email });
+          await navigator.credentials.store(cred);
+        } catch (_) { /* ignore if browser blocks */ }
+      }
     } catch (err) {
       setError(err.message === 'Invalid login credentials'
         ? 'Invalid email or password'

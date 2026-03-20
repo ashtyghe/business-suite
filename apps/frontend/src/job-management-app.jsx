@@ -2049,30 +2049,35 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
   const billStatusColors = { inbox: "#888", linked: "#2563eb", approved: "#059669", posted: "#111" };
   const billStatusLabels = { inbox: "Inbox", linked: "Linked", approved: "Approved", posted: "Posted" };
 
-  // ── AI Business Insight ──
+  // ── AI Business Insight + Chat ──
   const [aiInsight, setAiInsight] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [aiExpanded, setAiExpanded] = useState(false);
+  const [aiChatMessages, setAiChatMessages] = useState([]);
+  const [aiChatInput, setAiChatInput] = useState("");
+  const [aiChatLoading, setAiChatLoading] = useState(false);
+  const aiChatEndRef = useRef(null);
+
+  const getKpiData = () => ({
+    totalQuoted, revenueCollected, outstandingInv, outstandingInvCount,
+    unpostedBills: unpostedBills.length, unpostedBillsTotal,
+    activeJobs, completedJobs, overdueJobs,
+    activeWOs, overdueWOs, woAwaitingAcceptance, activePOs, overduePOs,
+    totalHours, billableHours, billableRatio, margin,
+    pipelineTotal, quoteDrafts, todayScheduleCount: todaySchedule.length,
+    contractorComplianceIssues: contractors.reduce((sum, c) => sum + getContractorComplianceCount(c), 0),
+    actionItemsCount: actionItems.length,
+    actionItemsSummary: actionItems.map(a => a.label).join(", "),
+  });
 
   const generateInsight = async () => {
     setAiLoading(true);
     setAiError(null);
-    const kpiData = {
-      totalQuoted, revenueCollected, outstandingInv, outstandingInvCount,
-      unpostedBills: unpostedBills.length, unpostedBillsTotal,
-      activeJobs, completedJobs, overdueJobs,
-      activeWOs, overdueWOs, woAwaitingAcceptance, activePOs, overduePOs,
-      totalHours, billableHours, billableRatio, margin,
-      pipelineTotal, quoteDrafts, todayScheduleCount: todaySchedule.length,
-      contractorComplianceIssues: contractors.reduce((sum, c) => sum + getContractorComplianceCount(c), 0),
-      actionItemsCount: actionItems.length,
-      actionItemsSummary: actionItems.map(a => a.label).join(", "),
-    };
     try {
       if (!supabase) throw new Error("Supabase not configured — add VITE_SUPABASE_URL to enable AI insights");
       const { data, error } = await supabase.functions.invoke("ai-insight", {
-        body: { kpis: kpiData },
+        body: { kpis: getKpiData() },
       });
       if (error) {
         const msg = typeof error === "object" && error.context
@@ -2081,7 +2086,10 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
         throw new Error(msg || "AI insight failed");
       }
       const result = typeof data === "string" ? JSON.parse(data) : data;
-      setAiInsight(result?.insight || "No insight generated.");
+      const insight = result?.insight || "No insight generated.";
+      setAiInsight(insight);
+      // Reset chat with the initial insight as first assistant message
+      setAiChatMessages([{ role: "assistant", content: insight }]);
     } catch (err) {
       setAiError(err.message);
     } finally {
@@ -2089,14 +2097,42 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
     }
   };
 
+  const sendChatMessage = async () => {
+    const question = aiChatInput.trim();
+    if (!question || aiChatLoading) return;
+    setAiChatInput("");
+    setAiChatLoading(true);
+    const updatedMessages = [...aiChatMessages, { role: "user", content: question }];
+    setAiChatMessages(updatedMessages);
+    try {
+      if (!supabase) throw new Error("Supabase not configured");
+      const { data, error } = await supabase.functions.invoke("ai-insight", {
+        body: { kpis: getKpiData(), messages: aiChatMessages, question },
+      });
+      if (error) {
+        const msg = typeof error === "object" && error.context
+          ? await error.context.text?.() || error.message
+          : error.message;
+        throw new Error(msg || "AI chat failed");
+      }
+      const result = typeof data === "string" ? JSON.parse(data) : data;
+      setAiChatMessages([...updatedMessages, { role: "assistant", content: result?.reply || "No response." }]);
+    } catch (err) {
+      setAiChatMessages([...updatedMessages, { role: "assistant", content: `Error: ${err.message}` }]);
+    } finally {
+      setAiChatLoading(false);
+    }
+  };
+
+  useEffect(() => { if (aiChatEndRef.current) aiChatEndRef.current.scrollIntoView({ behavior: "smooth" }); }, [aiChatMessages]);
   useEffect(() => { generateInsight(); }, []);
 
   return (
     <div>
-      {/* ── AI Business Insight (collapsible) ── */}
+      {/* ── AI Business Insight + Chat ── */}
       {(() => {
-        // Parse insight text into cards: split on bullet points (• or - or numbered)
-        const insightCards = aiInsight ? aiInsight.split(/\n/).filter(l => l.trim()).reduce((cards, line) => {
+        // Parse insight text into cards
+        const parseInsightCards = (text) => text ? text.split(/\n/).filter(l => l.trim()).reduce((cards, line) => {
           const trimmed = line.trim();
           const bulletMatch = trimmed.match(/^[•\-\*]\s*\*?\*?(.+?)\*?\*?:\s*(.+)/) || trimmed.match(/^[•\-\*]\s*\*?\*?(.+?)\*?\*?\s*[—–-]\s*(.+)/) || trimmed.match(/^\d+\.\s*\*?\*?(.+?)\*?\*?:\s*(.+)/);
           if (bulletMatch) {
@@ -2104,18 +2140,23 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
           } else if (trimmed.match(/^[•\-\*\d]/)) {
             const clean = trimmed.replace(/^[•\-\*\d.]+\s*/, "").replace(/\*+/g, "");
             const colonSplit = clean.indexOf(":") > 0 && clean.indexOf(":") < 60 ? [clean.slice(0, clean.indexOf(":")), clean.slice(clean.indexOf(":") + 1)] : null;
-            if (colonSplit) {
-              cards.push({ heading: colonSplit[0].trim(), detail: colonSplit[1].trim() });
-            } else {
-              cards.push({ heading: clean.length > 60 ? clean.slice(0, 60) + "..." : clean, detail: clean.length > 60 ? clean : "" });
-            }
+            if (colonSplit) cards.push({ heading: colonSplit[0].trim(), detail: colonSplit[1].trim() });
+            else cards.push({ heading: clean.length > 60 ? clean.slice(0, 60) + "..." : clean, detail: clean.length > 60 ? clean : "" });
           }
           return cards;
         }, []) : [];
 
+        const insightCards = parseInsightCards(aiInsight);
+        const suggestedQuestions = [
+          "How can I improve cash flow?",
+          "Which jobs need attention?",
+          "Break down my margins",
+          "What should I focus on this week?",
+        ];
+
         return (
           <div style={{ background: "linear-gradient(135deg, #111 0%, #1e293b 100%)", borderRadius: 12, marginBottom: 20, color: "#fff", overflow: "hidden" }}>
-            {/* Header — always visible, click to toggle */}
+            {/* Header */}
             <div onClick={() => setAiExpanded(e => !e)} style={{ padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 16 }}>&#10024;</span>
@@ -2132,10 +2173,11 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
             {/* Expandable content */}
             {aiExpanded && (
               <div style={{ padding: "0 24px 20px" }}>
-                {aiLoading && <div style={{ fontSize: 13, color: "#94a3b8" }}>Analysing your business data...</div>}
-                {aiError && <div style={{ fontSize: 12, color: "#f87171" }}>Failed to generate insight: {aiError}</div>}
-                {insightCards.length > 0 && !aiLoading ? (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
+                {aiLoading && !aiInsight && <div style={{ fontSize: 13, color: "#94a3b8" }}>Analysing your business data...</div>}
+                {aiError && <div style={{ fontSize: 12, color: "#f87171", marginBottom: 12 }}>Failed to generate insight: {aiError}</div>}
+                {/* Insight cards */}
+                {insightCards.length > 0 && !aiLoading && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginBottom: 16 }}>
                     {insightCards.map((card, i) => (
                       <div key={i} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "14px 16px" }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{card.heading}</div>
@@ -2143,9 +2185,86 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                       </div>
                     ))}
                   </div>
-                ) : (!aiLoading && !aiError && aiInsight && (
-                  <div style={{ fontSize: 13, lineHeight: 1.6, color: "#e2e8f0", whiteSpace: "pre-wrap" }}>{aiInsight}</div>
-                ))}
+                )}
+                {!aiLoading && !aiError && aiInsight && insightCards.length === 0 && (
+                  <div style={{ fontSize: 13, lineHeight: 1.6, color: "#e2e8f0", whiteSpace: "pre-wrap", marginBottom: 16 }}>{aiInsight}</div>
+                )}
+
+                {/* Chat section */}
+                {aiInsight && (
+                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 16 }}>
+                    {/* Chat messages (skip the first assistant message which is shown as insight cards above) */}
+                    {aiChatMessages.length > 1 && (
+                      <div style={{ maxHeight: 320, overflowY: "auto", marginBottom: 12, paddingRight: 4 }}>
+                        {aiChatMessages.slice(1).map((msg, i) => (
+                          <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
+                            <div style={{
+                              maxWidth: "85%",
+                              background: msg.role === "user" ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.06)",
+                              border: msg.role === "user" ? "1px solid rgba(99,102,241,0.4)" : "1px solid rgba(255,255,255,0.1)",
+                              borderRadius: msg.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
+                              padding: "10px 14px",
+                            }}>
+                              {msg.role === "assistant" && <div style={{ fontSize: 10, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>AI Analyst</div>}
+                              <div style={{ fontSize: 13, lineHeight: 1.6, color: msg.role === "user" ? "#e2e8f0" : "#cbd5e1", whiteSpace: "pre-wrap" }}>{msg.content}</div>
+                            </div>
+                          </div>
+                        ))}
+                        {aiChatLoading && (
+                          <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
+                            <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px 12px 12px 4px", padding: "10px 14px" }}>
+                              <div style={{ fontSize: 13, color: "#94a3b8" }}>Thinking...</div>
+                            </div>
+                          </div>
+                        )}
+                        <div ref={aiChatEndRef} />
+                      </div>
+                    )}
+
+                    {/* Suggested questions (only show when no chat history yet) */}
+                    {aiChatMessages.length <= 1 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                        {suggestedQuestions.map((q, i) => (
+                          <button key={i} onClick={() => { setAiChatInput(q); }} style={{
+                            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20,
+                            padding: "6px 14px", fontSize: 12, color: "#94a3b8", cursor: "pointer", fontFamily: "'Open Sans', sans-serif",
+                            transition: "all 0.15s",
+                          }}
+                          onMouseEnter={e => { e.target.style.background = "rgba(255,255,255,0.12)"; e.target.style.color = "#e2e8f0"; }}
+                          onMouseLeave={e => { e.target.style.background = "rgba(255,255,255,0.06)"; e.target.style.color = "#94a3b8"; }}
+                          >{q}</button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Chat input */}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        type="text"
+                        value={aiChatInput}
+                        onChange={e => setAiChatInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+                        placeholder="Ask a follow-up question..."
+                        style={{
+                          flex: 1, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
+                          borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#fff",
+                          fontFamily: "'Open Sans', sans-serif", outline: "none",
+                        }}
+                      />
+                      <button
+                        onClick={sendChatMessage}
+                        disabled={!aiChatInput.trim() || aiChatLoading}
+                        style={{
+                          background: aiChatInput.trim() && !aiChatLoading ? "#6366f1" : "rgba(255,255,255,0.08)",
+                          border: "none", borderRadius: 8, padding: "10px 16px", cursor: aiChatInput.trim() && !aiChatLoading ? "pointer" : "default",
+                          transition: "all 0.15s", display: "flex", alignItems: "center",
+                        }}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={aiChatInput.trim() && !aiChatLoading ? "#fff" : "#666"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

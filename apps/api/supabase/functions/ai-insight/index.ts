@@ -12,25 +12,41 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
 };
 
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+  });
+}
+
+const SYSTEM_PROMPT = `You are an expert business analyst for a construction and trades company called FieldOps. You have deep knowledge of the construction industry, cash flow management, job costing, project management, and trade business operations in Australia.
+
+You are given live KPI data from the business. Use this data to provide specific, actionable advice. Always reference actual numbers from the data. Be direct and practical — this is a busy tradie, not a corporate executive.
+
+When answering follow-up questions:
+- Dive deeper into the specific area asked about
+- Provide concrete recommendations with numbers
+- Suggest specific actions they can take today
+- If asked about trends or comparisons, work with what the data shows
+- Keep responses concise but thorough (2-4 paragraphs max)
+- Use bullet points where helpful but don't overdo it
+- Do not use markdown formatting — use plain text with bullet points (•)`;
+
+const INITIAL_PROMPT = `Analyse these KPIs and give 3-4 short, actionable bullet points about what needs attention and how we can improve. Be direct, specific, and use the actual numbers. Keep it under 200 words total. Use bullet points (•) not markdown.`;
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-    });
+    return json({ error: "Method not allowed" }, 405);
   }
 
-  // Verify the caller is authenticated by checking their JWT
+  // Verify the caller is authenticated
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
-    return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
-      status: 401,
-      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-    });
+    return json({ error: "Missing Authorization header" }, 401);
   }
 
   const anonClient = createClient(
@@ -42,26 +58,52 @@ Deno.serve(async (req: Request) => {
     data: { user: caller },
   } = await anonClient.auth.getUser();
   if (!caller) {
-    return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
-      status: 401,
-      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-    });
+    return json({ error: "Invalid or expired token" }, 401);
   }
 
   if (!ANTHROPIC_API_KEY) {
-    return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }), {
-      status: 500,
-      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-    });
+    return json({ error: "ANTHROPIC_API_KEY not configured" }, 500);
   }
 
   try {
-    const { kpis } = await req.json();
+    const body = await req.json();
+    const { kpis, messages, question } = body;
 
     if (!kpis) {
-      return new Response(JSON.stringify({ error: "Missing kpis data" }), {
-        status: 400,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      return json({ error: "Missing kpis data" }, 400);
+    }
+
+    const kpiContext = `\n\nCurrent KPIs:\n${JSON.stringify(kpis, null, 2)}`;
+
+    // Build the messages array for the API call
+    const apiMessages: { role: string; content: string }[] = [];
+
+    if (messages && messages.length > 0 && question) {
+      // Chat mode: include conversation history + new question
+      // First message is always the initial KPI analysis request
+      apiMessages.push({
+        role: "user",
+        content: INITIAL_PROMPT + kpiContext,
+      });
+
+      // Add conversation history (assistant responses and user follow-ups)
+      for (const msg of messages) {
+        apiMessages.push({
+          role: msg.role,
+          content: msg.content,
+        });
+      }
+
+      // Add the new question
+      apiMessages.push({
+        role: "user",
+        content: question,
+      });
+    } else {
+      // Initial insight mode (no conversation history)
+      apiMessages.push({
+        role: "user",
+        content: INITIAL_PROMPT + kpiContext,
       });
     }
 
@@ -74,35 +116,23 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 400,
-        messages: [
-          {
-            role: "user",
-            content: `You are a business analyst for a construction/trades company called FieldOps. Analyse these KPIs and give 3-4 short, actionable bullet points about what needs attention and how we can improve. Be direct, specific, and use the actual numbers. Keep it under 200 words total. Use bullet points (•) not markdown.\n\nKPIs:\n${JSON.stringify(kpis, null, 2)}`,
-          },
-        ],
+        max_tokens: question ? 800 : 400,
+        system: SYSTEM_PROMPT,
+        messages: apiMessages,
       }),
     });
 
     if (!response.ok) {
       const err = await response.text();
-      return new Response(JSON.stringify({ error: `Anthropic API error: ${response.status}`, details: err }), {
-        status: 502,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      });
+      return json({ error: `Anthropic API error: ${response.status}`, details: err }, 502);
     }
 
     const result = await response.json();
-    const insight = result.content?.[0]?.text || "No insight generated.";
+    const text = result.content?.[0]?.text || "No response generated.";
 
-    return new Response(JSON.stringify({ insight }), {
-      status: 200,
-      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-    });
+    // Return as 'insight' for backwards compat, plus 'reply' for chat mode
+    return json({ insight: text, reply: text });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-    });
+    return json({ error: (err as Error).message }, 500);
   }
 });

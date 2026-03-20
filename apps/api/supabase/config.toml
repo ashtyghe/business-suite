@@ -225,15 +225,15 @@ sender_name = "FieldOps"
 # Custom email templates
 [auth.email.template.recovery]
 subject = "Reset your FieldOps password"
-content_path = "./templates/password-reset.html"
+content_path = "./supabase/templates/password-reset.html"
 
 [auth.email.template.confirmation]
 subject = "Confirm your FieldOps email"
-content_path = "./templates/email-confirmation.html"
+content_path = "./supabase/templates/email-confirmation.html"
 
 [auth.email.template.invite]
 subject = "You've been invited to FieldOps"
-content_path = "./templates/password-reset.html"
+content_path = "./supabase/templates/password-reset.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.

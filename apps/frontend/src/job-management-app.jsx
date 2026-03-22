@@ -7,6 +7,32 @@ import { changePassword, adminResetUserPassword } from './lib/auth';
 import { buildQuotePdfHtml, buildInvoicePdfHtml, buildOrderPdfHtml, htmlToPdfBase64 } from './lib/pdf';
 // Heavy libraries loaded dynamically where used (fabric, pdfjs-dist, pdf-lib, signature_pad)
 
+// ── TODO ─────────────────────────────────────────────────────────────────────
+// Planned features & improvements for FieldOps:
+//
+// Features:
+// TODO: Add scheduling & KPI dashboard for office digital screens (team schedules, assignments, live KPIs)
+// TODO: Build digital asset management (DAM) for centralized templates, contracts, compliance docs, marketing assets
+// TODO: Add drag-and-drop reordering for job phases and tasks
+// TODO: Implement recurring jobs / maintenance schedules
+// TODO: Add bulk actions (multi-select jobs, invoices, bills for batch status updates)
+// TODO: Add notifications system (in-app + push) for overdue invoices, expiring contractor docs, job updates
+// TODO: Build a client portal so clients can view quotes, approve work orders, and pay invoices online
+//
+// Integrations:
+// TODO: Add Google Calendar two-way sync for schedule entries
+// TODO: Integrate Google Drive / file storage for centralized document access
+// TODO: Add webhook support for real-time Xero payment status updates (replace polling)
+//
+// Technical debt:
+// TODO: Break job-management-app.jsx (14k+ lines) into smaller feature-based component modules
+// TODO: Move seed data out of the main component file into a separate fixtures/seed module
+// TODO: Add unit and integration tests for critical flows (quoting, invoicing, bill extraction)
+// TODO: Replace inline styles with CSS modules or styled-components for maintainability
+// TODO: Add proper error boundaries around each major section
+// TODO: Implement optimistic UI updates for better perceived performance
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ── Google Font ──────────────────────────────────────────────────────────────
 const fontLink = document.createElement("link");
 fontLink.rel = "stylesheet";

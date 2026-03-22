@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from './lib/AuthContext';
 import { resetPassword } from './lib/auth';
+import s from './LoginPage.module.css';
 
 export default function LoginPage() {
   const { signIn, sessionMessage, clearSessionMessage } = useAuth();
@@ -51,19 +52,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={styles.wrapper}>
-      <div style={styles.card}>
+    <div className={s.wrapper}>
+      <div className={s.card}>
         {/* Logo */}
-        <div style={styles.logoBlock}>
-          <div style={styles.logoMark}>FieldOps</div>
-          <div style={styles.logoSub}>Job Management</div>
+        <div className={s.logoBlock}>
+          <div className={s.logoMark}>FieldOps</div>
+          <div className={s.logoSub}>Job Management</div>
         </div>
 
         {showReset ? (
           // ── Password Reset Form ──
           <>
-            <div style={styles.heading}>Reset Password</div>
-            <p style={styles.subtext}>
+            <div className={s.heading}>Reset Password</div>
+            <p className={s.subtext}>
               {resetSent
                 ? "Check your email for a password reset link."
                 : "Enter your email and we'll send you a reset link."}
@@ -71,137 +72,78 @@ export default function LoginPage() {
 
             {!resetSent && (
               <form onSubmit={handleReset}>
-                {resetError && <div style={styles.error}>{resetError}</div>}
-                <label style={styles.label}>Email</label>
+                {resetError && <div className={s.error}>{resetError}</div>}
+                <label className={s.label}>Email</label>
                 <input
                   type="email" value={resetEmail}
                   onChange={e => setResetEmail(e.target.value)}
                   placeholder="you@company.com"
-                  style={styles.input}
+                  className={s.input}
                   name="email"
                   autoComplete="username"
                   required autoFocus
                 />
-                <button type="submit" style={{ ...styles.button, opacity: resetLoading ? 0.6 : 1 }} disabled={resetLoading}>
+                <button type="submit" className={s.button} disabled={resetLoading}>
                   {resetLoading ? 'Sending…' : 'Send Reset Link'}
                 </button>
               </form>
             )}
 
-            <button onClick={() => { setShowReset(false); setResetSent(false); setResetError(null); }} style={styles.link}>
+            <button onClick={() => { setShowReset(false); setResetSent(false); setResetError(null); }} className={s.link}>
               Back to sign in
             </button>
           </>
         ) : (
           // ── Login Form ──
           <>
-            <div style={styles.heading}>Sign in</div>
-            <p style={styles.subtext}>Enter your credentials to access FieldOps</p>
+            <div className={s.heading}>Sign in</div>
+            <p className={s.subtext}>Enter your credentials to access FieldOps</p>
 
             <form onSubmit={handleSubmit} autoComplete="on">
               {sessionMessage && (
-                <div style={styles.info} onClick={clearSessionMessage}>
+                <div className={s.info} onClick={clearSessionMessage}>
                   {sessionMessage}
                 </div>
               )}
-              {error && <div style={styles.error}>{error}</div>}
+              {error && <div className={s.error}>{error}</div>}
 
-              <label style={styles.label}>Email</label>
+              <label className={s.label}>Email</label>
               <input
                 type="email" value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@company.com"
-                style={styles.input}
+                className={s.input}
                 name="email"
                 autoComplete="username"
                 required autoFocus
               />
 
-              <label style={styles.label}>Password</label>
+              <label className={s.label}>Password</label>
               <input
                 type="password" value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                style={styles.input}
+                className={s.input}
                 name="password"
                 autoComplete="current-password"
                 required
               />
 
-              <button type="submit" style={{ ...styles.button, opacity: loading ? 0.6 : 1 }} disabled={loading}>
+              <button type="submit" className={s.button} disabled={loading}>
                 {loading ? 'Signing in…' : 'Sign In'}
               </button>
             </form>
 
-            <button onClick={() => { setShowReset(true); setResetEmail(email); }} style={styles.link}>
+            <button onClick={() => { setShowReset(true); setResetEmail(email); }} className={s.link}>
               Forgot your password?
             </button>
           </>
         )}
       </div>
 
-      <div style={styles.footer}>
+      <div className={s.footer}>
         &copy; {new Date().getFullYear()} FieldOps &middot; Built for the trades
       </div>
     </div>
   );
 }
-
-const styles = {
-  wrapper: {
-    minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', background: '#f5f5f5', fontFamily: "'Open Sans', sans-serif",
-    padding: 20,
-  },
-  card: {
-    width: '100%', maxWidth: 400, background: '#fff', borderRadius: 12,
-    border: '1px solid #e8e8e8', padding: '40px 36px', boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-  },
-  logoBlock: {
-    textAlign: 'center', marginBottom: 32,
-  },
-  logoMark: {
-    fontSize: 28, fontWeight: 800, color: '#111', letterSpacing: '-0.03em',
-  },
-  logoSub: {
-    fontSize: 11, fontWeight: 600, color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2,
-  },
-  heading: {
-    fontSize: 18, fontWeight: 700, color: '#111', marginBottom: 4,
-  },
-  subtext: {
-    fontSize: 13, color: '#888', marginBottom: 24, marginTop: 0,
-  },
-  label: {
-    display: 'block', fontSize: 11, fontWeight: 700, color: '#555',
-    letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6, marginTop: 16,
-  },
-  input: {
-    width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6,
-    fontSize: 14, fontFamily: "'Open Sans', sans-serif", outline: 'none',
-    transition: 'border-color 0.15s', boxSizing: 'border-box',
-  },
-  button: {
-    width: '100%', padding: '11px 16px', background: '#111', color: '#fff', border: 'none',
-    borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 24,
-    fontFamily: "'Open Sans', sans-serif", transition: 'opacity 0.15s',
-  },
-  info: {
-    background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6,
-    padding: '10px 14px', fontSize: 12, color: '#1d4ed8', marginBottom: 8,
-    cursor: 'pointer',
-  },
-  error: {
-    background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6,
-    padding: '10px 14px', fontSize: 12, color: '#dc2626', marginBottom: 8,
-  },
-  link: {
-    display: 'block', background: 'none', border: 'none', color: '#888',
-    fontSize: 12, cursor: 'pointer', marginTop: 16, textAlign: 'center',
-    fontFamily: "'Open Sans', sans-serif", textDecoration: 'underline',
-    padding: 0,
-  },
-  footer: {
-    marginTop: 24, fontSize: 11, color: '#bbb',
-  },
-};

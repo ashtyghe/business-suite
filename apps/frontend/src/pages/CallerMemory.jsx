@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../lib/AuthContext";
 import { supabase } from "../lib/supabase";
 import { Icon } from "../components/Icon";
 import { SECTION_COLORS } from "../fixtures/seedData.jsx";
+import { hexToRgba } from "../utils/helpers";
 
 // ── Caller Memory (persistent context per caller for voice assistant) ────────
 const CALLER_NOTES_MAX = 20;

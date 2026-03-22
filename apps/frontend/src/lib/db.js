@@ -1153,3 +1153,55 @@ export async function createAuditEntry(entityType, entityId, action, detail, use
   );
   return normalizeAuditEntry(row);
 }
+
+// ── Company Info ──────────────────────────────────────────────────────────
+
+export async function fetchCompanyInfo() {
+  const rows = await q(supabase.from('company_info').select('settings').limit(1));
+  return rows.length ? rows[0].settings : null;
+}
+
+export async function saveCompanyInfo(settings) {
+  const existing = await q(supabase.from('company_info').select('id').limit(1));
+  if (existing.length) {
+    return q(supabase.from('company_info').update({ settings, updated_at: new Date().toISOString() }).eq('id', existing[0].id).select());
+  }
+  return q(supabase.from('company_info').insert({ settings }).select());
+}
+
+// ── Email Templates ───────────────────────────────────────────────────────
+
+export async function fetchTemplates() {
+  const rows = await q(supabase.from('email_templates').select('templates').limit(1));
+  return rows.length ? rows[0].templates : null;
+}
+
+export async function saveTemplates(templates) {
+  const existing = await q(supabase.from('email_templates').select('id').limit(1));
+  if (existing.length) {
+    return q(supabase.from('email_templates').update({ templates, updated_at: new Date().toISOString() }).eq('id', existing[0].id).select());
+  }
+  return q(supabase.from('email_templates').insert({ templates }).select());
+}
+
+// ── User Permissions ──────────────────────────────────────────────────────
+
+export async function fetchAllUserPermissions() {
+  const rows = await q(supabase.from('user_permissions').select('user_id, permissions'));
+  return Object.fromEntries(rows.map(r => [r.user_id, r.permissions]));
+}
+
+export async function saveUserPermissions(userId, permissions) {
+  return q(supabase.from('user_permissions').upsert({
+    user_id: userId,
+    permissions,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id' }).select());
+}
+
+// ── Outbound Defaults (for Actions page) ──────────────────────────────────
+
+export async function fetchOutboundDefaults() {
+  const rows = await q(supabase.from('voice_settings_defaults').select('settings').eq('type', 'outbound').limit(1));
+  return rows.length ? rows[0].settings : null;
+}

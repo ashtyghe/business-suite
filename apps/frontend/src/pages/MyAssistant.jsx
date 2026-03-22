@@ -185,7 +185,6 @@ const MyAssistant = () => {
         console.warn("Could not save personalised voice settings:", err.message);
       }
     }
-    localStorage.setItem(type === 'inbound' ? "fieldops_voice_settings" : "fieldops_outbound_settings", JSON.stringify(settings));
     setSaved(true); setDirty(false);
     setTimeout(() => setSaved(false), 2500);
   };

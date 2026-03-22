@@ -18,12 +18,43 @@ import { buildQuotePdfHtml, buildInvoicePdfHtml, buildOrderPdfHtml, htmlToPdfBas
 // Integrations:
 // TODO: Add webhook support for real-time Xero payment status updates (replace polling)
 //
-// Technical debt:
-// TODO: Break job-management-app.jsx (14k+ lines) into smaller feature-based component modules
-// TODO: Move seed data out of the main component file into a separate fixtures/seed module
+// ── File splitting plan (phased) ──────────────────────────────────────────
+//
+// Phase 1 — Quick wins (biggest impact, lowest risk):
+// TODO: Extract JobDetail (~2,450 lines, line ~3311) into pages/JobDetail/JobDetail.jsx
+//       - Split into sub-components: JobOverview, JobPhases, JobTasks, JobNotes, JobFinance, JobDocuments
+//       - Wrap sub-tabs in React.memo() to prevent unnecessary re-renders
+// TODO: Extract seed data (~205 lines, line ~40) into fixtures/seedData.js
+// TODO: Extract CallerMemory (~340 lines, line ~11217) into pages/CallerMemory.jsx
+//       - Already self-contained (no props, uses useAuth + supabase directly)
+// TODO: Extract shared helpers (fmt, calcQuoteTotal, uid etc, line ~244) into utils/helpers.js
+//
+// Phase 2 — Route-based code splitting (developer experience + bundle size):
+// TODO: Extract route pages into separate files under pages/:
+//       - Dashboard (~750 lines) → pages/Dashboard.jsx
+//       - Jobs (~900 lines) → pages/Jobs.jsx
+//       - Clients (~960 lines) → pages/Clients.jsx
+//       - Contractors (~700 lines) → pages/Contractors.jsx
+//       - Quotes (~670 lines) → pages/Quotes.jsx
+//       - Bills (~780 lines) → pages/Bills.jsx
+//       - Invoices (~390 lines) → pages/Invoices.jsx
+//       - TimeTracking (~310 lines) → pages/TimeTracking.jsx
+//       - Settings (~1,200 lines) → pages/Settings.jsx
+// TODO: Add React.lazy() + Suspense for route-based code splitting
+//       - Reduces initial bundle from ~944KB to ~200KB shell + lazy chunks
+// TODO: Extract reusable components into components/:
+//       - LineItemsEditor, PhotoMarkupEditor, PlanDrawingEditor
+//       - OrderDrawer, OrderCard, OrderEmailModal
+//
+// Phase 3 — State management (performance + scalability):
+// TODO: Replace prop drilling (22+ props per route) with Context or Zustand
+//       - Create JobsContext, FinanceContext, PartnersContext
+// TODO: Add React.memo() boundaries to prevent full-tree re-renders on any state change
+// TODO: Add proper error boundaries around each major section
+//
+// Other technical debt:
 // TODO: Add unit and integration tests for critical flows (quoting, invoicing, bill extraction)
 // TODO: Replace inline styles with CSS modules or styled-components for maintainability
-// TODO: Add proper error boundaries around each major section
 // TODO: Implement optimistic UI updates for better perceived performance
 // ─────────────────────────────────────────────────────────────────────────────
 

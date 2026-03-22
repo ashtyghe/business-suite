@@ -13,6 +13,7 @@ import jb from './styles/jobs.module.css';
 import sc from './styles/schedule.module.css';
 import bl from './styles/bills.module.css';
 import tm from './styles/time.module.css';
+import pg from './styles/pages.module.css';
 // Heavy libraries loaded dynamically where used (fabric, pdfjs-dist, pdf-lib, signature_pad)
 
 // ── Google Font ──────────────────────────────────────────────────────────────
@@ -845,9 +846,9 @@ const OrderFileAttachments = ({ files, onChange, onMarkup, onLightbox }) => {
         <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 10, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
           {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 40, height: 40, borderRadius: 4, objectFit: "cover", border: "1px solid #e2e8f0", cursor: "pointer" }} onClick={() => onLightbox && onLightbox(f.dataUrl)} />
             : <div style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}><FileIconBadge name={f.name} /></div>}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className={pg.listItemMain}>
             <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div>
-            <div style={{ fontSize: 11, color: "#94a3b8" }}>{fmtFileSize(f.size)}</div>
+            <div className={pg.textSubSm}>{fmtFileSize(f.size)}</div>
           </div>
           {f.dataUrl && f.type?.startsWith("image/") && onMarkup && <button onClick={() => onMarkup(f.dataUrl, f.id)} style={{ padding: 2, background: "none", border: "none", color: "#0891b2", cursor: "pointer", fontSize: 11 }} title="Mark up">✏️</button>}
           <button onClick={() => onChange(prev => prev.filter(x => x.id !== f.id))} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }}>
@@ -858,7 +859,7 @@ const OrderFileAttachments = ({ files, onChange, onMarkup, onLightbox }) => {
       <label style={{ display: "flex", alignItems: "center", gap: 8, padding: 10, border: "2px dashed #e2e8f0", borderRadius: 8, cursor: "pointer", color: "#64748b", fontSize: 13, fontWeight: 500 }}>
         <OrderIcon name="upload" size={16} />
         {files.length > 0 ? "Add more files" : "Attach files — drawings, specs, photos…"}
-        <input type="file" multiple style={{ display: "none" }} onChange={handleFiles} accept="*/*" />
+        <input type="file" multiple className={pg.hidden} onChange={handleFiles} accept="*/*" />
       </label>
     </div>
   );
@@ -906,7 +907,7 @@ const OrderAuditLog = ({ log }) => {
           <div style={{ width: 24, height: 24, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: getColor(entry.action).bg, color: getColor(entry.action).text, flexShrink: 0 }}>
             <OrderIcon name={entry.auto ? "zap" : "activity"} size={10} />
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className={pg.listItemMain}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{entry.action}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
@@ -1001,7 +1002,7 @@ const OrderEmailModal = ({ type, order, jobs, companyInfo, onClose, onSent }) =>
         <div style={{ padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#fff", background: accent }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <OrderIcon name="mail" size={18} />
-            <div><div style={{ fontSize: 11, fontWeight: 500, opacity: 0.75 }}>Send via Email</div><div style={{ fontWeight: 700 }}>{order.ref}</div></div>
+            <div><div style={{ fontSize: 11, fontWeight: 500, opacity: 0.75 }}>Send via Email</div><div className={pg.cellAmount}>{order.ref}</div></div>
           </div>
           <button onClick={onClose} style={{ padding: 6, background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, cursor: "pointer", color: "#fff" }}><OrderIcon name="x" size={16} /></button>
         </div>
@@ -1017,7 +1018,7 @@ const OrderEmailModal = ({ type, order, jobs, companyInfo, onClose, onSent }) =>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                 <ToggleBtn on={includePdf} onChange={v => setIncludePdf(v)} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div className={pg.flexCenter}>
                     <span style={{ fontSize: 10, fontWeight: 800, color: "#ef4444", background: "#fef2f2", padding: "2px 6px", borderRadius: 4 }}>PDF</span>
                     <span style={{ fontSize: 13, fontWeight: 500 }}>Attach {order.ref}.pdf</span>
                     <button onClick={() => printOrderPdf(type, order, jobs)} style={{ fontSize: 11, color: "#2563eb", background: "none", border: "none", cursor: "pointer" }}>Preview</button>
@@ -1218,11 +1219,11 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
   );
 
   const footerEl = <>
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div className={pg.flexCenter}>
       <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
       <button className="btn btn-secondary btn-sm" onClick={() => printOrderPdf(type, form, jobs)}><OrderIcon name="file" size={14} /> PDF</button>
     </div>
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div className={pg.flexCenter}>
       {mode === "edit" && dirty && <button className="btn btn-primary" style={{ background: accent }} onClick={handleSave}>Save</button>}
       {mode === "edit" && !isNew && !dirty && <button className="btn btn-secondary" onClick={() => setMode("view")}>Done editing</button>}
       {mode === "view" && <button className="btn btn-sm" style={{ background: "#2563eb", color: "#fff", border: "none" }} disabled={orderEmailSending} onClick={handleDirectSendOrder}><OrderIcon name="send" size={14} /> {orderEmailSending ? "Sending..." : `Email ${isWO ? "Contractor" : "Supplier"}`}</button>}
@@ -1251,13 +1252,13 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
               <div className="form-label">{isWO ? "Contractor" : "Supplier"}</div>
               <div style={{ fontWeight: 600, color: "#1e293b" }}>{partyName || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>None selected</span>}</div>
               {isWO ? <><div style={{ fontSize: 13, color: "#64748b" }}>{form.contractorContact}</div><div style={{ fontSize: 13, color: "#64748b" }}>{form.contractorEmail}</div><div style={{ fontSize: 13, color: "#64748b" }}>{form.contractorPhone}</div></> :
-                <><div style={{ fontSize: 13, color: "#64748b" }}>{form.supplierContact}</div><div style={{ fontSize: 13, color: "#64748b" }}>{form.supplierEmail}</div><div style={{ fontSize: 11, color: "#94a3b8" }}>ABN: {form.supplierAbn}</div></>}
+                <><div style={{ fontSize: 13, color: "#64748b" }}>{form.supplierContact}</div><div style={{ fontSize: 13, color: "#64748b" }}>{form.supplierEmail}</div><div className={pg.textSubSm}>ABN: {form.supplierAbn}</div></>}
             </div>
             <div style={{ fontSize: 13, display: "flex", flexDirection: "column", gap: 6 }}>
-              <div><span style={{ fontSize: 11, color: "#94a3b8" }}>Issue Date</span><div style={{ fontWeight: 500 }}>{orderFmtDate(form.issueDate)}</div></div>
-              <div><span style={{ fontSize: 11, color: "#94a3b8" }}>{isWO ? "Due Date" : "Delivery Date"}</span><div style={{ fontWeight: 500 }}>{orderFmtDate(form.dueDate)}</div></div>
-              {jd && <div><span style={{ fontSize: 11, color: "#94a3b8" }}>Linked Job</span><div style={{ fontWeight: 500 }}>{jd.ref} · {jd.name}</div></div>}
-              {form.poLimit && <div><span style={{ fontSize: 11, color: "#94a3b8" }}>PO Limit</span><div style={{ fontWeight: 700, color: "#b45309" }}>${parseFloat(form.poLimit).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</div></div>}
+              <div><span className={pg.textSubSm}>Issue Date</span><div style={{ fontWeight: 500 }}>{orderFmtDate(form.issueDate)}</div></div>
+              <div><span className={pg.textSubSm}>{isWO ? "Due Date" : "Delivery Date"}</span><div style={{ fontWeight: 500 }}>{orderFmtDate(form.dueDate)}</div></div>
+              {jd && <div><span className={pg.textSubSm}>Linked Job</span><div style={{ fontWeight: 500 }}>{jd.ref} · {jd.name}</div></div>}
+              {form.poLimit && <div><span className={pg.textSubSm}>PO Limit</span><div style={{ fontWeight: 700, color: "#b45309" }}>${parseFloat(form.poLimit).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</div></div>}
             </div>
           </div>
           {isWO && form.scopeOfWork && <div style={{ background: lightTint, borderRadius: 12, padding: 16 }}><div className="form-label" style={{ color: accent }}>Scope of Work</div><div style={{ fontSize: 13, color: "#334155", whiteSpace: "pre-line", lineHeight: 1.6 }}>{form.scopeOfWork}</div></div>}
@@ -1272,13 +1273,13 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
           {form.internalNotes && <div style={{ background: "#fffbeb", borderRadius: 8, padding: 10 }}><div style={{ fontSize: 11, fontWeight: 700, color: "#b45309", marginBottom: 4 }}>Internal Notes</div><div style={{ fontSize: 13, color: "#92400e" }}>{form.internalNotes}</div></div>}
           {form.attachments && form.attachments.length > 0 && (
             <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16 }}>
-              <div className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}><OrderIcon name="paperclip" size={11} /> Attachments ({form.attachments.length})</div>
+              <div className="form-label" className={pg.cardStatusRow}><OrderIcon name="paperclip" size={11} /> Attachments ({form.attachments.length})</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 {form.attachments.map(f => (
                   <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0", cursor: f.dataUrl ? "pointer" : "default" }}
                     onClick={() => f.dataUrl && setLightboxImg(f.dataUrl)}>
                     {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: "cover" }} /> : <FileIconBadge name={f.name} />}
-                    <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 11, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div><div style={{ fontSize: 10, color: "#94a3b8" }}>{fmtFileSize(f.size)}</div></div>
+                    <div className={pg.listItemMain}><div style={{ fontSize: 11, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div><div style={{ fontSize: 10, color: "#94a3b8" }}>{fmtFileSize(f.size)}</div></div>
                     {f.dataUrl && f.type?.startsWith("image/") && <button onClick={e => { e.stopPropagation(); setMarkupImg({ src: f.dataUrl, attachmentId: f.id }); }} style={{ padding: 2, background: "none", border: "none", color: "#0891b2", cursor: "pointer", fontSize: 11 }} title="Mark up">✏️</button>}
                   </div>
                 ))}
@@ -1286,7 +1287,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
             </div>
           )}
           <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16 }}>
-            <div className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}><OrderIcon name="activity" size={11} /> Activity Log</div>
+            <div className="form-label" className={pg.cardStatusRow}><OrderIcon name="activity" size={11} /> Activity Log</div>
             <OrderAuditLog log={form.auditLog} />
           </div>
         </div>
@@ -1317,9 +1318,9 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
           <div className="form-group">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 0 }}><OrderIcon name="paperclip" size={12} /> Attachments</label>
-              <div style={{ display: "flex", gap: 6 }}>
+              <div className={pg.flexGap6}>
                 <button type="button" className="btn btn-sm" style={{ background: "#7c3aed", color: "#fff", border: "none", fontSize: 12 }} onClick={() => orderPdfInputRef.current?.click()}>📄 Fill PDF</button>
-                <input ref={orderPdfInputRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={handleOrderPdfFile} />
+                <input ref={orderPdfInputRef} type="file" accept=".pdf" className={pg.hidden} onChange={handleOrderPdfFile} />
                 <button type="button" className="btn btn-sm" style={{ background: "#059669", color: "#fff", border: "none", fontSize: 12 }} onClick={() => setShowPlanDrawing(true)}>📐 Draw Plan</button>
               </div>
             </div>
@@ -1377,13 +1378,13 @@ const OrderCard = ({ type, order, onOpen, onDelete, jobs }) => {
   return (
     <div className="order-card" onClick={() => onOpen(order)}>
       <div className={jb.gridCardTop}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className={pg.flexCenter}>
           <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669" }}>
             <OrderIcon name={isWO ? "briefcase" : "shopping"} size={15} />
           </div>
-          <div><div style={{ fontWeight: 600, fontSize: 13 }}>{order.ref}</div><div style={{ fontSize: 11, color: "#94a3b8" }}>{orderFmtDate(order.issueDate)}</div></div>
+          <div><div className={pg.textBold13}>{order.ref}</div><div className={pg.textSubSm}>{orderFmtDate(order.issueDate)}</div></div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div className={pg.cardStatusRow}>
           <OrderStatusBadge status={order.status} />
           {onDelete && <button onClick={e => { e.stopPropagation(); onDelete(order.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }} title="Delete"><OrderIcon name="trash" size={13} /></button>}
         </div>
@@ -1436,8 +1437,8 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
           <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669", flexShrink: 0 }}>
             <OrderIcon name={isWO ? "briefcase" : "shopping"} size={14} />
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 13, fontWeight: 700 }}>{order.ref}</span><OrderStatusBadge status={order.status} /></div>
+          <div className={pg.listItemMain}>
+            <div className={pg.flexCenter}><span style={{ fontSize: 13, fontWeight: 700 }}>{order.ref}</span><OrderStatusBadge status={order.status} /></div>
             <div style={{ fontSize: 12, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{pName || <span style={{ fontStyle: "italic" }}>No party</span>}</div>
             {jd && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}><OrderIcon name="link" size={9} />{jd.ref} · {jd.name}</div>}
           </div>
@@ -1466,8 +1467,8 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", borderRadius: 8, cursor: "pointer" }} onClick={() => onView(order._type, order)}>
         <div style={{ width: 24, height: 24, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669", flexShrink: 0 }}><OrderIcon name={isWO ? "briefcase" : "shopping"} size={12} /></div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 13, fontWeight: 600 }}>{order.ref}</span><OrderStatusBadge status={order.status} /></div>
+        <div className={pg.listItemMain}>
+          <div className={pg.cardStatusRow}><span style={{ fontSize: 13, fontWeight: 600 }}>{order.ref}</span><OrderStatusBadge status={order.status} /></div>
           <div style={{ fontSize: 11, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(isWO ? order.contractorName : order.supplierName) || "—"}{jd ? " · " + jd.ref : ""}</div>
         </div>
         <DueDateChip dateStr={order.dueDate} isTerminal={isTerminal} />
@@ -1527,7 +1528,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
         ].map(({ title, icon, iconBg, iconColor, borderColor, orders, empty }) => (
           <div key={title} className="card" style={{ borderColor }}>
             <div className="card-header" style={{ cursor: orders.length > 0 ? "pointer" : "default" }} onClick={() => orders.length > 0 && openPanel(title, orders)}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div className={pg.flexCenter}>
                 <div style={{ width: 24, height: 24, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: iconBg }}><OrderIcon name={icon} size={13} cls="" style={{ color: iconColor }} /></div>
                 <span className="card-title">{title}</span>
                 {orders.length > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: iconColor, padding: "1px 6px", borderRadius: 10 }}>{orders.length}</span>}
@@ -2137,7 +2138,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
         return (
           <div className={`card ${db.cardMb}`}>
             <div className="card-header">
-              <span className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="card-title" className={pg.flexCenter}>
                 <Icon name="schedule" size={16} /> This Week
                 {todaySchedule.length > 0 && <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: schAccent, color: "#fff" }}>{todaySchedule.length} today</span>}
                 <span style={{ fontSize: 11, fontWeight: 600, color: "#999" }}>{thisWeekTotal} task{thisWeekTotal !== 1 ? "s" : ""}</span>
@@ -2225,11 +2226,11 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               const job = jobs.find(j => j.id === q.jobId);
               return (
                 <div key={q.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{q.number}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{job?.title}</div>
+                  <div className={pg.listItemMain}>
+                    <div className={pg.textBold13}>{q.number}</div>
+                    <div className={pg.textSub}>{job?.title}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div className={pg.flexCenter}>
                     <div style={{ fontWeight: 700, fontSize: 13 }}>{fmt(calcQuoteTotal(q))}</div>
                     <StatusBadge status={q.status} />
                   </div>
@@ -2253,11 +2254,11 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               const overdue = inv.dueDate && daysUntil(inv.dueDate) < 0 && inv.status !== "paid";
               return (
                 <div key={inv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{inv.number}</div>
+                  <div className={pg.listItemMain}>
+                    <div className={pg.textBold13}>{inv.number}</div>
                     <div style={{ fontSize: 12, color: overdue ? "#dc2626" : "#999" }}>{job?.title}{inv.dueDate ? ` · Due ${inv.dueDate}` : ""}{overdue ? " — OVERDUE" : ""}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div className={pg.flexCenter}>
                     <div style={{ fontWeight: 700, fontSize: 13 }}>{fmt(calcQuoteTotal(inv))}</div>
                     <StatusBadge status={inv.status} />
                   </div>
@@ -2293,11 +2294,11 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               const job = jobs.find(j => j.id === b.jobId);
               return (
                 <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{b.supplier}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{b.invoiceNo}{job ? ` · ${job.title}` : ""}</div>
+                  <div className={pg.listItemMain}>
+                    <div className={pg.textBold13}>{b.supplier}</div>
+                    <div className={pg.textSub}>{b.invoiceNo}{job ? ` · ${job.title}` : ""}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div className={pg.flexCenter}>
                     <div style={{ fontWeight: 700, fontSize: 13 }}>{fmt(b.amount)}</div>
                     <StatusBadge status={b.status} />
                   </div>
@@ -2326,11 +2327,11 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               const dueSoon = wo.dueDate && daysUntil(wo.dueDate) >= 0 && daysUntil(wo.dueDate) <= 3 && !["Cancelled", "Billed", "Completed"].includes(wo.status);
               return (
                 <div key={wo.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className={pg.listItemMain}>
                     <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{wo.ref}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{wo.contractorName}{wo.trade ? ` · ${wo.trade}` : ""}{wo.dueDate ? ` · Due ${wo.dueDate}` : ""}</div>
+                    <div className={pg.textSub}>{wo.contractorName}{wo.trade ? ` · ${wo.trade}` : ""}{wo.dueDate ? ` · Due ${wo.dueDate}` : ""}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className={pg.cardStatusRow}>
                     {overdue && <span className={db.overdueLabel}>OVERDUE</span>}
                     {dueSoon && !overdue && <span className={db.dueSoonLabel}>DUE SOON</span>}
                     <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: (ORDER_STATUS_COLORS[wo.status] || {}).bg || "#f0f0f0", color: (ORDER_STATUS_COLORS[wo.status] || {}).text || "#666" }}>{wo.status}</span>
@@ -2345,11 +2346,11 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               const dueSoon = po.dueDate && daysUntil(po.dueDate) >= 0 && daysUntil(po.dueDate) <= 3 && !["Cancelled", "Billed", "Completed"].includes(po.status);
               return (
                 <div key={po.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className={pg.listItemMain}>
                     <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{po.ref}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{po.supplierName}{po.dueDate ? ` · Due ${po.dueDate}` : ""}</div>
+                    <div className={pg.textSub}>{po.supplierName}{po.dueDate ? ` · Due ${po.dueDate}` : ""}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className={pg.cardStatusRow}>
                     {overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#dc2626" }}>OVERDUE</span>}
                     {dueSoon && !overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#d97706" }}>DUE SOON</span>}
                     <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: (ORDER_STATUS_COLORS[po.status] || {}).bg || "#f0f0f0", color: (ORDER_STATUS_COLORS[po.status] || {}).text || "#666" }}>{po.status}</span>
@@ -2396,9 +2397,9 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               const job = jobs.find(j => j.id === t.jobId);
               return (
                 <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{t.worker}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{job?.title} · {t.date}</div>
+                  <div className={pg.listItemMain}>
+                    <div className={pg.textBold13}>{t.worker}</div>
+                    <div className={pg.textSub}>{job?.title} · {t.date}</div>
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontWeight: 700, fontSize: 13 }}>{t.hours}h</div>
@@ -2433,7 +2434,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               const jobMargin = invoiced > 0 ? Math.round(((invoiced - costs) / invoiced) * 100) : (quoted > 0 ? Math.round(((quoted - costs) / quoted) * 100) : null);
               const costPct = quoted > 0 ? Math.min(100, Math.round((costs / quoted) * 100)) : 0;
               return (
-                <div key={job.id} style={{ marginBottom: 14 }}>
+                <div key={job.id} className={pg.cardMb}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
                     <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                       {job.title}
@@ -2441,7 +2442,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                     </span>
                     {jobMargin !== null && <span style={{ fontWeight: 700, color: jobMargin >= 20 ? "#16a34a" : jobMargin >= 0 ? "#d97706" : "#dc2626" }}>{jobMargin}% margin</span>}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className={pg.cardStatusRow}>
                     <div style={{ flex: 1, height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden", position: "relative" }}>
                       <div style={{ position: "absolute", height: "100%", width: `${costPct}%`, background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#16a34a", borderRadius: 3, transition: "width 0.3s" }} />
                     </div>
@@ -2616,7 +2617,7 @@ const PhotoMarkupEditor = ({ imageSrc, onSave, onClose }) => {
         <button onClick={clearAll} style={{ padding: "6px 10px", borderRadius: 6, border: "2px solid transparent", background: "transparent", color: "#fbbf24", cursor: "pointer", fontSize: 13, fontWeight: 600 }} title="Clear all markups">✕ Clear</button>
         <div style={{ width: 1, height: 24, background: "#555", margin: "0 4px" }} />
         {/* Brush size */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div className={pg.cardStatusRow}>
           <span style={{ color: "#aaa", fontSize: 11, fontWeight: 600 }}>Size</span>
           <input type="range" min="1" max="12" value={brushSize} onChange={e => setBrushSize(Number(e.target.value))} style={{ width: 70, accentColor: color }} />
         </div>
@@ -3361,7 +3362,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
       onClose={onClose}
     >
         {detailMode === "edit" ? (
-        <div style={{ padding: "20px 24px" }}>
+        <div className={pg.drawerBody}>
           <div className="form-group">
             <label className="form-label">Job Title *</label>
             <input className="form-control" value={detailForm.title} onChange={e => setDetailForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
@@ -3423,7 +3424,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
             </div>
           </div>
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Estimate</div>
+            <div className={pg.textLabelMb8}>Estimate</div>
             <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 14 }}>
               <div className="grid-2" style={{ marginBottom: 8 }}>
                 <div className={`form-group ${jb.formGroupNoMb}`}>
@@ -3457,7 +3458,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           </div>
         </div>
         ) : (
-        <div style={{ padding: "20px 24px" }}>
+        <div className={pg.drawerBody}>
 
           {/* ── Overview ── */}
           {tab === "overview" && (
@@ -3552,9 +3553,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                               <Icon name="invoices" size={11} />→ Invoice
                             </button>
                           )}
-                          {alreadyInvoiced && <span style={{ fontSize: 11, color: "#aaa" }}>Invoiced ✓</span>}
+                          {alreadyInvoiced && <span className={pg.textMutedSm}>Invoiced ✓</span>}
                           <button className="btn btn-ghost btn-xs" onClick={() => { setEditingQuote(q); setInlineQuoteMode("view"); }}><Icon name="edit" size={11} /></button>
-                          <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => delQuote(q.id)}><Icon name="trash" size={11} /></button>
+                          <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => delQuote(q.id)}><Icon name="trash" size={11} /></button>
                         </div>
                       </div>
                       <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
@@ -3627,7 +3628,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                             <button className="btn btn-ghost btn-xs" style={{ color: "#0369a1" }} onClick={() => xeroSyncInvoice("push", inv.id)} title="Send to Xero"><Icon name="send" size={11} /> Xero</button>
                           )}
                           <button className="btn btn-ghost btn-xs" onClick={() => { setEditingInvoice(inv); setInlineInvMode("view"); }}><Icon name="edit" size={11} /></button>
-                          <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => delInvoice(inv.id)}><Icon name="trash" size={11} /></button>
+                          <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => delInvoice(inv.id)}><Icon name="trash" size={11} /></button>
                         </div>
                       </div>
                       <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
@@ -3695,9 +3696,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     <label className="form-label">Description</label>
                     <input className="form-control" value={timeForm.description} onChange={e => setTimeForm(f => ({ ...f, description: e.target.value }))} placeholder="Work description" />
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div className={pg.flexBetween}>
                     <label className="checkbox-label"><input type="checkbox" checked={timeForm.billable} onChange={e => setTimeForm(f => ({ ...f, billable: e.target.checked }))} /><span>Billable</span></label>
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div className={pg.flexGap8}>
                       <button className="btn btn-secondary btn-sm" onClick={() => setShowTimeForm(false)}>Cancel</button>
                       <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.time.accent }} onClick={saveTime} disabled={quickHours <= 0}><Icon name="check" size={12} />Save</button>
                     </div>
@@ -3712,12 +3713,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     <tbody>
                       {[...jobTime].sort((a,b) => b.date > a.date ? 1 : -1).map(t => (
                         <tr key={t.id}>
-                          <td><div style={{ display: "flex", alignItems: "center", gap: 8 }}><div className="avatar" style={{ width: 26, height: 26, fontSize: 10, background: "#333", margin: 0 }}>{t.worker.split(" ").map(w=>w[0]).join("")}</div><span style={{ fontWeight: 600, fontSize: 13 }}>{t.worker}</span></div></td>
-                          <td style={{ fontSize: 12, color: "#999" }}>{t.date}</td>
-                          <td><span style={{ fontWeight: 700 }}>{t.hours}h</span></td>
+                          <td><div className={pg.flexCenter}><div className="avatar" style={{ width: 26, height: 26, fontSize: 10, background: "#333", margin: 0 }}>{t.worker.split(" ").map(w=>w[0]).join("")}</div><span className={pg.textBold13}>{t.worker}</span></div></td>
+                          <td className={pg.textSub}>{t.date}</td>
+                          <td><span className={pg.cellAmount}>{t.hours}h</span></td>
                           <td><span className="badge" style={{ background: t.billable ? "#111" : "#f0f0f0", color: t.billable ? "#fff" : "#999" }}>{t.billable ? "Billable" : "Non-bill"}</span></td>
                           <td style={{ fontSize: 12, color: "#666" }}>{t.description}</td>
-                          <td><button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => delTime(t.id)}><Icon name="trash" size={11} /></button></td>
+                          <td><button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => delTime(t.id)}><Icon name="trash" size={11} /></button></td>
                         </tr>
                       ))}
                     </tbody>
@@ -3755,14 +3756,14 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                         return (
                           <tr key={b.id}>
                             <td>
-                              <div style={{ fontWeight: 600, fontSize: 13 }}>{b.supplier || <span style={{ color: "#ccc" }}>—</span>}</div>
+                              <div className={pg.textBold13}>{b.supplier || <span style={{ color: "#ccc" }}>—</span>}</div>
                               {b.description && <div style={{ fontSize: 11, color: "#aaa", marginTop: 1 }}>{b.description.slice(0,40)}{b.description.length>40?"…":""}</div>}
                             </td>
                             <td><span style={{ fontFamily: "monospace", fontSize: 12, color: "#666" }}>{b.invoiceNo || "—"}</span></td>
                             <td><span className="chip">{b.category}</span></td>
-                            <td style={{ fontSize: 12, color: "#999" }}>{b.date}</td>
+                            <td className={pg.textSub}>{b.date}</td>
                             <td style={{ fontSize: 13 }}>{fmt(exGst)}</td>
-                            <td style={{ fontWeight: 700 }}>{fmt(b.amount||0)}</td>
+                            <td className={pg.cellAmount}>{fmt(b.amount||0)}</td>
                             <td style={{ fontSize: 12 }}>
                               {(b.markup||0) > 0
                                 ? <span style={{ color: "#555" }}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span>
@@ -3770,7 +3771,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                             </td>
                             <td><BillStatusBadge status={b.status} /> <XeroSyncBadge syncStatus={b.xeroSyncStatus} xeroId={b.xeroBillId} /></td>
                             <td>
-                              <div style={{ display: "flex", gap: 4 }}>
+                              <div className={pg.flexGap4}>
                                 {!b.xeroBillId && (b.status === "approved" || b.status === "posted") && (
                                   <button className="btn btn-ghost btn-xs" style={{ color: "#0369a1" }} title="Send to Xero" onClick={() => xeroSyncBill("push", b.id)}><Icon name="send" size={11} /></button>
                                 )}
@@ -3787,7 +3788,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                                   </button>
                                 )}
                                 <button className="btn btn-ghost btn-xs" onClick={() => setEditingBill(b)}><Icon name="edit" size={11} /></button>
-                                <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => delBill(b.id)}><Icon name="trash" size={11} /></button>
+                                <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => delBill(b.id)}><Icon name="trash" size={11} /></button>
                               </div>
                             </td>
                           </tr>
@@ -3815,9 +3816,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                         <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1 }}>{new Date(s.date+"T12:00:00").getDate()}</div>
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: 14 }}>{s.date} · {new Date(s.date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long"})}</div>
+                        <div className={pg.textBold14}>{s.date} · {new Date(s.date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long"})}</div>
                         {schSite && <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>📍 {schSite.name}</div>}
-                        {schSite?.contactName && <div style={{ fontSize: 12, color: "#888" }}>👤 {schSite.contactName} {schSite.contactPhone && `· ${schSite.contactPhone}`}</div>}
+                        {schSite?.contactName && <div className={pg.textMuted}>👤 {schSite.contactName} {schSite.contactPhone && `· ${schSite.contactPhone}`}</div>}
                         {s.notes && <div style={{ fontSize: 12, color: "#999", fontStyle: "italic", marginTop: 4 }}>{s.notes}</div>}
                         {(s.assignedTo||[]).length > 0 && <div style={{ marginTop: 8 }}><AvatarGroup names={s.assignedTo} max={4} /></div>}
                       </div>
@@ -3837,7 +3838,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     ? <span><strong style={{ color: "#111" }}>{jobWOs.length}</strong> WO{jobWOs.length !== 1 ? "s" : ""} · <strong style={{ color: "#111" }}>{jobPOs.length}</strong> PO{jobPOs.length !== 1 ? "s" : ""}</span>
                     : "No orders yet"}
                 </div>
-                <div style={{ display: "flex", gap: 6 }}>
+                <div className={pg.flexGap6}>
                   <button className="btn btn-primary btn-sm" style={{ background: "#2563eb" }} onClick={() => {
                     const newWo = { id: genId(), ref: "WO-" + String((workOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", contractorId: "", contractorName: "", contractorContact: "", contractorEmail: "", contractorPhone: "", trade: "", scopeOfWork: "", notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Work order created")] };
                     setWorkOrders(prev => [...prev, newWo]);
@@ -3922,7 +3923,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               const overBudget = actual > estimated && estimated > 0;
               return (
                 <tr key={label}>
-                  <td style={{ fontWeight: 600, fontSize: 13 }}>{label}</td>
+                  <td className={pg.textBold13}>{label}</td>
                   <td style={{ textAlign: "right", fontSize: 13 }}>{fmt(estimated)}</td>
                   <td style={{ textAlign: "right", fontSize: 13 }}>{fmt(actual)}</td>
                   <td style={{ textAlign: "right", fontSize: 13, color: overBudget ? "#dc2626" : "#059669", fontWeight: 600 }}>{variance >= 0 ? "+" : ""}{fmt(variance)}</td>
@@ -3988,7 +3989,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, paddingTop: 12, borderTop: "1px solid #e2e8f0" }}>
                       <div style={{ fontSize: 14, fontWeight: 700 }}>Total: {fmt((estimateForm.labour || 0) + (estimateForm.materials || 0) + (estimateForm.subcontractors || 0) + (estimateForm.other || 0))}</div>
-                      <div style={{ display: "flex", gap: 8 }}>
+                      <div className={pg.flexGap8}>
                         <button className="btn btn-ghost btn-sm" onClick={() => setEditingEstimate(false)}>Cancel</button>
                         <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={saveEstimate}>Save Estimate</button>
                       </div>
@@ -4021,7 +4022,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                       <span>{name} <span style={{ color: "#999" }}>({w.hours}h × ${w.rate}/hr)</span></span>
                       <span style={{ fontWeight: 600 }}>{fmt(w.cost)}</span>
                     </div>
-                  )) : <div style={{ fontSize: 12, color: "#999" }}>No time logged</div>}
+                  )) : <div className={pg.textSub}>No time logged</div>}
                 </div>
 
                 {/* Materials */}
@@ -4035,7 +4036,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                       <span>{b.supplier} {b.invoiceNo && <span style={{ color: "#999" }}>({b.invoiceNo})</span>}</span>
                       <span style={{ fontWeight: 600 }}>{fmt(b.amount)}</span>
                     </div>
-                  )) : <div style={{ fontSize: 12, color: "#999" }}>No material costs</div>}
+                  )) : <div className={pg.textSub}>No material costs</div>}
                 </div>
 
                 {/* Subcontractors */}
@@ -4049,7 +4050,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                       <span>{b.supplier} {b.invoiceNo && <span style={{ color: "#999" }}>({b.invoiceNo})</span>}</span>
                       <span style={{ fontWeight: 600 }}>{fmt(b.amount)}</span>
                     </div>
-                  )) : <div style={{ fontSize: 12, color: "#999" }}>No subcontractor costs</div>}
+                  )) : <div className={pg.textSub}>No subcontractor costs</div>}
                 </div>
 
                 {/* Other */}
@@ -4479,7 +4480,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
             {(tmpl?.fields || []).map(field => {
               const val = data[field.key];
               return (
-                <div key={field.key} style={{ marginBottom: 14 }}>
+                <div key={field.key} className={pg.cardMb}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{field.label}</div>
                   {field.type === "checklist" ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -4541,7 +4542,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         zIndex={1060}
       >
         {inlineQuoteMode === "view" ? (
-        <div style={{ padding: "20px 24px" }}>
+        <div className={pg.drawerBody}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
             <ViewField label="Status" value={editingQuote.status?.charAt(0).toUpperCase() + editingQuote.status?.slice(1)} />
             <ViewField label="GST" value={`${editingQuote.tax}%`} />
@@ -4572,12 +4573,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           <div style={{ background: '#f9fafb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>Subtotal</span><span style={{ fontWeight: 600 }}>{fmt(qSub)}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>GST ({editingQuote.tax}%)</span><span style={{ fontWeight: 600 }}>{fmt(qGst)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span style={{ fontWeight: 700 }}>Total</span><span style={{ fontWeight: 800, color: qAccent }}>{fmt(qTotal)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span className={pg.cellAmount}>Total</span><span style={{ fontWeight: 800, color: qAccent }}>{fmt(qTotal)}</span></div>
           </div>
           {editingQuote.notes && <ViewField label="Notes / Terms" value={editingQuote.notes} />}
         </div>
         ) : (
-        <div style={{ padding: "20px 24px" }}>
+        <div className={pg.drawerBody}>
           <div className="grid-2" style={{ marginBottom: 16 }}>
             <div className="form-group">
               <label className="form-label">Status</label>
@@ -4598,8 +4599,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               onChange={items => setEditingQuote(q => ({ ...q, lineItems: items }))} />
           </div>
           <div style={{ marginTop: 12, padding: "12px 16px", background: "#f8f8f8", borderRadius: 8, display: "flex", justifyContent: "flex-end", gap: 16 }}>
-            <span style={{ fontSize: 12, color: "#888" }}>Subtotal <strong>{fmt(qSub)}</strong></span>
-            <span style={{ fontSize: 12, color: "#888" }}>GST <strong>{fmt(qGst)}</strong></span>
+            <span className={pg.textMuted}>Subtotal <strong>{fmt(qSub)}</strong></span>
+            <span className={pg.textMuted}>GST <strong>{fmt(qGst)}</strong></span>
             <span style={{ fontSize: 14, fontWeight: 700 }}>Total {fmt(qTotal)}</span>
           </div>
           <div className="form-group" style={{ marginTop: 16 }}>
@@ -4652,7 +4653,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         zIndex={1060}
       >
         {inlineInvMode === "view" ? (
-        <div style={{ padding: "20px 24px" }}>
+        <div className={pg.drawerBody}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
             <ViewField label="Status" value={editingInvoice.status?.charAt(0).toUpperCase() + editingInvoice.status?.slice(1)} />
             <ViewField label="Due Date" value={editingInvoice.dueDate || "—"} />
@@ -4684,12 +4685,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           <div style={{ background: '#f9fafb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>Subtotal</span><span style={{ fontWeight: 600 }}>{fmt(iSub)}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>GST ({editingInvoice.tax}%)</span><span style={{ fontWeight: 600 }}>{fmt(iGst)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span style={{ fontWeight: 700 }}>Total</span><span style={{ fontWeight: 800, color: iAccent }}>{fmt(iTotal)}</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span className={pg.cellAmount}>Total</span><span style={{ fontWeight: 800, color: iAccent }}>{fmt(iTotal)}</span></div>
           </div>
           {editingInvoice.notes && <ViewField label="Notes" value={editingInvoice.notes} />}
         </div>
         ) : (
-        <div style={{ padding: "20px 24px" }}>
+        <div className={pg.drawerBody}>
           <div className="grid-3" style={{ marginBottom: 16 }}>
             <div className="form-group">
               <label className="form-label">Status</label>
@@ -4715,8 +4716,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               onChange={items => setEditingInvoice(i => ({ ...i, lineItems: items }))} />
           </div>
           <div style={{ marginTop: 12, padding: "12px 16px", background: "#f8f8f8", borderRadius: 8, display: "flex", justifyContent: "flex-end", gap: 16 }}>
-            <span style={{ fontSize: 12, color: "#888" }}>Subtotal <strong>{fmt(iSub)}</strong></span>
-            <span style={{ fontSize: 12, color: "#888" }}>GST <strong>{fmt(iGst)}</strong></span>
+            <span className={pg.textMuted}>Subtotal <strong>{fmt(iSub)}</strong></span>
+            <span className={pg.textMuted}>GST <strong>{fmt(iGst)}</strong></span>
             <span style={{ fontSize: 14, fontWeight: 700 }}>Total {fmt(iTotal)}</span>
           </div>
           <div className="form-group" style={{ marginTop: 16 }}>
@@ -4926,7 +4927,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                       </td>
                       <td>
                         <div className={jb.rowClient}>{client?.name}</div>
-                        {(() => { const s = client?.sites?.find(x => x.id === job.siteId); return s ? <div style={{ fontSize: 11, color: "#aaa" }}>📍 {s.name}</div> : null; })()}
+                        {(() => { const s = client?.sites?.find(x => x.id === job.siteId); return s ? <div className={pg.textMutedSm}>📍 {s.name}</div> : null; })()}
                       </td>
                       <td><StatusBadge status={job.status} /></td>
                       <td>
@@ -5348,7 +5349,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                       <td>{(client.sites || []).length}</td>
                       <td>{clientJobs.length}</td>
                       <td>{active > 0 ? <span className="chip" style={{ background: "#111", color: "#fff" }}>{active}</span> : "—"}</td>
-                      <td onClick={e => e.stopPropagation()}><button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(client.id)}><Icon name="trash" size={12} /></button></td>
+                      <td onClick={e => e.stopPropagation()}><button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(client.id)}><Icon name="trash" size={12} /></button></td>
                     </tr>
                   );
                 })}
@@ -5372,7 +5373,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                   <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#111", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, flexShrink: 0 }}>
                     {client.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className={pg.listItemMain}>
                     <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{client.name}</div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
                       {client.email  && <span style={{ fontSize: 12, color: "#666" }}>📧 {client.email}</span>}
@@ -5389,7 +5390,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 4, flexShrink: 0, marginLeft: 12 }} onClick={e => e.stopPropagation()}>
-                  <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(client.id)}><Icon name="trash" size={12} /></button>
+                  <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(client.id)}><Icon name="trash" size={12} /></button>
                 </div>
               </div>
 
@@ -5424,7 +5425,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                     sites.map((site, si) => (
                       <div key={site.id} style={{ padding: "14px 20px", borderBottom: si < sites.length - 1 ? "1px solid #f5f5f5" : "none", display: "flex", gap: 14, alignItems: "flex-start" }}>
                         <div style={{ width: 32, height: 32, borderRadius: 8, background: "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16 }}>🏢</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className={pg.listItemMain}>
                           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 3 }}>{site.name}</div>
                           {site.address && <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>📍 {site.address}</div>}
                           {(site.contactName || site.contactPhone || site.contactEmail) && (
@@ -5437,7 +5438,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                         </div>
                         <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
                           <button className="btn btn-ghost btn-xs" onClick={() => openEditSite(client.id, site)}><Icon name="edit" size={11} /></button>
-                          <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => delSite(client.id, site.id)}><Icon name="trash" size={11} /></button>
+                          <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => delSite(client.id, site.id)}><Icon name="trash" size={11} /></button>
                         </div>
                       </div>
                     ))
@@ -5490,7 +5491,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
           onClose={() => setShowModal(false)}
         >
           {clientMode === "view" ? (
-            <div style={{ padding: "20px 24px" }}>
+            <div className={pg.drawerBody}>
               <ViewField label="Company / Client Name" value={form.name} />
               <div className="grid-2">
                 <ViewField label="Email" value={form.email} />
@@ -5535,7 +5536,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
               ) : null}
               {/* Template Preferences */}
               <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 12, marginTop: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Template Preferences</div>
+                <div className={pg.textLabelMb8}>Template Preferences</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {[{ key: "quote", label: "Quotes" }, { key: "invoice", label: "Invoices" }, { key: "work_order", label: "Work Orders" }, { key: "purchase_order", label: "Purchase Orders" }].map(dt => {
                     const opts = templates.filter(t => t.type === dt.key);
@@ -5552,7 +5553,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                 </div>
               </div>
               <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 12 }}>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div className={pg.flexGap8}>
                   <span className="chip">{clientJobCount} jobs</span>
                   <span className="chip">🏢 {clientSites.length} site{clientSites.length !== 1 ? "s" : ""}</span>
                 </div>
@@ -5562,7 +5563,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                   <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>Sites</div>
                   {clientSites.map(s => (
                     <div key={s.id} style={{ padding: "10px 14px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
+                      <div className={pg.textBold13}>{s.name}</div>
                       {s.address && <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{s.address}</div>}
                       {s.contactName && <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>👤 {s.contactName}{s.contactPhone ? ` · ${s.contactPhone}` : ""}{s.contactEmail ? ` · ${s.contactEmail}` : ""}</div>}
                     </div>
@@ -5825,14 +5826,14 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                   const compIssues = getContractorComplianceCount(c);
                   return (
                   <tr key={c.id} style={{ cursor: "pointer" }} onClick={() => openEdit(c)}>
-                    <td style={{ fontWeight: 700 }}>{c.name}</td>
+                    <td className={pg.cellAmount}>{c.name}</td>
                     <td>{c.contact || "—"}<div style={{ fontSize: 11, color: "#999" }}>{c.phone}</div></td>
                     <td><span className="chip" style={{ fontSize: 10 }}>{c.trade}</span></td>
                     <td><ComplianceBadge contractor={c} /></td>
                     <td><span style={{ fontWeight: 600, color: getActiveWOs(c).length > 0 ? accent : "#ccc" }}>{getActiveWOs(c).length}</span></td>
                     <td><span style={{ fontWeight: 600, color: billCount > 0 ? SECTION_COLORS.bills.accent : "#ccc" }}>{billCount}</span></td>
                     <td style={{ fontWeight: billTotal > 0 ? 600 : 400, color: billTotal > 0 ? "#111" : "#ccc" }}>{billTotal > 0 ? fmt(billTotal) : "—"}</td>
-                    <td onClick={e => e.stopPropagation()}><button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(c.id)}><Icon name="trash" size={12} /></button></td>
+                    <td onClick={e => e.stopPropagation()}><button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(c.id)}><Icon name="trash" size={12} /></button></td>
                   </tr>
                   );
                 })}
@@ -5852,7 +5853,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
             return (
               <div key={c.id} className="card" onClick={() => openEdit(c)} style={{ cursor: "pointer", padding: 18 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                  <span style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</span>
+                  <span className={pg.textBold14}>{c.name}</span>
                   <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                     <ComplianceBadge contractor={c} />
                     <span className="chip" style={{ fontSize: 10, background: hexToRgba(accent, 0.12), color: accent }}>{c.trade}</span>
@@ -5862,11 +5863,11 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                 {c.email && <div style={{ fontSize: 12, color: "#999", marginBottom: 2 }}>{c.email}</div>}
                 {c.phone && <div style={{ fontSize: 12, color: "#999", marginBottom: 8 }}>{c.phone}</div>}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: billCount > 0 ? 8 : 0 }}>
-                  <div style={{ display: "flex", gap: 6 }}>
+                  <div className={pg.flexGap6}>
                     <span className="chip" style={{ fontSize: 10 }}>{getWOCount(c)} WO{getWOCount(c) !== 1 ? "s" : ""} · {activeWOs.length} active</span>
                     {billCount > 0 && <span className="chip" style={{ fontSize: 10 }}>{billCount} bill{billCount !== 1 ? "s" : ""}</span>}
                   </div>
-                  <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={e => { e.stopPropagation(); del(c.id); }}><Icon name="trash" size={12} /></button>
+                  <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={e => { e.stopPropagation(); del(c.id); }}><Icon name="trash" size={12} /></button>
                 </div>
                 {billTotal > 0 && <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>Bills total: <span style={{ color: "#111" }}>{fmt(billTotal)}</span></div>}
               </div>
@@ -5943,10 +5944,10 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
 
                   {linkedWOs.length > 0 && (
                     <div style={{ marginTop: 20 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Linked Work Orders</div>
+                      <div className={pg.textLabelMb8}>Linked Work Orders</div>
                       {linkedWOs.map(wo => (
                         <div key={wo.id} style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
-                          <span style={{ fontWeight: 700 }}>{wo.ref}</span>
+                          <span className={pg.cellAmount}>{wo.ref}</span>
                           <OrderStatusBadge status={wo.status} />
                           {wo.dueDate && <span style={{ float: "right", color: "#888" }}>{wo.dueDate}</span>}
                         </div>
@@ -5965,12 +5966,12 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                         <div key={b.id} style={{ padding: "10px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                             <div>
-                              <span style={{ fontWeight: 700 }}>{b.supplier}</span>
+                              <span className={pg.cellAmount}>{b.supplier}</span>
                               {b.invoiceNo && <span style={{ color: "#aaa", fontFamily: "monospace", fontSize: 11, marginLeft: 8 }}>{b.invoiceNo}</span>}
                             </div>
-                            <span style={{ fontWeight: 700 }}>{fmt(b.amount)}</span>
+                            <span className={pg.cellAmount}>{fmt(b.amount)}</span>
                           </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div className={pg.flexBetween}>
                             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                               <span className="badge" style={{ background: bsc.bg, color: bsc.text, fontSize: 10 }}>{BILL_STATUS_LABELS[b.status] || b.status}</span>
                               <span className="chip" style={{ fontSize: 10 }}>{b.category}</span>
@@ -5999,13 +6000,13 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                       return (
                         <div key={dt.id} style={{ padding: "12px 14px", background: "#f8f8f8", borderRadius: 8, marginBottom: 8, borderLeft: `3px solid ${sc.text}`, cursor: "pointer" }} onClick={() => openDocForm(dt.id, doc)}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: doc ? 6 : 0 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <span style={{ fontWeight: 600, fontSize: 13 }}>{dt.label}</span>
+                            <div className={pg.flexCenter}>
+                              <span className={pg.textBold13}>{dt.label}</span>
                               <span className="badge" style={{ background: sc.bg, color: sc.text, fontSize: 10 }}>{sc.label}</span>
                             </div>
                             <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                               {doc && (status === "expired" || status === "expiring_soon") && <button className="btn btn-ghost btn-xs" style={{ color: "#d97706" }} disabled={compEmailSending === doc.id} onClick={e => { e.stopPropagation(); handleSendComplianceReminder(editItem, doc, dt); }} title="Send Reminder"><Icon name="send" size={10} />{compEmailSending === doc.id ? "..." : ""}</button>}
-                              {doc && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={e => { e.stopPropagation(); deleteDoc(doc.id); }}><Icon name="trash" size={10} /></button>}
+                              {doc && <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={e => { e.stopPropagation(); deleteDoc(doc.id); }}><Icon name="trash" size={10} /></button>}
                             </div>
                           </div>
                           {doc && (
@@ -6070,11 +6071,11 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                   onDragOver={e => e.preventDefault()}
                   onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f && (f.type.startsWith("image/") || f.type === "application/pdf")) handleDocFile(f); }}
                 >
-                  <input ref={docFileRef} type="file" accept="image/*,application/pdf" capture="environment" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) handleDocFile(f); }} />
+                  <input ref={docFileRef} type="file" accept="image/*,application/pdf" capture="environment" className={pg.hidden} onChange={e => { const f = e.target.files?.[0]; if (f) handleDocFile(f); }} />
                   {docExtracting ? (
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: 12 }}>
                       <div style={{ width: 24, height: 24, border: "3px solid #e8e8e8", borderTopColor: accent, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                      <span style={{ fontSize: 12, color: "#888" }}>Extracting document details...</span>
+                      <span className={pg.textMuted}>Extracting document details...</span>
                     </div>
                   ) : docImagePreview ? (
                     <div>
@@ -6084,7 +6085,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                   ) : (
                     <div style={{ padding: 8 }}>
                       <div style={{ fontSize: 20, marginBottom: 4 }}>📷</div>
-                      <div style={{ fontSize: 12, color: "#888" }}>Take photo or upload document</div>
+                      <div className={pg.textMuted}>Take photo or upload document</div>
                       <div style={{ fontSize: 11, color: "#bbb" }}>AI will extract key details</div>
                     </div>
                   )}
@@ -6219,14 +6220,14 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
                 {filtered.length === 0 && <tr><td colSpan={8}><div className="empty-state"><div className="empty-state-icon">📦</div><div className="empty-state-text">No suppliers found</div></div></td></tr>}
                 {filtered.map(s => (
                   <tr key={s.id} style={{ cursor: "pointer" }} onClick={() => openEdit(s)}>
-                    <td style={{ fontWeight: 700 }}>{s.name}</td>
+                    <td className={pg.cellAmount}>{s.name}</td>
                     <td>{s.contact || "—"}</td>
                     <td style={{ color: "#666" }}>{s.email || "—"}</td>
                     <td style={{ fontFamily: "monospace", fontSize: 12, color: "#888" }}>{s.abn || "—"}</td>
                     <td style={{ color: "#666" }}>{s.phone || "—"}</td>
                     <td><span style={{ fontWeight: 600, color: getActivePOs(s).length > 0 ? accent : "#ccc" }}>{getPOCount(s)}</span></td>
                     <td><span style={{ fontWeight: 600, color: getBillCount(s) > 0 ? "#dc2626" : "#ccc" }}>{getBillCount(s)}</span></td>
-                    <td onClick={e => e.stopPropagation()}><button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(s.id)}><Icon name="trash" size={12} /></button></td>
+                    <td onClick={e => e.stopPropagation()}><button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(s.id)}><Icon name="trash" size={12} /></button></td>
                   </tr>
                 ))}
               </tbody>
@@ -6245,12 +6246,12 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
               {s.email && <div style={{ fontSize: 12, color: "#999", marginBottom: 2 }}>{s.email}</div>}
               {s.phone && <div style={{ fontSize: 12, color: "#999", marginBottom: 2 }}>{s.phone}</div>}
               {s.abn && <div style={{ fontSize: 11, color: "#bbb", fontFamily: "monospace", marginBottom: 8 }}>ABN {s.abn}</div>}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", gap: 6 }}>
+              <div className={pg.flexBetween}>
+                <div className={pg.flexGap6}>
                   <span className="chip" style={{ fontSize: 10 }}>{getPOCount(s)} PO{getPOCount(s) !== 1 ? "s" : ""}</span>
                   <span className="chip" style={{ fontSize: 10 }}>{getBillCount(s)} bill{getBillCount(s) !== 1 ? "s" : ""}</span>
                 </div>
-                <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={e => { e.stopPropagation(); del(s.id); }}><Icon name="trash" size={12} /></button>
+                <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={e => { e.stopPropagation(); del(s.id); }}><Icon name="trash" size={12} /></button>
               </div>
             </div>
           ))}
@@ -6269,7 +6270,7 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
                 <div key={s.id} className="kanban-card" onClick={() => openEdit(s)}>
                   <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>{s.name}</div>
                   {s.contact && <div style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>{s.contact}</div>}
-                  <div style={{ display: "flex", gap: 4 }}>
+                  <div className={pg.flexGap4}>
                     {getPOCount(s) > 0 && <span className="chip" style={{ fontSize: 10 }}>{getPOCount(s)} PO{getPOCount(s) > 1 ? "s" : ""}</span>}
                     {getBillCount(s) > 0 && <span className="chip" style={{ fontSize: 10 }}>{getBillCount(s)} bill{getBillCount(s) > 1 ? "s" : ""}</span>}
                   </div>
@@ -6310,10 +6311,10 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
                   <ViewField label="Notes" value={form.notes} />
                   {linkedPOs.length > 0 && (
                     <div style={{ marginTop: 20 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Purchase Orders</div>
+                      <div className={pg.textLabelMb8}>Purchase Orders</div>
                       {linkedPOs.map(po => (
                         <div key={po.id} style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
-                          <span style={{ fontWeight: 700 }}>{po.ref}</span>
+                          <span className={pg.cellAmount}>{po.ref}</span>
                           <OrderStatusBadge status={po.status} />
                           {po.poLimit && <span style={{ float: "right", color: "#888" }}>${parseFloat(po.poLimit).toLocaleString()}</span>}
                         </div>
@@ -6322,10 +6323,10 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
                   )}
                   {linkedBills.length > 0 && (
                     <div style={{ marginTop: 20 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Bills</div>
+                      <div className={pg.textLabelMb8}>Bills</div>
                       {linkedBills.map(b => (
                         <div key={b.id} style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
-                          <span style={{ fontWeight: 700 }}>{b.supplier}</span>
+                          <span className={pg.cellAmount}>{b.supplier}</span>
                           {b.invoiceNo && <span style={{ color: "#999", marginLeft: 8 }}>{b.invoiceNo}</span>}
                           <span style={{ float: "right", fontWeight: 600 }}>{fmt(b.amount)}</span>
                         </div>
@@ -8122,7 +8123,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
       zIndex={1060}
     >
       {mode === "view" ? (
-        <div style={{ padding: "20px 24px" }}>
+        <div className={pg.drawerBody}>
           <div className={bl.sectionDivider}>Supplier Details</div>
           <div className="grid-2">
             <ViewField label="Supplier" value={form.supplier} />
@@ -8177,7 +8178,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
                     type="file"
                     accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
                     capture="environment"
-                    style={{ display: "none" }}
+                    className={pg.hidden}
                     onChange={e => handleFile(e.target.files?.[0])}
                   />
                   <Icon name="camera" size={28} />
@@ -8613,7 +8614,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                     {b.status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
                     {canApprove && b.status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
                     {canApprove && b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
-                    {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={12} /></button>}
+                    {canDelete && <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(b.id)}><Icon name="trash" size={12} /></button>}
                   </div>
                 </div>
               </div>
@@ -8652,11 +8653,11 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                           <span className={`chip ${jb.kanbanChip}`}>{b.category}</span>
                           {job ? <span className={bl.kanbanCardJob}>{job.title}</span> : <span className={bl.kanbanCardUnlinked}>Unlinked</span>}
                         </div>
-                        <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                        <div className={pg.flexGap4} onClick={e => e.stopPropagation()}>
                           {status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
                           {canApprove && status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
                           {canApprove && status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
-                          {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={10} /></button>}
+                          {canDelete && <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(b.id)}><Icon name="trash" size={10} /></button>}
                         </div>
                       </div>
                     </div>
@@ -8717,10 +8718,10 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                           {job ? <div className={bl.jobCell}>{job.title}</div> : <span className={bl.unlinkedCell}>Unlinked</span>}
                         </td>
                         <td><span className="chip">{b.category}</span></td>
-                        <td style={{ fontSize: 12, color: "#999" }}>{b.date}</td>
+                        <td className={pg.textSub}>{b.date}</td>
                         <td style={{ fontSize: 13 }}>{fmt(exGst)}</td>
-                        <td style={{ fontSize: 12, color: "#999" }}>{b.hasGst ? fmt(gst) : <span style={{ color: "#ddd" }}>—</span>}</td>
-                        <td style={{ fontWeight: 700 }}>{fmt(b.amount)}</td>
+                        <td className={pg.textSub}>{b.hasGst ? fmt(gst) : <span style={{ color: "#ddd" }}>—</span>}</td>
+                        <td className={pg.cellAmount}>{fmt(b.amount)}</td>
                         <td style={{ fontSize: 12 }}>
                           {b.markup > 0 ? <span style={{ color: "#555" }}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span> : <span style={{ color: "#ddd" }}>—</span>}
                         </td>
@@ -8732,7 +8733,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                             {canApprove && b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} title="Post to Job" onClick={() => setPostBill(b)}>Post →</button>}
                             {!b.xeroBillId && (b.status === "approved" || b.status === "posted") && <button className="btn btn-ghost btn-xs" style={{ color: "#0369a1" }} title="Send to Xero" onClick={() => xeroSyncBill("push", b.id)}><Icon name="send" size={11} /></button>}
                             <button className="btn btn-ghost btn-xs" onClick={() => openEdit(b)}><Icon name="edit" size={11} /></button>
-                            {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={11} /></button>}
+                            {canDelete && <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(b.id)}><Icon name="trash" size={11} /></button>}
                           </div>
                         </td>
                       </tr>
@@ -8971,16 +8972,16 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
             return (
               <div key={inv.id} className="order-card" onClick={() => openEdit(inv)}>
                 <div className={jb.gridCardTop}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.invoices.light, color: SECTION_COLORS.invoices.accent }}>
+                  <div className={pg.flexCenter}>
+                    <div className={pg.cardIconBox} style={{ background: SECTION_COLORS.invoices.light, color: SECTION_COLORS.invoices.accent }}>
                       <Icon name="invoices" size={15} />
                     </div>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{inv.number}</div>
-                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{inv.createdAt || "—"}</div>
+                      <div className={pg.textSubSm}>{inv.createdAt || "—"}</div>
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className={pg.cardStatusRow}>
                     <StatusBadge status={inv.status} />
                   </div>
                 </div>
@@ -8996,9 +8997,9 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                 <SectionProgressBar status={inv.status} section="invoices" />
                 <div className={jb.gridCardFooter}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: inv.dueDate ? "#334155" : "#ccc" }}>{inv.dueDate ? `Due ${inv.dueDate}` : "No due date"}</span>
-                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                  <div className={pg.flexGap4} onClick={e => e.stopPropagation()}>
                     {inv.status !== "paid" && inv.status !== "void" && <button className="btn btn-ghost btn-xs" style={{ color: "#2a7" }} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>}
-                    <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(inv.id)}><Icon name="trash" size={12} /></button>
+                    <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(inv.id)}><Icon name="trash" size={12} /></button>
                   </div>
                 </div>
               </div>
@@ -9021,18 +9022,18 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                 return (
                   <tr key={inv.id} style={{ cursor: "pointer" }} onClick={() => openEdit(inv)}>
                     <td><span style={{ fontWeight: 700, fontFamily: "monospace", fontSize: 13 }}>{inv.number}</span>{fromQuote && <div style={{ fontSize: 10, color: "#bbb", marginTop: 2 }}>from {fromQuote.number}</div>}</td>
-                    <td style={{ fontWeight: 600, fontSize: 13 }}>{job?.title}</td>
+                    <td className={pg.textBold13}>{job?.title}</td>
                     <td style={{ fontSize: 13, color: "#666" }}>{client?.name}</td>
                     <td><StatusBadge status={inv.status} /> <XeroSyncBadge syncStatus={inv.xeroSyncStatus} xeroId={inv.xeroInvoiceId} /></td>
                     <td>{fmt(sub)}</td>
                     <td>{fmt(sub * inv.tax / 100)}</td>
-                    <td style={{ fontWeight: 700 }}>{fmt(sub * (1 + inv.tax / 100))}</td>
+                    <td className={pg.cellAmount}>{fmt(sub * (1 + inv.tax / 100))}</td>
                     <td style={{ fontSize: 12, color: inv.dueDate ? "#111" : "#ccc" }}>{inv.dueDate || "—"}</td>
                     <td onClick={e => e.stopPropagation()}>
-                      <div style={{ display: "flex", gap: 4 }}>
+                      <div className={pg.flexGap4}>
                         {inv.status !== "paid" && inv.status !== "void" && <button className="btn btn-ghost btn-xs" style={{ color: "#2a7" }} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>}
                         {!inv.xeroInvoiceId && inv.status !== "draft" && <button className="btn btn-ghost btn-xs" style={{ color: "#0369a1" }} onClick={() => xeroSyncInvoice("push", inv.id).then(() => refreshData?.())} title="Send to Xero"><Icon name="send" size={12} /></button>}
-                        <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(inv.id)}><Icon name="trash" size={12} /></button>
+                        <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(inv.id)}><Icon name="trash" size={12} /></button>
                       </div>
                     </td>
                   </tr>
@@ -9063,7 +9064,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
           isNew={isNewInv}
           footer={invMode === "view" && !isNewInv ? <>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
-            <div style={{ display: "flex", gap: 6 }}>
+            <div className={pg.flexGap6}>
               {(form.status === "sent" || form.status === "overdue") && <button className="btn btn-sm" style={{ background: "#dc2626", color: "#fff", border: "none" }} disabled={emailSending} onClick={() => handleSendPaymentReminder(form)}>
                 <Icon name="notification" size={13} /> {emailSending ? "Sending..." : "Payment Reminder"}
               </button>}
@@ -9083,7 +9084,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
           onClose={() => setShowModal(false)}
         >
           {invMode === "view" && !isNewInv ? (
-          <div style={{ padding: "20px 24px" }}>
+          <div className={pg.drawerBody}>
             {emailStatus && <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 16, fontSize: 13, fontWeight: 600, background: emailStatus.type === "success" ? "#ecfdf5" : "#fef2f2", color: emailStatus.type === "success" ? "#059669" : "#dc2626", border: `1px solid ${emailStatus.type === "success" ? "#a7f3d0" : "#fecaca"}` }}>{emailStatus.msg}</div>}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
               <ViewField label="Job" value={iJob?.title} />
@@ -9117,12 +9118,12 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
             <div style={{ background: '#f9fafb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>Subtotal</span><span style={{ fontWeight: 600 }}>{fmt(iSub)}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}><span style={{ color: '#888' }}>GST ({form.tax}%)</span><span style={{ fontWeight: 600 }}>{fmt(iTax)}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span style={{ fontWeight: 700 }}>Total</span><span style={{ fontWeight: 800, color: accent }}>{fmt(iTotal)}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span className={pg.cellAmount}>Total</span><span style={{ fontWeight: 800, color: accent }}>{fmt(iTotal)}</span></div>
             </div>
             {form.notes && <ViewField label="Notes" value={form.notes} />}
           </div>
           ) : (
-          <div style={{ padding: "20px 24px" }}>
+          <div className={pg.drawerBody}>
             <div className="grid-3" style={{ marginBottom: 16 }}>
               <div className="form-group">
                 <label className="form-label">Job</label>
@@ -9297,7 +9298,7 @@ const Actions = ({ jobs, quotes, invoices, bills, workOrders, purchaseOrders, co
                     {/* Severity dot */}
                     <div style={{ width: 8, height: 8, borderRadius: 4, background: item.severity === "high" ? "#dc2626" : item.severity === "medium" ? "#f59e0b" : "#94a3b8", flexShrink: 0 }} />
                     {/* Content */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className={pg.listItemMain}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</div>
                       {item.sub && <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{item.sub}</div>}
                     </div>
@@ -9439,7 +9440,7 @@ const Reminders = ({ reminders, setReminders, jobs }) => {
                     {r.status === "completed" && <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>✓</span>}
                   </button>
                   {/* Content */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className={pg.listItemMain}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: r.status === "completed" ? "#aaa" : "#111", textDecoration: r.status === "completed" ? "line-through" : "none" }}>{r.text}</div>
                     <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap", alignItems: "center" }}>
                       <span style={{ fontSize: 11, fontWeight: 600, color: dueDateColor(r.dueDate, r.status) }}>{dueDateLabel(r.dueDate, r.status)}</span>
@@ -9492,7 +9493,7 @@ const Reminders = ({ reminders, setReminders, jobs }) => {
                 <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Items</label>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
                   {form.items.map(item => (
-                    <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div key={item.id} className={pg.flexCenter}>
                       <input type="checkbox" checked={item.done} onChange={() => toggleFormItem(item.id)} style={{ width: 15, height: 15, accentColor: accent, cursor: "pointer" }} />
                       <span style={{ flex: 1, fontSize: 13, color: item.done ? "#aaa" : "#333", textDecoration: item.done ? "line-through" : "none" }}>{item.text}</span>
                       <button onClick={() => removeFormItem(item.id)} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 13, padding: 2 }}>✕</button>
@@ -10281,8 +10282,8 @@ const XeroSettingsTab = ({ accent }) => {
               </div>
             </div>
           )}
-          {xeroSetupStep === 3 && (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>If any invoices or bills have already been entered in Xero manually, mark them here to prevent duplicates.</div><div style={{ display: "flex", gap: 8 }}><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue to Preview</button><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip — None to mark</button></div></div>)}
-          {xeroSetupStep === 4 && (<div>{!xeroDryRun ? <button onClick={runDryRun} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Checking..." : "Preview Sync"}</button> : (<div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 12 }}><div style={{ background: "#f0fdf4", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#16a34a" }}>{xeroDryRun.invoices?.wouldSync || 0}</div><div style={{ fontSize: 11, color: "#666" }}>Invoices to sync</div></div><div style={{ background: "#eff6ff", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#2563eb" }}>{xeroDryRun.bills?.wouldSync || 0}</div><div style={{ fontSize: 11, color: "#666" }}>Bills to sync</div></div></div><div style={{ display: "flex", gap: 8 }}><button onClick={() => { runBulkSync("invoices"); runBulkSync("bills"); setXeroSetupStep(0); }} style={{ ...btnStyle, background: accent, color: "#fff" }}>Start Sync</button><button onClick={() => setXeroSetupStep(0)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Close Wizard</button></div></div>)}</div>)}
+          {xeroSetupStep === 3 && (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>If any invoices or bills have already been entered in Xero manually, mark them here to prevent duplicates.</div><div className={pg.flexGap8}><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue to Preview</button><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip — None to mark</button></div></div>)}
+          {xeroSetupStep === 4 && (<div>{!xeroDryRun ? <button onClick={runDryRun} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Checking..." : "Preview Sync"}</button> : (<div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 12 }}><div style={{ background: "#f0fdf4", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#16a34a" }}>{xeroDryRun.invoices?.wouldSync || 0}</div><div style={{ fontSize: 11, color: "#666" }}>Invoices to sync</div></div><div style={{ background: "#eff6ff", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#2563eb" }}>{xeroDryRun.bills?.wouldSync || 0}</div><div style={{ fontSize: 11, color: "#666" }}>Bills to sync</div></div></div><div className={pg.flexGap8}><button onClick={() => { runBulkSync("invoices"); runBulkSync("bills"); setXeroSetupStep(0); }} style={{ ...btnStyle, background: accent, color: "#fff" }}>Start Sync</button><button onClick={() => setXeroSetupStep(0)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Close Wizard</button></div></div>)}</div>)}
         </div>
       )}
       {xeroStatus?.connected && xeroSetupStep === 0 && (
@@ -10630,7 +10631,7 @@ const VoiceOptionCard = ({ option, selected, onSelect, accent }) => (
       background: selected ? hexToRgba(accent, 0.06) : "#fff",
     }}
   >
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div className={pg.flexCenter}>
       <div style={{
         width: 16, height: 16, borderRadius: "50%", border: selected ? `5px solid ${accent}` : "2px solid #ccc",
         background: "#fff", flexShrink: 0,
@@ -10881,13 +10882,13 @@ const CallerMemory = () => {
                 <div style={{ width: 36, height: 36, borderRadius: "50%", background: hexToRgba(accent, 0.1), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Icon name="clients" size={16} style={{ color: accent }} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div className={pg.listItemMain}>
+                  <div className={pg.flexCenter}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {caller.caller_name || formatPhone(caller.phone)}
                     </div>
                     {caller.caller_name && (
-                      <div style={{ fontSize: 12, color: "#999" }}>{formatPhone(caller.phone)}</div>
+                      <div className={pg.textSub}>{formatPhone(caller.phone)}</div>
                     )}
                   </div>
                   <div style={{ fontSize: 11, color: "#999", marginTop: 2, display: "flex", gap: 12 }}>
@@ -10937,7 +10938,7 @@ const CallerMemory = () => {
                       <textarea value={newNote} onChange={e => setNewNote(e.target.value.slice(0, CALLER_NOTE_MAX_CHARS))} placeholder="Key point from call... e.g. 'Needs quote for bathroom reno at 42 Smith St'" rows={2} style={{ width: "100%", padding: "8px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }} autoFocus />
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
                         <span style={{ fontSize: 11, color: "#bbb" }}>{newNote.length}/{CALLER_NOTE_MAX_CHARS}</span>
-                        <div style={{ display: "flex", gap: 6 }}>
+                        <div className={pg.flexGap6}>
                           <button className="btn btn-sm" onClick={() => { setAddingNote(null); setNewNote(""); }} style={{ fontSize: 11 }}>Cancel</button>
                           <button className="btn btn-primary btn-sm" onClick={() => addNote(caller.id)} disabled={!newNote.trim() || saving} style={{ background: accent, fontSize: 11 }}>{saving ? "Saving..." : "Save Note"}</button>
                         </div>
@@ -11203,7 +11204,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Configure your Iris voice assistant — powered by OpenAI Realtime + Twilio</div>
           <div style={{ fontSize: 11, color: "#b0b0b0", marginTop: 4 }}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div className={pg.flexGap8}>
           <button className="btn btn-ghost btn-sm" onClick={resetVoiceSettings} style={{ fontSize: 11 }}>Reset Defaults</button>
           <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: dirty ? 1 : 0.5 }} onClick={saveVoiceSettings} disabled={!dirty}>
             {saved ? "Saved!" : "Save Changes"}
@@ -11700,7 +11701,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Configure AI-powered outbound calls to team members about urgent tasks</div>
               <div style={{ fontSize: 11, color: "#b0b0b0", marginTop: 4 }}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className={pg.flexGap8}>
               <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: outboundDirty ? 1 : 0.5 }} onClick={saveOutboundSettings} disabled={!outboundDirty}>
                 {outboundSaved ? "Saved!" : "Save Changes"}
               </button>
@@ -11924,21 +11925,21 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
                   <div>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Accent Colour</label>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className={pg.flexCenter}>
                       <input type="color" value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} style={{ width: 36, height: 36, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", padding: 2 }} />
                       <input value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} style={{ width: 90, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "monospace", boxSizing: "border-box" }} />
                     </div>
                   </div>
                   <div>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Logo</label>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className={pg.flexCenter}>
                       {tplForm.logo && <img src={tplForm.logo} alt="Logo" style={{ height: 32, borderRadius: 4 }} />}
                       <input type="file" accept="image/*" onChange={e => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onload = () => setTplForm(f => ({ ...f, logo: reader.result })); reader.readAsDataURL(file); } }} style={{ fontSize: 12 }} />
                       {tplForm.logo && <button onClick={() => setTplForm(f => ({ ...f, logo: null }))} style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 11 }}>Remove</button>}
                     </div>
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div className={pg.flexCenter}>
                   <label style={{ fontSize: 13, fontWeight: 500, color: "#333" }}>Show GST</label>
                   <button onClick={() => setTplForm(f => ({ ...f, showGst: !f.showGst }))} style={{ width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer", position: "relative", background: tplForm.showGst ? "#059669" : "#ccc" }}>
                     <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: tplForm.showGst ? 19 : 3, transition: "left 0.2s", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }} />
@@ -12117,7 +12118,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                         <textarea value={tplForm.emailBody} onChange={e => setTplForm(f => ({ ...f, emailBody: e.target.value }))} rows={6} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 12 }} />
                         <div style={{ background: "#f8f8f8", borderRadius: 6, padding: "10px 14px" }}>
                           <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Available Variables</div>
-                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          <div className={pg.flexWrap} style={{ gap: 6 }}>
                             {TEMPLATE_VARS.map(v => (
                               <span key={v.var} title={v.desc} style={{ fontSize: 11, fontFamily: "monospace", background: "#fff", border: "1px solid #e0e0e0", padding: "2px 8px", borderRadius: 4, color: "#555", cursor: "help" }}>{v.var}</span>
                             ))}
@@ -12298,7 +12299,7 @@ const FilesPage = ({ jobs = [], bills = [], contractors = [], quotes = [], invoi
           <option value="all">All Types</option>
           {types.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <div style={{ fontSize: 12, color: "#888" }}>{filtered.length} file{filtered.length !== 1 ? "s" : ""}</div>
+        <div className={pg.textMuted}>{filtered.length} file{filtered.length !== 1 ? "s" : ""}</div>
       </div>
 
       {/* Table */}
@@ -12422,7 +12423,7 @@ const CallLog = ({ callLog = [], onNav }) => {
           <option value="missed">Missed</option>
           <option value="no_answer">No Answer</option>
         </select>
-        <div style={{ fontSize: 12, color: "#888" }}>{filtered.length} call{filtered.length !== 1 ? "s" : ""}</div>
+        <div className={pg.textMuted}>{filtered.length} call{filtered.length !== 1 ? "s" : ""}</div>
       </div>
 
       <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e5e5", overflow: "hidden" }}>
@@ -12620,8 +12621,8 @@ const SystemStatus = () => {
       <div style={{ display: "grid", gap: 12 }}>
         {services.map(svc => (
           <div key={svc.id} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", borderLeft: `3px solid ${statusColor[svc.status]}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className={pg.flexBetween}>
+              <div className={pg.flexGap10}>
                 <Icon name={svc.icon} size={16} />
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{svc.name}</div>
@@ -13000,7 +13001,7 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
           </div>
         )}
         <div style={{ flex: 1 }} />
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div className={pg.cardStatusRow}>
           <button onClick={() => setScale(s => Math.max(0.3, s - 0.15))} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #475569", background: "#1e293b", color: "#e2e8f0", fontSize: 16, cursor: "pointer", fontWeight: 700 }}>−</button>
           <span style={{ color: "#94a3b8", fontSize: 12, minWidth: 42, textAlign: "center" }}>{Math.round(scale * 100)}%</span>
           <button onClick={() => setScale(s => Math.min(3, s + 0.15))} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #475569", background: "#1e293b", color: "#e2e8f0", fontSize: 16, cursor: "pointer", fontWeight: 700 }}>+</button>

@@ -1,0 +1,113 @@
+/* ── Shared page patterns used across Clients, Contractors, Suppliers,
+      Actions, Reminders, Activity, Files, CallLog, SystemStatus,
+      Display pages, Settings, MyAssistant, CallerMemory ── */
+
+/* ── Card patterns ── */
+.cardClickable { cursor: pointer; }
+.cardPad { padding: 16px; }
+.cardPad20 { padding: 20px; }
+.cardMb { margin-bottom: 16px; }
+.sectionMt { margin-top: 16px; }
+
+/* ── Grid card common ── */
+.cardTop { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.cardIconRow { display: flex; align-items: center; gap: 8px; }
+.cardIconBox { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.cardTitle { font-weight: 600; font-size: 13px; }
+.cardTitleLg { font-weight: 700; font-size: 14px; }
+.cardSub { font-size: 11px; color: #94a3b8; }
+.cardStatusRow { display: flex; align-items: center; gap: 6px; }
+
+/* ── Flex rows ── */
+.flexBetween { display: flex; justify-content: space-between; align-items: center; }
+.flexCenter { display: flex; align-items: center; gap: 8px; }
+.flexGap4 { display: flex; gap: 4px; }
+.flexGap6 { display: flex; gap: 6px; }
+.flexGap8 { display: flex; gap: 8px; }
+.flexGap10 { display: flex; gap: 10px; }
+.flexWrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.flexCol { display: flex; flex-direction: column; gap: 6px; }
+
+/* ── Text styles ── */
+.textBold13 { font-weight: 600; font-size: 13px; }
+.textBold14 { font-weight: 700; font-size: 14px; }
+.textMono12 { font-family: monospace; font-size: 12px; color: #555; }
+.textSub { font-size: 12px; color: #999; }
+.textSubSm { font-size: 11px; color: #94a3b8; }
+.textMuted { font-size: 12px; color: #888; }
+.textMutedSm { font-size: 11px; color: #aaa; }
+.textDanger { color: #dc2626; }
+.textSuccess { color: #059669; }
+.textWarn { color: #d97706; }
+.textLabel { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 6px; }
+.textLabelMb8 { composes: textLabel; margin-bottom: 8px; }
+
+/* ── Section divider ── */
+.sectionTitle { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #aaa; margin-bottom: 10px; }
+.sectionBorder { border-top: 1px solid #f0f0f0; padding-top: 16px; }
+.sectionBorderMt { border-top: 1px solid #f0f0f0; margin-top: 4px; padding-top: 16px; }
+
+/* ── List item row ── */
+.listItem { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+.listItemMain { flex: 1; min-width: 0; }
+.listItemRight { display: flex; align-items: center; gap: 8px; }
+
+/* ── Info box ── */
+.infoBox { background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; padding: 14px; margin-bottom: 16px; }
+.infoBoxDark { background: #111; color: #fff; border-radius: 10px; padding: 16px; }
+
+/* ── Stat mini cards ── */
+.statMini { background: #f8f8f8; border-radius: 8px; padding: 10px 12px; text-align: center; }
+.statMiniValue { font-size: 18px; font-weight: 800; }
+.statMiniLabel { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+/* ── Action items / badges ── */
+.actionChip { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; background: #fff; cursor: pointer; transition: all 0.15s; }
+.actionChip:hover { filter: brightness(0.97); }
+.actionChipLabel { font-size: 12px; font-weight: 600; }
+
+/* ── Sites section ── */
+.siteRow { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 6px; }
+.siteRow:hover { background: #f8fafc; }
+.siteName { font-weight: 600; font-size: 13px; }
+.siteAddr { font-size: 11px; color: #999; }
+.siteContact { font-size: 11px; color: #64748b; }
+.siteToggle { cursor: pointer; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #64748b; }
+.siteToggle:hover { background: #f0f0f0; }
+
+/* ── Tab pill/chip styles ── */
+.tabPill { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #64748b; transition: all 0.15s; }
+.tabPillActive { composes: tabPill; background: #111; color: #fff; border-color: #111; }
+
+/* ── Empty state with smaller padding ── */
+.emptySmall { text-align: center; padding: 24px 16px; color: #94a3b8; }
+.emptyIcon { font-size: 24px; margin-bottom: 6px; }
+.emptyText { font-size: 13px; font-weight: 500; }
+
+/* ── Drawer body ── */
+.drawerBody { padding: 20px 24px; }
+
+/* ── Contact card ── */
+.contactCard { background: #f8fafc; border-radius: 8px; padding: 12px 14px; }
+.contactName { font-weight: 600; font-size: 13px; }
+.contactDetail { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+/* ── Compliance / status indicators ── */
+.complianceDot { width: 8px; height: 8px; border-radius: 50%; }
+.complianceRow { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+
+/* ── Table helper cells ── */
+.cellBold { font-weight: 600; font-size: 13px; }
+.cellSub { font-size: 11px; color: #999; margin-top: 2px; }
+.cellMuted { font-size: 12px; color: #888; }
+.cellAmount { font-weight: 700; font-size: 13px; }
+
+/* ── Progress indicator ── */
+.progressWrap { margin-top: 8px; }
+.progressLabel { font-size: 10px; color: #999; margin-top: 4px; }
+
+/* ── Delete button ── */
+.deleteBtn { color: #c00; }
+
+/* ── Hidden ── */
+.hidden { display: none; }

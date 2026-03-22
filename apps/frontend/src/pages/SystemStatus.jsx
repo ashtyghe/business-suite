@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Icon } from '../components/Icon';
 
 const SystemStatus = () => {
@@ -176,4 +176,4 @@ const SystemStatus = () => {
   );
 };
 
-export default SystemStatus;
+export default memo(SystemStatus);

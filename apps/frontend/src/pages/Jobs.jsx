@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { useAuth } from '../lib/AuthContext';
 import { createJob, updateJob, deleteJob } from '../lib/db';
@@ -449,4 +449,4 @@ const Jobs = () => {
   );
 };
 
-export default Jobs;
+export default memo(Jobs);

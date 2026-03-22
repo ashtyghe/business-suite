@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { createInvoice, updateInvoice, deleteInvoice } from '../lib/db';
 import { sendEmail, xeroSyncInvoice } from '../lib/supabase';
@@ -402,4 +402,4 @@ const Invoices = () => {
   );
 };
 
-export default Invoices;
+export default memo(Invoices);

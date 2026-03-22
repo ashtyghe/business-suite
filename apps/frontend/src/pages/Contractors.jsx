@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { useAppStore } from "../lib/store";
 import { fmt, daysUntil, COMPLIANCE_DOC_TYPES, COMPLIANCE_STATUS_COLORS, getComplianceStatus, getDaysUntilExpiry, getContractorComplianceCount, hexToRgba } from "../utils/helpers";
 import { Icon } from "../components/Icon";
@@ -517,4 +517,4 @@ const Contractors = () => {
 // ── Suppliers ─────────────────────────────────────────────────────────────────
 
 
-export default Contractors;
+export default memo(Contractors);

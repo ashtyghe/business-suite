@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { useAppStore } from "../lib/store";
 import { useAuth } from "../lib/AuthContext";
 import { Icon } from "../components/Icon";
@@ -1660,4 +1660,4 @@ const Settings = () => {
 
 
 export { VOICE_OPTIONS, DEFAULT_VOICE_SETTINGS, DEFAULT_OUTBOUND_SETTINGS, VoiceOptionCard };
-export default Settings;
+export default memo(Settings);

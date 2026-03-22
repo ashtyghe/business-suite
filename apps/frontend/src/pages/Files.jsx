@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { Icon } from '../components/Icon';
 
@@ -162,4 +162,4 @@ const FilesPage = () => {
   );
 };
 
-export default FilesPage;
+export default memo(FilesPage);

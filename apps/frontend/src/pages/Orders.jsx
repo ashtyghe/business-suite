@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { useAuth } from '../lib/AuthContext';
 import {
@@ -165,4 +165,4 @@ const OrdersPage = () => {
   );
 };
 
-export default OrdersPage;
+export default memo(OrdersPage);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { createScheduleEntry, updateScheduleEntry, deleteScheduleEntry } from '../lib/db';
 import { useAppStore } from '../lib/store';
 import { SECTION_COLORS, ViewField, TEAM } from '../fixtures/seedData.jsx';
@@ -519,4 +519,4 @@ const Schedule = () => {
   );
 };
 
-export default Schedule;
+export default memo(Schedule);

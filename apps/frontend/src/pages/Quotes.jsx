@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { createQuote, updateQuote, deleteQuote } from '../lib/db';
 import { sendEmail } from '../lib/supabase';
@@ -342,4 +342,4 @@ const Quotes = () => {
   );
 };
 
-export default Quotes;
+export default memo(Quotes);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -331,4 +331,4 @@ const MyAssistant = () => {
   );
 };
 
-export default MyAssistant;
+export default memo(MyAssistant);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite } from '../lib/db';
 import { SECTION_COLORS, ViewField } from '../fixtures/seedData.jsx';
@@ -456,4 +456,4 @@ const Clients = () => {
   );
 };
 
-export default Clients;
+export default memo(Clients);

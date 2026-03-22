@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, Fragment } from "react";
+import { useState, useEffect, useRef, useMemo, Fragment, memo } from "react";
 import { useAppStore } from "../lib/store";
 import { useAuth } from "../lib/AuthContext";
 import { addLog, calcHoursFromTimes, addMinsToTime } from "../utils/helpers";
@@ -650,4 +650,4 @@ const TimeTracking = () => {
 };
 
 
-export default TimeTracking;
+export default memo(TimeTracking);

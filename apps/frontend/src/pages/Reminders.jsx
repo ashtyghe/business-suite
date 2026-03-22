@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
 
@@ -216,4 +216,4 @@ const Reminders = () => {
   );
 };
 
-export default Reminders;
+export default memo(Reminders);

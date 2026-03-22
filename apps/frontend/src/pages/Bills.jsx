@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { useAuth } from '../lib/AuthContext';
 import { createBill, updateBill, deleteBill } from '../lib/db';
@@ -444,4 +444,4 @@ const Bills = () => {
   );
 };
 
-export default Bills;
+export default memo(Bills);

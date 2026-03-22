@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { useAppStore } from '../lib/store';
 import {
   SECTION_COLORS, ORDER_TERMINAL, ViewField,
@@ -205,4 +205,4 @@ const Suppliers = () => {
   );
 };
 
-export default Suppliers;
+export default memo(Suppliers);

@@ -103,6 +103,12 @@ export const getContractorComplianceCount = (contractor) => {
 };
 
 // ── Time Helpers ────────────────────────────────────────────────────────────
+export function addMinsToTime(timeStr, mins) {
+  const [h, m] = (timeStr || "09:00").split(":").map(Number);
+  const total = h * 60 + m + mins;
+  return `${String(Math.floor(total / 60) % 24).padStart(2,"0")}:${String(total % 60).padStart(2,"0")}`;
+}
+
 export function calcHoursFromTimes(start, end) {
   if (!start || !end) return 0;
   const [sh, sm] = start.split(":").map(Number);

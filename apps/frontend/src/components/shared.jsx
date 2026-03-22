@@ -142,7 +142,8 @@ export const FileIconBadge = ({ name }) => {
 };
 
 // ── Bill Status Badge ────────────────────────────────────────────────────────
-const BILL_STATUS_LABELS = { inbox: "Inbox", linked: "Linked", approved: "Approved", posted: "Posted to Job" };
+export const BILL_STATUS_LABELS = { inbox: "Inbox", linked: "Linked", approved: "Approved", posted: "Posted to Job" };
+export const BILL_STATUSES = ["inbox", "linked", "approved", "posted"];
 const BILL_STATUS_COLORS = {
   inbox:    { bg: "#f5f5f5", text: "#777" },
   linked:   { bg: "#e8f0fe", text: "#2c5fa8" },

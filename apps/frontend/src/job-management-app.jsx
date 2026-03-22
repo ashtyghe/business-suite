@@ -27,7 +27,7 @@ import { changePassword } from './lib/auth';
 //       - Also extracted: PhotoMarkupEditor, PlanDrawingEditor, FormFillerModal,
 //         BillModal, PdfFormFiller, OrderCard into components/
 // DONE: Split JobDetail tabs into sub-components: JobPnL, JobGantt, JobTasks
-// TODO: Extract Notes tab (~210 lines) — complex, tightly coupled with modals
+// DONE: Extracted Notes tab (~500 lines incl. modals) into JobDetail/JobNotes.jsx
 // DONE: Extracted seed data (~450 lines) into fixtures/seedData.jsx
 // DONE: Extracted CallerMemory (~340 lines) into pages/CallerMemory.jsx
 // DONE: Extracted shared helpers (~100 lines) into utils/helpers.js

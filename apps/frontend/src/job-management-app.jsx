@@ -509,12 +509,11 @@ const OrderStatusBadge = ({ status }) => {
 const DueDateChip = ({ dateStr, isTerminal }) => {
   if (!dateStr) return null;
   const days = daysUntil(dateStr);
-  const base = { display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 12 };
-  if (isTerminal) return <span style={{ ...base, color: "#94a3b8" }}><OrderIcon name="calendar" size={11} /> {orderFmtDate(dateStr)}</span>;
-  if (days < 0) return <span style={{ ...base, color: "#dc2626", background: "#fef2f2" }}><OrderIcon name="warning" size={11} /> {Math.abs(days)}d overdue</span>;
-  if (days === 0) return <span style={{ ...base, color: "#ea580c", background: "#fff7ed" }}><OrderIcon name="clock" size={11} /> Due today</span>;
-  if (days <= 3) return <span style={{ ...base, color: "#d97706", background: "#fffbeb" }}><OrderIcon name="clock" size={11} /> {days}d left</span>;
-  return <span style={{ ...base, color: "#64748b" }}><OrderIcon name="calendar" size={11} /> {orderFmtDate(dateStr)}</span>;
+  if (isTerminal) return <span className={pg.dueDateTerminal}><OrderIcon name="calendar" size={11} /> {orderFmtDate(dateStr)}</span>;
+  if (days < 0) return <span className={pg.dueDateOverdue}><OrderIcon name="warning" size={11} /> {Math.abs(days)}d overdue</span>;
+  if (days === 0) return <span className={pg.dueDateToday}><OrderIcon name="clock" size={11} /> Due today</span>;
+  if (days <= 3) return <span className={pg.dueDateSoon}><OrderIcon name="clock" size={11} /> {days}d left</span>;
+  return <span className={pg.dueDateDefault}><OrderIcon name="calendar" size={11} /> {orderFmtDate(dateStr)}</span>;
 };
 
 const OrderProgressBar = ({ status }) => {
@@ -550,7 +549,7 @@ const FileIconBadge = ({ name }) => {
   else if (["jpg","jpeg","png","gif","webp","heic"].includes(ext)) { icon = "IMG"; color = "#8b5cf6"; bg = "#f5f3ff"; }
   else if (["doc","docx"].includes(ext)) { icon = "DOC"; color = "#2563eb"; bg = "#eff6ff"; }
   else if (["xls","xlsx","csv"].includes(ext)) { icon = "XLS"; color = "#059669"; bg = "#ecfdf5"; }
-  return <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 6px", borderRadius: 4, color, background: bg }}>{icon}</span>;
+  return <span className={pg.fileIconBadge} style={{ color, background: bg }}>{icon}</span>;
 };
 
 const OrderFileAttachments = ({ files, onChange, onMarkup, onLightbox }) => {
@@ -630,8 +629,8 @@ const OrderAuditLog = ({ log }) => {
   return (
     <div>
       {[...log].reverse().map((entry, i) => (
-        <div key={entry.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: i < log.length - 1 ? "1px solid #f1f5f9" : "none" }}>
-          <div style={{ width: 24, height: 24, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: getColor(entry.action).bg, color: getColor(entry.action).text, flexShrink: 0 }}>
+        <div key={entry.id} className={i < log.length - 1 ? pg.auditLogEntryBorder : pg.auditLogEntry}>
+          <div className={pg.auditLogIcon} style={{ background: getColor(entry.action).bg, color: getColor(entry.action).text }}>
             <OrderIcon name={entry.auto ? "zap" : "activity"} size={10} />
           </div>
           <div className={pg.listItemMain}>
@@ -719,14 +718,14 @@ const OrderEmailModal = ({ type, order, jobs, companyInfo, onClose, onSent }) =>
         <div className={pg.u25}><OrderIcon name="check" size={24} cls="" /></div>
         <h3 className={pg.u26}>Email Sent</h3>
         <p className={pg.u27}>{isWO ? "Work order" : "Purchase order"} {order.ref} has been sent to {to}.</p>
-        <button className="btn btn-primary" style={{ background: accent }} onClick={onClose}>Done</button>
+        <button className={`btn btn-primary ${pg.sectionAccentBtn}`} style={{ background: accent }} onClick={onClose}>Done</button>
       </div>
     </div>
   );
   return (
     <div className="order-email-overlay">
       <div className="order-email-modal">
-        <div style={{ padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#fff", background: accent }}>
+        <div className={pg.drawerHeaderBarLg} style={{ background: accent }}>
           <div className={pg.flexCenterGap12}>
             <OrderIcon name="mail" size={18} />
             <div><div className={pg.u30}>Send via Email</div><div className={pg.cellAmount}>{order.ref}</div></div>
@@ -770,7 +769,7 @@ const OrderEmailModal = ({ type, order, jobs, companyInfo, onClose, onSent }) =>
         </div>
         <div className={pg.u44}>
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" style={{ background: accent, opacity: sending ? 0.6 : 1 }} disabled={!to || sending} onClick={handleSend}>
+          <button className={`btn btn-primary ${pg.sectionAccentBtn}`} style={{ background: accent, opacity: sending ? 0.6 : 1 }} disabled={!to || sending} onClick={handleSend}>
             <OrderIcon name="send" size={14} /> {sending ? "Sending..." : `Send ${isWO ? "to Contractor" : "to Supplier"}`}
           </button>
         </div>
@@ -785,7 +784,7 @@ const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mode, setM
     <div className="section-drawer-backdrop" onClick={onClose} />
     <div className="section-drawer">
       {/* Header */}
-      <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#fff", background: accent, flexShrink: 0 }}>
+      <div className={pg.drawerHeaderBar} style={{ background: accent }}>
         <div className={pg.u46}>
           {icon && <div className={pg.u47}>{icon}</div>}
           <div className={pg.u48}>
@@ -797,8 +796,8 @@ const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mode, setM
         <div className={pg.u51}>
           {showToggle && !isNew && (
             <div className={pg.u52}>
-              <button style={{ padding: "4px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: mode === "view" ? "#fff" : "transparent", color: mode === "view" ? "#1e293b" : "rgba(255,255,255,0.8)" }} onClick={() => setMode("view")}>View</button>
-              <button style={{ padding: "4px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: mode === "edit" ? "#fff" : "transparent", color: mode === "edit" ? "#1e293b" : "rgba(255,255,255,0.8)" }} onClick={() => setMode("edit")}>Edit</button>
+              <button className={mode === "view" ? pg.drawerToggleBtnActive : pg.drawerToggleBtnInactive} onClick={() => setMode("view")}>View</button>
+              <button className={mode === "edit" ? pg.drawerToggleBtnActive : pg.drawerToggleBtnInactive} onClick={() => setMode("edit")}>Edit</button>
             </div>
           )}
           <button className={pg.u55} onClick={onClose}>
@@ -924,11 +923,11 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
     }} />;
 
   const statusStripEl = (
-    <div style={{ padding: "12px 20px", background: lightTint, flexShrink: 0 }}>
+    <div className={pg.statusStripBar} style={{ background: lightTint }}>
       <div className={pg.flexBetweenMb6Alt}>
         <div className={pg.u58}>
           {availableTransitions.map(s => (
-            <button key={s} onClick={() => handleTransition(s)} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 8, border: ORDER_STATUS_TRIGGERS[s] ? "1px solid #fcd34d" : "1px solid #cbd5e1", background: ORDER_STATUS_TRIGGERS[s] ? "#fef3c7" : "#fff", color: ORDER_STATUS_TRIGGERS[s] ? "#92400e" : "#475569", cursor: "pointer" }}>
+            <button key={s} onClick={() => handleTransition(s)} className={ORDER_STATUS_TRIGGERS[s] ? pg.transitionBtnAuto : pg.transitionBtnNormal}>
               {ORDER_STATUS_TRIGGERS[s] && <OrderIcon name="zap" size={10} />}{s}
             </button>
           ))}
@@ -939,7 +938,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
       <OrderProgressBar status={form.status} />
       <div className={pg.u60}>
         {ORDER_STATUSES.filter(s => s !== "Cancelled").map(s => (
-          <span key={s} style={{ fontSize: 11, whiteSpace: "nowrap", fontWeight: form.status === s ? 700 : 400, color: form.status === s ? "#334155" : "#cbd5e1" }}>{s}</span>
+          <span key={s} className={form.status === s ? pg.statusLabelActive : pg.statusLabelInactive}>{s}</span>
         ))}
       </div>
     </div>
@@ -951,11 +950,11 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
       <button className="btn btn-secondary btn-sm" onClick={() => printOrderPdf(type, form, jobs)}><OrderIcon name="file" size={14} /> PDF</button>
     </div>
     <div className={pg.flexCenter}>
-      {mode === "edit" && dirty && <button className="btn btn-primary" style={{ background: accent }} onClick={handleSave}>Save</button>}
+      {mode === "edit" && dirty && <button className={`btn btn-primary ${pg.sectionAccentBtn}`} style={{ background: accent }} onClick={handleSave}>Save</button>}
       {mode === "edit" && !isNew && !dirty && <button className="btn btn-secondary" onClick={() => setMode("view")}>Done editing</button>}
       {mode === "view" && <button className="btn btn-sm" className={pg.bluePrimaryBtn} disabled={orderEmailSending} onClick={handleDirectSendOrder}><OrderIcon name="send" size={14} /> {orderEmailSending ? "Sending..." : `Email ${isWO ? "Contractor" : "Supplier"}`}</button>}
-      {mode === "view" && <button className="btn btn-primary" style={{ background: accent }} onClick={() => setShowEmail(true)}><OrderIcon name="mail" size={14} /> Draft Email</button>}
-      {isNew && <button className="btn btn-primary" style={{ background: accent }} onClick={handleSave}>Create {isWO ? "Work Order" : "Purchase Order"}</button>}
+      {mode === "view" && <button className={`btn btn-primary ${pg.sectionAccentBtn}`} style={{ background: accent }} onClick={() => setShowEmail(true)}><OrderIcon name="mail" size={14} /> Draft Email</button>}
+      {isNew && <button className={`btn btn-primary ${pg.sectionAccentBtn}`} style={{ background: accent }} onClick={handleSave}>Create {isWO ? "Work Order" : "Purchase Order"}</button>}
     </div>
   </>;
 
@@ -973,7 +972,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
     >
       {mode === "view" ? (
         <div className={pg.u61}>
-          {orderEmailStatus && <div style={{ padding: "10px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: orderEmailStatus.type === "success" ? "#ecfdf5" : "#fef2f2", color: orderEmailStatus.type === "success" ? "#059669" : "#dc2626", border: `1px solid ${orderEmailStatus.type === "success" ? "#a7f3d0" : "#fecaca"}` }}>{orderEmailStatus.msg}</div>}
+          {orderEmailStatus && <div className={orderEmailStatus.type === "success" ? pg.emailStatusSuccess : pg.emailStatusError}>{orderEmailStatus.msg}</div>}
           <div className="grid-2">
             <div>
               <div className="form-label">{isWO ? "Contractor" : "Supplier"}</div>
@@ -988,8 +987,8 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
               {form.poLimit && <div><span className={pg.textSubSm}>PO Limit</span><div className={pg.u64}>${parseFloat(form.poLimit).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</div></div>}
             </div>
           </div>
-          {isWO && form.scopeOfWork && <div style={{ background: lightTint, borderRadius: 12, padding: 16 }}><div className="form-label" style={{ color: accent }}>Scope of Work</div><div className={pg.u66}>{form.scopeOfWork}</div></div>}
-          {!isWO && form.deliveryAddress && <div style={{ background: lightTint, borderRadius: 12, padding: 16 }}><div className="form-label" style={{ color: accent }}>Delivery Address</div><div className={pg.fs13}>{form.deliveryAddress}</div></div>}
+          {isWO && form.scopeOfWork && <div className={pg.tintBox} style={{ background: lightTint }}><div className="form-label" style={{ color: accent }}>Scope of Work</div><div className={pg.u66}>{form.scopeOfWork}</div></div>}
+          {!isWO && form.deliveryAddress && <div className={pg.tintBox} style={{ background: lightTint }}><div className="form-label" style={{ color: accent }}>Delivery Address</div><div className={pg.fs13}>{form.deliveryAddress}</div></div>}
           {!isWO && form.lines && form.lines.length > 0 && (
             <table className={pg.u67}>
               <thead><tr className={pg.u68}><th className={pg.u69}>Description</th><th className={pg.p2_3}>Qty</th><th className={pg.p2_3}>Unit</th></tr></thead>
@@ -1003,7 +1002,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
               <div className="form-label" className={pg.cardStatusRow}><OrderIcon name="paperclip" size={11} /> Attachments ({form.attachments.length})</div>
               <div className={pg.grid2colGap8}>
                 {form.attachments.map(f => (
-                  <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0", cursor: f.dataUrl ? "pointer" : "default" }}
+                  <div key={f.id} className={f.dataUrl ? pg.fileAttachRowClickable : pg.fileAttachRow}
                     onClick={() => f.dataUrl && setLightboxImg(f.dataUrl)}>
                     {f.dataUrl ? <img src={f.dataUrl} alt={f.name} className={pg.u78} /> : <FileIconBadge name={f.name} />}
                     <div className={pg.listItemMain}><div className={pg.u79}>{f.name}</div><div className={pg.u80}>{fmtFileSize(f.size)}</div></div>
@@ -1106,7 +1105,7 @@ const OrderCard = ({ type, order, onOpen, onDelete, jobs }) => {
     <div className="order-card" onClick={() => onOpen(order)}>
       <div className={jb.gridCardTop}>
         <div className={pg.flexCenter}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669" }}>
+          <div className={isWO ? pg.orderIconBoxWo : pg.orderIconBoxPo}>
             <OrderIcon name={isWO ? "briefcase" : "shopping"} size={15} />
           </div>
           <div><div className={pg.textBold13}>{order.ref}</div><div className={pg.textSubSm}>{orderFmtDate(order.issueDate)}</div></div>
@@ -1161,7 +1160,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
     return (
       <div className={pg.u88}>
         <div className={pg.u89} onClick={() => onView(order._type, order)}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669", flexShrink: 0 }}>
+          <div className={isWO ? pg.orderIconBoxWoShrink : pg.orderIconBoxPoShrink}>
             <OrderIcon name={isWO ? "briefcase" : "shopping"} size={14} />
           </div>
           <div className={pg.listItemMain}>
@@ -1178,7 +1177,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
           <div className={pg.u95}>
             <span className={pg.u96}>Move to:</span>
             {transitions.map(s => (
-              <button key={s} onClick={e => { e.stopPropagation(); handleDashTransition(order, s); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 8, border: ORDER_STATUS_TRIGGERS[s] ? "1px solid #fcd34d" : "1px solid #e2e8f0", background: ORDER_STATUS_TRIGGERS[s] ? "#fffbeb" : "#f8fafc", color: ORDER_STATUS_TRIGGERS[s] ? "#b45309" : "#475569", cursor: "pointer" }}>
+              <button key={s} onClick={e => { e.stopPropagation(); handleDashTransition(order, s); }} className={ORDER_STATUS_TRIGGERS[s] ? pg.transitionBtnDashAuto : pg.transitionBtnDashNormal}>
                 {ORDER_STATUS_TRIGGERS[s] && <OrderIcon name="zap" size={9} />}{s}
               </button>
             ))}
@@ -1193,7 +1192,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
     const isTerminal = ORDER_TERMINAL.includes(order.status);
     return (
       <div className={pg.u99} onClick={() => onView(order._type, order)}>
-        <div style={{ width: 24, height: 24, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669", flexShrink: 0 }}><OrderIcon name={isWO ? "briefcase" : "shopping"} size={12} /></div>
+        <div className={isWO ? pg.orderIconBox24Wo : pg.orderIconBox24Po}><OrderIcon name={isWO ? "briefcase" : "shopping"} size={12} /></div>
         <div className={pg.listItemMain}>
           <div className={pg.cardStatusRow}><span className={pg.fs13fw600}>{order.ref}</span><OrderStatusBadge status={order.status} /></div>
           <div className={pg.u100}>{(isWO ? order.contractorName : order.supplierName) || "—"}{jd ? " · " + jd.ref : ""}</div>
@@ -1207,7 +1206,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
     return (
       <div className="card"><div className="card-body">
         <h3 className={pg.u101}>
-          <div style={{ width: 20, height: 20, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5" }}><OrderIcon name={isWO ? "briefcase" : "shopping"} size={11} cls="" /></div>
+          <div className={isWO ? pg.orderIconBox20Wo : pg.orderIconBox20Po}><OrderIcon name={isWO ? "briefcase" : "shopping"} size={11} cls="" /></div>
           {title}
         </h3>
         <div className={pg.flexColGap8}>
@@ -1215,10 +1214,10 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
             const matched = pipelineOrders.filter(o => o.status === s);
             const count = matched.length; const pct = pipelineOrders.length > 0 ? (count / pipelineOrders.length) * 100 : 0;
             return (
-              <div key={s} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 8px", borderRadius: 8, opacity: count > 0 ? 1 : 0.4, cursor: count > 0 ? "pointer" : "default" }} onClick={() => count > 0 && openPanel(s + " — " + title, matched.map(o => ({ ...o, _type: pType })))}>
+              <div key={s} className={count > 0 ? pg.pipelineStatusRowActive : pg.pipelineStatusRowEmpty} onClick={() => count > 0 && openPanel(s + " — " + title, matched.map(o => ({ ...o, _type: pType })))}>
                 <span className={pg.u103}>{s}</span>
-                <div className={pg.u104}><div style={{ height: "100%", borderRadius: 999, background: ORDER_BAR_COLORS[s], width: pct + "%" }} /></div>
-                <span style={{ fontSize: 12, fontWeight: 700, width: 16, textAlign: "right", color: count > 0 ? "#334155" : "#cbd5e1" }}>{count}</span>
+                <div className={pg.u104}><div style={{ height: "100%", borderRadius: 999, background: ORDER_BAR_COLORS[s], width: `${pct}%` }} /></div>
+                <span className={count > 0 ? pg.pipelineCountActive : pg.pipelineCountZero}>{count}</span>
               </div>
             );
           })}
@@ -1238,7 +1237,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
         {kpis.map(k => (
           <div key={k.label} className="order-kpi-card" style={{ border: `1px solid ${k.borderColor}`, background: k.bg, cursor: "pointer" }} onClick={() => openPanel(k.label, k.orders)}>
             <div className={pg.fs10fw700label94noMb}>{k.label}</div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: k.textColor, marginTop: 4 }}>{k.value}</div>
+            <div className={pg.kpiValueBig} style={{ color: k.textColor }}>{k.value}</div>
             <div className={pg.fs11c94a3b8mt2}>{k.sub}</div>
           </div>
         ))}
@@ -1247,7 +1246,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
         <StatusPipeline title="Work Orders" pipelineOrders={localWO} pType="wo" />
         <StatusPipeline title="Purchase Orders" pipelineOrders={localPO} pType="po" />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+      <div className={pg.gridAutoFit280}>
         {[
           { title: "Overdue", icon: "warning", iconBg: "#fef2f2", iconColor: "#dc2626", borderColor: "#fecaca", orders: overdue, empty: "No overdue orders" },
           { title: "Due This Week", icon: "clock", iconBg: "#fff7ed", iconColor: "#ea580c", borderColor: "#fed7aa", orders: dueSoon, empty: "Nothing due in 7 days" },
@@ -1258,7 +1257,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
               <div className={pg.flexCenter}>
                 <div className={pg.u110}><OrderIcon name={icon} size={13} cls="" className={pg.u111} /></div>
                 <span className="card-title">{title}</span>
-                {orders.length > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: iconColor, padding: "1px 6px", borderRadius: 10 }}>{orders.length}</span>}
+                {orders.length > 0 && <span className={pg.orderCountPill} style={{ background: iconColor }}>{orders.length}</span>}
               </div>
             </div>
             <div className="card-body">
@@ -1434,7 +1433,7 @@ const PhotoMarkupEditor = ({ imageSrc, onSave, onClose }) => {
       <div className={pg.u169}>
         {tools.map(t => (
           <button key={t.id} onClick={() => { if (t.action) t.action(); else setTool(t.id); }}
-            style={{ padding: "6px 10px", borderRadius: 6, border: tool === t.id ? "2px solid #fff" : "2px solid transparent", background: tool === t.id ? "rgba(255,255,255,0.15)" : "transparent", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+            className={tool === t.id ? pg.markupToolBtnActive : pg.markupToolBtn}>
             <span className={pg.u170}>{t.icon}</span> {t.label}
           </button>
         ))}
@@ -1452,7 +1451,8 @@ const PhotoMarkupEditor = ({ imageSrc, onSave, onClose }) => {
         <div className={pg.flexGap3}>
           {MARKUP_COLORS.map(c => (
             <button key={c} onClick={() => setColor(c)}
-              style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: color === c ? "3px solid #fff" : `2px solid ${c === "#ffffff" ? "#666" : "transparent"}`, cursor: "pointer", boxShadow: color === c ? "0 0 6px rgba(255,255,255,0.4)" : "none" }} />
+              className={color === c ? pg.markupColorSwatchActive : pg.markupColorSwatch}
+              style={{ background: c, border: color !== c ? `2px solid ${c === "#ffffff" ? "#666" : "transparent"}` : undefined }} />
           ))}
         </div>
       </div>
@@ -1771,29 +1771,29 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
     { id: "select", icon: "☝️", label: "Select" },
   ];
 
-  const btnStyle = (active) => ({ padding: "5px 9px", borderRadius: 6, border: active ? "2px solid #fff" : "2px solid transparent", background: active ? "rgba(255,255,255,0.15)" : "transparent", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 });
-  const toggleStyle = (on) => ({ padding: "4px 8px", borderRadius: 5, border: "none", background: on ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.06)", color: on ? "#fff" : "#888", cursor: "pointer", fontSize: 11, fontWeight: 600 });
+  const planBtnClass = (active) => active ? pg.planToolBtnActive : pg.planToolBtn;
+  const toggleClass = (on) => on ? pg.planToggleOn : pg.planToggleOff;
 
   return (
     <div className={pg.u178}>
       {/* Top Toolbar */}
       <div className={pg.u179}>
         {tools.map(t => (
-          <button key={t.id} onClick={() => { if (t.action) t.action(); else setTool(t.id); }} style={btnStyle(tool === t.id)}>
+          <button key={t.id} onClick={() => { if (t.action) t.action(); else setTool(t.id); }} className={planBtnClass(tool === t.id)}>
             <span className={pg.fs14}>{t.icon}</span> {t.label}
           </button>
         ))}
         <div className={pg.vertDividerSm} />
-        <button onClick={deleteSelected} style={{ ...btnStyle(false), color: "#f87171" }}>🗑</button>
-        <button onClick={clearAll} style={{ ...btnStyle(false), color: "#fbbf24" }}>✕ Clear</button>
+        <button onClick={deleteSelected} className={pg.planToolBtnDanger}>🗑</button>
+        <button onClick={clearAll} className={pg.planToolBtnWarn}>✕ Clear</button>
         <div className={pg.vertDividerSm} />
         {/* Line width */}
         <div className={pg.p2_14}>
           <span className={pg.u180}>Width</span>
           {PLAN_LINE_WIDTHS.map(w => (
             <button key={w} onClick={() => setLineWidth(w)}
-              style={{ width: 22, height: 22, borderRadius: 4, border: lineWidth === w ? "2px solid #fff" : "1px solid #555", background: lineWidth === w ? "rgba(255,255,255,0.15)" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: Math.min(w * 2, 14), height: Math.min(w, 8), background: "#fff", borderRadius: 1 }} />
+              className={lineWidth === w ? pg.planLineWidthBtnActive : pg.planLineWidthBtnInactive}>
+              <div className={pg.planLineWidthIndicator} style={{ width: Math.min(w * 2, 14), height: Math.min(w, 8) }} />
             </button>
           ))}
         </div>
@@ -1802,17 +1802,18 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
         <div className={pg.flexGap3}>
           {PLAN_COLORS.map(c => (
             <button key={c} onClick={() => setColor(c)}
-              style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: color === c ? "3px solid #fff" : `1px solid ${c === "#111111" ? "#666" : "transparent"}`, cursor: "pointer" }} />
+              className={color === c ? pg.planColorSwatchActive : pg.planColorSwatch}
+              style={{ background: c, border: color !== c ? `1px solid ${c === "#111111" ? "#666" : "transparent"}` : undefined }} />
           ))}
         </div>
       </div>
 
       {/* Snap/Options Bar */}
       <div className={pg.u181}>
-        <button onClick={() => setSnapGrid(v => !v)} style={toggleStyle(snapGrid)}>⊞ Snap Grid</button>
-        <button onClick={() => setSnapEndpoints(v => !v)} style={toggleStyle(snapEndpoints)}>⊙ Snap Endpoints</button>
-        <button onClick={() => setShowLengths(v => !v)} style={toggleStyle(showLengths)}>📏 Show Lengths</button>
-        <button onClick={() => setConstrainAngle(v => !v)} style={toggleStyle(constrainAngle)}>📐 Constrain Angle</button>
+        <button onClick={() => setSnapGrid(v => !v)} className={toggleClass(snapGrid)}>⊞ Snap Grid</button>
+        <button onClick={() => setSnapEndpoints(v => !v)} className={toggleClass(snapEndpoints)}>⊙ Snap Endpoints</button>
+        <button onClick={() => setShowLengths(v => !v)} className={toggleClass(showLengths)}>📏 Show Lengths</button>
+        <button onClick={() => setConstrainAngle(v => !v)} className={toggleClass(constrainAngle)}>📐 Constrain Angle</button>
         {constrainAngle && (
           <select value={angleStep} onChange={e => setAngleStep(Number(e.target.value))} className={pg.p2_15}>
             <option value={15}>15°</option>
@@ -2146,7 +2147,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
   const jobStatusStrip = detailMode === "view" ? (
     <div className={pg.flexShrink0}>
-      <div style={{ padding: "10px 20px", background: jobLight, display: "flex", alignItems: "center", gap: 6, overflowX: "auto", overflowY: "hidden" }}>
+      <div className={pg.statusStripBarSm} style={{ background: jobLight }}>
         {["draft","scheduled","in_progress","completed","cancelled"].filter(s => s !== job.status).map(s => (
           <button key={s} className="btn btn-xs" className={pg.u187} onClick={() => {
             const updated = { ...job, status: s, activityLog: addLog(job.activityLog, `Status → ${s.replace("_"," ")}`) };
@@ -2156,19 +2157,19 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
       </div>
       {/* Tabs */}
       <div className="tabs" className={pg.u188}>
-        {tabs.map(t => <div key={t.id} className={`tab ${tab === t.id ? "active" : ""}`} onClick={() => setTab(t.id)} style={{ whiteSpace: "nowrap", borderBottomColor: tab === t.id ? jobAccent : "transparent" }}>{t.label}</div>)}
+        {tabs.map(t => <div key={t.id} className={`tab ${tab === t.id ? "active" : ""} ${pg.tabItem}`} onClick={() => setTab(t.id)} style={{ borderBottomColor: tab === t.id ? jobAccent : "transparent" }}>{t.label}</div>)}
       </div>
     </div>
   ) : null;
 
   const jobFooter = detailMode === "view" ? <>
     <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
-    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setDetailForm({ title: job.title, clientId: job.clientId, siteId: job.siteId || null, status: job.status, priority: job.priority, description: job.description || "", startDate: job.startDate || "", dueDate: job.dueDate || "", assignedTo: job.assignedTo || [], tags: (job.tags || []).join(", "), estimate: job.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } }); setDetailMode("edit"); }}>
+    <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: jobAccent }} onClick={() => { setDetailForm({ title: job.title, clientId: job.clientId, siteId: job.siteId || null, status: job.status, priority: job.priority, description: job.description || "", startDate: job.startDate || "", dueDate: job.dueDate || "", assignedTo: job.assignedTo || [], tags: (job.tags || []).join(", "), estimate: job.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } }); setDetailMode("edit"); }}>
       <Icon name="edit" size={13} /> Edit
     </button>
   </> : <>
     <button className="btn btn-ghost btn-sm" onClick={() => setDetailMode("view")}>Cancel</button>
-    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={saveDetailForm} disabled={!detailForm.title}>
+    <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: jobAccent }} onClick={saveDetailForm} disabled={!detailForm.title}>
       <Icon name="check" size={13} /> Save Changes
     </button>
   </>;
@@ -2290,7 +2291,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           {tab === "overview" && (
             <div>
               {job.description && <p className={pg.u190}>{job.description}</p>}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px,1fr))", gap: 12, marginBottom: 20 }}>
+              <div className={pg.gridAutoFit120}>
                 {[
                   { label: "Estimate", val: (() => { const e = job.estimate || {}; const t = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0); return t > 0 ? fmt(t) : "—"; })(), sub: (() => { const e = job.estimate || {}; const t = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0); return t > 0 ? "Budget set" : "Not set"; })() },
                   { label: "Quoted", val: fmt(totalQuoted), sub: `${jobQuotes.filter(q=>q.status==="accepted").length} accepted` },
@@ -2349,7 +2350,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           {tab === "quotes" && (
             <div>
               <div className={pg.u198}>
-                <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.quotes.accent }} onClick={async () => {
+                <button className={`btn btn-primary btn-sm ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.quotes.accent }} onClick={async () => {
                   try {
                     const newQ = { jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" };
                     const saved = await createQuote(newQ);
@@ -2375,7 +2376,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                           <StatusBadge status={q.status} />
                           {q.status !== "accepted" && <button className="btn btn-secondary btn-xs" onClick={() => acceptQuote(q.id)}>Accept</button>}
                           {q.status === "accepted" && !alreadyInvoiced && (
-                            <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.invoices.accent }} onClick={() => { quoteToInvoice(q); setTab("invoices"); }}>
+                            <button className={`btn btn-primary btn-xs ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.invoices.accent }} onClick={() => { quoteToInvoice(q); setTab("invoices"); }}>
                               <Icon name="invoices" size={11} />→ Invoice
                             </button>
                           )}
@@ -2418,7 +2419,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 <div className={pg.fs13c888}>
                   {jobInvoices.length > 0 && <span><strong className={pg.color111}>{fmt(totalPaid)}</strong> paid of <strong className={pg.color111}>{fmt(totalInvoiced)}</strong> invoiced</span>}
                 </div>
-                <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.invoices.accent }} onClick={async () => {
+                <button className={`btn btn-primary btn-sm ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.invoices.accent }} onClick={async () => {
                   try {
                     const newInv = { jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" };
                     const saved = await createInvoice(newInv);
@@ -2448,7 +2449,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                           <StatusBadge status={inv.status} />
                           <XeroSyncBadge syncStatus={inv.xeroSyncStatus} xeroId={inv.xeroInvoiceId} />
                           {inv.status !== "paid" && inv.status !== "void" && (
-                            <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.invoices.accent }} onClick={() => markInvPaid(inv.id)}>Mark Paid</button>
+                            <button className={`btn btn-primary btn-xs ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.invoices.accent }} onClick={() => markInvPaid(inv.id)}>Mark Paid</button>
                           )}
                           {!inv.xeroInvoiceId && inv.status !== "draft" && (
                             <button className="btn btn-ghost btn-xs" className={pg.color0369a1} onClick={() => xeroSyncInvoice("push", inv.id)} title="Send to Xero"><Icon name="send" size={11} /> Xero</button>
@@ -2484,7 +2485,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 <div className={pg.fs13c888}>
                   {totalHours > 0 && <span><strong className={pg.color111}>{jobTime.filter(t=>t.billable).reduce((s,t)=>s+t.hours,0)}h</strong> billable · <strong className={pg.color111}>{totalHours}h</strong> total</span>}
                 </div>
-                <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.time.accent }} onClick={() => setShowTimeForm(v => !v)}><Icon name="plus" size={12} />Log Time</button>
+                <button className={`btn btn-primary btn-sm ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.time.accent }} onClick={() => setShowTimeForm(v => !v)}><Icon name="plus" size={12} />Log Time</button>
               </div>
               {showTimeForm && (
                 <div className={pg.u205}>
@@ -2501,7 +2502,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     </div>
                     <div className={`form-group ${jb.formGroupNoMb}`}>
                       <label className="form-label">Hours</label>
-                      <div style={{ background: "#fff", border: "1.5px solid #e0e0e0", borderRadius: 6, padding: "9px 12px", fontSize: 14, fontWeight: 700, color: quickHours > 0 ? "#111" : "#ccc", textAlign: "center" }}>
+                      <div className={quickHours > 0 ? pg.hoursInputBoxActive : pg.hoursInputBoxEmpty}>
                         {quickHours > 0 ? `${quickHours.toFixed(1)}h` : "—"}
                       </div>
                     </div>
@@ -2526,7 +2527,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     <label className="checkbox-label"><input type="checkbox" checked={timeForm.billable} onChange={e => setTimeForm(f => ({ ...f, billable: e.target.checked }))} /><span>Billable</span></label>
                     <div className={pg.flexGap8}>
                       <button className="btn btn-secondary btn-sm" onClick={() => setShowTimeForm(false)}>Cancel</button>
-                      <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.time.accent }} onClick={saveTime} disabled={quickHours <= 0}><Icon name="check" size={12} />Save</button>
+                      <button className={`btn btn-primary btn-sm ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.time.accent }} onClick={saveTime} disabled={quickHours <= 0}><Icon name="check" size={12} />Save</button>
                     </div>
                   </div>
                 </div>
@@ -2542,7 +2543,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                           <td><div className={pg.flexCenter}><div className="avatar" className={pg.u207}>{t.worker.split(" ").map(w=>w[0]).join("")}</div><span className={pg.textBold13}>{t.worker}</span></div></td>
                           <td className={pg.textSub}>{t.date}</td>
                           <td><span className={pg.cellAmount}>{t.hours}h</span></td>
-                          <td><span className="badge" style={{ background: t.billable ? "#111" : "#f0f0f0", color: t.billable ? "#fff" : "#999" }}>{t.billable ? "Billable" : "Non-bill"}</span></td>
+                          <td><span className={`badge ${t.billable ? pg.billableBadge : pg.nonBillBadge}`}>{t.billable ? "Billable" : "Non-bill"}</span></td>
                           <td className={pg.fs12c666}>{t.description}</td>
                           <td><button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => delTime(t.id)}><Icon name="trash" size={11} /></button></td>
                         </tr>
@@ -2568,7 +2569,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     </span>
                   )}
                 </div>
-                <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setEditingBill({})}><Icon name="plus" size={12} />Capture Bill</button>
+                <button className={`btn btn-primary btn-sm ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setEditingBill({})}><Icon name="plus" size={12} />Capture Bill</button>
               </div>
               {jobBills.length === 0
                 ? <div className="empty-state"><div className="empty-state-icon">🧾</div><div className="empty-state-text">No bills captured for this job</div><div className="empty-state-sub">Capture receipts and supplier invoices here</div></div>
@@ -2752,8 +2753,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   <td className={pg.textBold13}>{label}</td>
                   <td className={pg.p2_31}>{fmt(estimated)}</td>
                   <td className={pg.p2_31}>{fmt(actual)}</td>
-                  <td style={{ textAlign: "right", fontSize: 13, color: overBudget ? "#dc2626" : "#059669", fontWeight: 600 }}>{variance >= 0 ? "+" : ""}{fmt(variance)}</td>
-                  <td style={{ textAlign: "right", fontSize: 13, color: overBudget ? "#dc2626" : "#059669" }}>{pct}%</td>
+                  <td className={overBudget ? pg.varianceCellOver : pg.varianceCellUnder}>{variance >= 0 ? "+" : ""}{fmt(variance)}</td>
+                  <td className={overBudget ? pg.variancePctOver : pg.variancePctUnder}>{pct}%</td>
                 </tr>
               );
             };
@@ -2779,18 +2780,18 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 </div>
                 <div className={pg.grayBox}>
                   <div className={pg.fs10fw700label}>Total Costs</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: totalEstimate > 0 && totalActual > totalEstimate ? "#dc2626" : "#111" }}>{fmt(totalActual)}</div>
+                  <div className={totalEstimate > 0 && totalActual > totalEstimate ? pg.costTotalOver : pg.costTotalUnder}>{fmt(totalActual)}</div>
                   {totalEstimate > 0 && <div className={pg.u219}>
                     <div className={pg.u220}>
-                      <div style={{ width: `${costPct}%`, height: "100%", background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#059669", borderRadius: 2 }} />
+                      <div style={{ width: `${costPct}%`, height: "100%", background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#059669", borderRadius: 2, transition: "width 0.3s" }} />
                     </div>
                     <div className={pg.u221}>{costPct}% of estimate</div>
                   </div>}
                 </div>
-                <div style={{ background: profit >= 0 ? "#ecfdf5" : "#fef2f2", borderRadius: 8, padding: "14px 16px", borderLeft: `3px solid ${profit >= 0 ? "#059669" : "#dc2626"}` }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: profit >= 0 ? "#059669" : "#dc2626", marginBottom: 6 }}>Profit / Margin</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: profit >= 0 ? "#059669" : "#dc2626" }}>{fmt(profit)}</div>
-                  <div style={{ fontSize: 11, color: profit >= 0 ? "#059669" : "#dc2626", marginTop: 3 }}>{revenue > 0 ? `${marginPct}% margin` : "No revenue yet"}</div>
+                <div className={profit >= 0 ? pg.profitBoxPositive : pg.profitBoxNegative}>
+                  <div className={profit >= 0 ? pg.profitLabelPositive : pg.profitLabelNegative}>Profit / Margin</div>
+                  <div className={profit >= 0 ? pg.profitValuePositive : pg.profitValueNegative}>{fmt(profit)}</div>
+                  <div className={profit >= 0 ? pg.profitMarginPositive : pg.profitMarginNegative}>{revenue > 0 ? `${marginPct}% margin` : "No revenue yet"}</div>
                 </div>
               </div>
 
@@ -2817,7 +2818,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                       <div className={pg.fs14fw700}>Total: {fmt((estimateForm.labour || 0) + (estimateForm.materials || 0) + (estimateForm.subcontractors || 0) + (estimateForm.other || 0))}</div>
                       <div className={pg.flexGap8}>
                         <button className="btn btn-ghost btn-sm" onClick={() => setEditingEstimate(false)}>Cancel</button>
-                        <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={saveEstimate}>Save Estimate</button>
+                        <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: jobAccent }} onClick={saveEstimate}>Save Estimate</button>
                       </div>
                     </div>
                   </div>
@@ -2920,8 +2921,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                           <td className={pg.u236}>Total</td>
                           <td className={pg.p2_36}>{fmt(totalEstimate)}</td>
                           <td className={pg.p2_36}>{fmt(totalActual)}</td>
-                          <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 800, fontSize: 13, color: totalActual > totalEstimate ? "#dc2626" : "#059669" }}>{totalEstimate - totalActual >= 0 ? "+" : ""}{fmt(totalEstimate - totalActual)}</td>
-                          <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 800, fontSize: 13, color: costPct > 100 ? "#dc2626" : "#059669" }}>{costPct}%</td>
+                          <td className={pg.totalCellRight} style={{ color: totalActual > totalEstimate ? "#dc2626" : "#059669" }}>{totalEstimate - totalActual >= 0 ? "+" : ""}{fmt(totalEstimate - totalActual)}</td>
+                          <td className={pg.totalCellRight} style={{ color: costPct > 100 ? "#dc2626" : "#059669" }}>{costPct}%</td>
                         </tr>
                       </tbody>
                     </table>
@@ -2937,7 +2938,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     { label: "Total Invoiced", val: totalInvoiced, count: jobInvoices.length },
                     { label: "Paid", val: totalPaid, count: jobInvoices.filter(i => i.status === "paid").length }
                   ].map((r, i) => (
-                    <div key={r.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 2 ? "1px solid #f0f0f0" : "none" }}>
+                    <div key={r.label} className={i < 2 ? pg.revenueRowBorder : pg.revenueRow}>
                       <span className={pg.fs13c555}>{r.label} <span className={pg.color999}>({r.count})</span></span>
                       <span className={pg.fs14fw700}>{fmt(r.val)}</span>
                     </div>
@@ -2955,9 +2956,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     <div className={pg.u241}>{fmt(clientTotalRevenue)}</div>
                     <div className={pg.p2_39}>Based on {client?.name} rates</div>
                   </div>
-                  <div style={{ background: clientProfit >= 0 ? "#f0fdf4" : "#fef2f2", borderRadius: 8, padding: "12px 16px", borderLeft: `3px solid ${clientProfit >= 0 ? "#059669" : "#dc2626"}` }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: clientProfit >= 0 ? "#059669" : "#dc2626", marginBottom: 4 }}>Projected Profit</div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: clientProfit >= 0 ? "#059669" : "#dc2626" }}>{fmt(clientProfit)}</div>
+                  <div className={clientProfit >= 0 ? pg.profitBoxPositive : pg.profitBoxNegative}>
+                    <div className={`${pg.projProfitLabel} ${clientProfit >= 0 ? pg.profitLabelPositive : pg.profitLabelNegative}`}>Projected Profit</div>
+                    <div className={clientProfit >= 0 ? pg.profitValuePositive : pg.profitValueNegative}>{fmt(clientProfit)}</div>
                     <div className={pg.p2_39}>{clientMarginPct}% margin</div>
                   </div>
                 </div>
@@ -2997,7 +2998,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 <div>
                   <div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">No project phases yet</div></div>
                   <div className={pg.u248}>
-                    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
+                    <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: jobAccent }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
                   </div>
                 </div>
               );
@@ -3044,7 +3045,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               <div className={pg.p2_40}>
                 <div className={pg.u249}>{phases.length} phase{phases.length !== 1 ? "s" : ""} · {minDate} → {maxDate}</div>
                 <button className="btn btn-ghost btn-sm" onClick={printGanttPdf}>🖨️ Export PDF</button>
-                <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
+                <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: jobAccent }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
               </div>
 
               {showPhaseForm && (
@@ -3061,7 +3062,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   </div>
                   <div className={pg.flexEndGap8}>
                     <button className="btn btn-ghost btn-sm" onClick={() => { setShowPhaseForm(false); setEditPhase(null); }}>Cancel</button>
-                    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={savePhase} disabled={!phaseForm.name.trim()}>
+                    <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: jobAccent }} onClick={savePhase} disabled={!phaseForm.name.trim()}>
                       {editPhase ? "Update Phase" : "Add Phase"}
                     </button>
                   </div>
@@ -3086,17 +3087,17 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   return (
                     <div key={p.id} className={pg.u256}>
                       <div className={pg.u257}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, flexShrink: 0 }} />
+                        <div className={pg.ganttPhaseDot} style={{ background: p.color }} />
                         <span className={pg.u258}>{p.name}</span>
                         <button className="btn btn-ghost" className={pg.u259} onClick={() => { setEditPhase(p); setPhaseForm({ name: p.name, startDate: p.startDate, endDate: p.endDate, color: p.color, progress: p.progress }); setShowPhaseForm(true); }}>✏️</button>
                         <button className="btn btn-ghost" className={pg.u260} onClick={() => deletePhase(p.id)}>🗑</button>
                       </div>
                       <div className={pg.u261}>
-                        {todayPct > 0 && todayPct < 100 && <div style={{ position: "absolute", left: `${todayPct}%`, top: -2, bottom: -2, width: 2, background: "#ef4444", zIndex: 2, borderRadius: 1 }} />}
-                        <div style={{ position: "absolute", left: `${leftPct}%`, width: `${widthPct}%`, height: "100%", background: p.color + "25", borderRadius: 4, overflow: "hidden" }}>
-                          <div style={{ width: `${p.progress}%`, height: "100%", background: p.color, borderRadius: 4, transition: "width 0.3s" }} />
+                        {todayPct > 0 && todayPct < 100 && <div className={pg.ganttTodayMarker} style={{ left: `${todayPct}%` }} />}
+                        <div className={pg.ganttPhaseBar} style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: p.color + "25" }}>
+                          <div className={pg.ganttPhaseFill} style={{ width: `${p.progress}%`, background: p.color }} />
                         </div>
-                        <div style={{ position: "absolute", left: `${leftPct + widthPct + 1}%`, top: 3, fontSize: 10, color: "#888", whiteSpace: "nowrap" }}>{p.progress}%</div>
+                        <div className={pg.ganttProgressLabel} style={{ left: `${leftPct + widthPct + 1}%` }}>{p.progress}%</div>
                       </div>
                     </div>
                   );
@@ -3143,13 +3144,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   <div className={pg.u262}>
                     <span className={pg.fs13fw600}>{done} of {tasks.length} complete</span>
                     <div className={pg.u263}>
-                      <div style={{ width: `${tasks.length > 0 ? (done / tasks.length) * 100 : 0}%`, height: "100%", background: done === tasks.length ? "#059669" : jobAccent, borderRadius: 3, transition: "width 0.3s" }} />
+                      <div className={pg.progressFill} style={{ width: `${tasks.length > 0 ? (done / tasks.length) * 100 : 0}%`, background: done === tasks.length ? "#059669" : jobAccent }} />
                     </div>
                   </div>
                 )}
                 {!tasks.length && <div className={pg.flex1} />}
                 {(job.phases || []).length > 0 && <button className="btn btn-ghost btn-sm" onClick={copyFromGantt}>📋 Copy from Gantt</button>}
-                <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => setShowTaskForm(true)}>+ Add Task</button>
+                <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: jobAccent }} onClick={() => setShowTaskForm(true)}>+ Add Task</button>
               </div>
 
               {showTaskForm && (
@@ -3166,7 +3167,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   </div>
                   <div className={pg.flexEndGap8}>
                     <button className="btn btn-ghost btn-sm" onClick={() => setShowTaskForm(false)}>Cancel</button>
-                    <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={addTask} disabled={!taskForm.text.trim()}>Add Task</button>
+                    <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: jobAccent }} onClick={addTask} disabled={!taskForm.text.trim()}>Add Task</button>
                   </div>
                 </div>
               )}
@@ -3180,12 +3181,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   {tasks.map(task => {
                     const isOverdue = !task.done && task.dueDate && task.dueDate < todayStr;
                     return (
-                      <div key={task.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: task.done ? "#f9fafb" : "#fff", border: "1px solid #e8e8e8", borderRadius: 8, borderLeft: `3px solid ${task.done ? "#059669" : isOverdue ? "#dc2626" : jobAccent}` }}>
-                        <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} style={{ width: 18, height: 18, cursor: "pointer", accentColor: jobAccent }} />
+                      <div key={task.id} className={task.done ? pg.taskItemDone : pg.taskItemActive} style={{ borderLeft: `3px solid ${task.done ? "#059669" : isOverdue ? "#dc2626" : jobAccent}` }}>
+                        <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} className={pg.taskCheckbox} style={{ accentColor: jobAccent }} />
                         <div className={pg.flex1}>
-                          <div style={{ fontSize: 13, fontWeight: 500, textDecoration: task.done ? "line-through" : "none", color: task.done ? "#999" : "#333" }}>{task.text}</div>
+                          <div className={task.done ? pg.taskTextDone : pg.taskTextActive}>{task.text}</div>
                           <div className={pg.u265}>
-                            {task.dueDate && <span style={{ color: isOverdue ? "#dc2626" : "#888", fontWeight: isOverdue ? 700 : 400 }}>{isOverdue ? "⚠️ " : ""}{task.dueDate}</span>}
+                            {task.dueDate && <span className={isOverdue ? pg.taskDueOverdue : pg.taskDueNormal}>{isOverdue ? "⚠️ " : ""}{task.dueDate}</span>}
                             {task.assignedTo && <span>· {task.assignedTo}</span>}
                           </div>
                         </div>
@@ -3312,8 +3313,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     <div className={pg.p2_44}>
                       {(field.options || []).map((opt, i) => (
                         <div key={i} className={pg.u271}>
-                          <span style={{ color: (val || []).includes(opt) ? "#059669" : "#dc2626", fontWeight: 700 }}>{(val || []).includes(opt) ? "✓" : "✗"}</span>
-                          <span style={{ color: (val || []).includes(opt) ? "#333" : "#999" }}>{opt}</span>
+                          <span className={(val || []).includes(opt) ? pg.checklistChecked : pg.checklistUnchecked}>{(val || []).includes(opt) ? "✓" : "✗"}</span>
+                          <span className={(val || []).includes(opt) ? pg.checklistTextChecked : pg.checklistTextUnchecked}>{opt}</span>
                         </div>
                       ))}
                     </div>
@@ -3346,7 +3347,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         mode={inlineQuoteMode} setMode={setInlineQuoteMode}
         showToggle={true}
         statusStrip={inlineQuoteMode === "edit" ?
-          <div style={{ padding: "8px 20px", background: SECTION_COLORS.quotes.light, display: "flex", alignItems: "center", gap: 6, overflowX: "auto", overflowY: "hidden" }}>
+          <div className={pg.statusStripBarQuote} style={{ background: SECTION_COLORS.quotes.light }}>
             {["draft","sent","accepted","declined"].filter(s => s !== editingQuote.status).map(s => (
               <button key={s} className="btn btn-xs" className={pg.p2_49}
                 onClick={() => setEditingQuote(q => ({ ...q, status: s }))}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>
@@ -3355,12 +3356,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         : null}
         footer={inlineQuoteMode === "view" ? <>
           <button className="btn btn-ghost btn-sm" onClick={() => setEditingQuote(null)}>Close</button>
-          <button className="btn btn-sm" style={{ background: qAccent, color: "#fff", border: "none" }} onClick={() => setInlineQuoteMode("edit")}>
+          <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: qAccent }} onClick={() => setInlineQuoteMode("edit")}>
             <Icon name="edit" size={13} /> Edit
           </button>
         </> : <>
           <button className="btn btn-ghost btn-sm" onClick={() => setInlineQuoteMode("view")}>Cancel</button>
-          <button className="btn btn-sm" style={{ background: qAccent, color: "#fff", border: "none" }} onClick={() => saveQuote(editingQuote)}>
+          <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: qAccent }} onClick={() => saveQuote(editingQuote)}>
             <Icon name="check" size={13} /> Save Quote
           </button>
         </>}
@@ -3457,7 +3458,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         mode={inlineInvMode} setMode={setInlineInvMode}
         showToggle={true}
         statusStrip={inlineInvMode === "edit" ?
-          <div style={{ padding: "8px 20px", background: SECTION_COLORS.invoices.light, display: "flex", alignItems: "center", gap: 6, overflowX: "auto", overflowY: "hidden" }}>
+          <div className={pg.statusStripBarQuote} style={{ background: SECTION_COLORS.invoices.light }}>
             {["draft","sent","paid","overdue","void"].filter(s => s !== editingInvoice.status).map(s => (
               <button key={s} className="btn btn-xs" className={pg.p2_49}
                 onClick={() => setEditingInvoice(i => ({ ...i, status: s }))}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>
@@ -3466,12 +3467,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         : null}
         footer={inlineInvMode === "view" ? <>
           <button className="btn btn-ghost btn-sm" onClick={() => setEditingInvoice(null)}>Close</button>
-          <button className="btn btn-sm" style={{ background: iAccent, color: "#fff", border: "none" }} onClick={() => setInlineInvMode("edit")}>
+          <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: iAccent }} onClick={() => setInlineInvMode("edit")}>
             <Icon name="edit" size={13} /> Edit
           </button>
         </> : <>
           <button className="btn btn-ghost btn-sm" onClick={() => setInlineInvMode("view")}>Cancel</button>
-          <button className="btn btn-sm" style={{ background: iAccent, color: "#fff", border: "none" }} onClick={() => saveInvoice(editingInvoice)}>
+          <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: iAccent }} onClick={() => saveInvoice(editingInvoice)}>
             <Icon name="check" size={13} /> Save Invoice
           </button>
         </>}
@@ -3668,7 +3669,7 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
               <div className={pg.u355}>
                 {(field.options || []).map((opt, i) => (
                   <label key={i} className={pg.u356}>
-                    <input type="checkbox" checked={(formData[field.key] || []).includes(opt)} onChange={() => toggleChecklist(field.key, opt)} style={{ width: 16, height: 16, accentColor: "#2563eb" }} />
+                    <input type="checkbox" checked={(formData[field.key] || []).includes(opt)} onChange={() => toggleChecklist(field.key, opt)} className={pg.checklistCheckbox} />
                     {opt}
                   </label>
                 ))}
@@ -3815,12 +3816,12 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
       isNew={isNewTime}
       footer={mode === "view" ? <>
         <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
-        <button className="btn btn-sm" style={{ background: SECTION_COLORS.time.accent, color: "#fff", border: "none" }} onClick={() => setMode("edit")}>
+        <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.time.accent }} onClick={() => setMode("edit")}>
           <Icon name="edit" size={13} /> Edit
         </button>
       </> : <>
         <button className="btn btn-ghost btn-sm" onClick={() => editEntry ? setMode("view") : onClose()}>{editEntry ? "Cancel" : "Cancel"}</button>
-        <button className="btn btn-sm" style={{ background: SECTION_COLORS.time.accent, color: "#fff", border: "none" }} onClick={save} disabled={hours <= 0 || !form.jobId}>
+        <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.time.accent }} onClick={save} disabled={hours <= 0 || !form.jobId}>
           <Icon name="check" size={13} /> {isNewTime ? "Log Time" : "Save Changes"}
         </button>
       </>}
@@ -4177,12 +4178,12 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
       isNew={isNew}
       footer={mode === "view" ? <>
         <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
-        <button className="btn btn-sm" style={{ background: SECTION_COLORS.bills.accent, color: "#fff", border: "none" }} onClick={() => setMode("edit")}>
+        <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setMode("edit")}>
           <Icon name="edit" size={13} /> Edit
         </button>
       </> : <>
         <button className="btn btn-ghost btn-sm" onClick={() => bill ? setMode("view") : onClose()}>{bill ? "Cancel" : "Cancel"}</button>
-        <button className="btn btn-sm" style={{ background: SECTION_COLORS.bills.accent, color: "#fff", border: "none" }} onClick={isNew ? handleSave : handleSaveAndView} disabled={!form.supplier || !form.amount}>
+        <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.bills.accent }} onClick={isNew ? handleSave : handleSaveAndView} disabled={!form.supplier || !form.amount}>
           <Icon name="check" size={13} /> {isNew ? "Capture Bill" : "Save Changes"}
         </button>
       </>}
@@ -4425,7 +4426,7 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
       showToggle={false}
       footer={<>
         <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-        <button className="btn btn-sm" style={{ background: SECTION_COLORS.bills.accent, color: "#fff", border: "none" }} onClick={() => onPost(jobId, category, parseFloat(markup)||0)} disabled={!jobId}>
+        <button className={`btn btn-sm ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.bills.accent }} onClick={() => onPost(jobId, category, parseFloat(markup)||0)} disabled={!jobId}>
           <Icon name="check" size={13} /> Post to Job
         </button>
       </>}
@@ -4531,7 +4532,7 @@ const ChangePasswordModal = ({ onClose }) => {
               className={pg.u668} />
             <div className={pg.flexEndGap8}>
               <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-              <button type="submit" className="btn btn-sm" style={{ background: "#111", color: "#fff", border: "none", opacity: saving ? 0.6 : 1 }} disabled={saving}>
+              <button type="submit" className={`btn btn-sm ${pg.blackAccentBtn}`} style={{ opacity: saving ? 0.6 : 1 }} disabled={saving}>
                 {saving ? "Saving…" : "Update Password"}
               </button>
             </div>
@@ -4560,9 +4561,9 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.error) {
       return (
-        <div style={{ padding: 40, textAlign: "center" }}>
-          <div style={{ fontSize: 28, marginBottom: 12 }}>Something went wrong</div>
-          <div style={{ fontSize: 13, color: "#888", marginBottom: 20, maxWidth: 500, margin: "0 auto 20px" }}>{this.state.error.message}</div>
+        <div className={pg.errorBoundary}>
+          <div className={pg.errorBoundaryTitle}>Something went wrong</div>
+          <div className={pg.errorBoundaryMsg}>{this.state.error.message}</div>
           <button className="btn btn-primary" onClick={() => this.setState({ error: null })}>Try Again</button>
         </div>
       );
@@ -4573,9 +4574,9 @@ class ErrorBoundary extends Component {
 
 // ── Page Loading Fallback ────────────────────────────────────────────────────
 const PageLoader = () => (
-  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 0", flexDirection: "column", gap: 12 }}>
-    <div style={{ width: 28, height: 28, border: "3px solid #e8e8e8", borderTopColor: "#111", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-    <div style={{ color: "#999", fontSize: 13 }}>Loading…</div>
+  <div className={pg.pageLoader}>
+    <div className={pg.pageLoaderSpinner} />
+    <div className={pg.pageLoaderText}>Loading…</div>
   </div>
 );
 
@@ -4869,7 +4870,7 @@ export default function App() {
               <div className={sh.userRole}>{auth.staff?.role || "Admin"}</div>
             </div>
             {!auth.isLocalDev && (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={showUserMenu ? "#fff" : "#555"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transition: "transform 0.15s", transform: showUserMenu ? "rotate(180deg)" : "rotate(0)" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={showUserMenu ? "#fff" : "#555"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={pg.sidebarChevron} style={{ transform: showUserMenu ? "rotate(180deg)" : "rotate(0)" }}>
                 <polyline points="18 15 12 9 6 15"/>
               </svg>
             )}

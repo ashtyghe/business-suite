@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAppStore } from "../../lib/store";
 import { addLog } from "../../utils/helpers";
 import { TEAM, SECTION_COLORS } from "../../fixtures/seedData.jsx";
+import s from './JobTasks.module.css';
 
 const JobTasks = ({ job }) => {
   const { setJobs } = useAppStore();
@@ -40,35 +41,35 @@ const JobTasks = ({ job }) => {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+      <div className={s.toolbar}>
         {tasks.length > 0 && (
-          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>{done} of {tasks.length} complete</span>
-            <div style={{ flex: 1, maxWidth: 200, height: 6, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}>
-              <div style={{ width: `${tasks.length > 0 ? (done / tasks.length) * 100 : 0}%`, height: "100%", background: done === tasks.length ? "#059669" : jobAccent, borderRadius: 3, transition: "width 0.3s" }} />
+          <div className={s.progressRow}>
+            <span className={s.progressLabel}>{done} of {tasks.length} complete</span>
+            <div className={s.progressTrack}>
+              <div className={s.progressFill} style={{ width: `${tasks.length > 0 ? (done / tasks.length) * 100 : 0}%`, background: done === tasks.length ? "#059669" : jobAccent }} />
             </div>
           </div>
         )}
-        {!tasks.length && <div style={{ flex: 1 }} />}
+        {!tasks.length && <div className={s.spacer} />}
         {(job.phases || []).length > 0 && <button className="btn btn-ghost btn-sm" onClick={copyFromGantt}>📋 Copy from Gantt</button>}
-        <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => setShowTaskForm(true)}>+ Add Task</button>
+        <button className="btn btn-sm" style={{ background: jobAccent }} onClick={() => setShowTaskForm(true)}>+ Add Task</button>
       </div>
 
       {showTaskForm && (
-        <div style={{ padding: 16, background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 16 }}>
+        <div className={s.taskForm}>
           <input className="form-control" value={taskForm.text} onChange={e => setTaskForm(f => ({ ...f, text: e.target.value }))} placeholder="Task description…" style={{ marginBottom: 10 }} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-            <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Due Date</label><input type="date" className="form-control" value={taskForm.dueDate} onChange={e => setTaskForm(f => ({ ...f, dueDate: e.target.value }))} /></div>
-            <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Assigned To</label>
+          <div className={s.taskFormGrid}>
+            <div><label className={s.fieldLabel}>Due Date</label><input type="date" className="form-control" value={taskForm.dueDate} onChange={e => setTaskForm(f => ({ ...f, dueDate: e.target.value }))} /></div>
+            <div><label className={s.fieldLabel}>Assigned To</label>
               <select className="form-control" value={taskForm.assignedTo} onChange={e => setTaskForm(f => ({ ...f, assignedTo: e.target.value }))}>
                 <option value="">Unassigned</option>
                 {TEAM.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <div className={s.taskFormActions}>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowTaskForm(false)}>Cancel</button>
-            <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={addTask} disabled={!taskForm.text.trim()}>Add Task</button>
+            <button className="btn btn-sm" style={{ background: jobAccent }} onClick={addTask} disabled={!taskForm.text.trim()}>Add Task</button>
           </div>
         </div>
       )}
@@ -78,20 +79,20 @@ const JobTasks = ({ job }) => {
       )}
 
       {tasks.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div className={s.taskList}>
           {tasks.map(task => {
             const isOverdue = !task.done && task.dueDate && task.dueDate < todayStr;
             return (
-              <div key={task.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: task.done ? "#f9fafb" : "#fff", border: "1px solid #e8e8e8", borderRadius: 8, borderLeft: `3px solid ${task.done ? "#059669" : isOverdue ? "#dc2626" : jobAccent}` }}>
-                <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} style={{ width: 18, height: 18, cursor: "pointer", accentColor: jobAccent }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, textDecoration: task.done ? "line-through" : "none", color: task.done ? "#999" : "#333" }}>{task.text}</div>
-                  <div style={{ display: "flex", gap: 8, marginTop: 3, fontSize: 11, color: "#888" }}>
-                    {task.dueDate && <span style={{ color: isOverdue ? "#dc2626" : "#888", fontWeight: isOverdue ? 700 : 400 }}>{isOverdue ? "⚠️ " : ""}{task.dueDate}</span>}
+              <div key={task.id} className={`${s.taskRow} ${task.done ? s.taskRowDone : s.taskRowActive}`} style={{ borderLeft: `3px solid ${task.done ? "#059669" : isOverdue ? "#dc2626" : jobAccent}` }}>
+                <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} className={s.taskCheckbox} style={{ accentColor: jobAccent }} />
+                <div className={s.taskContent}>
+                  <div className={`${s.taskText} ${task.done ? s.taskTextDone : s.taskTextActive}`}>{task.text}</div>
+                  <div className={s.taskMeta}>
+                    {task.dueDate && <span className={isOverdue ? s.overdue : undefined}>{isOverdue ? "⚠️ " : ""}{task.dueDate}</span>}
                     {task.assignedTo && <span>· {task.assignedTo}</span>}
                   </div>
                 </div>
-                <button className="btn btn-ghost" style={{ padding: 4, color: "#ccc", fontSize: 12 }} onClick={() => deleteTask(task.id)}>✕</button>
+                <button className={`btn btn-ghost ${s.deleteBtn}`} onClick={() => deleteTask(task.id)}>✕</button>
               </div>
             );
           })}

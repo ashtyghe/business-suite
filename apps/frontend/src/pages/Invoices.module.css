@@ -1,0 +1,428 @@
+/* Summary strip */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.summaryCard {
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+/* Search bar */
+.searchBarWrap {
+  flex: 1;
+  min-width: 120px;
+}
+
+.filterSelect {
+  width: auto;
+}
+
+/* View toggle */
+.viewToggle {
+  display: flex;
+  gap: 4px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 3px;
+}
+
+/* Kanban */
+.kanbanCols {
+  grid-template-columns: repeat(5, minmax(200px, 1fr));
+}
+
+.kanbanBadge {
+  background: #e0e0e0;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.kanbanColTotal {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.kanbanCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.kanbanCardNumber {
+  font-weight: 700;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.kanbanCardTitle {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.kanbanCardClient {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 6px;
+}
+
+.kanbanCardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kanbanCardTotal {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.kanbanCardDue {
+  font-size: 10px;
+}
+
+.kanbanCardActions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+/* Grid view cards */
+.gridEmpty {
+  grid-column: 1 / -1;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardNumber {
+  font-weight: 600;
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.cardDate {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.cardStatusWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cardTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardTitleEmpty {
+  font-style: italic;
+  color: #94a3b8;
+}
+
+.cardClient {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.cardTotal {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+}
+
+.cardPill {
+  font-size: 11px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.cardDue {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cardActions {
+  display: flex;
+  gap: 4px;
+}
+
+/* List view */
+.rowPointer {
+  cursor: pointer;
+}
+
+.listNumber {
+  font-weight: 700;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.listQuoteRef {
+  font-size: 10px;
+  color: #bbb;
+  margin-top: 2px;
+}
+
+.listJobCell {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.listClientCell {
+  font-size: 13px;
+  color: #666;
+}
+
+.listTotalCell {
+  font-weight: 700;
+}
+
+.listDueCell {
+  font-size: 12px;
+}
+
+.listActions {
+  display: flex;
+  gap: 4px;
+}
+
+/* Button colors */
+.btnGreen {
+  color: #2a7;
+}
+
+.btnBlue {
+  color: #0369a1;
+}
+
+.btnRed {
+  color: #c00;
+}
+
+/* Drawer view mode */
+.drawerViewPad {
+  padding: 20px 24px;
+}
+
+.emailAlert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.emailAlertSuccess {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.emailAlertError {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.viewGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.lineItemsSection {
+  margin-bottom: 20px;
+}
+
+.sectionHeading {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.lineItemsTable {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+}
+
+.lineItemsHeaderRow {
+  border-bottom: 2px solid #eee;
+}
+
+.lineItemsTh {
+  text-align: left;
+  padding: 6px 8px;
+  color: #888;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.lineItemsThRight {
+  text-align: right;
+  padding: 6px 8px;
+  color: #888;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.lineItemRow {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.lineItemCell {
+  padding: 8px 8px;
+  font-weight: 500;
+}
+
+.lineItemCellRight {
+  padding: 8px 8px;
+  text-align: right;
+}
+
+.lineItemCellRightBold {
+  padding: 8px 8px;
+  text-align: right;
+  font-weight: 600;
+}
+
+.lineItemCellPlain {
+  padding: 8px 8px;
+}
+
+/* Totals box */
+.totalsBox {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.totalsRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.totalsLabel {
+  color: #888;
+}
+
+.totalsValue {
+  font-weight: 600;
+}
+
+.totalsFinalRow {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 2px solid #e5e7eb;
+  font-size: 15px;
+}
+
+.totalsFinalLabel {
+  font-weight: 700;
+}
+
+.totalsFinalValue {
+  font-weight: 800;
+}
+
+/* Drawer footer buttons */
+.drawerFooterActions {
+  display: flex;
+  gap: 6px;
+}
+
+.btnDanger {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+}
+
+.btnPrimary {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+}
+
+.btnAccent {
+  color: #fff;
+  border: none;
+}
+
+/* Edit form */
+.editPad {
+  padding: 20px 24px;
+}
+
+.editFormGrid {
+  margin-bottom: 16px;
+}
+
+/* Active view button */
+.activeViewBtn {
+  color: #fff;
+}

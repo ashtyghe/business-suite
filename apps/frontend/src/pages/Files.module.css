@@ -1,0 +1,142 @@
+.page {
+  padding: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.searchWrap {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.selectInput {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  font-size: 13px;
+  background: #fff;
+  color: #333;
+  font-family: 'Open Sans', sans-serif;
+  min-width: 120px;
+}
+
+.searchInput {
+  composes: selectInput;
+  width: 100%;
+  padding-left: 32px;
+}
+
+.fileCount {
+  font-size: 12px;
+  color: #888;
+}
+
+.tableWrap {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+  overflow: hidden;
+}
+
+.scrollWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.headerRow {
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e5e5;
+}
+
+.th {
+  text-align: left;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.thStatic {
+  composes: th;
+  cursor: default;
+}
+
+.thCenter {
+  composes: thStatic;
+  text-align: center;
+}
+
+.emptyCell {
+  text-align: center;
+  padding: 40px;
+  color: #aaa;
+}
+
+.row {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.nameCell {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nameText {
+  font-weight: 500;
+}
+
+.cell {
+  padding: 10px 14px;
+  color: #666;
+}
+
+.dateCell {
+  composes: cell;
+  white-space: nowrap;
+}
+
+.linkedCell {
+  padding: 10px 14px;
+  color: #888;
+  font-size: 12px;
+}
+
+.statusCell {
+  padding: 10px 14px;
+  text-align: center;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}

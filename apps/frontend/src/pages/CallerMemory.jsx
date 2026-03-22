@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { Icon } from "../components/Icon";
 import { SECTION_COLORS } from "../fixtures/seedData.jsx";
 import { hexToRgba } from "../utils/helpers";
+import s from './CallerMemory.module.css';
 
 // ── Caller Memory (persistent context per caller for voice assistant) ────────
 const CALLER_NOTES_MAX = 20;
@@ -173,61 +174,58 @@ const CallerMemory = () => {
     );
   }, [callers, search]);
 
-  const cardStyle = { background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, marginBottom: 8, overflow: "hidden" };
-  const inputStyle = { width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" };
-
-  if (loading) return <div style={{ textAlign: "center", padding: 40, color: "#888" }}>Loading...</div>;
+  if (loading) return <div className={s.loadingState}>Loading...</div>;
 
   return (
     <div>
       {/* Info banner */}
-      <div style={{ background: hexToRgba(accent, 0.06), border: `1px solid ${hexToRgba(accent, 0.15)}`, borderRadius: 10, padding: "14px 18px", marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
-        <Icon name="info" size={16} style={{ color: accent, marginTop: 1, flexShrink: 0 }} />
-        <div style={{ fontSize: 12, color: "#666", lineHeight: 1.5 }}>
-          <strong style={{ color: "#333" }}>Caller Memory</strong> gives your voice assistant context from previous calls. Key points are stored per phone number and linked to your account via your phone number in Settings → Users. Limited to {CALLER_NOTES_MAX} notes per caller, auto-pruned after {CALLER_NOTES_MAX_AGE_DAYS} days.
+      <div className={s.infoBanner} style={{ background: hexToRgba(accent, 0.06), border: `1px solid ${hexToRgba(accent, 0.15)}` }}>
+        <Icon name="info" size={16} className={s.infoBannerIcon} style={{ color: accent }} />
+        <div className={s.infoBannerText}>
+          <strong className={s.infoBannerStrong}>Caller Memory</strong> gives your voice assistant context from previous calls. Key points are stored per phone number and linked to your account via your phone number in Settings → Users. Limited to {CALLER_NOTES_MAX} notes per caller, auto-pruned after {CALLER_NOTES_MAX_AGE_DAYS} days.
         </div>
       </div>
 
       {/* Search + Add */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
-        <div style={{ flex: 1, position: "relative" }}>
-          <Icon name="search" size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#aaa" }} />
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search callers, notes..." style={{ ...inputStyle, paddingLeft: 32 }} />
+      <div className={s.searchRow}>
+        <div className={s.searchWrap}>
+          <Icon name="search" size={14} className={s.searchIcon} />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search callers, notes..." className={s.searchInput} />
         </div>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)} style={{ background: accent, whiteSpace: "nowrap", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+        <button className={`btn btn-primary btn-sm ${s.addCallerBtn}`} onClick={() => setShowAdd(true)} style={{ background: accent }}>
           <Icon name="add" size={14} /> Add Caller
         </button>
       </div>
 
       {/* Add new caller form */}
       {showAdd && (
-        <div style={{ ...cardStyle, padding: 16, marginBottom: 16, border: `2px solid ${accent}` }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#111", marginBottom: 12 }}>Add New Caller</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+        <div className={s.addForm} style={{ border: `2px solid ${accent}` }}>
+          <div className={s.addFormTitle}>Add New Caller</div>
+          <div className={s.addFormGrid}>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Phone Number *</div>
-              <input type="tel" value={addPhone} onChange={e => setAddPhone(e.target.value)} placeholder="0412 345 678" style={inputStyle} />
+              <div className={s.fieldLabel}>Phone Number *</div>
+              <input type="tel" value={addPhone} onChange={e => setAddPhone(e.target.value)} placeholder="0412 345 678" className={s.input} />
             </div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Name (optional)</div>
-              <input type="text" value={addName} onChange={e => setAddName(e.target.value)} placeholder="John Smith" style={inputStyle} />
+              <div className={s.fieldLabel}>Name (optional)</div>
+              <input type="text" value={addName} onChange={e => setAddName(e.target.value)} placeholder="John Smith" className={s.input} />
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button className="btn btn-sm" onClick={() => { setShowAdd(false); setAddPhone(""); setAddName(""); }} style={{ fontSize: 12 }}>Cancel</button>
-            <button className="btn btn-primary btn-sm" onClick={addNewCaller} disabled={!addPhone.trim() || saving} style={{ background: accent, fontSize: 12 }}>{saving ? "Saving..." : "Add"}</button>
+          <div className={s.addFormActions}>
+            <button className={`btn btn-sm ${s.btnFontSm}`} onClick={() => { setShowAdd(false); setAddPhone(""); setAddName(""); }}>Cancel</button>
+            <button className={`btn btn-primary btn-sm ${s.btnFontSm}`} onClick={addNewCaller} disabled={!addPhone.trim() || saving} style={{ background: accent }}>{saving ? "Saving..." : "Add"}</button>
           </div>
         </div>
       )}
 
       {/* Caller list */}
       {filtered.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 20px", color: "#999" }}>
-          <Icon name="send" size={32} style={{ color: "#ddd", marginBottom: 12 }} />
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#888", marginBottom: 4 }}>
+        <div className={s.emptyState}>
+          <Icon name="send" size={32} className={s.emptyIcon} />
+          <div className={s.emptyTitle}>
             {callers.length === 0 ? "No caller memory yet" : "No matches"}
           </div>
-          <div style={{ fontSize: 12 }}>
+          <div className={s.emptyBody}>
             {callers.length === 0 ? "Context will be saved automatically when your assistant handles calls, or add callers manually above." : "Try a different search term."}
           </div>
         </div>
@@ -236,57 +234,57 @@ const CallerMemory = () => {
           const isExpanded = expandedId === caller.id;
           const noteCount = (caller.notes || []).length;
           return (
-            <div key={caller.id} style={cardStyle}>
+            <div key={caller.id} className={s.card}>
               {/* Caller header */}
-              <div onClick={() => setExpandedId(isExpanded ? null : caller.id)} style={{ padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, transition: "background 0.1s" }}>
+              <div onClick={() => setExpandedId(isExpanded ? null : caller.id)} className={s.callerHeader}>
                 {/* Avatar */}
-                <div style={{ width: 36, height: 36, borderRadius: "50%", background: hexToRgba(accent, 0.1), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div className={s.avatar} style={{ background: hexToRgba(accent, 0.1) }}>
                   <Icon name="clients" size={16} style={{ color: accent }} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div className={s.callerInfo}>
+                  <div className={s.callerNameRow}>
+                    <div className={s.callerName}>
                       {caller.caller_name || formatPhone(caller.phone)}
                     </div>
                     {caller.caller_name && (
-                      <div style={{ fontSize: 12, color: "#999" }}>{formatPhone(caller.phone)}</div>
+                      <div className={s.callerPhone}>{formatPhone(caller.phone)}</div>
                     )}
                   </div>
-                  <div style={{ fontSize: 11, color: "#999", marginTop: 2, display: "flex", gap: 12 }}>
+                  <div className={s.callerMeta}>
                     <span>{noteCount} note{noteCount !== 1 ? "s" : ""}</span>
                     {caller.last_call_at && <span>Last contact: {timeAgo(caller.last_call_at)}</span>}
                   </div>
                 </div>
                 {/* Latest note preview */}
                 {!isExpanded && noteCount > 0 && (
-                  <div style={{ fontSize: 12, color: "#888", maxWidth: 250, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexShrink: 0 }}>
+                  <div className={s.notePreview}>
                     {caller.notes[0].text}
                   </div>
                 )}
-                <Icon name={isExpanded ? "up" : "down"} size={14} style={{ color: "#ccc", flexShrink: 0 }} />
+                <Icon name={isExpanded ? "up" : "down"} size={14} className={s.chevron} />
               </div>
 
               {/* Expanded detail */}
               {isExpanded && (
-                <div style={{ borderTop: "1px solid #f0f0f0", padding: "12px 16px" }}>
+                <div className={s.expandedPanel}>
                   {/* Caller name edit */}
-                  <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
+                  <div className={s.actionBar}>
                     {editingCaller === caller.id ? (
                       <>
-                        <input type="text" value={editName} onChange={e => setEditName(e.target.value)} placeholder="Caller name" style={{ ...inputStyle, flex: 1, maxWidth: 250 }} autoFocus />
-                        <button className="btn btn-sm" onClick={() => updateCallerName(caller.id)} style={{ fontSize: 11 }}>Save</button>
-                        <button className="btn btn-sm" onClick={() => { setEditingCaller(null); setEditName(""); }} style={{ fontSize: 11 }}>Cancel</button>
+                        <input type="text" value={editName} onChange={e => setEditName(e.target.value)} placeholder="Caller name" className={s.inputFlex} autoFocus />
+                        <button className={`btn btn-sm ${s.btnFontXs}`} onClick={() => updateCallerName(caller.id)}>Save</button>
+                        <button className={`btn btn-sm ${s.btnFontXs}`} onClick={() => { setEditingCaller(null); setEditName(""); }}>Cancel</button>
                       </>
                     ) : (
                       <>
-                        <button className="btn btn-sm" onClick={() => { setEditingCaller(caller.id); setEditName(caller.caller_name || ""); }} style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                        <button className={`btn btn-sm ${s.actionBtn}`} onClick={() => { setEditingCaller(caller.id); setEditName(caller.caller_name || ""); }}>
                           <Icon name="edit" size={12} /> {caller.caller_name ? "Edit Name" : "Add Name"}
                         </button>
-                        <button className="btn btn-sm" onClick={() => { setAddingNote(addingNote === caller.id ? null : caller.id); setNewNote(""); }} style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                        <button className={`btn btn-sm ${s.actionBtn}`} onClick={() => { setAddingNote(addingNote === caller.id ? null : caller.id); setNewNote(""); }}>
                           <Icon name="add" size={12} /> Add Note
                         </button>
-                        <div style={{ flex: 1 }} />
-                        <button className="btn btn-sm" onClick={() => { if (confirm("Delete all memory for this caller?")) deleteCaller(caller.id); }} style={{ fontSize: 11, color: "#dc2626" }}>
+                        <div className={s.spacer} />
+                        <button className={`btn btn-sm ${s.deleteCallerBtn}`} onClick={() => { if (confirm("Delete all memory for this caller?")) deleteCaller(caller.id); }}>
                           Delete Caller
                         </button>
                       </>
@@ -295,13 +293,13 @@ const CallerMemory = () => {
 
                   {/* Add note inline form */}
                   {addingNote === caller.id && (
-                    <div style={{ background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: 8, padding: 12, marginBottom: 12 }}>
-                      <textarea value={newNote} onChange={e => setNewNote(e.target.value.slice(0, CALLER_NOTE_MAX_CHARS))} placeholder="Key point from call... e.g. 'Needs quote for bathroom reno at 42 Smith St'" rows={2} style={{ width: "100%", padding: "8px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }} autoFocus />
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
-                        <span style={{ fontSize: 11, color: "#bbb" }}>{newNote.length}/{CALLER_NOTE_MAX_CHARS}</span>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button className="btn btn-sm" onClick={() => { setAddingNote(null); setNewNote(""); }} style={{ fontSize: 11 }}>Cancel</button>
-                          <button className="btn btn-primary btn-sm" onClick={() => addNote(caller.id)} disabled={!newNote.trim() || saving} style={{ background: accent, fontSize: 11 }}>{saving ? "Saving..." : "Save Note"}</button>
+                    <div className={s.noteForm}>
+                      <textarea value={newNote} onChange={e => setNewNote(e.target.value.slice(0, CALLER_NOTE_MAX_CHARS))} placeholder="Key point from call... e.g. 'Needs quote for bathroom reno at 42 Smith St'" rows={2} className={s.noteTextarea} autoFocus />
+                      <div className={s.noteFormFooter}>
+                        <span className={s.charCount}>{newNote.length}/{CALLER_NOTE_MAX_CHARS}</span>
+                        <div className={s.noteFormBtns}>
+                          <button className={`btn btn-sm ${s.btnFontXs}`} onClick={() => { setAddingNote(null); setNewNote(""); }}>Cancel</button>
+                          <button className={`btn btn-primary btn-sm ${s.btnFontXs}`} onClick={() => addNote(caller.id)} disabled={!newNote.trim() || saving} style={{ background: accent }}>{saving ? "Saving..." : "Save Note"}</button>
                         </div>
                       </div>
                     </div>
@@ -309,17 +307,17 @@ const CallerMemory = () => {
 
                   {/* Notes list */}
                   {(caller.notes || []).length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "16px 0", fontSize: 12, color: "#bbb" }}>No notes yet — add a key point from a call.</div>
+                    <div className={s.emptyNotes}>No notes yet — add a key point from a call.</div>
                   ) : (
                     <div>
                       {(caller.notes || []).map((note, idx) => (
-                        <div key={idx} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: idx < caller.notes.length - 1 ? "1px solid #f5f5f5" : "none", alignItems: "flex-start" }}>
-                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: accent, marginTop: 6, flexShrink: 0, opacity: 0.5 }} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 13, color: "#333", lineHeight: 1.5 }}>{note.text}</div>
-                            <div style={{ fontSize: 11, color: "#bbb", marginTop: 2 }}>{formatDate(note.date)}</div>
+                        <div key={idx} className={s.noteRow} style={{ borderBottom: idx < caller.notes.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                          <div className={s.noteDot} style={{ background: accent }} />
+                          <div className={s.noteContent}>
+                            <div className={s.noteText}>{note.text}</div>
+                            <div className={s.noteDate}>{formatDate(note.date)}</div>
                           </div>
-                          <button onClick={() => deleteNote(caller.id, idx)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#ccc", fontSize: 11 }} title="Delete note">
+                          <button onClick={() => deleteNote(caller.id, idx)} className={s.noteDeleteBtn} title="Delete note">
                             <Icon name="close" size={12} />
                           </button>
                         </div>
@@ -328,7 +326,7 @@ const CallerMemory = () => {
                   )}
 
                   {noteCount >= CALLER_NOTES_MAX && (
-                    <div style={{ fontSize: 11, color: "#f59e0b", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                    <div className={s.maxNotesWarning}>
                       <Icon name="notification" size={12} /> Maximum {CALLER_NOTES_MAX} notes reached — oldest will be replaced.
                     </div>
                   )}
@@ -341,7 +339,7 @@ const CallerMemory = () => {
 
       {/* Summary stats */}
       {callers.length > 0 && (
-        <div style={{ textAlign: "center", padding: "16px 0", fontSize: 11, color: "#ccc" }}>
+        <div className={s.summaryStats}>
           {callers.length} caller{callers.length !== 1 ? "s" : ""} · {callers.reduce((sum, c) => sum + (c.notes || []).length, 0)} total notes · Auto-prunes after {CALLER_NOTES_MAX_AGE_DAYS} days
         </div>
       )}

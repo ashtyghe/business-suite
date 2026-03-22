@@ -1,0 +1,144 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.overallRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.statusDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.overallLabel {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.lastChecked {
+  font-size: 11px;
+  color: #999;
+  margin-left: 20px;
+}
+
+.refreshBtn {
+  font-size: 12px;
+  padding: 6px 14px;
+}
+
+.servicesGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.serviceCard {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+
+.serviceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.serviceInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.serviceName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.serviceDesc {
+  font-size: 11px;
+  color: #888;
+}
+
+.statusRight {
+  text-align: right;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.statusBadgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.latencyText {
+  font-size: 10px;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+.serviceDetail {
+  font-size: 11px;
+  color: #666;
+  margin-top: 8px;
+  padding-left: 26px;
+}
+
+.endpointsSection {
+  margin-top: 32px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.endpointsTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 12px;
+}
+
+.endpointsList {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.endpointRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8f8f8;
+  border-radius: 6px;
+}
+
+.endpointLabel {
+  color: #666;
+}
+
+.endpointValue {
+  font-family: monospace;
+  font-size: 11px;
+  color: #333;
+}

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import s from './PhotoMarkupEditor.module.css';
 
 // ── Photo Markup Editor (fabric.js) ───────────────────────────────────────────
 const MARKUP_COLORS = ["#dc2626", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6", "#ffffff", "#000000"];
@@ -134,45 +135,45 @@ const PhotoMarkupEditor = ({ imageSrc, onSave, onClose }) => {
   ];
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.88)", display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div className={s.overlay}>
       {/* Toolbar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", background: "#1e1e1e", borderRadius: "0 0 12px 12px", flexWrap: "wrap", justifyContent: "center", maxWidth: "100%" }}>
+      <div className={s.toolbar}>
         {tools.map(t => (
           <button key={t.id} onClick={() => { if (t.action) t.action(); else setTool(t.id); }}
-            style={{ padding: "6px 10px", borderRadius: 6, border: tool === t.id ? "2px solid #fff" : "2px solid transparent", background: tool === t.id ? "rgba(255,255,255,0.15)" : "transparent", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: 15 }}>{t.icon}</span> {t.label}
+            className={tool === t.id ? s.toolButtonActive : s.toolButtonInactive}>
+            <span className={s.toolIcon}>{t.icon}</span> {t.label}
           </button>
         ))}
-        <div style={{ width: 1, height: 24, background: "#555", margin: "0 4px" }} />
-        <button onClick={deleteSelected} style={{ padding: "6px 10px", borderRadius: 6, border: "2px solid transparent", background: "transparent", color: "#f87171", cursor: "pointer", fontSize: 13, fontWeight: 600 }} title="Delete selected">🗑 Delete</button>
-        <button onClick={clearAll} style={{ padding: "6px 10px", borderRadius: 6, border: "2px solid transparent", background: "transparent", color: "#fbbf24", cursor: "pointer", fontSize: 13, fontWeight: 600 }} title="Clear all markups">✕ Clear</button>
-        <div style={{ width: 1, height: 24, background: "#555", margin: "0 4px" }} />
+        <div className={s.divider} />
+        <button onClick={deleteSelected} className={s.deleteButton} title="Delete selected">🗑 Delete</button>
+        <button onClick={clearAll} className={s.clearButton} title="Clear all markups">✕ Clear</button>
+        <div className={s.divider} />
         {/* Brush size */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ color: "#aaa", fontSize: 11, fontWeight: 600 }}>Size</span>
+        <div className={s.brushSizeGroup}>
+          <span className={s.brushSizeLabel}>Size</span>
           <input type="range" min="1" max="12" value={brushSize} onChange={e => setBrushSize(Number(e.target.value))} style={{ width: 70, accentColor: color }} />
         </div>
-        <div style={{ width: 1, height: 24, background: "#555", margin: "0 4px" }} />
+        <div className={s.divider} />
         {/* Colors */}
-        <div style={{ display: "flex", gap: 3 }}>
+        <div className={s.colorsRow}>
           {MARKUP_COLORS.map(c => (
             <button key={c} onClick={() => setColor(c)}
-              style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: color === c ? "3px solid #fff" : `2px solid ${c === "#ffffff" ? "#666" : "transparent"}`, cursor: "pointer", boxShadow: color === c ? "0 0 6px rgba(255,255,255,0.4)" : "none" }} />
+              className={s.colorSwatch} style={{ background: c, border: color === c ? "3px solid #fff" : `2px solid ${c === "#ffffff" ? "#666" : "transparent"}`, boxShadow: color === c ? "0 0 6px rgba(255,255,255,0.4)" : "none" }} />
           ))}
         </div>
       </div>
 
       {/* Canvas area */}
-      <div ref={containerRef} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", width: "100%", padding: 20, overflow: "auto" }}>
-        <div style={{ borderRadius: 8, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.5)" }}>
+      <div ref={containerRef} className={s.canvasArea}>
+        <div className={s.canvasWrapper}>
           <canvas ref={canvasRef} />
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div style={{ display: "flex", gap: 10, padding: "12px 20px", background: "#1e1e1e", borderRadius: "12px 12px 0 0", width: "100%", justifyContent: "center" }}>
-        <button onClick={onClose} style={{ padding: "8px 24px", borderRadius: 8, border: "1px solid #555", background: "transparent", color: "#ccc", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>Cancel</button>
-        <button onClick={handleSave} style={{ padding: "8px 24px", borderRadius: 8, border: "none", background: "#0891b2", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>💾 Save Markup</button>
+      <div className={s.bottomBar}>
+        <button onClick={onClose} className={s.cancelButton}>Cancel</button>
+        <button onClick={handleSave} className={s.saveButton}>💾 Save Markup</button>
       </div>
     </div>
   );

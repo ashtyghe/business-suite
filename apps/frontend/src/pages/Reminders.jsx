@@ -1,6 +1,7 @@
 import { useState, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
+import s from './Reminders.module.css';
 
 const Reminders = () => {
   const { reminders, setReminders, jobs, clients } = useAppStore();
@@ -86,66 +87,66 @@ const Reminders = () => {
   return (
     <div>
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 20 }}>
-        {stats.map(s => (
-          <div key={s.label} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", borderLeft: `4px solid ${s.color}` }}>
-            <div style={{ fontSize: 24, fontWeight: 800, color: s.color }}>{s.count}</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
+      <div className={s.statsGrid}>
+        {stats.map(st => (
+          <div key={st.label} className={s.statCard} style={{ borderLeft: `4px solid ${st.color}` }}>
+            <div className={s.statCount} style={{ color: st.color }}>{st.count}</div>
+            <div className={s.statLabel}>{st.label}</div>
           </div>
         ))}
       </div>
 
       {/* Toolbar */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reminders..." style={{ flex: 1, minWidth: 180, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif" }} />
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif" }}>
+      <div className={s.toolbar}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reminders..." className={s.searchInput} />
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className={s.filterSelect}>
           <option value="all">All</option>
           <option value="overdue">Overdue</option>
           <option value="pending">Pending</option>
           <option value="completed">Completed</option>
           <option value="dismissed">Dismissed</option>
         </select>
-        <button onClick={openNew} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>+ New Reminder</button>
+        <button onClick={openNew} className={s.newBtn} style={{ background: accent }}>+ New Reminder</button>
       </div>
 
       {/* List */}
       {sorted.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 40, color: "#aaa", fontSize: 13 }}>No reminders found</div>
+        <div className={s.emptyState}>No reminders found</div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className={s.list}>
           {sorted.map(r => {
             const job = r.jobId ? jobs.find(j => j.id === r.jobId) : null;
             const isOverdue = r.status === "pending" && r.dueDate < today;
             const checklistProgress = r.type === "checklist" && r.items?.length ? `${r.items.filter(i => i.done).length}/${r.items.length}` : null;
             return (
-              <div key={r.id} onClick={() => openEdit(r)} style={{ background: "#fff", border: `1px solid ${isOverdue ? "#fecaca" : "#e8e8e8"}`, borderRadius: 10, padding: "14px 18px", opacity: r.status !== "pending" ? 0.6 : 1, cursor: "pointer", transition: "box-shadow 0.15s" }} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div key={r.id} onClick={() => openEdit(r)} className={s.reminderCard} style={{ border: `1px solid ${isOverdue ? "#fecaca" : "#e8e8e8"}`, opacity: r.status !== "pending" ? 0.6 : 1 }}>
+                <div className={s.cardRow}>
                   {/* Round checkbox */}
-                  <button onClick={e => { e.stopPropagation(); toggleComplete(r.id); }} style={{ width: 22, height: 22, borderRadius: 11, border: r.status === "completed" ? `2px solid ${accent}` : "2px solid #ccc", background: r.status === "completed" ? accent : "transparent", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
-                    {r.status === "completed" && <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>✓</span>}
+                  <button onClick={e => { e.stopPropagation(); toggleComplete(r.id); }} className={s.checkbox} style={{ border: r.status === "completed" ? `2px solid ${accent}` : "2px solid #ccc", background: r.status === "completed" ? accent : "transparent" }}>
+                    {r.status === "completed" && <span className={s.checkmark}>✓</span>}
                   </button>
                   {/* Content */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: r.status === "completed" ? "#aaa" : "#111", textDecoration: r.status === "completed" ? "line-through" : "none" }}>{r.text}</div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap", alignItems: "center" }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: dueDateColor(r.dueDate, r.status) }}>{dueDateLabel(r.dueDate, r.status)}</span>
-                      {checklistProgress && <span style={{ fontSize: 10, fontWeight: 600, background: "#f0f0f0", padding: "2px 8px", borderRadius: 4, color: "#555" }}>{checklistProgress} done</span>}
-                      {job && <span style={{ fontSize: 10, fontWeight: 600, background: "#f0f0f0", padding: "2px 8px", borderRadius: 4, color: "#555" }}>{job.title}</span>}
-                      {r.status === "dismissed" && <span style={{ fontSize: 10, fontWeight: 600, background: "#f5f5f5", padding: "2px 8px", borderRadius: 4, color: "#999" }}>Dismissed</span>}
+                  <div className={s.cardContent}>
+                    <div className={s.cardTitle} style={{ color: r.status === "completed" ? "#aaa" : "#111", textDecoration: r.status === "completed" ? "line-through" : "none" }}>{r.text}</div>
+                    <div className={s.cardMeta}>
+                      <span className={s.dueDate} style={{ color: dueDateColor(r.dueDate, r.status) }}>{dueDateLabel(r.dueDate, r.status)}</span>
+                      {checklistProgress && <span className={s.badge}>{checklistProgress} done</span>}
+                      {job && <span className={s.badge}>{job.title}</span>}
+                      {r.status === "dismissed" && <span className={s.dismissedBadge}>Dismissed</span>}
                     </div>
                   </div>
                   {/* Actions */}
-                  <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                    {r.status === "pending" && <button onClick={() => dismissReminder(r.id)} title="Dismiss" style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 13, padding: 4 }}>✕</button>}
-                    <button onClick={() => deleteReminder(r.id)} title="Delete" style={{ background: "none", border: "none", cursor: "pointer", color: "#ddd", fontSize: 13, padding: 4 }}>🗑</button>
+                  <div className={s.actions} onClick={e => e.stopPropagation()}>
+                    {r.status === "pending" && <button onClick={() => dismissReminder(r.id)} title="Dismiss" className={s.dismissBtn}>✕</button>}
+                    <button onClick={() => deleteReminder(r.id)} title="Delete" className={s.deleteBtn}>🗑</button>
                   </div>
                 </div>
                 {/* Checklist items inline */}
                 {r.type === "checklist" && r.items?.length > 0 && r.status === "pending" && (
-                  <div onClick={e => e.stopPropagation()} style={{ marginTop: 10, marginLeft: 34, display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div onClick={e => e.stopPropagation()} className={s.checklistItems}>
                     {r.items.map(item => (
-                      <label key={item.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: item.done ? "#aaa" : "#333" }}>
-                        <input type="checkbox" checked={item.done} onChange={() => toggleChecklistItem(r.id, item.id)} style={{ width: 15, height: 15, accentColor: accent, cursor: "pointer" }} />
+                      <label key={item.id} className={s.checklistLabel} style={{ color: item.done ? "#aaa" : "#333" }}>
+                        <input type="checkbox" checked={item.done} onChange={() => toggleChecklistItem(r.id, item.id)} className={s.checklistCheckbox} style={{ accentColor: accent }} />
                         <span style={{ textDecoration: item.done ? "line-through" : "none" }}>{item.text}</span>
                       </label>
                     ))}
@@ -159,55 +160,55 @@ const Reminders = () => {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowModal(false)}>
-          <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 440, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{editReminder ? "Edit Reminder" : "New Reminder"}</div>
+        <div className={s.overlay} onClick={() => setShowModal(false)}>
+          <div className={s.modal} onClick={e => e.stopPropagation()}>
+            <div className={s.modalTitle}>{editReminder ? "Edit Reminder" : "New Reminder"}</div>
 
             {/* Type toggle */}
-            <div style={{ display: "flex", gap: 0, marginBottom: 16, border: "1px solid #ddd", borderRadius: 6, overflow: "hidden" }}>
-              <button onClick={() => setForm(f => ({ ...f, type: "text" }))} style={{ flex: 1, padding: "8px 12px", fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", fontFamily: "'Open Sans', sans-serif", background: form.type === "text" ? accent : "#f5f5f5", color: form.type === "text" ? "#fff" : "#666" }}>Text</button>
-              <button onClick={() => setForm(f => ({ ...f, type: "checklist" }))} style={{ flex: 1, padding: "8px 12px", fontSize: 12, fontWeight: 600, border: "none", borderLeft: "1px solid #ddd", cursor: "pointer", fontFamily: "'Open Sans', sans-serif", background: form.type === "checklist" ? accent : "#f5f5f5", color: form.type === "checklist" ? "#fff" : "#666" }}>Checklist</button>
+            <div className={s.typeToggle}>
+              <button onClick={() => setForm(f => ({ ...f, type: "text" }))} className={s.typeBtn} style={{ background: form.type === "text" ? accent : "#f5f5f5", color: form.type === "text" ? "#fff" : "#666" }}>Text</button>
+              <button onClick={() => setForm(f => ({ ...f, type: "checklist" }))} className={s.typeBtnRight} style={{ background: form.type === "checklist" ? accent : "#f5f5f5", color: form.type === "checklist" ? "#fff" : "#666" }}>Checklist</button>
             </div>
 
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{form.type === "checklist" ? "Title" : "Reminder"}</label>
+            <label className={s.fieldLabel}>{form.type === "checklist" ? "Title" : "Reminder"}</label>
             {form.type === "text" ? (
-              <textarea value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="What do you need to remember?" rows={3} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 16 }} autoFocus />
+              <textarea value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="What do you need to remember?" rows={3} className={s.textarea} autoFocus />
             ) : (
               <>
-                <input value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="e.g. Site prep checklist" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} autoFocus />
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Items</label>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+                <input value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="e.g. Site prep checklist" className={s.input} autoFocus />
+                <label className={s.fieldLabel}>Items</label>
+                <div className={s.formItemsList}>
                   {form.items.map(item => (
-                    <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <input type="checkbox" checked={item.done} onChange={() => toggleFormItem(item.id)} style={{ width: 15, height: 15, accentColor: accent, cursor: "pointer" }} />
-                      <span style={{ flex: 1, fontSize: 13, color: item.done ? "#aaa" : "#333", textDecoration: item.done ? "line-through" : "none" }}>{item.text}</span>
-                      <button onClick={() => removeFormItem(item.id)} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 13, padding: 2 }}>✕</button>
+                    <div key={item.id} className={s.formItemRow}>
+                      <input type="checkbox" checked={item.done} onChange={() => toggleFormItem(item.id)} className={s.checklistCheckbox} style={{ accentColor: accent }} />
+                      <span className={s.formItemText} style={{ color: item.done ? "#aaa" : "#333", textDecoration: item.done ? "line-through" : "none" }}>{item.text}</span>
+                      <button onClick={() => removeFormItem(item.id)} className={s.removeItemBtn}>✕</button>
                     </div>
                   ))}
                 </div>
-                <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-                  <input value={newItemText} onChange={e => setNewItemText(e.target.value)} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addFormItem())} placeholder="Add an item..." style={{ flex: 1, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
-                  <button onClick={addFormItem} style={{ padding: "8px 12px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Add</button>
+                <div className={s.addItemRow}>
+                  <input value={newItemText} onChange={e => setNewItemText(e.target.value)} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addFormItem())} placeholder="Add an item..." className={s.addItemInput} />
+                  <button onClick={addFormItem} className={s.addItemBtn}>Add</button>
                 </div>
               </>
             )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+            <div className={s.formGrid}>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Due Date</label>
-                <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <label className={s.fieldLabel}>Due Date</label>
+                <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={s.formInput} />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Link to Job</label>
-                <select value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value ? Number(e.target.value) : "" }))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }}>
+                <label className={s.fieldLabel}>Link to Job</label>
+                <select value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value ? Number(e.target.value) : "" }))} className={s.formSelect}>
                   <option value="">None</option>
                   {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
                 </select>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button onClick={() => setShowModal(false)} style={{ padding: "8px 16px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
-              <button onClick={saveReminder} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>{editReminder ? "Save" : "Create"}</button>
+            <div className={s.modalFooter}>
+              <button onClick={() => setShowModal(false)} className={s.cancelBtn}>Cancel</button>
+              <button onClick={saveReminder} className={s.saveBtn} style={{ background: accent }}>{editReminder ? "Save" : "Create"}</button>
             </div>
           </div>
         </div>

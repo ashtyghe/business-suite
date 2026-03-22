@@ -1,0 +1,536 @@
+/* ── LogTimeModal ── */
+.accentBtn {
+  color: #fff;
+  border: none;
+}
+
+.viewPad {
+  padding: 20px 24px;
+}
+
+.hoursBox {
+  text-align: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.hoursValue {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.hoursLabel {
+  font-size: 11px;
+  color: #999;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+
+.billableBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.disabledInput {
+  background: #f5f5f5;
+}
+
+.quickSelectLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.presetGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.presetBtn {
+  padding: 7px 4px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.12s;
+}
+
+/* ── TimeCalendar ── */
+.calCell {
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 4px;
+  min-height: 48px;
+  text-align: center;
+  transition: box-shadow 0.15s;
+}
+
+.calDayNum {
+  font-size: 10px;
+  font-weight: 700;
+  color: #999;
+  margin-bottom: 3px;
+}
+
+.calDayHrs {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.calNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.calNavBtn {
+  padding: 4px 10px;
+  font-size: 18px;
+}
+
+.calMonthLabel {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: 6px;
+}
+
+.calDow {
+  text-align: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 0;
+}
+
+/* ── WeekStrip ── */
+.weekStrip {
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 12px 16px 0;
+}
+
+.weekNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.weekNavBtn {
+  font-size: 20px;
+  padding: 2px 10px;
+}
+
+.weekLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #555;
+}
+
+.weekDays {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  padding-bottom: 1px;
+}
+
+.weekDay {
+  flex: 1;
+  min-width: 40px;
+  text-align: center;
+  padding: 8px 2px 10px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.weekDayLabel {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+
+.weekDayDate {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.weekDayHrs {
+  font-size: 10px;
+  font-weight: 700;
+  height: 14px;
+}
+
+/* ── Main TimeTracking ── */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.statCardPad {
+  padding: 14px 16px;
+}
+
+.statValueSize {
+  font-size: 22px;
+}
+
+.searchBar {
+  flex: 1;
+  min-width: 120px;
+}
+
+.workerSelect {
+  width: auto;
+}
+
+.logTimeBtn {
+  white-space: nowrap;
+}
+
+.tabsNoMargin {
+  margin-bottom: 0;
+}
+
+/* Week view panel */
+.weekPanel {
+  background: #fafafa;
+  border-radius: 0 0 10px 10px;
+  border: 1px solid #e8e8e8;
+  border-top: none;
+  margin-bottom: 20px;
+}
+
+.weekPanelInner {
+  padding: 16px;
+}
+
+.dayHeading {
+  font-size: 12px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.emptyDayState {
+  padding: 28px 0;
+}
+
+.entryCard {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid #e8e8e8;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  transition: border-color 0.15s;
+}
+
+.entryHoursCol {
+  min-width: 56px;
+  text-align: center;
+}
+
+.entryHoursVal {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.entryTimeRange {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 3px;
+}
+
+.entryBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.entryMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.entryAvatar {
+  width: 22px;
+  height: 22px;
+  font-size: 9px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.entryWorker {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.entryBadgeBillable {
+  background: #111;
+  color: #fff;
+  font-size: 10px;
+}
+
+.entryBadgeNonBill {
+  background: #f0f0f0;
+  color: #999;
+  font-size: 10px;
+}
+
+.entryJob {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 3px;
+}
+
+.entryDesc {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.5;
+}
+
+.entryActions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.deleteBtn {
+  color: #c00;
+}
+
+/* ── Team View ── */
+.teamSection {
+  margin-top: 16px;
+}
+
+.teamCard {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.teamCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.teamCardLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.teamAvatar {
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+  margin: 0;
+}
+
+.teamName {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.teamEntryCount {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.teamCardRight {
+  text-align: right;
+}
+
+.teamTotalHrs {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.teamTotalLabel {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.teamStatBox {
+  background: #f8f8f8;
+  border-radius: 7px;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.teamStatVal {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.teamStatLabel {
+  font-size: 10px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+.teamProgressWrap {
+  margin-top: 12px;
+}
+
+.progressHeight {
+  height: 6px;
+}
+
+.billablePercent {
+  font-size: 10px;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+/* ── Calendar View ── */
+.calSection {
+  margin-top: 16px;
+}
+
+.calCard {
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.calLegend {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.calLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #888;
+}
+
+.calLegendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.calDrillHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.calDrillTitle {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.calDrillRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.calDrillTotal {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.calDrillEmpty {
+  font-size: 13px;
+  color: #aaa;
+  text-align: center;
+  padding: 20px;
+}
+
+.calDrillEntry {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.calDrillHrs {
+  font-weight: 800;
+  font-size: 18px;
+  min-width: 44px;
+}
+
+.calDrillBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.calDrillWorker {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.calDrillJob {
+  font-size: 12px;
+  color: #888;
+}
+
+.calDrillDesc {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.calDrillActions {
+  display: flex;
+  gap: 4px;
+}

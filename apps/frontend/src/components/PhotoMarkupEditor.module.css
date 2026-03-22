@@ -1,0 +1,140 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: #1e1e1e;
+  border-radius: 0 0 12px 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.toolButton {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolButtonActive {
+  composes: toolButton;
+  border: 2px solid #fff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.toolButtonInactive {
+  composes: toolButton;
+  border: 2px solid transparent;
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: #555;
+  margin: 0 4px;
+}
+
+.deleteButton {
+  composes: toolButton;
+  border: 2px solid transparent;
+  color: #f87171;
+}
+
+.clearButton {
+  composes: toolButton;
+  border: 2px solid transparent;
+  color: #fbbf24;
+}
+
+.brushSizeGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.brushSizeLabel {
+  color: #aaa;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.toolIcon {
+  font-size: 15px;
+}
+
+.colorsRow {
+  display: flex;
+  gap: 3px;
+}
+
+.colorSwatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.canvasArea {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 20px;
+  overflow: auto;
+}
+
+.canvasWrapper {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.bottomBar {
+  display: flex;
+  gap: 10px;
+  padding: 12px 20px;
+  background: #1e1e1e;
+  border-radius: 12px 12px 0 0;
+  width: 100%;
+  justify-content: center;
+}
+
+.cancelButton {
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: transparent;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.saveButton {
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: none;
+  background: #0891b2;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}

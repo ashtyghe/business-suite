@@ -1,0 +1,575 @@
+/* ── JobDetail CSS Module ─────────────────────────────────────────────────── */
+
+/* Layout / containers */
+.flexShrink0 { flex-shrink: 0; }
+.sectionPad { padding: 20px 24px; }
+
+/* Status strip bar */
+.statusStrip {
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.statusStripSmall {
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.statusBtn {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Tab bar override */
+.tabBar {
+  margin-bottom: 0;
+  padding: 0 20px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.tabItemNoWrap { white-space: nowrap; }
+
+/* Accent button (used for Edit/Save/primary action) */
+.accentBtn {
+  color: #fff;
+  border: none;
+}
+
+/* ── Estimate section (edit mode) ── */
+.estimateWrap { margin-bottom: 16px; }
+
+.sectionHeading {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.estimateBox {
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 14px;
+}
+
+.formGroupNoMb { margin-bottom: 0; }
+.formLabelSm { font-size: 11px; }
+.gridGap8 { margin-bottom: 8px; }
+
+.estimateTotal {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* ── Overview tab ── */
+.jobDescription {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.statCard {
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 6px;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.statSub {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 3px;
+}
+
+/* Job details column */
+.detailsCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  border-bottom: 1px solid #f5f5f5;
+  padding-bottom: 6px;
+}
+
+.detailLabel { color: #888; }
+.detailValue { font-weight: 600; }
+.capitalize { text-transform: capitalize; }
+
+/* Team */
+.emptyText {
+  font-size: 13px;
+  color: #bbb;
+}
+
+.teamRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.teamName {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.teamHours {
+  font-size: 11px;
+  color: #bbb;
+  margin-left: auto;
+}
+
+/* Tags */
+.tagWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ── Quotes / Invoices tabs ── */
+.tabActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+.tabHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.summaryText {
+  font-size: 13px;
+  color: #888;
+}
+
+.strongDark { color: #111; }
+
+/* Card (quote/invoice row) */
+.itemCard {
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.cardNumber {
+  font-weight: 700;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.cardDate {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.invoicedCheck {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.dangerBtn { color: #c00; }
+
+/* Line-items table (compact) */
+.lineTable {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+
+.lineTableTh {
+  text-align: left;
+  color: #bbb;
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.lineCell { padding: 5px 0; color: #444; }
+.lineCellMuted { color: #666; }
+.lineCellBold { font-weight: 600; }
+
+/* Totals row */
+.totalsRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  gap: 20px;
+  font-size: 13px;
+}
+
+.totalsMuted { color: #999; }
+.totalsGrand { font-weight: 800; font-size: 14px; }
+
+/* Quote/Invoice notes */
+.itemNotes {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+  border-top: 1px solid #f5f5f5;
+  padding-top: 8px;
+}
+
+/* From-quote ref */
+.fromRef {
+  margin-left: 8px;
+  color: #bbb;
+}
+
+.dueDateRef { margin-left: 8px; }
+
+/* Xero btn */
+.xeroBtn { color: #0369a1; }
+
+/* ── Time tab ── */
+.timeFormBox {
+  background: #f8f8f8;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #e8e8e8;
+}
+
+.timeFormGrid { margin-bottom: 10px; }
+
+.hoursDisplay {
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.hoursActive { color: #111; }
+.hoursEmpty { color: #ccc; }
+
+.timeFormActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flexGap8 {
+  display: flex;
+  gap: 8px;
+}
+
+.flexGap4 {
+  display: flex;
+  gap: 4px;
+}
+
+/* Time table cells */
+.workerCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workerAvatar {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+  background: #333;
+  margin: 0;
+}
+
+.workerName {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.dateCell {
+  font-size: 12px;
+  color: #999;
+}
+
+.hoursBold { font-weight: 700; }
+
+.descCell {
+  font-size: 12px;
+  color: #666;
+}
+
+/* ── Costs / Bills tab ── */
+.supplierName {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.supplierEmpty { color: #ccc; }
+
+.billDesc {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 1px;
+}
+
+.monoRef {
+  font-family: monospace;
+  font-size: 12px;
+  color: #666;
+}
+
+.billAmount { font-weight: 700; }
+
+.markupText { color: #555; }
+.markupEmpty { color: #ddd; }
+.fontSize12 { font-size: 12px; }
+.fontSize13 { font-size: 13px; }
+
+.approveBtn { color: #1e7e34; }
+
+/* ── Schedule tab ── */
+.scheduleItem {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  border-bottom: 1px solid #f5f5f5;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+
+.dateBadge {
+  background: #111;
+  color: #fff;
+  border-radius: 6px;
+  padding: 8px 12px;
+  text-align: center;
+  min-width: 68px;
+  flex-shrink: 0;
+}
+
+.dateBadgeMonth {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dateBadgeDay {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.scheduleFlex { flex: 1; }
+
+.scheduleTitle {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.scheduleMeta {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.scheduleMetaPlain {
+  font-size: 12px;
+  color: #888;
+}
+
+.scheduleNotes {
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.scheduleTeam { margin-top: 8px; }
+
+/* ── Orders tab ── */
+.ordersEmpty {
+  text-align: center;
+  padding: 40px 0;
+  color: #999;
+  font-size: 13px;
+}
+
+.ordersActions {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── Activity tab ── */
+.activityHeader {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ── Inline Quote/Invoice Drawer (view mode) ── */
+.viewGrid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.viewGrid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.lineItemsSection { margin-bottom: 20px; }
+
+/* View-mode line-items table */
+.viewTable {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+}
+
+.viewTableHeadRow { border-bottom: 2px solid #eee; }
+
+.viewTableTh {
+  padding: 6px 8px;
+  color: #888;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.viewTableThLeft {
+  composes: viewTableTh;
+  text-align: left;
+}
+
+.viewTableThRight {
+  composes: viewTableTh;
+  text-align: right;
+}
+
+.viewTableBodyRow { border-bottom: 1px solid #f0f0f0; }
+
+.viewTableTd { padding: 8px 8px; }
+.viewTableTdBold { padding: 8px 8px; font-weight: 500; }
+.viewTableTdRight { padding: 8px 8px; text-align: right; }
+.viewTableTdRightBold { padding: 8px 8px; text-align: right; font-weight: 600; }
+
+/* Totals summary box */
+.totalsBox {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.totalsLine {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.totalsLineFinal {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 2px solid #e5e7eb;
+  font-size: 15px;
+}
+
+.totalsLabel { color: #888; }
+.totalsAmount { font-weight: 600; }
+.totalsFinalLabel { font-weight: 700; }
+.totalsFinalAmount { font-weight: 800; }
+
+/* Edit-mode totals bar */
+.editTotalsBar {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.editTotalSm {
+  font-size: 12px;
+  color: #888;
+}
+
+.editTotalLg {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.editFormMt { margin-top: 16px; }
+.editGridMb { margin-bottom: 16px; }
+
+.avatarNoMargin { margin: 0; }

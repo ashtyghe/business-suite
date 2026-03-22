@@ -1,13 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAppStore } from '../lib/store';
+import s from './DisplaySchedule.module.css';
 
-// ── Display Dashboard Styles ──
-const DS = {
-  accent: "#0891b2",
-  root: { background: "#fafafa", color: "#111", fontFamily: "'Open Sans', sans-serif", height: "100vh", padding: "28px 36px", boxSizing: "border-box", display: "flex", flexDirection: "column" },
-  card: { background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, flex: 1, minWidth: 0, minHeight: 0, overflow: "hidden" },
-  heading: { fontSize: 32, fontWeight: 700, color: "#111" },
-};
+// ── Display Dashboard Constants ──
+const ACCENT = "#0891b2";
 
 // Sydney timezone date helper
 const sydneyToday = () => {
@@ -44,7 +40,6 @@ const DisplaySchedule = () => {
   const nextWeekAll = allDays(nextMon);
   const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const accent = DS.accent;
 
   // Weather data for Coffs Harbour NSW
   const [weather, setWeather] = useState({});
@@ -73,42 +68,62 @@ const DisplaySchedule = () => {
     const d = new Date(dateStr + "T12:00:00");
     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
     const dayEntries = schedule.filter(e => e.date === dateStr);
-    const headerBg = isToday ? accent : isPast ? "#e0e0e0" : isWeekend ? "#f8f8f8" : "#f5f5f5";
+    const headerBg = isToday ? ACCENT : isPast ? "#e0e0e0" : isWeekend ? "#f8f8f8" : "#f5f5f5";
     const headerColor = isToday ? "#fff" : isPast ? "#bbb" : "#333";
     const w = weather[dateStr];
+    const weatherColor = isToday ? "rgba(255,255,255,0.85)" : isPast ? "#ccc" : "#666";
     return (
-      <div style={{ flex: isCompact ? undefined : 1, background: isToday ? "#ecfeff" : isPast ? "#fafafa" : isWeekend ? "#fafafa" : "#fff", border: `1px solid ${isToday ? accent : "#e5e5e5"}`, borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column", opacity: isPast ? 0.7 : 1 }}>
-        <div style={{ background: headerBg, padding: isCompact ? "6px 10px" : isLarge ? "10px 16px" : "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-          <div style={{ display: "flex", flexDirection: isCompact ? "row" : "column", alignItems: isCompact ? "center" : "flex-start", gap: isCompact ? 8 : 0 }}>
-            <span style={{ fontSize: isCompact ? 11 : isLarge ? 14 : 11, fontWeight: 700, textTransform: "uppercase", color: headerColor }}>{DAY_NAMES[d.getDay()]}</span>
-            <span style={{ fontSize: isCompact ? 14 : isLarge ? 25 : 18, fontWeight: 800, lineHeight: 1, color: headerColor }}>{d.getDate()}</span>
+      <div
+        className={isCompact ? s.dayColCompact : s.dayCol}
+        style={{
+          background: isToday ? "#ecfeff" : isPast ? "#fafafa" : isWeekend ? "#fafafa" : "#fff",
+          border: `1px solid ${isToday ? ACCENT : "#e5e5e5"}`,
+          opacity: isPast ? 0.7 : 1,
+        }}
+      >
+        <div
+          className={`${s.dayHeader} ${isCompact ? s.dayHeaderCompact : isLarge ? s.dayHeaderLarge : s.dayHeaderDefault}`}
+          style={{ background: headerBg }}
+        >
+          <div className={isCompact ? s.dayHeaderInfoCompact : s.dayHeaderInfo}>
+            <span className={isCompact ? s.dayNameDefault : isLarge ? s.dayNameLarge : s.dayNameDefault} style={{ color: headerColor }}>{DAY_NAMES[d.getDay()]}</span>
+            <span className={isCompact ? s.dayNumberCompact : isLarge ? s.dayNumberLarge : s.dayNumberDefault} style={{ color: headerColor }}>{d.getDate()}</span>
           </div>
           {w && !isCompact ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1, fontSize: isLarge ? 13 : 11, color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#ccc" : "#666" }}>
-              <span style={{ fontWeight: 600 }}>{Math.round(w.minTemp)}–{Math.round(w.maxTemp)}°</span>
+            <div className={`${s.weatherInfo} ${isLarge ? s.weatherInfoLarge : s.weatherInfoDefault}`} style={{ color: weatherColor }}>
+              <span className={s.weatherTemp}>{Math.round(w.minTemp)}–{Math.round(w.maxTemp)}°</span>
               {w.rainChance > 0 && <span style={{ color: isToday ? "rgba(255,255,255,0.85)" : w.rainChance >= 50 ? "#2563eb" : "#888" }}>💧{w.rainChance}%{w.rain > 0 ? ` ${w.rain}mm` : ""}</span>}
             </div>
           ) : w && isCompact ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0, fontSize: 9, color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#ccc" : "#666" }}>
+            <div className={`${s.weatherInfo} ${s.weatherInfoCompact}`} style={{ color: weatherColor }}>
               <span>{Math.round(w.maxTemp)}°</span>
               {w.rainChance > 0 && <span>💧{w.rainChance}%</span>}
             </div>
           ) : (
-            <span style={{ fontSize: isCompact ? 10 : isLarge ? 14 : 11, color: isToday ? "rgba(255,255,255,0.7)" : isPast ? "#ccc" : "#aaa", fontWeight: 400 }}>{MONTH_SHORT[d.getMonth()]}</span>
+            <span className={isCompact ? s.monthLabelCompact : isLarge ? s.monthLabelLarge : s.monthLabelDefault} style={{ color: isToday ? "rgba(255,255,255,0.7)" : isPast ? "#ccc" : "#aaa" }}>{MONTH_SHORT[d.getMonth()]}</span>
           )}
         </div>
-        <div style={{ padding: isCompact ? "4px 8px" : isLarge ? "12px 14px" : "8px 10px", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: isCompact ? 4 : 8 }}>
+        <div className={`${s.dayEntries} ${isCompact ? s.dayEntriesCompact : isLarge ? s.dayEntriesLarge : s.dayEntriesDefault}`}>
           {dayEntries.length === 0 ? (
-            <div style={{ fontSize: isCompact ? 11 : isLarge ? 16 : 13, color: isPast ? "#ddd" : "#ccc", textAlign: "center", padding: isCompact ? "4px 0" : "12px 0" }}>—</div>
+            <div className={isCompact ? s.emptyDayCompact : isLarge ? s.emptyDayLarge : s.emptyDayDefault} style={{ color: isPast ? "#ddd" : "#ccc" }}>—</div>
           ) : (
             dayEntries.map(entry => {
               const job = jobs.find(j => j.id === entry.jobId);
               const client = clients.find(c => c.id === job?.clientId);
               const title = client ? `${client.name} – ${job?.title || entry.title}` : (job?.title || entry.title || "Untitled");
               return (
-                <div key={entry.id} style={{ background: isPast ? "#fafafa" : "#fff", border: `1px solid ${isPast ? "#f0f0f0" : "#e8e8e8"}`, borderRadius: isCompact ? 6 : 8, padding: isCompact ? "4px 6px" : isLarge ? "10px 12px" : "6px 8px", borderLeft: `3px solid ${isPast ? "#ddd" : accent}` }}>
-                  <div style={{ fontWeight: 700, fontSize: isCompact ? 11 : isLarge ? 16 : 13, lineHeight: 1.4, color: isPast ? "#bbb" : "#333" }}>{title}</div>
-                  {entry.startTime && !isCompact && <div style={{ fontSize: isLarge ? 13 : 11, color: isPast ? "#ccc" : "#aaa", marginTop: 2 }}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}
+                <div
+                  key={entry.id}
+                  className={isCompact ? s.entryCardCompact : s.entryCard}
+                  style={{
+                    background: isPast ? "#fafafa" : "#fff",
+                    border: `1px solid ${isPast ? "#f0f0f0" : "#e8e8e8"}`,
+                    padding: isCompact ? "4px 6px" : isLarge ? "10px 12px" : "6px 8px",
+                    borderLeft: `3px solid ${isPast ? "#ddd" : ACCENT}`,
+                  }}
+                >
+                  <div className={isCompact ? s.entryTitleCompact : isLarge ? s.entryTitleLarge : s.entryTitleDefault} style={{ color: isPast ? "#bbb" : "#333" }}>{title}</div>
+                  {entry.startTime && !isCompact && <div className={isLarge ? s.entryTimeLarge : s.entryTimeDefault} style={{ color: isPast ? "#ccc" : "#aaa" }}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}
                 </div>
               );
             })
@@ -123,15 +138,15 @@ const DisplaySchedule = () => {
     const weekdays = days.slice(0, 5);
     const weekend = days.slice(5);
     return (
-      <div style={{ flex, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexShrink: 0 }}>
-          <span style={{ fontSize: isLarge ? 32 : 25, fontWeight: 700, color: "#111" }}>{label}</span>
+      <div className={s.weekContainer} style={{ flex }}>
+        <div className={s.weekHeader}>
+          <span className={isLarge ? s.weekLabelLarge : s.weekLabelSmall}>{label}</span>
         </div>
-        <div style={{ display: "flex", gap: 10, flex: 1, minHeight: 0 }}>
+        <div className={s.weekGrid}>
           {weekdays.map(dateStr => (
             <DayCol key={dateStr} dateStr={dateStr} isLarge={isLarge} />
           ))}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0, flex: 1 }}>
+          <div className={s.weekendCol}>
             {weekend.map(dateStr => (
               <DayCol key={dateStr} dateStr={dateStr} isLarge={isLarge} isCompact />
             ))}
@@ -142,7 +157,7 @@ const DisplaySchedule = () => {
   };
 
   return (
-    <div style={{ ...DS.root, gap: 20 }}>
+    <div className={s.root}>
       {renderWeek("This Week", thisWeekAll, 2)}
       {renderWeek("Next Week", nextWeekAll, 1)}
     </div>

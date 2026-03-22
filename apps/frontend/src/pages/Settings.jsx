@@ -6,6 +6,8 @@ import { CloseBtn, BILL_CATEGORIES } from "../components/shared";
 import { SECTION_COLORS, DEFAULT_COLUMNS, SEED_TEMPLATES } from "../fixtures/seedData.jsx";
 import { supabase, inviteUser, updateStaffRecord, xeroOAuth, xeroSyncInvoice, xeroSyncBill, xeroSyncContact, xeroPollUpdates, xeroFetchAccounts, xeroGetMappings, xeroSaveMappings } from "../lib/supabase";
 import { adminResetUserPassword } from "../lib/auth";
+import { hexToRgba } from "../utils/helpers";
+import s from './Settings.module.css';
 
 // ── Settings Page ───────────────────────────────────────────────────────────
 
@@ -53,11 +55,6 @@ const XeroAccountMappingSection = ({ accent, xeroAccounts, setXeroAccounts, mapp
   const [savingMappings, setSavingMappings] = useState(false);
   const [mappingSaved, setMappingSaved] = useState(false);
   const [mappingError, setMappingError] = useState(null);
-
-  const cardStyle = { background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 };
-  const labelStyle = { display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 };
-  const btnStyle = { padding: "8px 16px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "'Open Sans', sans-serif" };
-  const selectStyle = { width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, background: "#fff", boxSizing: "border-box", fontFamily: "'Open Sans', sans-serif" };
 
   const revenueAccounts = (xeroAccounts || []).filter(a => a.type === "REVENUE");
   const expenseAccounts = (xeroAccounts || []).filter(a => a.type === "EXPENSE");
@@ -116,11 +113,11 @@ const XeroAccountMappingSection = ({ accent, xeroAccounts, setXeroAccounts, mapp
 
   const renderAccountSelect = (entityType, category, label, accountList) => (
     <div key={`${entityType}-${category}`}>
-      <label style={labelStyle}>{label}</label>
+      <label className={s.label}>{label}</label>
       <select
         value={getMappingValue(entityType, category)}
         onChange={e => setMappingValue(entityType, category, e.target.value)}
-        style={selectStyle}
+        className={s.selectBase}
       >
         <option value="">— Select account —</option>
         {accountList.map(a => (
@@ -133,52 +130,52 @@ const XeroAccountMappingSection = ({ accent, xeroAccounts, setXeroAccounts, mapp
   return (
     <div>
       {mappingError && (
-        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#dc2626", display: "flex", alignItems: "center", gap: 8 }}>
+        <div className={s.alertErrorSmallFlex}>
           {mappingError}
-          <button onClick={() => setMappingError(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#dc2626", fontSize: 14 }}>&times;</button>
+          <button onClick={() => setMappingError(null)} className={s.alertDismiss}>&times;</button>
         </div>
       )}
       {mappingSaved && (
-        <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#166534" }}>
+        <div className={s.alertSuccessSmall}>
           Account mappings saved successfully.
         </div>
       )}
 
       {(!xeroAccounts || xeroAccounts.length === 0) ? (
         <div>
-          <div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>Pull your Chart of Accounts from Xero to configure which accounts invoices and bills sync to.</div>
-          <button onClick={handleFetchAccounts} disabled={fetchingAccounts} style={{ ...btnStyle, background: accent, color: "#fff" }}>
+          <div className={s.setupHelp}>Pull your Chart of Accounts from Xero to configure which accounts invoices and bills sync to.</div>
+          <button onClick={handleFetchAccounts} disabled={fetchingAccounts} className={s.btnAccent} style={{ background: accent }}>
             {fetchingAccounts ? "Fetching..." : "Fetch Accounts from Xero"}
           </button>
         </div>
       ) : (
         <div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <div style={{ fontSize: 12, color: "#666" }}>{xeroAccounts.length} accounts loaded from Xero ({revenueAccounts.length} revenue, {expenseAccounts.length} expense)</div>
-            <button onClick={handleFetchAccounts} disabled={fetchingAccounts} style={{ ...btnStyle, background: "#f8f8f8", color: "#666", fontSize: 11, padding: "6px 12px" }}>
+          <div className={s.flexBetweenMbSm}>
+            <div className={s.accountsInfo}>{xeroAccounts.length} accounts loaded from Xero ({revenueAccounts.length} revenue, {expenseAccounts.length} expense)</div>
+            <button onClick={handleFetchAccounts} disabled={fetchingAccounts} className={s.refreshBtn}>
               {fetchingAccounts ? "Refreshing..." : "Refresh Accounts"}
             </button>
           </div>
 
           {/* Revenue Accounts (Invoices) */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#111", marginBottom: 10 }}>Revenue Accounts (Invoices)</div>
-            <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "1fr 1fr", gap: 12 }}>
+          <div className={s.mb20}>
+            <div className={s.accountsSectionTitle}>Revenue Accounts (Invoices)</div>
+            <div className={s.gridGap12} style={{ gridTemplateColumns: compact ? "1fr" : "1fr 1fr" }}>
               {renderAccountSelect("invoice", "", "Default Invoice Account", revenueAccounts)}
             </div>
           </div>
 
           {/* Expense Accounts (Bills) */}
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#111", marginBottom: 10 }}>Expense Accounts (Bills)</div>
-            <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "1fr 1fr", gap: 12 }}>
+          <div className={s.mb16}>
+            <div className={s.accountsSectionTitle}>Expense Accounts (Bills)</div>
+            <div className={s.gridGap12} style={{ gridTemplateColumns: compact ? "1fr" : "1fr 1fr" }}>
               {BILL_CATEGORIES.map(cat =>
                 renderAccountSelect("bill", cat, cat, expenseAccounts)
               )}
             </div>
           </div>
 
-          <button onClick={handleSaveMappings} disabled={savingMappings} style={{ ...btnStyle, background: accent, color: "#fff" }}>
+          <button onClick={handleSaveMappings} disabled={savingMappings} className={s.btnAccent} style={{ background: accent }}>
             {savingMappings ? "Saving..." : "Save Mappings"}
           </button>
         </div>
@@ -297,11 +294,7 @@ const XeroSettingsTab = ({ accent }) => {
     try { setXeroPollResult(await xeroPollUpdates()); } catch (e) { setXeroError(e.message); } finally { setXeroSyncing(false); }
   };
 
-  if (xeroLoading) return <div style={{ padding: 40, textAlign: "center", color: "#888" }}>Loading Xero status...</div>;
-
-  const cardStyle = { background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 };
-  const labelStyle = { display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 };
-  const btnStyle = { padding: "8px 16px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "'Open Sans', sans-serif" };
+  if (xeroLoading) return <div className={s.xeroLoading}>Loading Xero status...</div>;
 
   // Build current mapping summary for display
   const getMappingSummary = (entityType, category = "") => {
@@ -311,38 +304,38 @@ const XeroSettingsTab = ({ accent }) => {
 
   return (
     <div>
-      <div style={{ fontSize: 16, fontWeight: 700, color: "#111", marginBottom: 4 }}>Xero Accounting Integration</div>
-      <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>Sync invoices, bills, and contacts with your Xero organisation</div>
+      <div className={s.pageHeading} style={{ marginBottom: 4 }}>Xero Accounting Integration</div>
+      <div className={s.sectionSubtitleSm}>Sync invoices, bills, and contacts with your Xero organisation</div>
       {xeroError && (
-        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#dc2626", display: "flex", alignItems: "center", gap: 8 }}>
+        <div className={s.alertErrorFlex}>
           <Icon name="notification" size={14} /> {xeroError}
-          <button onClick={() => setXeroError(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#dc2626", fontSize: 14 }}>&times;</button>
+          <button onClick={() => setXeroError(null)} className={s.alertDismiss}>&times;</button>
         </div>
       )}
-      <div style={cardStyle}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 8, background: xeroStatus?.connected ? "#ecfdf5" : "#f8f8f8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: xeroStatus?.connected ? "#16a34a" : "#888" }}>X</div>
+      <div className={s.card}>
+        <div className={s.flexBetween}>
+          <div className={s.flexGap12}>
+            <div className={xeroStatus?.connected ? s.xeroIconConnected : s.xeroIconDisconnected}>X</div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{xeroStatus?.connected ? `Connected to ${xeroStatus.tenantName}` : "Not connected"}</div>
-              <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{xeroStatus?.connected ? `Connected ${xeroStatus.connectedAt ? new Date(xeroStatus.connectedAt).toLocaleDateString() : ""}` : "Connect to your Xero organisation to start syncing"}</div>
+              <div className={s.xeroStatusTitle}>{xeroStatus?.connected ? `Connected to ${xeroStatus.tenantName}` : "Not connected"}</div>
+              <div className={s.xeroStatusSub}>{xeroStatus?.connected ? `Connected ${xeroStatus.connectedAt ? new Date(xeroStatus.connectedAt).toLocaleDateString() : ""}` : "Connect to your Xero organisation to start syncing"}</div>
             </div>
           </div>
           {xeroStatus?.connected
-            ? <button onClick={handleDisconnect} style={{ ...btnStyle, background: "#fee2e2", color: "#dc2626" }}>Disconnect</button>
-            : <button onClick={handleConnect} style={{ ...btnStyle, background: accent, color: "#fff" }}>Connect to Xero</button>}
+            ? <button onClick={handleDisconnect} className={s.btnDisconnect}>Disconnect</button>
+            : <button onClick={handleConnect} className={s.btnAccent} style={{ background: accent }}>Connect to Xero</button>}
         </div>
       </div>
       {xeroStatus?.connected && xeroSetupStep > 0 && xeroSetupStep <= 4 && (
-        <div style={{ ...cardStyle, border: `2px solid ${accent}` }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 4 }}>Setup Wizard — Step {xeroSetupStep} of 4</div>
-          <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>
+        <div className={s.card} style={{ border: `2px solid ${accent}` }}>
+          <div className={s.setupWizardTitle}>Setup Wizard — Step {xeroSetupStep} of 4</div>
+          <div className={s.setupWizardDesc}>
             {xeroSetupStep === 1 && "Match your existing contacts with Xero to avoid duplicates"}
             {xeroSetupStep === 2 && "Map your Xero account codes for invoices and bills"}
             {xeroSetupStep === 3 && "Mark items that are already in Xero to skip during sync"}
             {xeroSetupStep === 4 && "Preview what will be synced before running"}
           </div>
-          {xeroSetupStep === 1 && (<div>{!xeroMatchResults ? <button onClick={runContactMatch} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Matching..." : "Run Contact Matching"}</button> : (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>Found {xeroMatchResults.xeroContactCount} contacts in Xero. {xeroMatchResults.matches?.length || 0} FieldOps contacts to review.</div>{(xeroMatchResults.matches || []).map((m, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid #f0f0f0", fontSize: 12 }}><input type="checkbox" checked={m.confirmed || false} onChange={() => { const updated = [...xeroMatchResults.matches]; updated[i] = { ...updated[i], confirmed: !updated[i].confirmed }; setXeroMatchResults({ ...xeroMatchResults, matches: updated }); }} /><div style={{ flex: 1 }}><span style={{ fontWeight: 600 }}>{m.name}</span><span style={{ color: "#888", marginLeft: 8 }}>({m.entityType})</span></div><div style={{ flex: 1, color: m.xeroMatch ? "#16a34a" : "#888" }}>{m.xeroMatch ? `→ ${m.xeroMatch.name} (${m.xeroMatch.confidence})` : "No match — will create new"}</div></div>))}<div style={{ display: "flex", gap: 8, marginTop: 12 }}><button onClick={() => confirmMatches(xeroMatchResults.matches)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Confirm & Continue</button><button onClick={() => setXeroSetupStep(2)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip</button></div></div>)}</div>)}
+          {xeroSetupStep === 1 && (<div>{!xeroMatchResults ? <button onClick={runContactMatch} disabled={xeroSyncing} className={s.btnAccent} style={{ background: accent }}>{xeroSyncing ? "Matching..." : "Run Contact Matching"}</button> : (<div><div className={s.setupHelp}>Found {xeroMatchResults.xeroContactCount} contacts in Xero. {xeroMatchResults.matches?.length || 0} FieldOps contacts to review.</div>{(xeroMatchResults.matches || []).map((m, i) => (<div key={i} className={s.contactRow}><input type="checkbox" checked={m.confirmed || false} onChange={() => { const updated = [...xeroMatchResults.matches]; updated[i] = { ...updated[i], confirmed: !updated[i].confirmed }; setXeroMatchResults({ ...xeroMatchResults, matches: updated }); }} /><div className={s.flex1}><span className={s.contactName}>{m.name}</span><span className={s.contactType}>({m.entityType})</span></div><div className={m.xeroMatch ? s.contactMatch : s.contactNoMatch}>{m.xeroMatch ? `→ ${m.xeroMatch.name} (${m.xeroMatch.confidence})` : "No match — will create new"}</div></div>))}<div className={s.flexEndMt}><button onClick={() => confirmMatches(xeroMatchResults.matches)} className={s.btnAccent} style={{ background: accent }}>Confirm & Continue</button><button onClick={() => setXeroSetupStep(2)} className={s.btnSecondary}>Skip</button></div></div>)}</div>)}
           {xeroSetupStep === 2 && (
             <div>
               <XeroAccountMappingSection
@@ -354,40 +347,40 @@ const XeroSettingsTab = ({ accent }) => {
                 onSaved={() => {}}
                 compact={false}
               />
-              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <button onClick={() => setXeroSetupStep(3)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue</button>
-                <button onClick={() => setXeroSetupStep(3)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip</button>
+              <div className={s.flexEndMt}>
+                <button onClick={() => setXeroSetupStep(3)} className={s.btnAccent} style={{ background: accent }}>Continue</button>
+                <button onClick={() => setXeroSetupStep(3)} className={s.btnSecondary}>Skip</button>
               </div>
             </div>
           )}
-          {xeroSetupStep === 3 && (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>If any invoices or bills have already been entered in Xero manually, mark them here to prevent duplicates.</div><div style={{ display: "flex", gap: 8 }}><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue to Preview</button><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip — None to mark</button></div></div>)}
-          {xeroSetupStep === 4 && (<div>{!xeroDryRun ? <button onClick={runDryRun} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Checking..." : "Preview Sync"}</button> : (<div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 12 }}><div style={{ background: "#f0fdf4", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#16a34a" }}>{xeroDryRun.invoices?.wouldSync || 0}</div><div style={{ fontSize: 11, color: "#666" }}>Invoices to sync</div></div><div style={{ background: "#eff6ff", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#2563eb" }}>{xeroDryRun.bills?.wouldSync || 0}</div><div style={{ fontSize: 11, color: "#666" }}>Bills to sync</div></div></div><div style={{ display: "flex", gap: 8 }}><button onClick={() => { runBulkSync("invoices"); runBulkSync("bills"); setXeroSetupStep(0); }} style={{ ...btnStyle, background: accent, color: "#fff" }}>Start Sync</button><button onClick={() => setXeroSetupStep(0)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Close Wizard</button></div></div>)}</div>)}
+          {xeroSetupStep === 3 && (<div><div className={s.setupHelp}>If any invoices or bills have already been entered in Xero manually, mark them here to prevent duplicates.</div><div className={s.flexGap8}><button onClick={() => setXeroSetupStep(4)} className={s.btnAccent} style={{ background: accent }}>Continue to Preview</button><button onClick={() => setXeroSetupStep(4)} className={s.btnSecondary}>Skip — None to mark</button></div></div>)}
+          {xeroSetupStep === 4 && (<div>{!xeroDryRun ? <button onClick={runDryRun} disabled={xeroSyncing} className={s.btnAccent} style={{ background: accent }}>{xeroSyncing ? "Checking..." : "Preview Sync"}</button> : (<div><div className={s.grid2Gap16} style={{ marginBottom: 12 }}><div className={s.dryRunInvoices}><div className={s.dryRunNumberGreen}>{xeroDryRun.invoices?.wouldSync || 0}</div><div className={s.dryRunLabel}>Invoices to sync</div></div><div className={s.dryRunBills}><div className={s.dryRunNumberBlue}>{xeroDryRun.bills?.wouldSync || 0}</div><div className={s.dryRunLabel}>Bills to sync</div></div></div><div className={s.flexGap8}><button onClick={() => { runBulkSync("invoices"); runBulkSync("bills"); setXeroSetupStep(0); }} className={s.btnAccent} style={{ background: accent }}>Start Sync</button><button onClick={() => setXeroSetupStep(0)} className={s.btnSecondary}>Close Wizard</button></div></div>)}</div>)}
         </div>
       )}
       {xeroStatus?.connected && xeroSetupStep === 0 && (
         <>
           {/* Account Mapping Section */}
-          <div style={cardStyle}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 4 }}>Account Mapping</div>
-            <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>Configure which Xero accounts invoices and bills are posted to</div>
+          <div className={s.card}>
+            <div className={s.sectionTitleMb}>Account Mapping</div>
+            <div className={s.sectionSubtitle}>Configure which Xero accounts invoices and bills are posted to</div>
             {/* Current mappings summary */}
             {mappings.length > 0 && !xeroAccounts.length && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: "grid", gap: 8 }}>
+              <div className={s.mb16}>
+                <div className={s.gridGap8}>
                   {getMappingSummary("invoice") && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#16a34a" }} />
-                      <span style={{ fontWeight: 600, minWidth: 140 }}>Invoices:</span>
-                      <span style={{ color: "#333" }}>{getMappingSummary("invoice")}</span>
+                    <div className={s.mappingRow}>
+                      <div className={s.mappingDotGreen} />
+                      <span className={s.mappingLabel}>Invoices:</span>
+                      <span className={s.mappingValue}>{getMappingSummary("invoice")}</span>
                     </div>
                   )}
                   {BILL_CATEGORIES.map(cat => {
                     const summary = getMappingSummary("bill", cat);
                     return summary ? (
-                      <div key={cat} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2563eb" }} />
-                        <span style={{ fontWeight: 600, minWidth: 140 }}>Bills ({cat}):</span>
-                        <span style={{ color: "#333" }}>{summary}</span>
+                      <div key={cat} className={s.mappingRow}>
+                        <div className={s.mappingDotBlue} />
+                        <span className={s.mappingLabel}>Bills ({cat}):</span>
+                        <span className={s.mappingValue}>{summary}</span>
                       </div>
                     ) : null;
                   })}
@@ -404,26 +397,26 @@ const XeroSettingsTab = ({ accent }) => {
             />
           </div>
 
-          <div style={cardStyle}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 16 }}>Sync Actions</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button onClick={() => runBulkSync("invoices")} disabled={xeroSyncing} style={{ ...btnStyle, background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }}>{xeroSyncing ? "Syncing..." : "Sync All Invoices"}</button>
-              <button onClick={() => runBulkSync("bills")} disabled={xeroSyncing} style={{ ...btnStyle, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe" }}>{xeroSyncing ? "Syncing..." : "Sync All Bills"}</button>
-              <button onClick={handlePoll} disabled={xeroSyncing} style={{ ...btnStyle, background: "#faf5ff", color: "#7c3aed", border: "1px solid #ddd6fe" }}>{xeroSyncing ? "Checking..." : "Check for Updates"}</button>
-              <button onClick={() => setXeroSetupStep(1)} style={{ ...btnStyle, background: "#f8f8f8", color: "#666" }}>Re-run Setup Wizard</button>
+          <div className={s.card}>
+            <div className={s.sectionTitle} style={{ marginBottom: 16 }}>Sync Actions</div>
+            <div className={s.flexWrap}>
+              <button onClick={() => runBulkSync("invoices")} disabled={xeroSyncing} className={s.btnSyncInvoices}>{xeroSyncing ? "Syncing..." : "Sync All Invoices"}</button>
+              <button onClick={() => runBulkSync("bills")} disabled={xeroSyncing} className={s.btnSyncBills}>{xeroSyncing ? "Syncing..." : "Sync All Bills"}</button>
+              <button onClick={handlePoll} disabled={xeroSyncing} className={s.btnSyncPoll}>{xeroSyncing ? "Checking..." : "Check for Updates"}</button>
+              <button onClick={() => setXeroSetupStep(1)} className={s.btnLight}>Re-run Setup Wizard</button>
             </div>
-            {xeroSyncResult && <div style={{ marginTop: 12, background: xeroSyncResult.errors > 0 ? "#fffbeb" : "#f0fdf4", borderRadius: 8, padding: 12, fontSize: 12 }}><span style={{ fontWeight: 600 }}>{xeroSyncResult.type}:</span> {xeroSyncResult.synced} synced, {xeroSyncResult.errors} errors, {xeroSyncResult.total} total</div>}
-            {xeroPollResult && <div style={{ marginTop: 12, background: "#f0fdf4", borderRadius: 8, padding: 12, fontSize: 12 }}><span style={{ fontWeight: 600 }}>Updates:</span> {xeroPollResult.invoices?.updated || 0} invoices, {xeroPollResult.bills?.updated || 0} bills updated</div>}
+            {xeroSyncResult && <div className={xeroSyncResult.errors > 0 ? s.syncResultWarn : s.syncResultSuccess}><span className={s.syncResultBold}>{xeroSyncResult.type}:</span> {xeroSyncResult.synced} synced, {xeroSyncResult.errors} errors, {xeroSyncResult.total} total</div>}
+            {xeroPollResult && <div className={s.syncResultSuccess}><span className={s.syncResultBold}>Updates:</span> {xeroPollResult.invoices?.updated || 0} invoices, {xeroPollResult.bills?.updated || 0} bills updated</div>}
           </div>
           {xeroSyncLog.length > 0 && (
-            <div style={cardStyle}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 12 }}>Recent Sync Activity</div>
+            <div className={s.card}>
+              <div className={s.sectionTitle} style={{ marginBottom: 12 }}>Recent Sync Activity</div>
               {xeroSyncLog.map((log, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < xeroSyncLog.length - 1 ? "1px solid #f0f0f0" : "none", fontSize: 12 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: log.status === "success" ? "#16a34a" : log.status === "error" ? "#dc2626" : "#f59e0b" }} />
-                  <div style={{ flex: 1 }}><span style={{ fontWeight: 600 }}>{log.entity_type}</span><span style={{ color: "#888", marginLeft: 4 }}>{log.direction}</span></div>
-                  <div style={{ color: log.status === "error" ? "#dc2626" : "#888", fontSize: 11 }}>{log.error_message ? log.error_message.slice(0, 50) : log.status}</div>
-                  <div style={{ color: "#aaa", fontSize: 10 }}>{log.created_at ? new Date(log.created_at).toLocaleString() : ""}</div>
+                <div key={i} className={s.syncLogRow} style={{ borderBottom: i < xeroSyncLog.length - 1 ? "1px solid #f0f0f0" : "none" }}>
+                  <div className={log.status === "success" ? s.syncLogDotSuccess : log.status === "error" ? s.syncLogDotError : s.syncLogDotWarn} />
+                  <div className={s.syncLogEntity}><span className={s.syncLogEntityType}>{log.entity_type}</span><span className={s.syncLogDirection}>{log.direction}</span></div>
+                  <div className={log.status === "error" ? s.syncLogStatusError : s.syncLogStatusNormal}>{log.error_message ? log.error_message.slice(0, 50) : log.status}</div>
+                  <div className={s.syncLogTime}>{log.created_at ? new Date(log.created_at).toLocaleString() : ""}</div>
                 </div>
               ))}
             </div>
@@ -439,20 +432,20 @@ const XeroSettingsTab = ({ accent }) => {
 const VoiceOptionCard = ({ option, selected, onSelect, accent }) => (
   <div
     onClick={onSelect}
+    className={s.voiceCard}
     style={{
-      padding: "12px 16px", borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
-      border: selected ? `2px solid ${accent}` : "2px solid #e8e8e8",
-      background: selected ? hexToRgba(accent, 0.06) : "#fff",
+      border: selected ? `2px solid ${accent}` : undefined,
+      background: selected ? hexToRgba(accent, 0.06) : undefined,
     }}
   >
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div style={{
-        width: 16, height: 16, borderRadius: "50%", border: selected ? `5px solid ${accent}` : "2px solid #ccc",
-        background: "#fff", flexShrink: 0,
-      }} />
+    <div className={s.voiceCardFlex}>
+      <div
+        className={s.voiceRadio}
+        style={selected ? { border: `5px solid ${accent}` } : undefined}
+      />
       <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#111" : "#333" }}>{option.label}</div>
-        <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{option.desc}</div>
+        <div className={selected ? s.voiceLabelSelected : s.voiceLabel}>{option.label}</div>
+        <div className={s.voiceDesc}>{option.desc}</div>
       </div>
     </div>
   </div>
@@ -670,13 +663,13 @@ const Settings = () => {
 
   const voiceIntegrationContent = (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+      <div className={s.flexBetweenMb}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Voice Assistant</div>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Configure your Iris voice assistant — powered by OpenAI Realtime + Twilio</div>
-          <div style={{ fontSize: 11, color: "#b0b0b0", marginTop: 4 }}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
+          <div className={s.pageHeading}>Voice Assistant</div>
+          <div className={s.pageSubheading}>Configure your Iris voice assistant — powered by OpenAI Realtime + Twilio</div>
+          <div className={s.pageSubheadingMuted}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div className={s.flexGap8}>
           <button className="btn btn-ghost btn-sm" onClick={resetVoiceSettings} style={{ fontSize: 11 }}>Reset Defaults</button>
           <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: dirty ? 1 : 0.5 }} onClick={saveVoiceSettings} disabled={!dirty}>
             {saved ? "Saved!" : "Save Changes"}
@@ -685,27 +678,27 @@ const Settings = () => {
       </div>
 
       {saved && (
-        <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+        <div className={s.alertSuccessFlex}>
           <Icon name="check" size={14} /> Voice settings saved. Changes will apply to the next call.
         </div>
       )}
 
       {/* Assistant Name */}
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Assistant Name</div>
+      <div className={s.card}>
+        <div className={s.sectionHeading}>Assistant Name</div>
         <input
           type="text" value={voiceSettings.name}
           onChange={e => updateVoice("name", e.target.value)}
           placeholder="e.g. Iris, Billy, Sage"
-          style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif" }}
+          className={s.inputNarrowLg}
         />
-        <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>The name your assistant introduces itself as on calls</div>
+        <div className={s.hint}>The name your assistant introduces itself as on calls</div>
       </div>
 
       {/* Voice Selection */}
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Voice</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+      <div className={s.card}>
+        <div className={s.sectionHeading}>Voice</div>
+        <div className={s.gridAutoFill}>
           {VOICE_OPTIONS.voices.map(v => (
             <VoiceOptionCard key={v.id} option={v} selected={voiceSettings.voice === v.id} onSelect={() => updateVoice("voice", v.id)} accent={accent} />
           ))}
@@ -713,97 +706,92 @@ const Settings = () => {
       </div>
 
       {/* Greeting Style */}
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Greeting Style</div>
+      <div className={s.card}>
+        <div className={s.sectionHeading}>Greeting Style</div>
         <textarea
           value={voiceSettings.greetingStyle}
           onChange={e => updateVoice("greetingStyle", e.target.value)}
           placeholder={VOICE_OPTIONS.greetingStylePlaceholder}
           rows={3}
-          style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }}
+          className={s.textarea}
         />
-        <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>Describe how Iris should greet callers</div>
+        <div className={s.hint}>Describe how Iris should greet callers</div>
       </div>
 
       {/* Personality */}
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Personality</div>
+      <div className={s.card}>
+        <div className={s.sectionHeading}>Personality</div>
         <textarea
           value={voiceSettings.personality}
           onChange={e => updateVoice("personality", e.target.value)}
           placeholder={VOICE_OPTIONS.personalityPlaceholder}
           rows={3}
-          style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }}
+          className={s.textarea}
         />
-        <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>Describe the tone, style, and personality of your assistant</div>
+        <div className={s.hint}>Describe the tone, style, and personality of your assistant</div>
       </div>
 
       {/* General Knowledge */}
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>General Knowledge</div>
+      <div className={s.card}>
+        <div className={s.sectionHeading}>General Knowledge</div>
         <textarea
           value={voiceSettings.generalKnowledge}
           onChange={e => updateVoice("generalKnowledge", e.target.value)}
           placeholder={VOICE_OPTIONS.generalKnowledgePlaceholder}
           rows={3}
-          style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }}
+          className={s.textarea}
         />
-        <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>Any background knowledge your assistant should have — local area, industry, etc.</div>
+        <div className={s.hint}>Any background knowledge your assistant should have — local area, industry, etc.</div>
       </div>
 
       {/* Advanced Settings */}
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 16 }}>Advanced</div>
-        <div style={{ display: "grid", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className={s.card}>
+        <div className={s.sectionHeadingLg}>Advanced</div>
+        <div className={s.gridGap16}>
+          <div className={s.flexBetween}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>Confirm before writing</div>
-              <div style={{ fontSize: 11, color: "#888" }}>Ask for confirmation before creating or updating records</div>
+              <div className={s.settingTitle}>Confirm before writing</div>
+              <div className={s.settingDesc}>Ask for confirmation before creating or updating records</div>
             </div>
             <button
               onClick={() => updateVoice("confirmWrites", !voiceSettings.confirmWrites)}
-              style={{
-                width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s",
-                background: voiceSettings.confirmWrites ? accent : "#ccc",
-              }}
+              className={s.toggle}
+              style={{ background: voiceSettings.confirmWrites ? accent : "#ccc" }}
             >
-              <div style={{
-                width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, transition: "left 0.2s",
-                left: voiceSettings.confirmWrites ? 23 : 3, boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-              }} />
+              <div className={s.toggleKnob} style={{ left: voiceSettings.confirmWrites ? 23 : 3 }} />
             </button>
           </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+            <div className={s.flexBetweenMb6}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>Silence detection (ms)</div>
-                <div style={{ fontSize: 11, color: "#888" }}>How long to wait after the caller stops speaking before responding</div>
+                <div className={s.settingTitle}>Silence detection (ms)</div>
+                <div className={s.settingDesc}>How long to wait after the caller stops speaking before responding</div>
               </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: accent, minWidth: 50, textAlign: "right" }}>{voiceSettings.silenceDuration}ms</span>
+              <span className={s.rangeValue} style={{ color: accent }}>{voiceSettings.silenceDuration}ms</span>
             </div>
             <input
               type="range" min={200} max={1500} step={100} value={voiceSettings.silenceDuration}
               onChange={e => updateVoice("silenceDuration", Number(e.target.value))}
-              style={{ width: "100%", maxWidth: 400, accentColor: accent }}
+              className={s.rangeInput} style={{ accentColor: accent }}
             />
-            <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 400, fontSize: 10, color: "#bbb" }}>
+            <div className={s.rangeLabels}>
               <span>200ms (fast)</span><span>1500ms (patient)</span>
             </div>
           </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+            <div className={s.flexBetweenMb6}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>Voice detection sensitivity</div>
-                <div style={{ fontSize: 11, color: "#888" }}>How sensitive the mic is to picking up speech (lower = more sensitive)</div>
+                <div className={s.settingTitle}>Voice detection sensitivity</div>
+                <div className={s.settingDesc}>How sensitive the mic is to picking up speech (lower = more sensitive)</div>
               </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: accent, minWidth: 50, textAlign: "right" }}>{voiceSettings.vadThreshold}</span>
+              <span className={s.rangeValue} style={{ color: accent }}>{voiceSettings.vadThreshold}</span>
             </div>
             <input
               type="range" min={0.1} max={0.9} step={0.1} value={voiceSettings.vadThreshold}
               onChange={e => updateVoice("vadThreshold", Number(e.target.value))}
-              style={{ width: "100%", maxWidth: 400, accentColor: accent }}
+              className={s.rangeInput} style={{ accentColor: accent }}
             />
-            <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 400, fontSize: 10, color: "#bbb" }}>
+            <div className={s.rangeLabels}>
               <span>0.1 (very sensitive)</span><span>0.9 (less sensitive)</span>
             </div>
           </div>
@@ -811,15 +799,15 @@ const Settings = () => {
       </div>
 
       {/* Current Config Summary */}
-      <div style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Current Configuration</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, fontSize: 12 }}>
-          <div><span style={{ color: "#888" }}>Name:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.name}</span></div>
-          <div><span style={{ color: "#888" }}>Voice:</span> <span style={{ fontWeight: 600 }}>{VOICE_OPTIONS.voices.find(v => v.id === voiceSettings.voice)?.label || voiceSettings.voice}</span></div>
-          <div><span style={{ color: "#888" }}>Greeting:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.greetingStyle ? (voiceSettings.greetingStyle.length > 60 ? voiceSettings.greetingStyle.slice(0, 60) + "…" : voiceSettings.greetingStyle) : "Not set"}</span></div>
-          <div><span style={{ color: "#888" }}>Personality:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.personality ? (voiceSettings.personality.length > 60 ? voiceSettings.personality.slice(0, 60) + "…" : voiceSettings.personality) : "Not set"}</span></div>
-          <div><span style={{ color: "#888" }}>General Knowledge:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.generalKnowledge ? (voiceSettings.generalKnowledge.length > 60 ? voiceSettings.generalKnowledge.slice(0, 60) + "…" : voiceSettings.generalKnowledge) : "Not set"}</span></div>
-          <div><span style={{ color: "#888" }}>Silence:</span> <span style={{ fontWeight: 600 }}>{voiceSettings.silenceDuration}ms</span></div>
+      <div className={s.cardMuted}>
+        <div className={s.sectionHeading}>Current Configuration</div>
+        <div className={s.gridAutoFillGap12}>
+          <div><span className={s.configLabel}>Name:</span> <span className={s.configValue}>{voiceSettings.name}</span></div>
+          <div><span className={s.configLabel}>Voice:</span> <span className={s.configValue}>{VOICE_OPTIONS.voices.find(v => v.id === voiceSettings.voice)?.label || voiceSettings.voice}</span></div>
+          <div><span className={s.configLabel}>Greeting:</span> <span className={s.configValue}>{voiceSettings.greetingStyle ? (voiceSettings.greetingStyle.length > 60 ? voiceSettings.greetingStyle.slice(0, 60) + "…" : voiceSettings.greetingStyle) : "Not set"}</span></div>
+          <div><span className={s.configLabel}>Personality:</span> <span className={s.configValue}>{voiceSettings.personality ? (voiceSettings.personality.length > 60 ? voiceSettings.personality.slice(0, 60) + "…" : voiceSettings.personality) : "Not set"}</span></div>
+          <div><span className={s.configLabel}>General Knowledge:</span> <span className={s.configValue}>{voiceSettings.generalKnowledge ? (voiceSettings.generalKnowledge.length > 60 ? voiceSettings.generalKnowledge.slice(0, 60) + "…" : voiceSettings.generalKnowledge) : "Not set"}</span></div>
+          <div><span className={s.configLabel}>Silence:</span> <span className={s.configValue}>{voiceSettings.silenceDuration}ms</span></div>
         </div>
       </div>
     </div>
@@ -901,17 +889,17 @@ const Settings = () => {
       try { await adminResetUserPassword(s.email); alert(`Password reset email sent to ${s.email}`); } catch (err) { setUpdateError(`Failed to send reset: ${err.message}`); }
     };
 
-    const handleSavePhone = async (s) => {
+    const handleSavePhone = async (st) => {
       setUpdateError(null);
       try {
-        await updateStaffRecord(s.id, { phone: editPhoneVal.trim() });
-        if (setStaff) { setStaff(prev => prev.map(st => st.id === s.id ? { ...st, phone: editPhoneVal.trim() } : st)); }
+        await updateStaffRecord(st.id, { phone: editPhoneVal.trim() });
+        if (setStaff) { setStaff(prev => prev.map(x => x.id === st.id ? { ...x, phone: editPhoneVal.trim() } : x)); }
         setEditPhoneId(null);
         setEditPhoneVal("");
       } catch (err) { setUpdateError(`Failed to update phone: ${err.message}`); }
     };
 
-    const openPermissions = (s) => { setPermEditId(s.id); setPermData(JSON.parse(JSON.stringify(getUserPerms(s.id)))); };
+    const openPermissions = (st) => { setPermEditId(st.id); setPermData(JSON.parse(JSON.stringify(getUserPerms(st.id)))); };
     const toggleAction = (sectionId, action) => {
       setPermData(prev => {
         const current = prev[sectionId] || [];
@@ -925,7 +913,7 @@ const Settings = () => {
     };
     const toggleAllSection = (sectionId) => {
       setPermData(prev => {
-        const sec = PERMISSION_SECTIONS.find(s => s.id === sectionId);
+        const sec = PERMISSION_SECTIONS.find(x => x.id === sectionId);
         const current = prev[sectionId] || [];
         return { ...prev, [sectionId]: current.length === sec.actions.length ? [] : [...sec.actions] };
       });
@@ -934,10 +922,10 @@ const Settings = () => {
 
     return (
       <div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div className={s.flexBetweenMb}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>User Management</div>
-            <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{staff.length} team member{staff.length !== 1 ? "s" : ""}</div>
+            <div className={s.pageHeading}>User Management</div>
+            <div className={s.pageSubheading}>{staff.length} team member{staff.length !== 1 ? "s" : ""}</div>
           </div>
           <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11 }} onClick={() => { setShowInvite(true); setInviteSuccess(null); setInviteError(null); }}>
             <Icon name="plus" size={12} /> Invite User
@@ -945,53 +933,53 @@ const Settings = () => {
         </div>
 
         {updateError && (
-          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#dc2626" }}>{updateError}</div>
+          <div className={s.alertError}>{updateError}</div>
         )}
 
         {/* Invite form */}
         {showInvite && (
-          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Invite New User</div>
+          <div className={s.card}>
+            <div className={s.flexBetweenMbSm}>
+              <div className={s.sectionTitle}>Invite New User</div>
               <CloseBtn onClick={() => { setShowInvite(false); setInviteSuccess(null); }} />
             </div>
             {inviteSuccess ? (
-              <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: 16 }}>
-                <div style={{ fontWeight: 700, color: "#166534", marginBottom: 8, fontSize: 13 }}><Icon name="check" size={14} /> User created successfully</div>
-                <div style={{ display: "grid", gap: 6, fontSize: 12 }}>
-                  <div><span style={{ color: "#888" }}>Name:</span> <span style={{ fontWeight: 600 }}>{inviteSuccess.fullName}</span></div>
-                  <div><span style={{ color: "#888" }}>Email:</span> <span style={{ fontWeight: 600 }}>{inviteSuccess.email}</span></div>
-                  <div style={{ background: "#fff", border: "1px solid #bbf7d0", borderRadius: 6, padding: "10px 14px", marginTop: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 4, letterSpacing: "0.06em", textTransform: "uppercase" }}>Temporary Password</div>
-                    <div style={{ fontFamily: "monospace", fontSize: 15, fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>{inviteSuccess.temporaryPassword}</div>
-                    <div style={{ fontSize: 10, color: "#888", marginTop: 4 }}>Share this securely. They should change it on first login.</div>
+              <div className={s.cardSuccess}>
+                <div className={s.inviteSuccessTitle}><Icon name="check" size={14} /> User created successfully</div>
+                <div className={s.inviteGrid}>
+                  <div><span className={s.configLabel}>Name:</span> <span className={s.configValue}>{inviteSuccess.fullName}</span></div>
+                  <div><span className={s.configLabel}>Email:</span> <span className={s.configValue}>{inviteSuccess.email}</span></div>
+                  <div className={s.tempPasswordBox}>
+                    <div className={s.tempPasswordLabel}>Temporary Password</div>
+                    <div className={s.tempPasswordValue}>{inviteSuccess.temporaryPassword}</div>
+                    <div className={s.tempPasswordHint}>Share this securely. They should change it on first login.</div>
                   </div>
                 </div>
                 <button className="btn btn-sm" style={{ marginTop: 12, fontSize: 11 }} onClick={() => setInviteSuccess(null)}>Invite Another</button>
               </div>
             ) : (
               <form onSubmit={handleInvite}>
-                {inviteError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#dc2626" }}>{inviteError}</div>}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                {inviteError && <div className={s.alertErrorSmall}>{inviteError}</div>}
+                <div className={s.grid2Mb}>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Full Name</label>
-                    <input type="text" value={inviteForm.fullName} onChange={e => setInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="e.g. Tom Baker" required style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                    <label className={s.label}>Full Name</label>
+                    <input type="text" value={inviteForm.fullName} onChange={e => setInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="e.g. Tom Baker" required className={s.inputBase} />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Email</label>
-                    <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="tom@company.com" required style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                    <label className={s.label}>Email</label>
+                    <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="tom@company.com" required className={s.inputBase} />
                   </div>
                 </div>
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Phone Number</label>
-                  <input type="tel" value={inviteForm.phone} onChange={e => setInviteForm(f => ({ ...f, phone: e.target.value }))} placeholder="0412 345 678" style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
-                  <div style={{ fontSize: 10, color: "#aaa", marginTop: 4 }}>Used by the voice assistant to route calls to this user's caller memory</div>
+                <div className={s.mb12}>
+                  <label className={s.label}>Phone Number</label>
+                  <input type="tel" value={inviteForm.phone} onChange={e => setInviteForm(f => ({ ...f, phone: e.target.value }))} placeholder="0412 345 678" className={s.inputNarrow} />
+                  <div className={s.hintSm}>Used by the voice assistant to route calls to this user's caller memory</div>
                 </div>
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Password (optional)</label>
-                  <input type="text" value={inviteForm.password} onChange={e => setInviteForm(f => ({ ...f, password: e.target.value }))} placeholder="Auto-generated if blank" style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <div className={s.mb16}>
+                  <label className={s.label}>Password (optional)</label>
+                  <input type="text" value={inviteForm.password} onChange={e => setInviteForm(f => ({ ...f, password: e.target.value }))} placeholder="Auto-generated if blank" className={s.inputNarrow} />
                 </div>
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <div className={s.flexEnd}>
                   <button type="button" className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => setShowInvite(false)}>Cancel</button>
                   <button type="submit" className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: inviteLoading ? 0.6 : 1 }} disabled={inviteLoading}>{inviteLoading ? "Creating..." : "Create User"}</button>
                 </div>
@@ -1001,41 +989,41 @@ const Settings = () => {
         )}
 
         {/* Users list */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {staff.length === 0 && <div style={{ textAlign: "center", padding: 24, color: "#999", fontSize: 13 }}>No users found</div>}
-          {staff.map(s => {
-            const initials = s.name?.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase() || "?";
-            const isSelf = auth.staff?.id === s.id;
-            const perms = getUserPerms(s.id);
+        <div className={s.flexCol}>
+          {staff.length === 0 && <div className={s.emptyState}>No users found</div>}
+          {staff.map(st => {
+            const initials = st.name?.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase() || "?";
+            const isSelf = auth.staff?.id === st.id;
+            const perms = getUserPerms(st.id);
             const { total: permTotal, enabled: permEnabled } = countPerms(perms);
             return (
-              <div key={s.id} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", opacity: s.active ? 1 : 0.5 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: s.active ? "#111" : "#ddd", color: s.active ? "#fff" : "#999", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, flexShrink: 0 }}>{initials}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{s.name}{isSelf ? " (you)" : ""}</div>
-                    <div style={{ fontSize: 11, color: "#888", display: "flex", alignItems: "center", gap: 8 }}>
-                      <span>{s.email}</span>
-                      {editPhoneId === s.id ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          <input type="tel" value={editPhoneVal} onChange={e => setEditPhoneVal(e.target.value)} placeholder="0412 345 678" autoFocus onKeyDown={e => { if (e.key === "Enter") handleSavePhone(s); if (e.key === "Escape") setEditPhoneId(null); }} style={{ width: 130, padding: "2px 6px", border: "1px solid #ccc", borderRadius: 4, fontSize: 11, fontFamily: "'Open Sans', sans-serif" }} />
-                          <button onClick={() => handleSavePhone(s)} style={{ background: "none", border: "none", cursor: "pointer", color: "#059669", fontSize: 11, fontWeight: 600, fontFamily: "'Open Sans', sans-serif" }}>Save</button>
-                          <button onClick={() => setEditPhoneId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#999", fontSize: 11, fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
+              <div key={st.id} className={s.userCard} style={{ opacity: st.active ? 1 : 0.5 }}>
+                <div className={s.flexGap12}>
+                  <div className={st.active ? s.userAvatarActive : s.userAvatarInactive}>{initials}</div>
+                  <div className={s.flex1}>
+                    <div className={s.userName}>{st.name}{isSelf ? " (you)" : ""}</div>
+                    <div className={s.userMeta}>
+                      <span>{st.email}</span>
+                      {editPhoneId === st.id ? (
+                        <span className={s.phoneEditInline}>
+                          <input type="tel" value={editPhoneVal} onChange={e => setEditPhoneVal(e.target.value)} placeholder="0412 345 678" autoFocus onKeyDown={e => { if (e.key === "Enter") handleSavePhone(st); if (e.key === "Escape") setEditPhoneId(null); }} className={s.inputSmInline} />
+                          <button onClick={() => handleSavePhone(st)} className={s.phoneSaveBtn}>Save</button>
+                          <button onClick={() => setEditPhoneId(null)} className={s.phoneCancelBtn}>Cancel</button>
                         </span>
                       ) : (
-                        <span onClick={() => { setEditPhoneId(s.id); setEditPhoneVal(s.phone || ""); }} style={{ cursor: "pointer", color: s.phone ? "#555" : "#ccc", borderBottom: "1px dashed #ccc" }} title="Click to edit phone">
-                          {s.phone || "Add phone"}
+                        <span onClick={() => { setEditPhoneId(st.id); setEditPhoneVal(st.phone || ""); }} className={s.phoneClickable} style={{ color: st.phone ? "#555" : "#ccc" }} title="Click to edit phone">
+                          {st.phone || "Add phone"}
                         </span>
                       )}
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: permEnabled === permTotal ? "#059669" : "#f59e0b", background: "#f5f5f5", padding: "2px 8px", borderRadius: 4 }}>{permEnabled}/{permTotal} permissions</span>
-                    <button onClick={() => openPermissions(s)} style={{ padding: "4px 10px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", fontWeight: 600 }}>Permissions</button>
+                  <div className={s.flexGap6} style={{ flexShrink: 0 }}>
+                    <span className={s.permBadge} style={{ color: permEnabled === permTotal ? "#059669" : "#f59e0b" }}>{permEnabled}/{permTotal} permissions</span>
+                    <button onClick={() => openPermissions(st)} className={s.permBtnSm}>Permissions</button>
                     {!isSelf && (
                       <>
-                        <button onClick={() => handleResetPassword(s)} style={{ padding: "4px 10px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Reset PW</button>
-                        <button onClick={() => handleToggleActive(s)} style={{ padding: "4px 10px", background: "none", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", color: s.active ? "#dc2626" : "#059669" }}>{s.active ? "Deactivate" : "Activate"}</button>
+                        <button onClick={() => handleResetPassword(st)} className={s.userActionBtn}>Reset PW</button>
+                        <button onClick={() => handleToggleActive(st)} className={s.userToggleBtn} style={{ color: st.active ? "#dc2626" : "#059669" }}>{st.active ? "Deactivate" : "Activate"}</button>
                       </>
                     )}
                   </div>
@@ -1047,35 +1035,31 @@ const Settings = () => {
 
         {/* Permissions modal */}
         {permEditId && permData && (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setPermEditId(null)}>
-            <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 560, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", maxHeight: "85vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
-              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Permissions</div>
-              <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>{staff.find(s => s.id === permEditId)?.name} — {(() => { const c = countPerms(permData); return `${c.enabled}/${c.total} enabled`; })()}</div>
+          <div className={s.modalOverlay} onClick={() => setPermEditId(null)}>
+            <div className={s.modalContentPermissions} onClick={e => e.stopPropagation()}>
+              <div className={s.modalTitleSm}>Permissions</div>
+              <div className={s.modalSubtitle}>{staff.find(x => x.id === permEditId)?.name} — {(() => { const c = countPerms(permData); return `${c.enabled}/${c.total} enabled`; })()}</div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+              <div className={s.permSectionList}>
                 {PERMISSION_SECTIONS.map(sec => {
                   const enabled = permData[sec.id] || [];
                   const allOn = enabled.length === sec.actions.length;
                   const anyOn = enabled.length > 0;
                   return (
-                    <div key={sec.id} style={{ border: "1px solid #e8e8e8", borderRadius: 8, overflow: "hidden", background: anyOn ? "#fff" : "#fafafa" }}>
+                    <div key={sec.id} className={anyOn ? s.permSectionActive : s.permSectionInactive}>
                       {/* Section header */}
-                      <div onClick={() => toggleAllSection(sec.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", borderBottom: anyOn ? "1px solid #f0f0f0" : "none" }}>
-                        <input type="checkbox" checked={allOn} readOnly style={{ width: 15, height: 15, accentColor: "#059669", cursor: "pointer", pointerEvents: "none" }} />
-                        <span style={{ fontSize: 13, fontWeight: 600, color: anyOn ? "#111" : "#999", flex: 1 }}>{sec.label}</span>
-                        <span style={{ fontSize: 10, color: "#aaa" }}>{enabled.length}/{sec.actions.length}</span>
+                      <div onClick={() => toggleAllSection(sec.id)} className={anyOn ? s.permSectionHeaderActive : s.permSectionHeader}>
+                        <input type="checkbox" checked={allOn} readOnly className={s.permCheckbox} />
+                        <span className={anyOn ? s.permSectionLabelActive : s.permSectionLabelInactive}>{sec.label}</span>
+                        <span className={s.permCount}>{enabled.length}/{sec.actions.length}</span>
                       </div>
                       {/* Action toggles */}
                       {anyOn && (
-                        <div style={{ display: "flex", gap: 6, padding: "8px 14px 10px 40px", flexWrap: "wrap" }}>
+                        <div className={s.permActions}>
                           {sec.actions.map(action => {
                             const isOn = enabled.includes(action);
                             return (
-                              <button key={action} onClick={() => toggleAction(sec.id, action)} style={{
-                                padding: "3px 10px", borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: "pointer", border: "1px solid",
-                                fontFamily: "'Open Sans', sans-serif", transition: "all 0.15s",
-                                background: isOn ? "#ecfdf5" : "#fff", color: isOn ? "#059669" : "#999", borderColor: isOn ? "#bbf7d0" : "#e8e8e8",
-                              }}>{ACTION_LABELS[action]}</button>
+                              <button key={action} onClick={() => toggleAction(sec.id, action)} className={isOn ? s.permActionBtnOn : s.permActionBtnOff}>{ACTION_LABELS[action]}</button>
                             );
                           })}
                         </div>
@@ -1085,9 +1069,9 @@ const Settings = () => {
                 })}
               </div>
 
-              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                <button onClick={() => setPermEditId(null)} style={{ padding: "8px 16px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
-                <button onClick={savePermissions} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Save Permissions</button>
+              <div className={s.flexEnd}>
+                <button onClick={() => setPermEditId(null)} className={s.btnCancel}>Cancel</button>
+                <button onClick={savePermissions} className={s.btnPrimary} style={{ background: accent }}>Save Permissions</button>
               </div>
             </div>
           </div>
@@ -1099,17 +1083,15 @@ const Settings = () => {
   return (
     <div>
       {/* Settings sub-navigation */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #e8e8e8", paddingBottom: 0 }}>
+      <div className={s.tabBar}>
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className="btn"
+            className={`btn ${s.tabBtn}`}
             style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", fontSize: 13, fontWeight: 600,
-              border: "none", borderBottom: tab === t.id ? `2px solid ${accent}` : "2px solid transparent",
-              borderRadius: 0, background: "transparent", color: tab === t.id ? "#111" : "#888",
-              cursor: "pointer", transition: "all 0.15s",
+              borderBottom: tab === t.id ? `2px solid ${accent}` : undefined,
+              color: tab === t.id ? "#111" : undefined,
             }}
           >
             <Icon name={t.icon} size={14} />{t.label}
@@ -1119,47 +1101,47 @@ const Settings = () => {
 
       {tab === "company" && (
         <div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div className={s.flexBetweenMb}>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Company Information</div>
-              <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Your company details used across the app and document templates</div>
+              <div className={s.pageHeading}>Company Information</div>
+              <div className={s.pageSubheading}>Your company details used across the app and document templates</div>
             </div>
             <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: companyDirty ? 1 : 0.5 }} onClick={saveCompanyInfo} disabled={!companyDirty}>
               {companySaved ? "Saved!" : "Save Changes"}
             </button>
           </div>
           {companySaved && (
-            <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+            <div className={s.alertSuccessFlex}>
               <Icon name="check" size={14} /> Company information saved.
             </div>
           )}
-          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <div className={s.card}>
+            <div className={s.grid2Mb}>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Company Name</label>
-                <input value={companyForm.companyName} onChange={e => updateCompanyField("companyName", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <label className={s.label}>Company Name</label>
+                <input value={companyForm.companyName} onChange={e => updateCompanyField("companyName", e.target.value)} className={s.inputLg} />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>ABN</label>
-                <input value={companyForm.abn} onChange={e => updateCompanyField("abn", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <label className={s.label}>ABN</label>
+                <input value={companyForm.abn} onChange={e => updateCompanyField("abn", e.target.value)} className={s.inputLg} />
               </div>
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Address</label>
-              <input value={companyForm.address} onChange={e => updateCompanyField("address", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+            <div className={s.mb12}>
+              <label className={s.label}>Address</label>
+              <input value={companyForm.address} onChange={e => updateCompanyField("address", e.target.value)} className={s.inputLg} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className={s.grid2}>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Phone</label>
-                <input value={companyForm.phone} onChange={e => updateCompanyField("phone", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <label className={s.label}>Phone</label>
+                <input value={companyForm.phone} onChange={e => updateCompanyField("phone", e.target.value)} className={s.inputLg} />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Email</label>
-                <input value={companyForm.email} onChange={e => updateCompanyField("email", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <label className={s.label}>Email</label>
+                <input value={companyForm.email} onChange={e => updateCompanyField("email", e.target.value)} className={s.inputLg} />
               </div>
             </div>
           </div>
-          <div style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: 10, padding: "14px 20px", fontSize: 12, color: "#888" }}>
+          <div className={s.companyFooter}>
             These details are used as defaults across the app. Document templates can override the email address per template in the Templates tab.
           </div>
         </div>
@@ -1167,13 +1149,13 @@ const Settings = () => {
       {tab === "integrations" && voiceIntegrationContent}
       {tab === "outbound" && (
         <div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div className={s.flexBetweenMb}>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Outbound Call Assistant</div>
-              <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Configure AI-powered outbound calls to team members about urgent tasks</div>
-              <div style={{ fontSize: 11, color: "#b0b0b0", marginTop: 4 }}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
+              <div className={s.pageHeading}>Outbound Call Assistant</div>
+              <div className={s.pageSubheading}>Configure AI-powered outbound calls to team members about urgent tasks</div>
+              <div className={s.pageSubheadingMuted}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className={s.flexGap8}>
               <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: outboundDirty ? 1 : 0.5 }} onClick={saveOutboundSettings} disabled={!outboundDirty}>
                 {outboundSaved ? "Saved!" : "Save Changes"}
               </button>
@@ -1181,68 +1163,68 @@ const Settings = () => {
           </div>
 
           {outboundSaved && (
-            <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+            <div className={s.alertSuccessFlex}>
               <Icon name="check" size={14} /> Outbound settings saved.
             </div>
           )}
           {testCallStatus && (
-            <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#1d4ed8" }}>{testCallStatus}</div>
+            <div className={s.alertInfo}>{testCallStatus}</div>
           )}
 
           {/* Enable toggle */}
-          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className={s.outboundEnableCard}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Enable Outbound Calls</div>
-              <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Allow the AI assistant to make outbound calls to team members</div>
+              <div className={s.sectionTitle}>Enable Outbound Calls</div>
+              <div className={s.pageSubheading}>Allow the AI assistant to make outbound calls to team members</div>
             </div>
-            <button onClick={() => updateOutbound("enabled", !outboundSettings.enabled)} style={{ width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s", background: outboundSettings.enabled ? "#059669" : "#ccc" }}>
-              <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, transition: "left 0.2s", left: outboundSettings.enabled ? 23 : 3, boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+            <button onClick={() => updateOutbound("enabled", !outboundSettings.enabled)} className={s.toggle} style={{ background: outboundSettings.enabled ? "#059669" : "#ccc" }}>
+              <div className={s.toggleKnob} style={{ left: outboundSettings.enabled ? 23 : 3 }} />
             </button>
           </div>
 
           {/* AI Personality */}
-          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>AI Personality</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <div className={s.card}>
+            <div className={s.sectionHeading}>AI Personality</div>
+            <div className={s.grid2Mb}>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Name</label>
-                <input value={outboundSettings.name} onChange={e => updateOutbound("name", e.target.value)} placeholder="e.g. Iris" style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <label className={s.label}>Name</label>
+                <input value={outboundSettings.name} onChange={e => updateOutbound("name", e.target.value)} placeholder="e.g. Iris" className={s.inputLg} />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Voice</label>
-                <select value={outboundSettings.voice} onChange={e => updateOutbound("voice", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }}>
+                <label className={s.label}>Voice</label>
+                <select value={outboundSettings.voice} onChange={e => updateOutbound("voice", e.target.value)} className={s.inputBase}>
                   {VOICE_OPTIONS.voices.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}
                 </select>
               </div>
             </div>
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Greeting Style</label>
-            <textarea value={outboundSettings.greetingStyle} onChange={e => updateOutbound("greetingStyle", e.target.value)} rows={2} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 12 }} />
-            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Personality</label>
-            <textarea value={outboundSettings.personality} onChange={e => updateOutbound("personality", e.target.value)} rows={2} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }} />
+            <label className={s.label}>Greeting Style</label>
+            <textarea value={outboundSettings.greetingStyle} onChange={e => updateOutbound("greetingStyle", e.target.value)} rows={2} className={s.textareaMb} />
+            <label className={s.label}>Personality</label>
+            <textarea value={outboundSettings.personality} onChange={e => updateOutbound("personality", e.target.value)} rows={2} className={s.textarea} />
           </div>
 
           {/* Team Contacts */}
-          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Team Contacts</div>
-              <button onClick={openNewTeamMember} style={{ padding: "4px 12px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>+ Add</button>
+          <div className={s.card}>
+            <div className={s.flexBetweenMb12}>
+              <div className={s.sectionHeading} style={{ marginBottom: 0 }}>Team Contacts</div>
+              <button onClick={openNewTeamMember} className={s.teamAddBtn} style={{ background: accent }}>+ Add</button>
             </div>
             {outboundSettings.team.length === 0 ? (
-              <div style={{ textAlign: "center", padding: 20, color: "#aaa", fontSize: 13 }}>No team members added</div>
+              <div className={s.emptyStateMd}>No team members added</div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className={s.flexCol}>
                 {outboundSettings.team.map(m => (
-                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", border: "1px solid #e8e8e8", borderRadius: 8 }}>
-                    <button onClick={() => toggleTeamMemberCall(m.id)} style={{ width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer", position: "relative", background: m.callEnabled ? "#059669" : "#ccc", flexShrink: 0 }}>
-                      <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: m.callEnabled ? 19 : 3, transition: "left 0.2s", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }} />
+                  <div key={m.id} className={s.teamRow}>
+                    <button onClick={() => toggleTeamMemberCall(m.id)} className={s.toggleSm} style={{ background: m.callEnabled ? "#059669" : "#ccc", flexShrink: 0 }}>
+                      <div className={s.toggleKnobSm} style={{ left: m.callEnabled ? 19 : 3 }} />
                     </button>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>{m.name}</div>
-                      <div style={{ fontSize: 11, color: "#888" }}>{m.phone} {m.role ? `· ${m.role}` : ""}</div>
+                    <div className={s.flex1}>
+                      <div className={s.teamMemberName}>{m.name}</div>
+                      <div className={s.teamMemberInfo}>{m.phone} {m.role ? `· ${m.role}` : ""}</div>
                     </div>
-                    <button onClick={() => triggerTestCall(m)} style={{ padding: "4px 10px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Test Call</button>
-                    <button onClick={() => openEditTeamMember(m)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 13, padding: 4 }}>✎</button>
-                    <button onClick={() => removeTeamMember(m.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ddd", fontSize: 13, padding: 4 }}>🗑</button>
+                    <button onClick={() => triggerTestCall(m)} className={s.testCallBtn}>Test Call</button>
+                    <button onClick={() => openEditTeamMember(m)} className={s.teamActionBtn}>✎</button>
+                    <button onClick={() => removeTeamMember(m.id)} className={s.teamDeleteBtn}>🗑</button>
                   </div>
                 ))}
               </div>
@@ -1250,46 +1232,46 @@ const Settings = () => {
           </div>
 
           {/* Call Rules */}
-          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 16 }}>Call Rules</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div className={s.card}>
+            <div className={s.sectionHeadingLg}>Call Rules</div>
+            <div className={s.grid2Gap16}>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Min. Severity</label>
-                <select value={outboundSettings.callRules.minSeverity} onChange={e => updateCallRule("minSeverity", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }}>
+                <label className={s.label}>Min. Severity</label>
+                <select value={outboundSettings.callRules.minSeverity} onChange={e => updateCallRule("minSeverity", e.target.value)} className={s.inputBase}>
                   <option value="high">High only</option>
                   <option value="medium">Medium and above</option>
                   <option value="low">All severities</option>
                 </select>
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Max Calls / Day</label>
-                <input type="number" min={1} max={10} value={outboundSettings.callRules.maxCallsPerDay} onChange={e => updateCallRule("maxCallsPerDay", Number(e.target.value))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <label className={s.label}>Max Calls / Day</label>
+                <input type="number" min={1} max={10} value={outboundSettings.callRules.maxCallsPerDay} onChange={e => updateCallRule("maxCallsPerDay", Number(e.target.value))} className={s.inputBase} />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Call Window Start</label>
-                <input type="time" value={outboundSettings.callRules.callWindowStart} onChange={e => updateCallRule("callWindowStart", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <label className={s.label}>Call Window Start</label>
+                <input type="time" value={outboundSettings.callRules.callWindowStart} onChange={e => updateCallRule("callWindowStart", e.target.value)} className={s.inputBase} />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Call Window End</label>
-                <input type="time" value={outboundSettings.callRules.callWindowEnd} onChange={e => updateCallRule("callWindowEnd", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <label className={s.label}>Call Window End</label>
+                <input type="time" value={outboundSettings.callRules.callWindowEnd} onChange={e => updateCallRule("callWindowEnd", e.target.value)} className={s.inputBase} />
               </div>
             </div>
           </div>
 
           {/* Team member modal */}
           {showTeamModal && (
-            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowTeamModal(false)}>
-              <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }} onClick={e => e.stopPropagation()}>
-                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{editTeamMember ? "Edit Team Member" : "Add Team Member"}</div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Name</label>
-                <input value={teamForm.name} onChange={e => setTeamForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Tom Baker" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} autoFocus />
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Phone</label>
-                <input value={teamForm.phone} onChange={e => setTeamForm(f => ({ ...f, phone: e.target.value }))} placeholder="+61400000000" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Role</label>
-                <input value={teamForm.role} onChange={e => setTeamForm(f => ({ ...f, role: e.target.value }))} placeholder="e.g. Site Manager" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 20 }} />
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                  <button onClick={() => setShowTeamModal(false)} style={{ padding: "8px 16px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
-                  <button onClick={saveTeamMember} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>{editTeamMember ? "Save" : "Add"}</button>
+            <div className={s.modalOverlay} onClick={() => setShowTeamModal(false)}>
+              <div className={s.modalContentSm} onClick={e => e.stopPropagation()}>
+                <div className={s.modalTitle}>{editTeamMember ? "Edit Team Member" : "Add Team Member"}</div>
+                <label className={s.label}>Name</label>
+                <input value={teamForm.name} onChange={e => setTeamForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Tom Baker" className={s.inputModalMb} autoFocus />
+                <label className={s.label}>Phone</label>
+                <input value={teamForm.phone} onChange={e => setTeamForm(f => ({ ...f, phone: e.target.value }))} placeholder="+61400000000" className={s.inputModalMb} />
+                <label className={s.label}>Role</label>
+                <input value={teamForm.role} onChange={e => setTeamForm(f => ({ ...f, role: e.target.value }))} placeholder="e.g. Site Manager" className={s.inputModalMbLast} />
+                <div className={s.flexEnd}>
+                  <button onClick={() => setShowTeamModal(false)} className={s.btnCancel}>Cancel</button>
+                  <button onClick={saveTeamMember} className={s.btnPrimary} style={{ background: accent }}>{editTeamMember ? "Save" : "Add"}</button>
                 </div>
               </div>
             </div>
@@ -1346,135 +1328,131 @@ const Settings = () => {
           // ── Template Editor ──
           return (
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                <button onClick={() => setEditTemplate(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#888", fontSize: 16, padding: 4 }}>&larr;</button>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>{editTemplate === "new" ? "New Template" : "Edit Template"}</div>
-                <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                  <button onClick={() => setEditTemplate(null)} style={{ padding: "6px 14px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 12, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
-                  <button onClick={saveTemplate} style={{ padding: "6px 14px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Save Template</button>
+              <div className={s.flexGap8} style={{ alignItems: "center", marginBottom: 20 }}>
+                <button onClick={() => setEditTemplate(null)} className={s.tplBackBtn}>&larr;</button>
+                <div className={s.pageHeading}>{editTemplate === "new" ? "New Template" : "Edit Template"}</div>
+                <div className={s.tplHeaderActions}>
+                  <button onClick={() => setEditTemplate(null)} className={s.btnCancel} style={{ fontSize: 12, padding: "6px 14px" }}>Cancel</button>
+                  <button onClick={saveTemplate} className={s.btnPrimary} style={{ background: accent, fontSize: 12, padding: "6px 14px" }}>Save Template</button>
                 </div>
               </div>
 
               {/* Template name */}
-              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Template Name</label>
-                <input value={tplForm.name} onChange={e => setTplForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Premium, Minimal, Branded" style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} autoFocus />
+              <div className={s.card}>
+                <label className={s.label}>Template Name</label>
+                <input value={tplForm.name} onChange={e => setTplForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Premium, Minimal, Branded" className={s.inputNarrowLg} autoFocus />
               </div>
 
               {/* Company Details (inherited from Settings > Company) */}
-              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Company Details</div>
-                  <span style={{ fontSize: 10, color: "#aaa" }}>From Settings &gt; Company</span>
+              <div className={s.card}>
+                <div className={s.flexBetweenMb12}>
+                  <div className={s.sectionHeading} style={{ marginBottom: 0 }}>Company Details</div>
+                  <span className={s.fromCompanyHint}>From Settings &gt; Company</span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
-                  <div style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#aaa", textTransform: "uppercase", marginBottom: 2 }}>Company</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>{companyInfo.companyName}</div>
+                <div className={s.grid4}>
+                  <div className={s.tplCompanyDetailBox}>
+                    <div className={s.tplCompanyDetailLabel}>Company</div>
+                    <div className={s.tplCompanyDetailValue}>{companyInfo.companyName}</div>
                   </div>
-                  <div style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#aaa", textTransform: "uppercase", marginBottom: 2 }}>ABN</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>{companyInfo.abn}</div>
+                  <div className={s.tplCompanyDetailBox}>
+                    <div className={s.tplCompanyDetailLabel}>ABN</div>
+                    <div className={s.tplCompanyDetailValue}>{companyInfo.abn}</div>
                   </div>
-                  <div style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#aaa", textTransform: "uppercase", marginBottom: 2 }}>Address</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>{companyInfo.address}</div>
+                  <div className={s.tplCompanyDetailBox}>
+                    <div className={s.tplCompanyDetailLabel}>Address</div>
+                    <div className={s.tplCompanyDetailValue}>{companyInfo.address}</div>
                   </div>
-                  <div style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 6 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#aaa", textTransform: "uppercase", marginBottom: 2 }}>Phone</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>{companyInfo.phone}</div>
+                  <div className={s.tplCompanyDetailBox}>
+                    <div className={s.tplCompanyDetailLabel}>Phone</div>
+                    <div className={s.tplCompanyDetailValue}>{companyInfo.phone}</div>
                   </div>
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Template Email <span style={{ fontWeight: 400, color: "#aaa", textTransform: "none" }}>(override per template)</span></label>
-                  <input value={tplForm.email} onChange={e => setTplForm(f => ({ ...f, email: e.target.value }))} style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  <label className={s.label}>Template Email <span className={s.tplLabelOverride}>(override per template)</span></label>
+                  <input value={tplForm.email} onChange={e => setTplForm(f => ({ ...f, email: e.target.value }))} className={s.inputNarrow} />
                 </div>
               </div>
 
               {/* Branding */}
-              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Branding</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div className={s.card}>
+                <div className={s.sectionHeading}>Branding</div>
+                <div className={s.grid2Mb}>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Accent Colour</label>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <input type="color" value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} style={{ width: 36, height: 36, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", padding: 2 }} />
-                      <input value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} style={{ width: 90, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "monospace", boxSizing: "border-box" }} />
+                    <label className={s.label}>Accent Colour</label>
+                    <div className={s.flexGap8} style={{ alignItems: "center" }}>
+                      <input type="color" value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} className={s.inputColor} />
+                      <input value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} className={s.inputMono} />
                     </div>
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Logo</label>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {tplForm.logo && <img src={tplForm.logo} alt="Logo" style={{ height: 32, borderRadius: 4 }} />}
-                      <input type="file" accept="image/*" onChange={e => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onload = () => setTplForm(f => ({ ...f, logo: reader.result })); reader.readAsDataURL(file); } }} style={{ fontSize: 12 }} />
-                      {tplForm.logo && <button onClick={() => setTplForm(f => ({ ...f, logo: null }))} style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 11 }}>Remove</button>}
+                    <label className={s.label}>Logo</label>
+                    <div className={s.flexGap8} style={{ alignItems: "center" }}>
+                      {tplForm.logo && <img src={tplForm.logo} alt="Logo" className={s.logoPreview} />}
+                      <input type="file" accept="image/*" onChange={e => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onload = () => setTplForm(f => ({ ...f, logo: reader.result })); reader.readAsDataURL(file); } }} className={s.fileInput} />
+                      {tplForm.logo && <button onClick={() => setTplForm(f => ({ ...f, logo: null }))} className={s.removeBtn}>Remove</button>}
                     </div>
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <label style={{ fontSize: 13, fontWeight: 500, color: "#333" }}>Show GST</label>
-                  <button onClick={() => setTplForm(f => ({ ...f, showGst: !f.showGst }))} style={{ width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer", position: "relative", background: tplForm.showGst ? "#059669" : "#ccc" }}>
-                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: tplForm.showGst ? 19 : 3, transition: "left 0.2s", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }} />
+                <div className={s.flexGap8} style={{ alignItems: "center" }}>
+                  <label className={s.showGstLabel}>Show GST</label>
+                  <button onClick={() => setTplForm(f => ({ ...f, showGst: !f.showGst }))} className={s.toggleSm} style={{ background: tplForm.showGst ? "#059669" : "#ccc" }}>
+                    <div className={s.toggleKnobSm} style={{ left: tplForm.showGst ? 19 : 3 }} />
                   </button>
                 </div>
               </div>
 
               {/* Column Visibility */}
               {(tplForm.type === "quote" || tplForm.type === "invoice") && (
-                <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Line Item Columns</div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div className={s.card}>
+                  <div className={s.sectionHeading}>Line Item Columns</div>
+                  <div className={s.flexWrap}>
                     {[{ id: "description", label: "Description", required: true }, { id: "qty", label: "Quantity" }, { id: "unit", label: "Unit" }, { id: "unitPrice", label: "Unit Price" }, { id: "lineTotal", label: "Line Total" }, { id: "gst", label: "GST" }].map(col => {
                       const cols = tplForm.columns || DEFAULT_COLUMNS;
                       const isOn = cols[col.id] !== false;
                       return (
-                        <button key={col.id} onClick={() => !col.required && setTplForm(f => ({ ...f, columns: { ...(f.columns || DEFAULT_COLUMNS), [col.id]: !isOn } }))} style={{
-                          padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: col.required ? "default" : "pointer", border: "1px solid",
-                          fontFamily: "'Open Sans', sans-serif", transition: "all 0.15s", opacity: col.required ? 0.7 : 1,
-                          background: isOn ? "#ecfdf5" : "#fff", color: isOn ? "#059669" : "#999", borderColor: isOn ? "#bbf7d0" : "#e8e8e8",
-                        }}>{col.label}</button>
+                        <button key={col.id} onClick={() => !col.required && setTplForm(f => ({ ...f, columns: { ...(f.columns || DEFAULT_COLUMNS), [col.id]: !isOn } }))} className={col.required ? s.colToggleBtnRequired : (isOn ? s.colToggleBtnOn : s.colToggleBtnOff)}>{col.label}</button>
                       );
                     })}
                   </div>
-                  <div style={{ fontSize: 11, color: "#999", marginTop: 8 }}>Toggle which columns appear on the document. Description is always shown.</div>
+                  <div className={s.hint} style={{ marginTop: 8 }}>Toggle which columns appear on the document. Description is always shown.</div>
                 </div>
               )}
 
               {/* Document Preview */}
-              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Preview</div>
+              <div className={s.card}>
+                <div className={s.flexBetweenMb12}>
+                  <div className={s.sectionHeading} style={{ marginBottom: 0 }}>Preview</div>
                   <button onClick={() => {
                     const el = document.getElementById("tpl-preview");
                     if (!el) return;
                     const w = window.open("", "_blank", "width=800,height=1000");
                     w.document.write(`<html><head><title>${tplForm.type} Preview</title><style>body{margin:0;padding:40px;font-family:Arial,sans-serif;font-size:12px}@media print{body{padding:20px}}</style></head><body>${el.innerHTML}<script>setTimeout(()=>window.print(),300)</script></body></html>`);
                     w.document.close();
-                  }} style={{ padding: "4px 12px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ fontSize: 13 }}>&#8595;</span> Download PDF
+                  }} className={s.downloadPdfBtn}>
+                    <span className={s.downloadIcon}>&#8595;</span> Download PDF
                   </button>
                 </div>
-                <div id="tpl-preview" style={{ border: "1px solid #e0e0e0", borderRadius: 8, padding: 24, background: "#fff", fontFamily: "Arial, sans-serif", fontSize: 12 }}>
+                <div id="tpl-preview" className={s.previewContainer}>
                   {/* Header */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, paddingBottom: 16, borderBottom: `2px solid ${tplForm.accentColor}` }}>
+                  <div className={s.previewHeader} style={{ borderBottom: `2px solid ${tplForm.accentColor}` }}>
                     <div>
-                      {tplForm.logo && <img src={tplForm.logo} alt="Logo" style={{ height: 40, marginBottom: 8 }} />}
-                      <div style={{ fontSize: 16, fontWeight: 800, color: tplForm.accentColor }}>{companyInfo.companyName}</div>
-                      {companyInfo.abn && <div style={{ fontSize: 10, color: "#888" }}>ABN: {companyInfo.abn}</div>}
-                      <div style={{ fontSize: 10, color: "#888" }}>{companyInfo.address}</div>
-                      <div style={{ fontSize: 10, color: "#888" }}>{companyInfo.phone} | {tplForm.email}</div>
+                      {tplForm.logo && <img src={tplForm.logo} alt="Logo" className={s.previewLogo} />}
+                      <div className={s.previewCompanyName} style={{ color: tplForm.accentColor }}>{companyInfo.companyName}</div>
+                      {companyInfo.abn && <div className={s.previewSmallMuted}>ABN: {companyInfo.abn}</div>}
+                      <div className={s.previewSmallMuted}>{companyInfo.address}</div>
+                      <div className={s.previewSmallMuted}>{companyInfo.phone} | {tplForm.email}</div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: tplForm.accentColor, textTransform: "uppercase" }}>{tplForm.type === "work_order" ? "Work Order" : tplForm.type === "purchase_order" ? "Purchase Order" : tplForm.type.charAt(0).toUpperCase() + tplForm.type.slice(1)}</div>
-                      <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>#Q-0001</div>
-                      <div style={{ fontSize: 11, color: "#666" }}>Date: 18/03/2026</div>
+                    <div className={s.previewRight}>
+                      <div className={s.previewDocType} style={{ color: tplForm.accentColor }}>{tplForm.type === "work_order" ? "Work Order" : tplForm.type === "purchase_order" ? "Purchase Order" : tplForm.type.charAt(0).toUpperCase() + tplForm.type.slice(1)}</div>
+                      <div className={s.previewDocMeta}>#Q-0001</div>
+                      <div className={s.previewDocMetaSm}>Date: 18/03/2026</div>
                     </div>
                   </div>
                   {/* Client */}
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", marginBottom: 4 }}>Bill To</div>
-                    <div style={{ fontWeight: 600 }}>Hartwell Properties</div>
-                    <div style={{ color: "#666" }}>22 King St, Sydney NSW 2000</div>
+                  <div className={s.previewBillTo}>
+                    <div className={s.previewBillToLabel}>Bill To</div>
+                    <div className={s.previewBillToName}>Hartwell Properties</div>
+                    <div className={s.previewBillToAddr}>22 King St, Sydney NSW 2000</div>
                   </div>
                   {/* Line items table */}
                   {(() => {
@@ -1485,11 +1463,11 @@ const Settings = () => {
                       { desc: "Materials — timber framing", qty: 1, unit: "lot", rate: 2340 },
                       { desc: "Subcontractor — electrical rough-in", qty: 1, unit: "lot", rate: 1850 },
                     ];
-                    const subtotal = sampleItems.reduce((s, i) => s + i.qty * i.rate, 0);
+                    const subtotal = sampleItems.reduce((sum, i) => sum + i.qty * i.rate, 0);
                     const gstAmt = tplForm.showGst ? subtotal * 0.1 : 0;
                     return (
                       <>
-                        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 12, fontSize: 11, tableLayout: "fixed" }}>
+                        <table className={s.previewTable}>
                           <colgroup>
                             <col />
                             {cols.qty !== false && <col style={{ width: colW }} />}
@@ -1498,49 +1476,49 @@ const Settings = () => {
                             {cols.lineTotal !== false && <col style={{ width: colW }} />}
                           </colgroup>
                           <thead>
-                            <tr style={{ background: tplForm.accentColor, color: "#fff" }}>
-                              <th style={{ padding: "6px 8px", textAlign: "left" }}>Description</th>
-                              {cols.qty !== false && <th style={{ padding: "6px 8px", textAlign: "right" }}>Qty</th>}
-                              {cols.unit !== false && <th style={{ padding: "6px 8px", textAlign: "center" }}>Unit</th>}
-                              {cols.unitPrice !== false && <th style={{ padding: "6px 8px", textAlign: "right" }}>Unit Price</th>}
-                              {cols.lineTotal !== false && <th style={{ padding: "6px 8px", textAlign: "right" }}>Total</th>}
+                            <tr style={{ background: tplForm.accentColor }}>
+                              <th className={s.previewTh}>Description</th>
+                              {cols.qty !== false && <th className={s.previewThRight}>Qty</th>}
+                              {cols.unit !== false && <th className={s.previewThCenter}>Unit</th>}
+                              {cols.unitPrice !== false && <th className={s.previewThRight}>Unit Price</th>}
+                              {cols.lineTotal !== false && <th className={s.previewThRight}>Total</th>}
                             </tr>
                           </thead>
                           <tbody>
                             {sampleItems.map((item, i) => (
-                              <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
-                                <td style={{ padding: "6px 8px" }}>{item.desc}</td>
-                                {cols.qty !== false && <td style={{ padding: "6px 8px", textAlign: "right" }}>{item.qty}</td>}
-                                {cols.unit !== false && <td style={{ padding: "6px 8px", textAlign: "center" }}>{item.unit}</td>}
-                                {cols.unitPrice !== false && <td style={{ padding: "6px 8px", textAlign: "right" }}>${item.rate.toLocaleString()}</td>}
-                                {cols.lineTotal !== false && <td style={{ padding: "6px 8px", textAlign: "right" }}>${(item.qty * item.rate).toLocaleString()}</td>}
+                              <tr key={i} className={s.previewTr}>
+                                <td className={s.previewTd}>{item.desc}</td>
+                                {cols.qty !== false && <td className={s.previewTdRight}>{item.qty}</td>}
+                                {cols.unit !== false && <td className={s.previewTdCenter}>{item.unit}</td>}
+                                {cols.unitPrice !== false && <td className={s.previewTdRight}>${item.rate.toLocaleString()}</td>}
+                                {cols.lineTotal !== false && <td className={s.previewTdRight}>${(item.qty * item.rate).toLocaleString()}</td>}
                               </tr>
                             ))}
                           </tbody>
                         </table>
-                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                          <div style={{ width: 180 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 11 }}><span>Subtotal</span><span>${subtotal.toLocaleString()}</span></div>
-                            {tplForm.showGst && cols.gst !== false && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 11 }}><span>GST (10%)</span><span>${gstAmt.toLocaleString()}</span></div>}
-                            <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13, fontWeight: 800, borderTop: "2px solid #111", marginTop: 4 }}><span>Total</span><span>${(subtotal + gstAmt).toLocaleString()}</span></div>
+                        <div className={s.previewTotals}>
+                          <div className={s.previewTotalsBox}>
+                            <div className={s.previewTotalRow}><span>Subtotal</span><span>${subtotal.toLocaleString()}</span></div>
+                            {tplForm.showGst && cols.gst !== false && <div className={s.previewTotalRow}><span>GST (10%)</span><span>${gstAmt.toLocaleString()}</span></div>}
+                            <div className={s.previewTotalFinal}><span>Total</span><span>${(subtotal + gstAmt).toLocaleString()}</span></div>
                           </div>
                         </div>
                       </>
                     );
                   })()}
                   {/* Terms & Footer */}
-                  {tplForm.terms && <div style={{ marginTop: 16, padding: "10px 12px", background: "#f8f8f8", borderRadius: 4, fontSize: 10, color: "#666" }}><strong>Terms:</strong> {tplForm.terms}</div>}
-                  {tplForm.footer && <div style={{ marginTop: 12, textAlign: "center", fontSize: 10, color: "#999" }}>{tplForm.footer}</div>}
+                  {tplForm.terms && <div className={s.previewTerms}><strong>Terms:</strong> {tplForm.terms}</div>}
+                  {tplForm.footer && <div className={s.previewFooter}>{tplForm.footer}</div>}
                 </div>
               </div>
 
               {/* Footer & Terms */}
-              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 }}>Footer & Terms</div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Footer Text</label>
-                <input value={tplForm.footer} onChange={e => setTplForm(f => ({ ...f, footer: e.target.value }))} placeholder="e.g. Thank you for your business." style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Terms & Conditions</label>
-                <textarea value={tplForm.terms} onChange={e => setTplForm(f => ({ ...f, terms: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }} />
+              <div className={s.card}>
+                <div className={s.sectionHeading}>Footer & Terms</div>
+                <label className={s.label}>Footer Text</label>
+                <input value={tplForm.footer} onChange={e => setTplForm(f => ({ ...f, footer: e.target.value }))} placeholder="e.g. Thank you for your business." className={s.inputBase} style={{ marginBottom: 12 }} />
+                <label className={s.label}>Terms & Conditions</label>
+                <textarea value={tplForm.terms} onChange={e => setTplForm(f => ({ ...f, terms: e.target.value }))} rows={3} className={s.textarea} />
               </div>
 
               {/* Email Template */}
@@ -1548,51 +1526,51 @@ const Settings = () => {
                 const sampleVars = { clientName: "James Hartwell", number: "Q-0001", total: "$5,445", subtotal: "$4,950", dueDate: "01/04/2026", jobTitle: "Office Fitout – Level 3", companyName: companyInfo.companyName, date: "18/03/2026", type: tplForm.type === "work_order" ? "work order" : tplForm.type === "purchase_order" ? "purchase order" : tplForm.type };
                 const replaceVars = (text) => text.replace(/\{\{(\w+)\}\}/g, (_, key) => sampleVars[key] || `{{${key}}}`);
                 return (
-                  <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>Email Template</div>
-                      <button onClick={() => setTplForm(f => ({ ...f, _showEmailPreview: !f._showEmailPreview }))} style={{ padding: "4px 12px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>
+                  <div className={s.card}>
+                    <div className={s.flexBetweenMb12}>
+                      <div className={s.sectionHeading} style={{ marginBottom: 0 }}>Email Template</div>
+                      <button onClick={() => setTplForm(f => ({ ...f, _showEmailPreview: !f._showEmailPreview }))} className={s.downloadPdfBtn}>
                         {tplForm._showEmailPreview ? "Edit" : "Preview"}
                       </button>
                     </div>
                     {tplForm._showEmailPreview ? (
-                      <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden" }}>
+                      <div className={s.emailPreviewWrap}>
                         {/* Email header */}
-                        <div style={{ background: "#f8f8f8", padding: "12px 16px", borderBottom: "1px solid #e0e0e0" }}>
-                          <div style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 12 }}>
-                            <span style={{ fontWeight: 700, color: "#888", minWidth: 40 }}>From:</span>
-                            <span style={{ color: "#333" }}>{companyInfo.companyName} &lt;{tplForm.email}&gt;</span>
+                        <div className={s.emailHeader}>
+                          <div className={s.emailHeaderRow}>
+                            <span className={s.emailHeaderLabel}>From:</span>
+                            <span className={s.emailHeaderValue}>{companyInfo.companyName} &lt;{tplForm.email}&gt;</span>
                           </div>
-                          <div style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 12 }}>
-                            <span style={{ fontWeight: 700, color: "#888", minWidth: 40 }}>To:</span>
-                            <span style={{ color: "#333" }}>James Hartwell &lt;james@hartwell.com&gt;</span>
+                          <div className={s.emailHeaderRow}>
+                            <span className={s.emailHeaderLabel}>To:</span>
+                            <span className={s.emailHeaderValue}>James Hartwell &lt;james@hartwell.com&gt;</span>
                           </div>
-                          <div style={{ display: "flex", gap: 8, fontSize: 12 }}>
-                            <span style={{ fontWeight: 700, color: "#888", minWidth: 40 }}>Subject:</span>
-                            <span style={{ color: "#111", fontWeight: 600 }}>{replaceVars(tplForm.emailSubject)}</span>
+                          <div className={s.emailHeaderRowLast}>
+                            <span className={s.emailHeaderLabel}>Subject:</span>
+                            <span className={s.emailSubjectValue}>{replaceVars(tplForm.emailSubject)}</span>
                           </div>
                         </div>
                         {/* Email body */}
-                        <div style={{ padding: "16px 20px", fontSize: 13, lineHeight: 1.6, color: "#333", whiteSpace: "pre-wrap", fontFamily: "Arial, sans-serif" }}>
+                        <div className={s.emailBody}>
                           {replaceVars(tplForm.emailBody)}
                         </div>
                         {/* Attachment indicator */}
-                        <div style={{ padding: "10px 16px", borderTop: "1px solid #e0e0e0", background: "#fafafa", display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 14 }}>&#128206;</span>
-                          <span style={{ fontSize: 11, color: "#666" }}>{tplForm.type === "work_order" ? "Work_Order" : tplForm.type === "purchase_order" ? "Purchase_Order" : tplForm.type.charAt(0).toUpperCase() + tplForm.type.slice(1)}_Q-0001.pdf</span>
+                        <div className={s.emailAttachment}>
+                          <span className={s.emailAttachIcon}>&#128206;</span>
+                          <span className={s.emailAttachName}>{tplForm.type === "work_order" ? "Work_Order" : tplForm.type === "purchase_order" ? "Purchase_Order" : tplForm.type.charAt(0).toUpperCase() + tplForm.type.slice(1)}_Q-0001.pdf</span>
                         </div>
                       </div>
                     ) : (
                       <>
-                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Subject</label>
-                        <input value={tplForm.emailSubject} onChange={e => setTplForm(f => ({ ...f, emailSubject: e.target.value }))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
-                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Body</label>
-                        <textarea value={tplForm.emailBody} onChange={e => setTplForm(f => ({ ...f, emailBody: e.target.value }))} rows={6} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 12 }} />
-                        <div style={{ background: "#f8f8f8", borderRadius: 6, padding: "10px 14px" }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Available Variables</div>
-                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        <label className={s.label}>Subject</label>
+                        <input value={tplForm.emailSubject} onChange={e => setTplForm(f => ({ ...f, emailSubject: e.target.value }))} className={s.inputBase} style={{ marginBottom: 12 }} />
+                        <label className={s.label}>Body</label>
+                        <textarea value={tplForm.emailBody} onChange={e => setTplForm(f => ({ ...f, emailBody: e.target.value }))} rows={6} className={s.textarea} style={{ marginBottom: 12 }} />
+                        <div className={s.varsBox}>
+                          <div className={s.varsBoxLabel}>Available Variables</div>
+                          <div className={s.varsWrap}>
                             {TEMPLATE_VARS.map(v => (
-                              <span key={v.var} title={v.desc} style={{ fontSize: 11, fontFamily: "monospace", background: "#fff", border: "1px solid #e0e0e0", padding: "2px 8px", borderRadius: 4, color: "#555", cursor: "help" }}>{v.var}</span>
+                              <span key={v.var} title={v.desc} className={s.varTag}>{v.var}</span>
                             ))}
                           </div>
                         </div>
@@ -1608,40 +1586,40 @@ const Settings = () => {
         // ── Template List ──
         return (
           <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+            <div className={s.flexBetweenMb}>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#111" }}>Document & Email Templates</div>
-                <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Manage PDF layouts and email templates for each document type</div>
+                <div className={s.pageHeading}>Document & Email Templates</div>
+                <div className={s.pageSubheading}>Manage PDF layouts and email templates for each document type</div>
               </div>
-              <button onClick={openNewTemplate} style={{ padding: "6px 14px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>+ New Template</button>
+              <button onClick={openNewTemplate} className={s.newTemplateBtn} style={{ background: accent }}>+ New Template</button>
             </div>
 
             {/* Document type tabs */}
-            <div style={{ display: "flex", gap: 0, marginBottom: 20, border: "1px solid #ddd", borderRadius: 6, overflow: "hidden" }}>
+            <div className={s.docTypeBar}>
               {DOC_TYPES.map(dt => (
-                <button key={dt.id} onClick={() => setDocType(dt.id)} style={{ flex: 1, padding: "8px 12px", fontSize: 12, fontWeight: 600, border: "none", borderRight: "1px solid #ddd", cursor: "pointer", fontFamily: "'Open Sans', sans-serif", background: docType === dt.id ? accent : "#f5f5f5", color: docType === dt.id ? "#fff" : "#666" }}>{dt.label}</button>
+                <button key={dt.id} onClick={() => setDocType(dt.id)} className={docType === dt.id ? s.docTypeBtnActive : s.docTypeBtn} style={docType === dt.id ? { background: accent } : undefined}>{dt.label}</button>
               ))}
             </div>
 
             {/* Templates for selected type */}
             {typeTemplates.length === 0 ? (
-              <div style={{ textAlign: "center", padding: 40, color: "#aaa", fontSize: 13 }}>No templates for this document type</div>
+              <div className={s.emptyStateLg}>No templates for this document type</div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className={s.flexCol}>
                 {typeTemplates.map(tpl => (
-                  <div key={tpl.id} onClick={() => openEditTemplate(tpl)} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "box-shadow 0.15s" }} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+                  <div key={tpl.id} onClick={() => openEditTemplate(tpl)} className={s.tplListItem}>
                     {/* Colour swatch */}
-                    <div style={{ width: 8, height: 40, borderRadius: 4, background: tpl.accentColor, flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{tpl.name}</div>
-                      <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{tpl.companyName} {tpl.logo ? "· Logo" : ""}</div>
+                    <div className={s.tplSwatch} style={{ background: tpl.accentColor }} />
+                    <div className={s.flex1}>
+                      <div className={s.tplName}>{tpl.name}</div>
+                      <div className={s.tplMeta}>{tpl.companyName} {tpl.logo ? "· Logo" : ""}</div>
                     </div>
-                    {tpl.isDefault && <span style={{ fontSize: 10, fontWeight: 700, background: "#ecfdf5", color: "#059669", padding: "2px 8px", borderRadius: 4 }}>Default</span>}
+                    {tpl.isDefault && <span className={s.tplDefaultBadge}>Default</span>}
                     {!tpl.isDefault && (
-                      <button onClick={e => { e.stopPropagation(); setDefault(tpl.id); }} style={{ fontSize: 10, fontWeight: 600, background: "#f5f5f5", border: "1px solid #ddd", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", color: "#666" }}>Set Default</button>
+                      <button onClick={e => { e.stopPropagation(); setDefault(tpl.id); }} className={s.tplSetDefaultBtn}>Set Default</button>
                     )}
                     {!tpl.isDefault && (
-                      <button onClick={e => { e.stopPropagation(); deleteTemplate(tpl.id); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#ddd", fontSize: 13, padding: 4 }}>🗑</button>
+                      <button onClick={e => { e.stopPropagation(); deleteTemplate(tpl.id); }} className={s.tplDeleteBtn}>🗑</button>
                     )}
                   </div>
                 ))}

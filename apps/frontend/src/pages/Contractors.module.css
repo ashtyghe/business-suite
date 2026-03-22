@@ -1,0 +1,504 @@
+/* ── Compliance Badge ── */
+.badgeCompliant {
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 10px;
+}
+
+.badgeIssues {
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 10px;
+}
+
+/* ── Toolbar ── */
+.searchBar {
+  flex: 1;
+  min-width: 120px;
+}
+
+.autoWidth {
+  width: auto;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 4px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.viewBtnActive {
+  color: #fff;
+}
+
+/* ── List View ── */
+.rowPointer {
+  cursor: pointer;
+}
+
+.nameCell {
+  font-weight: 700;
+}
+
+.contactSub {
+  font-size: 11px;
+  color: #999;
+}
+
+.chipSmall {
+  font-size: 10px;
+}
+
+.deleteBtn {
+  color: #c00;
+}
+
+/* ── Grid View ── */
+.gridLayout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.gridFullSpan {
+  grid-column: 1 / -1;
+}
+
+.gridCard {
+  cursor: pointer;
+  padding: 18px;
+}
+
+.gridCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.gridCardName {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.gridCardBadges {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.gridContact {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.gridEmail {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 2px;
+}
+
+.gridPhone {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.gridFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gridChips {
+  display: flex;
+  gap: 6px;
+}
+
+.gridBillTotal {
+  font-size: 12px;
+  color: #888;
+  font-weight: 600;
+}
+
+.gridBillAmount {
+  color: #111;
+}
+
+/* ── Kanban View ── */
+.kanbanCount {
+  background: #e0e0e0;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.kanbanCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.kanbanCardName {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.kanbanContact {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 2px;
+}
+
+.kanbanPhone {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 6px;
+}
+
+.kanbanChips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* ── Drawer / Modal ── */
+.drawerFooter {
+  padding: 12px 20px;
+  border-top: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.drawerBody {
+  padding: 20px;
+}
+
+/* ── Linked sections ── */
+.linkedSection {
+  margin-top: 20px;
+}
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.linkedRow {
+  padding: 8px 12px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.linkedBold {
+  font-weight: 700;
+}
+
+.linkedDate {
+  float: right;
+  color: #888;
+}
+
+/* ── Bills section ── */
+.billsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.billsTotal {
+  font-size: 12px;
+  font-weight: 700;
+  color: #111;
+}
+
+.billRow {
+  padding: 10px 12px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.billRowTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.billInvoiceNo {
+  color: #aaa;
+  font-family: monospace;
+  font-size: 11px;
+  margin-left: 8px;
+}
+
+.billAmount {
+  font-weight: 700;
+}
+
+.billRowBottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.billRowMeta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.billBadge {
+  font-size: 10px;
+}
+
+.billDate {
+  font-size: 11px;
+  color: #999;
+}
+
+.billDesc {
+  font-size: 11px;
+  color: #777;
+  margin-top: 4px;
+}
+
+/* ── Compliance Documents ── */
+.complianceSection {
+  margin-top: 24px;
+}
+
+.complianceAlert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.complianceAlertSuccess {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.complianceAlertError {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.complianceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.docRow {
+  padding: 12px 14px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.docRowTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.docRowLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.docLabel {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.docRowRight {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.reminderBtn {
+  color: #d97706;
+}
+
+.docDetails {
+  font-size: 11px;
+  color: #666;
+}
+
+.docDetailValue {
+  font-weight: 600;
+  color: #333;
+}
+
+.docNotUploaded {
+  font-size: 11px;
+  color: #bbb;
+  margin-top: 4px;
+}
+
+/* ── Document Modal ── */
+.docModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.docModalContent {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.docModalHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.docModalTitle {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.docModalBody {
+  padding: 20px;
+}
+
+.dropZone {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 2px dashed #d0d0d0;
+  border-radius: 8px;
+  text-align: center;
+  background: #fafafa;
+  cursor: pointer;
+}
+
+.dropZoneHidden {
+  display: none;
+}
+
+.extractingSpinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e8e8e8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.extractingText {
+  font-size: 12px;
+  color: #888;
+}
+
+.previewImg {
+  max-width: 100%;
+  max-height: 120px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.previewReplace {
+  font-size: 11px;
+  color: #888;
+}
+
+.dropZoneIcon {
+  padding: 8px;
+}
+
+.dropZoneIconEmoji {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.dropZoneText {
+  font-size: 12px;
+  color: #888;
+}
+
+.dropZoneSub {
+  font-size: 11px;
+  color: #bbb;
+}
+
+.extractError {
+  font-size: 11px;
+  color: #d97706;
+  background: #fffbeb;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.docModalFooter {
+  padding: 12px 20px;
+  border-top: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ── Counts ── */
+.countActive {
+  font-weight: 600;
+}
+
+.countMuted {
+  font-weight: 600;
+  color: #ccc;
+}
+
+.billTotalCell {
+  font-weight: 400;
+  color: #ccc;
+}
+
+.billTotalCellActive {
+  font-weight: 600;
+  color: #111;
+}

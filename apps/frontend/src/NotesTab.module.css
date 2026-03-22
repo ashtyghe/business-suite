@@ -440,6 +440,13 @@
   font-size: 11px;
 }
 
+/* ── Accent button (uses --accent via inline style) ── */
+.accentBtn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+
 /* ── FileIconBadge ── */
 .fileIconBadge {
   display: inline-flex;

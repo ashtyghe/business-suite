@@ -11,6 +11,7 @@ import {
   BILL_STATUSES, BILL_STATUS_LABELS, BILL_CATEGORIES,
 } from '../components/shared';
 import { BillModal } from '../components/BillModal';
+import s from './Bills.module.css';
 
 // Not exported from shared.jsx, so defined locally
 const BILL_STATUS_COLORS = {
@@ -39,18 +40,18 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
       showToggle={false}
       footer={<>
         <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-        <button className="btn btn-sm" style={{ background: SECTION_COLORS.bills.accent, color: "#fff", border: "none" }} onClick={() => onPost(jobId, category, parseFloat(markup)||0)} disabled={!jobId}>
+        <button className={`btn btn-sm ${s.drawerBtn}`} style={{ background: SECTION_COLORS.bills.accent }} onClick={() => onPost(jobId, category, parseFloat(markup)||0)} disabled={!jobId}>
           <Icon name="check" size={13} /> Post to Job
         </button>
       </>}
       onClose={onClose}
       zIndex={1060}
     >
-      <div style={{ padding: "20px 24px" }}>
-        <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "12px 14px", marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: 13 }}>{bill.supplier}</div>
-          <div style={{ fontSize: 12, color: "#888" }}>{bill.invoiceNo && `${bill.invoiceNo} · `}{bill.description}</div>
-          <div style={{ fontSize: 15, fontWeight: 800, marginTop: 6 }}>{fmt(bill.amount)} <span style={{ fontSize: 11, fontWeight: 400, color: "#aaa" }}>inc. GST</span></div>
+      <div className={s.drawerBody}>
+        <div className={s.postSummaryCard}>
+          <div className={s.postSupplier}>{bill.supplier}</div>
+          <div className={s.postMeta}>{bill.invoiceNo && `${bill.invoiceNo} · `}{bill.description}</div>
+          <div className={s.postAmount}>{fmt(bill.amount)} <span className={s.postAmountSuffix}>inc. GST</span></div>
         </div>
 
         <div className="form-group">
@@ -68,26 +69,26 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
         </div>
         <div className="form-group">
           <label className="form-label">Markup %</label>
-          <div style={{ position: "relative" }}>
-            <input type="number" className="form-control" style={{ paddingRight: 32 }} value={markup}
+          <div className={s.markupInputWrap}>
+            <input type="number" className={`form-control ${s.markupInputControl}`} value={markup}
               onChange={e => setMarkup(e.target.value)} min="0" max="200" placeholder="0" />
-            <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 13 }}>%</span>
+            <span className={s.markupPercent}>%</span>
           </div>
         </div>
 
         {/* Cost summary */}
-        <div style={{ background: "#111", color: "#fff", borderRadius: 8, padding: "14px 16px", marginTop: 4 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 10 }}>Cost Summary</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#888" }}>Ex-GST cost</span><span>{fmt(exGst)}</span>
+        <div className={s.costSummaryCard}>
+          <div className={s.costSummaryLabel}>Cost Summary</div>
+          <div className={s.costSummaryRows}>
+            <div className={s.costRow}>
+              <span className={s.costRowLabel}>Ex-GST cost</span><span>{fmt(exGst)}</span>
             </div>
             {parseFloat(markup) > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#888" }}>Markup ({markup}%)</span><span>+ {fmt(exGst * (parseFloat(markup)||0) / 100)}</span>
+              <div className={s.costRow}>
+                <span className={s.costRowLabel}>Markup ({markup}%)</span><span>+ {fmt(exGst * (parseFloat(markup)||0) / 100)}</span>
               </div>
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #2a2a2a", paddingTop: 6, marginTop: 2, fontWeight: 800, fontSize: 15 }}>
+            <div className={s.costTotalRow}>
               <span>On-charge to client</span><span>{fmt(withMarkup)}</span>
             </div>
           </div>
@@ -118,9 +119,9 @@ const Bills = () => {
   const linked   = bills.filter(b => b.status === "linked");
   const approved = bills.filter(b => b.status === "approved");
   const posted   = bills.filter(b => b.status === "posted");
-  const totalAll = bills.reduce((s,b) => s + (b.amount||0), 0);
-  const totalPending = [...inbox, ...linked, ...approved].reduce((s,b) => s + (b.amount||0), 0);
-  const totalPosted  = posted.reduce((s,b) => s + (b.amount||0), 0);
+  const totalAll = bills.reduce((sum,b) => sum + (b.amount||0), 0);
+  const totalPending = [...inbox, ...linked, ...approved].reduce((sum,b) => sum + (b.amount||0), 0);
+  const totalPosted  = posted.reduce((sum,b) => sum + (b.amount||0), 0);
 
   // ── Filtered list view
   const filtered = bills.filter(b => {
@@ -207,42 +208,42 @@ const Bills = () => {
     setPostBill(null);
   };
 
-  const toggleSelect = (id) => setSelectedIds(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
-  const toggleAll = () => setSelectedIds(s => s.length === filtered.length ? [] : filtered.map(b => b.id));
+  const toggleSelect = (id) => setSelectedIds(si => si.includes(id) ? si.filter(x => x !== id) : [...si, id]);
+  const toggleAll = () => setSelectedIds(si => si.length === filtered.length ? [] : filtered.map(b => b.id));
 
   return (
     <div>
       {/* ── Summary strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: 12, marginBottom: 24 }}>
+      <div className={s.summaryGrid}>
         {[
-          { label: "Inbox",    count: inbox.length,    total: inbox.reduce((s,b)=>s+b.amount,0),    color: "#888" },
-          { label: "Linked",   count: linked.length,   total: linked.reduce((s,b)=>s+b.amount,0),   color: "#2c5fa8" },
-          { label: "Approved", count: approved.length, total: approved.reduce((s,b)=>s+b.amount,0), color: "#1e7e34" },
-          { label: "Posted",   count: posted.length,   total: posted.reduce((s,b)=>s+b.amount,0),   color: "#111" },
-        ].map(s => (
-          <div key={s.label} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${s.color}`, cursor: "pointer" }}
-            onClick={() => { setFilterStatus(s.label.toLowerCase()); setTab("list"); }}>
-            <div className="stat-label">{s.label}</div>
-            <div className="stat-value" style={{ fontSize: 22, color: s.color }}>{s.count}</div>
-            <div className="stat-sub">{fmt(s.total)}</div>
+          { label: "Inbox",    count: inbox.length,    total: inbox.reduce((sum,b)=>sum+b.amount,0),    color: "#888" },
+          { label: "Linked",   count: linked.length,   total: linked.reduce((sum,b)=>sum+b.amount,0),   color: "#2c5fa8" },
+          { label: "Approved", count: approved.length, total: approved.reduce((sum,b)=>sum+b.amount,0), color: "#1e7e34" },
+          { label: "Posted",   count: posted.length,   total: posted.reduce((sum,b)=>sum+b.amount,0),   color: "#111" },
+        ].map(st => (
+          <div key={st.label} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${st.color}`, cursor: "pointer" }}
+            onClick={() => { setFilterStatus(st.label.toLowerCase()); setTab("list"); }}>
+            <div className="stat-label">{st.label}</div>
+            <div className="stat-value" style={{ fontSize: 22, color: st.color }}>{st.count}</div>
+            <div className="stat-sub">{fmt(st.total)}</div>
           </div>
         ))}
       </div>
 
       {/* ── Toolbar */}
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+        <div className={`search-bar ${s.searchBar}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search supplier, invoice, description…" />
         </div>
-        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className={`form-control ${s.filterSelect}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="all">All Statuses</option>
-          {BILL_STATUSES.map(s => <option key={s} value={s}>{BILL_STATUS_LABELS[s]}</option>)}
+          {BILL_STATUSES.map(st => <option key={st} value={st}>{BILL_STATUS_LABELS[st]}</option>)}
         </select>
-        <select className="form-control" style={{ width: "auto" }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
+        <select className={`form-control ${s.filterSelect}`} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
           <option value="all">All Categories</option>
           {BILL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+        <div className={s.viewToggle}>
           <button className={`btn btn-xs ${tab === "list" ? "" : "btn-ghost"}`} style={tab === "list" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${tab === "grid" ? "" : "btn-ghost"}`} style={tab === "grid" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("grid")}><Icon name="grid_view" size={12} /></button>
           <button className={`btn btn-xs ${tab === "kanban" ? "" : "btn-ghost"}`} style={tab === "kanban" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("kanban")}><Icon name="kanban" size={12} /></button>
@@ -260,43 +261,43 @@ const Bills = () => {
       {/* ══ GRID VIEW ══ */}
       {tab === "grid" && (
         <div className="order-cards-grid">
-          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">🧾</div><div className="empty-state-text">No bills found</div></div>}
+          {filtered.length === 0 && <div className={`empty-state ${s.emptyStateFull}`}><div className="empty-state-icon">🧾</div><div className="empty-state-text">No bills found</div></div>}
           {filtered.map(b => {
             const job = jobs.find(j => j.id === b.jobId);
             const sc = BILL_STATUS_COLORS[b.status];
             return (
               <div key={b.id} className="order-card" onClick={() => openEdit(b)}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.bills.light, color: SECTION_COLORS.bills.accent }}>
+                <div className={s.cardHeader}>
+                  <div className={s.cardHeaderLeft}>
+                    <div className={s.cardIcon} style={{ background: SECTION_COLORS.bills.light, color: SECTION_COLORS.bills.accent }}>
                       <Icon name="bills" size={15} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{b.supplier}</div>
-                      {b.invoiceNo && <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>{b.invoiceNo}</div>}
+                      <div className={s.cardTitle}>{b.supplier}</div>
+                      {b.invoiceNo && <div className={s.cardSubtitle}>{b.invoiceNo}</div>}
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: sc.bg, color: sc.text }}>{BILL_STATUS_LABELS[b.status]}</span>
+                  <div className={s.statusWrap}>
+                    <span className={s.statusBadgeInline} style={{ background: sc.bg, color: sc.text }}>{BILL_STATUS_LABELS[b.status]}</span>
                   </div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {b.description || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No description</span>}
+                <div className={s.cardDescription}>
+                  {b.description || <span className={s.noDescText}>No description</span>}
                 </div>
-                {job && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}><Icon name="jobs" size={10} /> {job.title}</div>}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{fmt(b.amount)}</span>
-                  <span className="chip" style={{ fontSize: 10 }}>{b.category}</span>
-                  {b.hasGst && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>incl. GST</span>}
+                {job && <div className={s.jobRow}><Icon name="jobs" size={10} /> {job.title}</div>}
+                <div className={s.amountRow}>
+                  <span className={s.amountValue}>{fmt(b.amount)}</span>
+                  <span className={`chip ${s.chipSmall}`}>{b.category}</span>
+                  {b.hasGst && <span className={s.gstChip}>incl. GST</span>}
                 </div>
                 <SectionProgressBar status={b.status} section="bills" />
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b" }}>{b.date}</span>
-                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                <div className={s.cardFooter}>
+                  <span className={s.cardDate}>{b.date}</span>
+                  <div className={s.actionRow} onClick={e => e.stopPropagation()}>
                     {b.status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
-                    {canApprove && b.status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
+                    {canApprove && b.status === "linked" && <button className={`btn btn-secondary btn-xs ${s.approveColor}`} onClick={() => setStatus(b.id, "approved")}>✓</button>}
                     {canApprove && b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
-                    {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={12} /></button>}
+                    {canDelete && <button className={`btn btn-ghost btn-xs ${s.deleteBtn}`} onClick={() => del(b.id)}><Icon name="trash" size={12} /></button>}
                   </div>
                 </div>
               </div>
@@ -307,7 +308,7 @@ const Bills = () => {
 
       {/* ══ KANBAN VIEW ══ */}
       {tab === "kanban" && (
-        <div className="kanban" style={{ gridTemplateColumns: "repeat(4, minmax(200px,1fr))" }}>
+        <div className={`kanban ${s.kanban4Col}`}>
           {BILL_STATUSES.map(status => {
             const stageBills = filtered.filter(b => b.status === status);
             const sc = BILL_STATUS_COLORS[status];
@@ -315,31 +316,31 @@ const Bills = () => {
               <div key={status} className="kanban-col">
                 <div className="kanban-col-header">
                   <span>{BILL_STATUS_LABELS[status]}</span>
-                  <span style={{ background: sc.bg, color: sc.text, borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{stageBills.length}</span>
+                  <span className={s.kanbanBadge} style={{ background: sc.bg, color: sc.text }}>{stageBills.length}</span>
                 </div>
-                <div style={{ fontSize: 11, color: "#888", marginBottom: 8, fontWeight: 600 }}>{fmt(stageBills.reduce((s,b)=>s+b.amount,0))}</div>
+                <div className={s.kanbanColTotal}>{fmt(stageBills.reduce((sum,b)=>sum+b.amount,0))}</div>
                 {stageBills.map(b => {
                   const job = jobs.find(j => j.id === b.jobId);
                   return (
                     <div key={b.id} className="kanban-card" onClick={() => openEdit(b)}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 2 }}>{b.supplier}</div>
-                          {b.invoiceNo && <span style={{ color: "#aaa", fontFamily: "monospace", fontSize: 10 }}>{b.invoiceNo}</span>}
+                      <div className={s.kanbanCardHeader}>
+                        <div className={s.kanbanCardLeft}>
+                          <div className={s.kanbanSupplier}>{b.supplier}</div>
+                          {b.invoiceNo && <span className={s.kanbanInvoiceNo}>{b.invoiceNo}</span>}
                         </div>
-                        <div style={{ fontWeight: 800, color: "#111", fontSize: 13, flexShrink: 0 }}>{fmt(b.amount)}</div>
+                        <div className={s.kanbanAmount}>{fmt(b.amount)}</div>
                       </div>
-                      {b.description && <div style={{ color: "#777", marginTop: 3, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.description}</div>}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, marginTop: 8 }}>
-                        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                          <span className="chip" style={{ fontSize: 10 }}>{b.category}</span>
-                          {job ? <span style={{ fontSize: 10, color: "#888" }}>{job.title}</span> : <span style={{ fontSize: 10, color: "#ccc" }}>Unlinked</span>}
+                      {b.description && <div className={s.kanbanDesc}>{b.description}</div>}
+                      <div className={s.kanbanFooter}>
+                        <div className={s.kanbanMeta}>
+                          <span className={`chip ${s.chipSmall}`}>{b.category}</span>
+                          {job ? <span className={s.kanbanJobTitle}>{job.title}</span> : <span className={s.kanbanUnlinked}>Unlinked</span>}
                         </div>
-                        <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                        <div className={s.actionRow} onClick={e => e.stopPropagation()}>
                           {status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
-                          {canApprove && status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
+                          {canApprove && status === "linked" && <button className={`btn btn-secondary btn-xs ${s.approveColor}`} onClick={() => setStatus(b.id, "approved")}>✓</button>}
                           {canApprove && status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
-                          {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={10} /></button>}
+                          {canDelete && <button className={`btn btn-ghost btn-xs ${s.deleteBtn}`} onClick={() => del(b.id)}><Icon name="trash" size={10} /></button>}
                         </div>
                       </div>
                     </div>
@@ -357,11 +358,11 @@ const Bills = () => {
 
           {/* Totals bar */}
           {filtered.length > 0 && (
-            <div style={{ display: "flex", gap: 20, marginBottom: 12, fontSize: 13, padding: "10px 16px", background: "#fafafa", borderRadius: 8, border: "1px solid #f0f0f0", flexWrap: "wrap" }}>
-              <span style={{ color: "#888" }}>Showing <strong style={{ color: "#111" }}>{filtered.length}</strong> bills</span>
-              <span style={{ color: "#888" }}>Total <strong style={{ color: "#111" }}>{fmt(filtered.reduce((s,b)=>s+b.amount,0))}</strong></span>
-              <span style={{ color: "#888" }}>Ex-GST <strong style={{ color: "#111" }}>{fmt(filtered.reduce((s,b)=>s+(b.hasGst?b.amount/1.1:b.amount),0))}</strong></span>
-              {selectedIds.length > 0 && <span style={{ marginLeft: "auto", color: "#2c5fa8", fontWeight: 600 }}>{selectedIds.length} selected · {fmt(bills.filter(b=>selectedIds.includes(b.id)).reduce((s,b)=>s+b.amount,0))}</span>}
+            <div className={s.totalsBar}>
+              <span className={s.totalsLabel}>Showing <strong className={s.totalsValue}>{filtered.length}</strong> bills</span>
+              <span className={s.totalsLabel}>Total <strong className={s.totalsValue}>{fmt(filtered.reduce((sum,b)=>sum+b.amount,0))}</strong></span>
+              <span className={s.totalsLabel}>Ex-GST <strong className={s.totalsValue}>{fmt(filtered.reduce((sum,b)=>sum+(b.hasGst?b.amount/1.1:b.amount),0))}</strong></span>
+              {selectedIds.length > 0 && <span className={s.totalsSelection}>{selectedIds.length} selected · {fmt(bills.filter(b=>selectedIds.includes(b.id)).reduce((sum,b)=>sum+b.amount,0))}</span>}
             </div>
           )}
 
@@ -370,7 +371,7 @@ const Bills = () => {
               <table>
                 <thead>
                   <tr>
-                    <th style={{ width: 32 }}>
+                    <th className={s.checkboxCol}>
                       <input type="checkbox" checked={filtered.length > 0 && selectedIds.length === filtered.length} onChange={toggleAll} />
                     </th>
                     <th>Supplier</th><th>Invoice #</th><th>Job</th><th>Category</th>
@@ -392,30 +393,30 @@ const Bills = () => {
                           <input type="checkbox" checked={selectedIds.includes(b.id)} onChange={() => toggleSelect(b.id)} />
                         </td>
                         <td>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{b.supplier}</div>
-                          {b.notes && <div style={{ fontSize: 10, color: "#aaa", marginTop: 1, fontStyle: "italic" }}>{b.notes.slice(0,40)}{b.notes.length>40?"…":""}</div>}
+                          <div className={s.listSupplier}>{b.supplier}</div>
+                          {b.notes && <div className={s.listNotes}>{b.notes.slice(0,40)}{b.notes.length>40?"…":""}</div>}
                         </td>
-                        <td><span style={{ fontFamily: "monospace", fontSize: 12, color: "#555" }}>{b.invoiceNo||"—"}</span></td>
+                        <td><span className={s.listInvoiceNo}>{b.invoiceNo||"—"}</span></td>
                         <td>
-                          {job ? <div style={{ fontSize: 12 }}>{job.title}</div> : <span style={{ color: "#ccc", fontSize: 12 }}>Unlinked</span>}
+                          {job ? <div className={s.listJobTitle}>{job.title}</div> : <span className={s.listUnlinked}>Unlinked</span>}
                         </td>
                         <td><span className="chip">{b.category}</span></td>
-                        <td style={{ fontSize: 12, color: "#999" }}>{b.date}</td>
-                        <td style={{ fontSize: 13 }}>{fmt(exGst)}</td>
-                        <td style={{ fontSize: 12, color: "#999" }}>{b.hasGst ? fmt(gst) : <span style={{ color: "#ddd" }}>—</span>}</td>
-                        <td style={{ fontWeight: 700 }}>{fmt(b.amount)}</td>
-                        <td style={{ fontSize: 12 }}>
-                          {b.markup > 0 ? <span style={{ color: "#555" }}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span> : <span style={{ color: "#ddd" }}>—</span>}
+                        <td className={s.listDate}>{b.date}</td>
+                        <td className={s.listExGst}>{fmt(exGst)}</td>
+                        <td className={s.listGst}>{b.hasGst ? fmt(gst) : <span className={s.listGstDash}>—</span>}</td>
+                        <td className={s.listTotal}>{fmt(b.amount)}</td>
+                        <td className={s.listMarkup}>
+                          {b.markup > 0 ? <span className={s.markupValue}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span> : <span className={s.markupDash}>—</span>}
                         </td>
                         <td><BillStatusBadge status={b.status} /> <XeroSyncBadge syncStatus={b.xeroSyncStatus} xeroId={b.xeroBillId} /></td>
                         <td>
-                          <div style={{ display: "flex", gap: 4, flexWrap: "nowrap" }}>
+                          <div className={s.listActions}>
                             {b.status === "inbox"    && <button className="btn btn-ghost btn-xs" title="Link" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}><Icon name="arrow_right" size={11} /></button>}
-                            {canApprove && b.status === "linked"   && <button className="btn btn-ghost btn-xs" style={{ color: "#1e7e34" }} title="Approve" onClick={() => setStatus(b.id, "approved")}><Icon name="check" size={11} /></button>}
+                            {canApprove && b.status === "linked"   && <button className={`btn btn-ghost btn-xs ${s.approveColor}`} title="Approve" onClick={() => setStatus(b.id, "approved")}><Icon name="check" size={11} /></button>}
                             {canApprove && b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} title="Post to Job" onClick={() => setPostBill(b)}>Post →</button>}
-                            {!b.xeroBillId && (b.status === "approved" || b.status === "posted") && <button className="btn btn-ghost btn-xs" style={{ color: "#0369a1" }} title="Send to Xero" onClick={() => xeroSyncBill("push", b.id)}><Icon name="send" size={11} /></button>}
+                            {!b.xeroBillId && (b.status === "approved" || b.status === "posted") && <button className={`btn btn-ghost btn-xs ${s.xeroBtn}`} title="Send to Xero" onClick={() => xeroSyncBill("push", b.id)}><Icon name="send" size={11} /></button>}
                             <button className="btn btn-ghost btn-xs" onClick={() => openEdit(b)}><Icon name="edit" size={11} /></button>
-                            {canDelete && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(b.id)}><Icon name="trash" size={11} /></button>}
+                            {canDelete && <button className={`btn btn-ghost btn-xs ${s.deleteBtn}`} onClick={() => del(b.id)}><Icon name="trash" size={11} /></button>}
                           </div>
                         </td>
                       </tr>

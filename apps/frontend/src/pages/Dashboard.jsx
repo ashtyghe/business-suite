@@ -3,8 +3,9 @@ import { useAppStore } from '../lib/store';
 import { supabase } from '../lib/supabase';
 import { fmt, calcQuoteTotal, daysUntil, getContractorComplianceCount } from '../utils/helpers';
 import { Icon } from '../components/Icon';
-import { SectionLabel, StatusBadge } from '../components/shared';
-import { SECTION_COLORS } from '../fixtures/seedData.jsx';
+import { SectionLabel, StatusBadge, AvatarGroup } from '../components/shared';
+import { SECTION_COLORS, ORDER_STATUS_COLORS } from '../fixtures/seedData.jsx';
+import s from './Dashboard.module.css';
 
 const Dashboard = ({ onNav }) => {
   const { jobs, clients, quotes, invoices, bills, timeEntries, schedule, workOrders, purchaseOrders, contractors, suppliers } = useAppStore();
@@ -175,65 +176,59 @@ const Dashboard = ({ onNav }) => {
         ];
 
         return (
-          <div style={{ background: "linear-gradient(135deg, #111 0%, #1e293b 100%)", borderRadius: 12, marginBottom: 20, color: "#fff", overflow: "hidden" }}>
+          <div className={s.aiPanel}>
             {/* Header */}
-            <div onClick={() => setAiExpanded(e => !e)} style={{ padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 16 }}>&#10024;</span>
-                <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.03em" }}>AI Business Insight</span>
-                {insightCards.length > 0 && !aiExpanded && <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 4 }}>{insightCards.length} insights</span>}
+            <div onClick={() => setAiExpanded(e => !e)} className={s.aiHeader}>
+              <div className={s.aiHeaderLeft}>
+                <span className={s.aiSparkle}>&#10024;</span>
+                <span className={s.aiTitle}>AI Business Insight</span>
+                {insightCards.length > 0 && !aiExpanded && <span className={s.aiInsightCount}>{insightCards.length} insights</span>}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <button onClick={e => { e.stopPropagation(); generateInsight(); }} disabled={aiLoading} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, padding: "4px 12px", fontSize: 11, fontWeight: 600, color: "#fff", cursor: "pointer", opacity: aiLoading ? 0.5 : 1, fontFamily: "'Open Sans', sans-serif" }}>
+              <div className={s.aiHeaderRight}>
+                <button onClick={e => { e.stopPropagation(); generateInsight(); }} disabled={aiLoading} className={s.aiRefreshBtn}>
                   {aiLoading ? "Analysing..." : "Refresh"}
                 </button>
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" style={{ transition: "transform 0.2s", transform: aiExpanded ? "rotate(180deg)" : "rotate(0deg)" }}><polyline points="5 8 10 13 15 8"/></svg>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" className={`${s.chevron} ${aiExpanded ? s.chevronExpanded : ""}`}><polyline points="5 8 10 13 15 8"/></svg>
               </div>
             </div>
             {/* Expandable content */}
             {aiExpanded && (
-              <div style={{ padding: "0 24px 20px" }}>
-                {aiLoading && !aiInsight && <div style={{ fontSize: 13, color: "#94a3b8" }}>Analysing your business data...</div>}
-                {aiError && <div style={{ fontSize: 12, color: "#f87171", marginBottom: 12 }}>Failed to generate insight: {aiError}</div>}
+              <div className={s.aiExpandBody}>
+                {aiLoading && !aiInsight && <div className={s.aiLoadingText}>Analysing your business data...</div>}
+                {aiError && <div className={s.aiErrorText}>Failed to generate insight: {aiError}</div>}
                 {/* Insight cards */}
                 {insightCards.length > 0 && !aiLoading && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginBottom: 16 }}>
+                  <div className={s.aiCardsGrid}>
                     {insightCards.map((card, i) => (
-                      <div key={i} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "14px 16px" }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{card.heading}</div>
-                        {card.detail && <div style={{ fontSize: 12, lineHeight: 1.5, color: "#94a3b8" }}>{card.detail}</div>}
+                      <div key={i} className={s.aiCard}>
+                        <div className={s.aiCardHeading}>{card.heading}</div>
+                        {card.detail && <div className={s.aiCardDetail}>{card.detail}</div>}
                       </div>
                     ))}
                   </div>
                 )}
                 {!aiLoading && !aiError && aiInsight && insightCards.length === 0 && (
-                  <div style={{ fontSize: 13, lineHeight: 1.6, color: "#e2e8f0", whiteSpace: "pre-wrap", marginBottom: 16 }}>{aiInsight}</div>
+                  <div className={s.aiInsightFallback}>{aiInsight}</div>
                 )}
 
                 {/* Chat section */}
                 {aiInsight && (
-                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 16 }}>
+                  <div className={s.aiChatSection}>
                     {/* Chat messages (skip the first assistant message which is shown as insight cards above) */}
                     {aiChatMessages.length > 1 && (
-                      <div style={{ maxHeight: 320, overflowY: "auto", marginBottom: 12, paddingRight: 4 }}>
+                      <div className={s.aiChatScroll}>
                         {aiChatMessages.slice(1).map((msg, i) => (
-                          <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
-                            <div style={{
-                              maxWidth: "85%",
-                              background: msg.role === "user" ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.06)",
-                              border: msg.role === "user" ? "1px solid rgba(99,102,241,0.4)" : "1px solid rgba(255,255,255,0.1)",
-                              borderRadius: msg.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
-                              padding: "10px 14px",
-                            }}>
-                              {msg.role === "assistant" && <div style={{ fontSize: 10, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>AI Analyst</div>}
-                              <div style={{ fontSize: 13, lineHeight: 1.6, color: msg.role === "user" ? "#e2e8f0" : "#cbd5e1", whiteSpace: "pre-wrap" }}>{msg.content}</div>
+                          <div key={i} className={`${s.aiChatRow} ${msg.role === "user" ? s.aiChatRowUser : s.aiChatRowAssistant}`}>
+                            <div className={`${s.aiChatBubble} ${msg.role === "user" ? s.aiChatBubbleUser : s.aiChatBubbleAssistant}`}>
+                              {msg.role === "assistant" && <div className={s.aiChatLabel}>AI Analyst</div>}
+                              <div className={msg.role === "user" ? s.aiChatTextUser : s.aiChatTextAssistant}>{msg.content}</div>
                             </div>
                           </div>
                         ))}
                         {aiChatLoading && (
-                          <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
-                            <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px 12px 12px 4px", padding: "10px 14px" }}>
-                              <div style={{ fontSize: 13, color: "#94a3b8" }}>Thinking...</div>
+                          <div className={`${s.aiChatRow} ${s.aiChatRowAssistant}`}>
+                            <div className={`${s.aiChatBubble} ${s.aiChatBubbleAssistant}`}>
+                              <div className={s.aiThinking}>Thinking...</div>
                             </div>
                           </div>
                         )}
@@ -243,42 +238,27 @@ const Dashboard = ({ onNav }) => {
 
                     {/* Suggested questions (only show when no chat history yet) */}
                     {aiChatMessages.length <= 1 && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                      <div className={s.aiSuggestedWrap}>
                         {suggestedQuestions.map((q, i) => (
-                          <button key={i} onClick={() => { setAiChatInput(q); }} style={{
-                            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20,
-                            padding: "6px 14px", fontSize: 12, color: "#94a3b8", cursor: "pointer", fontFamily: "'Open Sans', sans-serif",
-                            transition: "all 0.15s",
-                          }}
-                          onMouseEnter={e => { e.target.style.background = "rgba(255,255,255,0.12)"; e.target.style.color = "#e2e8f0"; }}
-                          onMouseLeave={e => { e.target.style.background = "rgba(255,255,255,0.06)"; e.target.style.color = "#94a3b8"; }}
-                          >{q}</button>
+                          <button key={i} onClick={() => { setAiChatInput(q); }} className={s.aiSuggestBtn}>{q}</button>
                         ))}
                       </div>
                     )}
 
                     {/* Chat input */}
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div className={s.aiInputRow}>
                       <input
                         type="text"
                         value={aiChatInput}
                         onChange={e => setAiChatInput(e.target.value)}
                         onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
                         placeholder="Ask a follow-up question..."
-                        style={{
-                          flex: 1, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
-                          borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#fff",
-                          fontFamily: "'Open Sans', sans-serif", outline: "none",
-                        }}
+                        className={s.aiInput}
                       />
                       <button
                         onClick={sendChatMessage}
                         disabled={!aiChatInput.trim() || aiChatLoading}
-                        style={{
-                          background: aiChatInput.trim() && !aiChatLoading ? "#6366f1" : "rgba(255,255,255,0.08)",
-                          border: "none", borderRadius: 8, padding: "10px 16px", cursor: aiChatInput.trim() && !aiChatLoading ? "pointer" : "default",
-                          transition: "all 0.15s", display: "flex", alignItems: "center",
-                        }}
+                        className={`${s.aiSendBtn} ${aiChatInput.trim() && !aiChatLoading ? s.aiSendBtnActive : s.aiSendBtnDisabled}`}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={aiChatInput.trim() && !aiChatLoading ? "#fff" : "#666"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                       </button>
@@ -292,34 +272,34 @@ const Dashboard = ({ onNav }) => {
       })()}
 
       {/* ── ROW 1: Financial Hero Strip (full width) ── */}
-      <div className="stat-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 24 }}>
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.quotes.accent}`, cursor: "pointer" }} onClick={() => onNav("quotes")}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="quotes" size={13} /><div className="stat-label">Total Quoted</div></div>
+      <div className={`stat-grid ${s.financialGrid}`}>
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.quotes.accent}` }} onClick={() => onNav("quotes")}>
+          <div className={s.statHeaderRow}><Icon name="quotes" size={13} /><div className="stat-label">Total Quoted</div></div>
           <div className="stat-value">{fmt(totalQuoted)}</div>
           <div className="stat-sub">{quotes.filter(q => q.status !== "declined").length} quotes in pipeline</div>
         </div>
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.invoices.accent}`, cursor: "pointer" }} onClick={() => onNav("invoices")}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="invoices" size={13} /><div className="stat-label">Revenue Collected</div></div>
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.invoices.accent}` }} onClick={() => onNav("invoices")}>
+          <div className={s.statHeaderRow}><Icon name="invoices" size={13} /><div className="stat-label">Revenue Collected</div></div>
           <div className="stat-value">{fmt(revenueCollected)}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-            <div style={{ flex: 1, height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: totalQuoted > 0 ? `${Math.min(100, Math.round((revenueCollected / totalQuoted) * 100))}%` : "0%", background: SECTION_COLORS.invoices.accent, borderRadius: 2 }} />
+          <div className={s.progressRow}>
+            <div className={s.progressTrack}>
+              <div className={s.progressFill} style={{ width: totalQuoted > 0 ? `${Math.min(100, Math.round((revenueCollected / totalQuoted) * 100))}%` : "0%", background: SECTION_COLORS.invoices.accent }} />
             </div>
-            <span style={{ fontSize: 11, color: "#999", fontWeight: 600 }}>{totalQuoted > 0 ? Math.round((revenueCollected / totalQuoted) * 100) : 0}%</span>
+            <span className={s.progressLabel}>{totalQuoted > 0 ? Math.round((revenueCollected / totalQuoted) * 100) : 0}%</span>
           </div>
         </div>
-        <div className="stat-card" style={{ borderTop: `3px solid ${outstandingInvCount > 0 ? "#dc2626" : "#e5e5e5"}`, cursor: "pointer" }} onClick={() => onNav("invoices")}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="invoices" size={13} /><div className="stat-label">Outstanding</div></div>
+        <div className="stat-card" style={{ borderTop: `3px solid ${outstandingInvCount > 0 ? "#dc2626" : "#e5e5e5"}` }} onClick={() => onNav("invoices")}>
+          <div className={s.statHeaderRow}><Icon name="invoices" size={13} /><div className="stat-label">Outstanding</div></div>
           <div className="stat-value" style={{ color: outstandingInvCount > 0 ? "#dc2626" : undefined }}>{fmt(outstandingInv)}</div>
           <div className="stat-sub">{outstandingInvCount > 0 ? `${outstandingInvCount} unpaid — action needed` : "All invoices paid ✓"}</div>
         </div>
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.bills.accent}`, cursor: "pointer" }} onClick={() => onNav("bills")}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="bills" size={13} /><div className="stat-label">Costs to Process</div></div>
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.bills.accent}` }} onClick={() => onNav("bills")}>
+          <div className={s.statHeaderRow}><Icon name="bills" size={13} /><div className="stat-label">Costs to Process</div></div>
           <div className="stat-value">{fmt(unpostedBillsTotal)}</div>
-          <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
+          <div className={s.billPillRow}>
             {["inbox", "linked", "approved"].map(st => {
               const c = bills.filter(b => b.status === st).length;
-              return c > 0 ? <span key={st} style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: billStatusColors[st], color: "#fff" }}>{c} {billStatusLabels[st]}</span> : null;
+              return c > 0 ? <span key={st} className={s.billPill} style={{ background: billStatusColors[st] }}>{c} {billStatusLabels[st]}</span> : null;
             })}
           </div>
         </div>
@@ -327,56 +307,56 @@ const Dashboard = ({ onNav }) => {
 
       {/* ── ROW 2: Operational KPI Cards (5 cards with progress/actions) ── */}
       <SectionLabel>Operations</SectionLabel>
-      <div className="stat-grid" style={{ gridTemplateColumns: "repeat(5, 1fr)", marginBottom: 24 }}>
+      <div className={`stat-grid ${s.opsGrid}`}>
         {/* Active Jobs */}
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.jobs.accent}`, cursor: "pointer" }} onClick={() => onNav("jobs")}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="jobs" size={13} /><div className="stat-label">Active Jobs</div></div>
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.jobs.accent}` }} onClick={() => onNav("jobs")}>
+          <div className={s.statHeaderRow}><Icon name="jobs" size={13} /><div className="stat-label">Active Jobs</div></div>
           <div className="stat-value">{activeJobs}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-            <div style={{ flex: 1, height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: jobs.length > 0 ? `${Math.round((completedJobs / jobs.length) * 100)}%` : "0%", background: "#16a34a", borderRadius: 2 }} />
+          <div className={s.progressRow}>
+            <div className={s.progressTrack}>
+              <div className={s.progressFill} style={{ width: jobs.length > 0 ? `${Math.round((completedJobs / jobs.length) * 100)}%` : "0%", background: "#16a34a" }} />
             </div>
-            <span style={{ fontSize: 11, color: "#999", fontWeight: 600 }}>{completedJobs}/{jobs.length}</span>
+            <span className={s.progressLabel}>{completedJobs}/{jobs.length}</span>
           </div>
-          {overdueJobs > 0 && <div style={{ fontSize: 11, color: "#dc2626", fontWeight: 600, marginTop: 4 }}>⚠ {overdueJobs} overdue</div>}
+          {overdueJobs > 0 && <div className={s.overdueText}>⚠ {overdueJobs} overdue</div>}
         </div>
 
         {/* Work Orders */}
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.wo.accent}`, cursor: "pointer" }} onClick={() => onNav("orders")}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="orders" size={13} /><div className="stat-label">Work Orders</div></div>
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.wo.accent}` }} onClick={() => onNav("orders")}>
+          <div className={s.statHeaderRow}><Icon name="orders" size={13} /><div className="stat-label">Work Orders</div></div>
           <div className="stat-value">{activeWOs}</div>
           <div className="stat-sub">{workOrders.length} total · {fmt(workOrders.reduce((s, wo) => s + (parseFloat(wo.poLimit) || 0), 0))}</div>
-          {woAwaitingAcceptance > 0 && <div style={{ fontSize: 11, color: SECTION_COLORS.wo.accent, fontWeight: 600, marginTop: 2 }}>{woAwaitingAcceptance} awaiting acceptance</div>}
-          {overdueWOs > 0 && <div style={{ fontSize: 11, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>⚠ {overdueWOs} overdue</div>}
+          {woAwaitingAcceptance > 0 && <div className={s.accentText} style={{ color: SECTION_COLORS.wo.accent }}>{woAwaitingAcceptance} awaiting acceptance</div>}
+          {overdueWOs > 0 && <div className={s.accentText} style={{ color: "#dc2626" }}>⚠ {overdueWOs} overdue</div>}
         </div>
 
         {/* Purchase Orders */}
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.po.accent}`, cursor: "pointer" }} onClick={() => onNav("orders")}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="orders" size={13} /><div className="stat-label">Purchase Orders</div></div>
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.po.accent}` }} onClick={() => onNav("orders")}>
+          <div className={s.statHeaderRow}><Icon name="orders" size={13} /><div className="stat-label">Purchase Orders</div></div>
           <div className="stat-value">{activePOs}</div>
           <div className="stat-sub">{purchaseOrders.length} total</div>
-          {overduePOs > 0 && <div style={{ fontSize: 11, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>⚠ {overduePOs} overdue</div>}
+          {overduePOs > 0 && <div className={s.accentText} style={{ color: "#dc2626" }}>⚠ {overduePOs} overdue</div>}
         </div>
 
         {/* Hours Logged */}
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.time.accent}`, cursor: "pointer" }} onClick={() => onNav("time")}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="time" size={13} /><div className="stat-label">Hours Logged</div></div>
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.time.accent}` }} onClick={() => onNav("time")}>
+          <div className={s.statHeaderRow}><Icon name="time" size={13} /><div className="stat-label">Hours Logged</div></div>
           <div className="stat-value">{totalHours}h</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-            <div style={{ flex: 1, height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${billableRatio}%`, background: SECTION_COLORS.time.accent, borderRadius: 2 }} />
+          <div className={s.progressRow}>
+            <div className={s.progressTrack}>
+              <div className={s.progressFill} style={{ width: `${billableRatio}%`, background: SECTION_COLORS.time.accent }} />
             </div>
-            <span style={{ fontSize: 11, color: "#999", fontWeight: 600 }}>{billableRatio}%</span>
+            <span className={s.progressLabel}>{billableRatio}%</span>
           </div>
           <div className="stat-sub">{billableHours}h billable</div>
         </div>
 
         {/* Open Quotes */}
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.quotes.accent}`, cursor: "pointer" }} onClick={() => onNav("quotes")}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}><Icon name="quotes" size={13} /><div className="stat-label">Open Quotes</div></div>
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.quotes.accent}` }} onClick={() => onNav("quotes")}>
+          <div className={s.statHeaderRow}><Icon name="quotes" size={13} /><div className="stat-label">Open Quotes</div></div>
           <div className="stat-value">{pipelineQuotes.length}</div>
           <div className="stat-sub">{fmt(pipelineTotal)} pending</div>
-          {quoteDrafts > 0 && <div style={{ fontSize: 11, color: SECTION_COLORS.quotes.accent, fontWeight: 600, marginTop: 2 }}>{quoteDrafts} draft{quoteDrafts > 1 ? "s" : ""} to send</div>}
+          {quoteDrafts > 0 && <div className={s.accentText} style={{ color: SECTION_COLORS.quotes.accent }}>{quoteDrafts} draft{quoteDrafts > 1 ? "s" : ""} to send</div>}
         </div>
       </div>
 
@@ -399,21 +379,21 @@ const Dashboard = ({ onNav }) => {
           const isWeekend = dayName === "Sat" || dayName === "Sun";
           const dayEntries = weekEntries.filter(e => e.date === dateStr);
           return (
-            <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`} style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? schAccent : "#e5e5e5", cursor: "pointer" }} onClick={() => onNav("schedule")}>
+            <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`} style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? schAccent : "#e5e5e5" }} onClick={() => onNav("schedule")}>
               <div className="schedule-day-header" style={{ background: isToday ? schAccent : isPast ? "#e0e0e0" : "#f5f5f5", color: isToday ? "#fff" : isPast ? "#999" : "#333" }}>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>{dayName}</span>
-                <span style={{ fontSize: isCompact ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</span>
+                <span className={s.dayHeaderLabel}>{dayName}</span>
+                <span className={isCompact ? s.dayHeaderDateCompact : s.dayHeaderDateFull}>{d.getDate()}</span>
               </div>
               <div className="schedule-day-body">
-                {dayEntries.length === 0 && <div style={{ fontSize: 11, color: "#ccc", textAlign: "center", padding: isCompact ? "6px 0" : "12px 0" }}>—</div>}
+                {dayEntries.length === 0 && <div className={`${s.emptyDay} ${isCompact ? s.emptyDayCompact : s.emptyDayFull}`}>—</div>}
                 {dayEntries.map(entry => {
                   const job = jobs.find(j => j.id === entry.jobId);
                   return (
                     <div key={entry.id} className="schedule-card" style={{ borderLeft: `3px solid ${isPast ? "#ddd" : schAccent}` }}>
-                      <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 2, lineHeight: 1.3 }}>{entry.title}</div>
-                      {entry.startTime && <div style={{ fontSize: 10, color: "#aaa" }}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}
+                      <div className={s.scheduleEntryTitle}>{entry.title}</div>
+                      {entry.startTime && <div className={s.scheduleEntryTime}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}
                       {(entry.assignedTo || []).length > 0 && (
-                        <div style={{ marginTop: 4 }}><AvatarGroup names={entry.assignedTo} max={2} /></div>
+                        <div className={s.scheduleEntryAvatars}><AvatarGroup names={entry.assignedTo} max={2} /></div>
                       )}
                     </div>
                   );
@@ -424,16 +404,16 @@ const Dashboard = ({ onNav }) => {
         };
 
         return (
-          <div className="card" style={{ marginBottom: 20 }}>
+          <div className={`card ${s.scheduleCard}`}>
             <div className="card-header">
-              <span className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span className={`card-title ${s.scheduleCardTitle}`}>
                 <Icon name="schedule" size={16} /> This Week
-                {todaySchedule.length > 0 && <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: schAccent, color: "#fff" }}>{todaySchedule.length} today</span>}
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#999" }}>{thisWeekTotal} task{thisWeekTotal !== 1 ? "s" : ""}</span>
+                {todaySchedule.length > 0 && <span className={s.todayBadge} style={{ background: schAccent }}>{todaySchedule.length} today</span>}
+                <span className={s.weekTaskCount}>{thisWeekTotal} task{thisWeekTotal !== 1 ? "s" : ""}</span>
               </span>
               <button className="btn btn-ghost btn-sm" onClick={() => onNav("schedule")}>View all <Icon name="arrow_right" size={12} /></button>
             </div>
-            <div style={{ padding: "12px 16px" }}>
+            <div className={s.schedulePadding}>
               <div className="schedule-week-grid">
                 {weekdays.map((dateStr, i) => (
                   <DashDayCol key={dateStr} dateStr={dateStr} dayName={dayNames[i]} />
@@ -451,13 +431,13 @@ const Dashboard = ({ onNav }) => {
 
       {/* ── Action Items Banner (if any) ── */}
       {actionItems.length > 0 && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+        <div className={s.actionBanner}>
           {actionItems.map((item, i) => (
-            <div key={i} onClick={() => onNav(item.section)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 8, background: "#fff", border: `1px solid ${item.color}30`, cursor: "pointer", transition: "all 0.15s" }}
+            <div key={i} onClick={() => onNav(item.section)} className={s.actionItem} style={{ border: `1px solid ${item.color}30` }}
               onMouseEnter={e => { e.currentTarget.style.background = item.color + "10"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
               <Icon name={item.icon} size={12} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: item.color }}>{item.label}</span>
+              <span className={s.actionLabel} style={{ color: item.color }}>{item.label}</span>
               <Icon name="arrow_right" size={10} />
             </div>
           ))}
@@ -465,7 +445,7 @@ const Dashboard = ({ onNav }) => {
       )}
 
       {/* ── ROW 4: Detail Panels (2-col grid) ── */}
-      <div className="dashboard-grid" style={{ display: "grid", gap: 20 }}>
+      <div className={`dashboard-grid ${s.detailGrid}`}>
 
         {/* Panel 1: Jobs by Status */}
         <div className="card">
@@ -474,28 +454,28 @@ const Dashboard = ({ onNav }) => {
             <button className="btn btn-ghost btn-sm" onClick={() => onNav("jobs")}>View all <Icon name="arrow_right" size={12} /></button>
           </div>
           <div className="card-body">
-            {["draft","scheduled","quoted","in_progress","completed"].map(s => {
-              const count = jobs.filter(j => j.status === s).length;
+            {["draft","scheduled","quoted","in_progress","completed"].map(st => {
+              const count = jobs.filter(j => j.status === st).length;
               const pct = jobs.length ? (count / jobs.length) * 100 : 0;
               return (
-                <div key={s} style={{ marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 5 }}>
-                    <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: jobStatusColors[s], display: "inline-block" }} />
-                      {jobStatusLabels[s]}
+                <div key={st} className={s.statusRow}>
+                  <div className={s.statusRowHeader}>
+                    <span className={s.statusRowLabel}>
+                      <span className={s.statusDot} style={{ background: jobStatusColors[st] }} />
+                      {jobStatusLabels[st]}
                     </span>
-                    <span style={{ color: "#999" }}>{count} job{count !== 1 ? "s" : ""}</span>
+                    <span className={s.statusCount}>{count} job{count !== 1 ? "s" : ""}</span>
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${pct}%`, background: jobStatusColors[s] }} />
+                    <div className="progress-fill" style={{ width: `${pct}%`, background: jobStatusColors[st] }} />
                   </div>
                 </div>
               );
             })}
             {/* Job completion rate */}
-            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Completion Rate</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: jobs.length > 0 ? "#16a34a" : "#999" }}>{jobs.length > 0 ? Math.round((completedJobs / jobs.length) * 100) : 0}%</span>
+            <div className={s.summaryBar}>
+              <span className={s.summaryLabel}>Completion Rate</span>
+              <span className={s.summaryValue} style={{ color: jobs.length > 0 ? "#16a34a" : "#999" }}>{jobs.length > 0 ? Math.round((completedJobs / jobs.length) * 100) : 0}%</span>
             </div>
           </div>
         </div>
@@ -506,20 +486,20 @@ const Dashboard = ({ onNav }) => {
             <span className="card-title">Quote & Invoice Pipeline</span>
           </div>
           <div className="card-body">
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div className={s.sectionBetween}>
               <SectionLabel>Quotes</SectionLabel>
-              <button className="btn btn-ghost btn-sm" onClick={() => onNav("quotes")} style={{ marginTop: -4 }}>View all <Icon name="arrow_right" size={12} /></button>
+              <button className={`btn btn-ghost btn-sm ${s.btnNudgeUp}`} onClick={() => onNav("quotes")}>View all <Icon name="arrow_right" size={12} /></button>
             </div>
             {quotes.map(q => {
               const job = jobs.find(j => j.id === q.jobId);
               return (
-                <div key={q.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{q.number}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{job?.title}</div>
+                <div key={q.id} className={s.listRow}>
+                  <div className={s.listRowLeft}>
+                    <div className={s.listRowTitle}>{q.number}</div>
+                    <div className={s.listRowSub}>{job?.title}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13 }}>{fmt(calcQuoteTotal(q))}</div>
+                  <div className={s.listRowRight}>
+                    <div className={s.listRowAmount}>{fmt(calcQuoteTotal(q))}</div>
                     <StatusBadge status={q.status} />
                   </div>
                 </div>
@@ -527,27 +507,27 @@ const Dashboard = ({ onNav }) => {
             })}
             {/* Quote conversion rate */}
             {quotes.length > 0 && (
-              <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Conversion Rate</span>
-                <span style={{ fontSize: 14, fontWeight: 800, color: "#16a34a" }}>{Math.round((quotes.filter(q => q.status === "accepted").length / quotes.length) * 100)}%</span>
+              <div className={s.summaryBar}>
+                <span className={s.summaryLabel}>Conversion Rate</span>
+                <span className={s.summaryValue} style={{ color: "#16a34a" }}>{Math.round((quotes.filter(q => q.status === "accepted").length / quotes.length) * 100)}%</span>
               </div>
             )}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, marginBottom: 8 }}>
+            <div className={`${s.sectionBetween} ${s.sectionBetweenTop}`}>
               <SectionLabel>Invoices</SectionLabel>
-              <button className="btn btn-ghost btn-sm" onClick={() => onNav("invoices")} style={{ marginTop: -4 }}>View all <Icon name="arrow_right" size={12} /></button>
+              <button className={`btn btn-ghost btn-sm ${s.btnNudgeUp}`} onClick={() => onNav("invoices")}>View all <Icon name="arrow_right" size={12} /></button>
             </div>
-            {invoices.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No invoices yet</div>}
+            {invoices.length === 0 && <div className={s.emptyText}>No invoices yet</div>}
             {invoices.map(inv => {
               const job = jobs.find(j => j.id === inv.jobId);
               const overdue = inv.dueDate && daysUntil(inv.dueDate) < 0 && inv.status !== "paid";
               return (
-                <div key={inv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{inv.number}</div>
-                    <div style={{ fontSize: 12, color: overdue ? "#dc2626" : "#999" }}>{job?.title}{inv.dueDate ? ` · Due ${inv.dueDate}` : ""}{overdue ? " — OVERDUE" : ""}</div>
+                <div key={inv.id} className={s.listRow}>
+                  <div className={s.listRowLeft}>
+                    <div className={s.listRowTitle}>{inv.number}</div>
+                    <div className={s.listRowSub} style={{ color: overdue ? "#dc2626" : undefined }}>{job?.title}{inv.dueDate ? ` · Due ${inv.dueDate}` : ""}{overdue ? " — OVERDUE" : ""}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13 }}>{fmt(calcQuoteTotal(inv))}</div>
+                  <div className={s.listRowRight}>
+                    <div className={s.listRowAmount}>{fmt(calcQuoteTotal(inv))}</div>
                     <StatusBadge status={inv.status} />
                   </div>
                 </div>
@@ -564,16 +544,16 @@ const Dashboard = ({ onNav }) => {
           </div>
           <div className="card-body">
             {/* Bill workflow pipeline */}
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 14 }}>
+            <div className={s.billPipeline}>
               {["inbox", "linked", "approved", "posted"].map((st, i) => {
                 const count = bills.filter(b => b.status === st).length;
                 return (
                   <Fragment key={st}>
-                    <div style={{ flex: 1, textAlign: "center", padding: "6px 4px", borderRadius: 6, background: count > 0 ? billStatusColors[st] + "15" : "#f5f5f5", border: `1px solid ${count > 0 ? billStatusColors[st] + "40" : "#e5e5e5"}` }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: count > 0 ? billStatusColors[st] : "#ccc" }}>{count}</div>
-                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", color: count > 0 ? billStatusColors[st] : "#bbb", letterSpacing: "0.04em" }}>{billStatusLabels[st]}</div>
+                    <div className={s.billPipelineStep} style={{ background: count > 0 ? billStatusColors[st] + "15" : "#f5f5f5", border: `1px solid ${count > 0 ? billStatusColors[st] + "40" : "#e5e5e5"}` }}>
+                      <div className={s.billPipelineCount} style={{ color: count > 0 ? billStatusColors[st] : "#ccc" }}>{count}</div>
+                      <div className={s.billPipelineLabel} style={{ color: count > 0 ? billStatusColors[st] : "#bbb" }}>{billStatusLabels[st]}</div>
                     </div>
-                    {i < 3 && <span style={{ color: "#ccc", fontSize: 12 }}>→</span>}
+                    {i < 3 && <span className={s.pipelineArrow}>→</span>}
                   </Fragment>
                 );
               })}
@@ -581,22 +561,22 @@ const Dashboard = ({ onNav }) => {
             {recentBills.map(b => {
               const job = jobs.find(j => j.id === b.jobId);
               return (
-                <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{b.supplier}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{b.invoiceNo}{job ? ` · ${job.title}` : ""}</div>
+                <div key={b.id} className={s.listRow}>
+                  <div className={s.listRowLeft}>
+                    <div className={s.listRowTitle}>{b.supplier}</div>
+                    <div className={s.listRowSub}>{b.invoiceNo}{job ? ` · ${job.title}` : ""}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13 }}>{fmt(b.amount)}</div>
+                  <div className={s.listRowRight}>
+                    <div className={s.listRowAmount}>{fmt(b.amount)}</div>
                     <StatusBadge status={b.status} />
                   </div>
                 </div>
               );
             })}
             {/* Margin indicator */}
-            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Gross Margin</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
+            <div className={s.summaryBar}>
+              <span className={s.summaryLabel}>Gross Margin</span>
+              <span className={s.summaryValue} style={{ color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
             </div>
           </div>
         </div>
@@ -609,47 +589,47 @@ const Dashboard = ({ onNav }) => {
           </div>
           <div className="card-body">
             <SectionLabel>Work Orders</SectionLabel>
-            {workOrders.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No work orders</div>}
+            {workOrders.length === 0 && <div className={s.emptyText}>No work orders</div>}
             {workOrders.map(wo => {
               const overdue = wo.dueDate && daysUntil(wo.dueDate) < 0 && !["Cancelled", "Billed", "Completed"].includes(wo.status);
               const dueSoon = wo.dueDate && daysUntil(wo.dueDate) >= 0 && daysUntil(wo.dueDate) <= 3 && !["Cancelled", "Billed", "Completed"].includes(wo.status);
               return (
-                <div key={wo.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{wo.ref}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{wo.contractorName}{wo.trade ? ` · ${wo.trade}` : ""}{wo.dueDate ? ` · Due ${wo.dueDate}` : ""}</div>
+                <div key={wo.id} className={s.listRow}>
+                  <div className={s.listRowLeft}>
+                    <div className={s.orderRef}>{wo.ref}</div>
+                    <div className={s.listRowSub}>{wo.contractorName}{wo.trade ? ` · ${wo.trade}` : ""}{wo.dueDate ? ` · Due ${wo.dueDate}` : ""}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    {overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#dc2626" }}>OVERDUE</span>}
-                    {dueSoon && !overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#d97706" }}>DUE SOON</span>}
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: (ORDER_STATUS_COLORS[wo.status] || {}).bg || "#f0f0f0", color: (ORDER_STATUS_COLORS[wo.status] || {}).text || "#666" }}>{wo.status}</span>
+                  <div className={s.orderRightCol}>
+                    {overdue && <span className={s.overdueLabel}>OVERDUE</span>}
+                    {dueSoon && !overdue && <span className={s.dueSoonLabel}>DUE SOON</span>}
+                    <span className={s.orderStatusPill} style={{ background: (ORDER_STATUS_COLORS[wo.status] || {}).bg || "#f0f0f0", color: (ORDER_STATUS_COLORS[wo.status] || {}).text || "#666" }}>{wo.status}</span>
                   </div>
                 </div>
               );
             })}
-            <div style={{ marginTop: 14 }}><SectionLabel>Purchase Orders</SectionLabel></div>
-            {purchaseOrders.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No purchase orders</div>}
+            <div className={s.sectionSpacer}><SectionLabel>Purchase Orders</SectionLabel></div>
+            {purchaseOrders.length === 0 && <div className={s.emptyText}>No purchase orders</div>}
             {purchaseOrders.map(po => {
               const overdue = po.dueDate && daysUntil(po.dueDate) < 0 && !["Cancelled", "Billed", "Completed"].includes(po.status);
               const dueSoon = po.dueDate && daysUntil(po.dueDate) >= 0 && daysUntil(po.dueDate) <= 3 && !["Cancelled", "Billed", "Completed"].includes(po.status);
               return (
-                <div key={po.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{po.ref}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{po.supplierName}{po.dueDate ? ` · Due ${po.dueDate}` : ""}</div>
+                <div key={po.id} className={s.listRow}>
+                  <div className={s.listRowLeft}>
+                    <div className={s.orderRef}>{po.ref}</div>
+                    <div className={s.listRowSub}>{po.supplierName}{po.dueDate ? ` · Due ${po.dueDate}` : ""}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    {overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#dc2626" }}>OVERDUE</span>}
-                    {dueSoon && !overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#d97706" }}>DUE SOON</span>}
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: (ORDER_STATUS_COLORS[po.status] || {}).bg || "#f0f0f0", color: (ORDER_STATUS_COLORS[po.status] || {}).text || "#666" }}>{po.status}</span>
+                  <div className={s.orderRightCol}>
+                    {overdue && <span className={s.overdueLabel}>OVERDUE</span>}
+                    {dueSoon && !overdue && <span className={s.dueSoonLabel}>DUE SOON</span>}
+                    <span className={s.orderStatusPill} style={{ background: (ORDER_STATUS_COLORS[po.status] || {}).bg || "#f0f0f0", color: (ORDER_STATUS_COLORS[po.status] || {}).text || "#666" }}>{po.status}</span>
                   </div>
                 </div>
               );
             })}
             {/* Order value summary */}
-            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Total Committed</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: "#333" }}>{fmt(workOrders.reduce((s, wo) => s + (parseFloat(wo.poLimit) || 0), 0) + purchaseOrders.reduce((s, po) => s + ((po.lines || []).reduce((ls, l) => ls + (l.qty || 0) * (l.rate || 0), 0)), 0))}</span>
+            <div className={s.summaryBar}>
+              <span className={s.summaryLabel}>Total Committed</span>
+              <span className={s.summaryValue} style={{ color: "#333" }}>{fmt(workOrders.reduce((s, wo) => s + (parseFloat(wo.poLimit) || 0), 0) + purchaseOrders.reduce((s, po) => s + ((po.lines || []).reduce((ls, l) => ls + (l.qty || 0) * (l.rate || 0), 0)), 0))}</span>
             </div>
           </div>
         </div>
@@ -665,42 +645,42 @@ const Dashboard = ({ onNav }) => {
             {workerHours.map(([name, hrs]) => {
               const ratio = hrs.total > 0 ? (hrs.billable / hrs.total) * 100 : 0;
               return (
-                <div key={name} style={{ marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                    <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ width: 22, height: 22, borderRadius: "50%", background: "#111", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700 }}>{name.split(" ").map(n => n[0]).join("")}</span>
+                <div key={name} className={s.workerRow}>
+                  <div className={s.workerRowHeader}>
+                    <span className={s.workerName}>
+                      <span className={s.workerAvatar}>{name.split(" ").map(n => n[0]).join("")}</span>
                       {name}
                     </span>
-                    <span style={{ color: "#999" }}>{hrs.total}h <span style={{ color: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : "#dc2626", fontWeight: 700 }}>({Math.round(ratio)}%)</span></span>
+                    <span className={s.workerHours}>{hrs.total}h <span className={s.workerRatio} style={{ color: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : "#dc2626" }}>({Math.round(ratio)}%)</span></span>
                   </div>
-                  <div style={{ height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${ratio}%`, background: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : SECTION_COLORS.time.accent, borderRadius: 2 }} />
+                  <div className={s.thinProgressTrack}>
+                    <div className={s.thinProgressFill} style={{ width: `${ratio}%`, background: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : SECTION_COLORS.time.accent }} />
                   </div>
                 </div>
               );
             })}
-            {workerHours.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No time entries</div>}
-            <div style={{ marginTop: 14 }}><SectionLabel>Recent Entries</SectionLabel></div>
+            {workerHours.length === 0 && <div className={s.emptyText}>No time entries</div>}
+            <div className={s.sectionSpacer}><SectionLabel>Recent Entries</SectionLabel></div>
             {recentTime.map(t => {
               const job = jobs.find(j => j.id === t.jobId);
               return (
-                <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f5f5f5" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{t.worker}</div>
-                    <div style={{ fontSize: 12, color: "#999" }}>{job?.title} · {t.date}</div>
+                <div key={t.id} className={s.listRow}>
+                  <div className={s.listRowLeft}>
+                    <div className={s.listRowTitle}>{t.worker}</div>
+                    <div className={s.listRowSub}>{job?.title} · {t.date}</div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontWeight: 700, fontSize: 13 }}>{t.hours}h</div>
-                    {t.billable && <span style={{ fontSize: 10, color: "#16a34a", fontWeight: 600 }}>BILLABLE</span>}
-                    {!t.billable && <span style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>NON-BILL</span>}
+                  <div className={s.timeEntryRight}>
+                    <div className={s.timeEntryHours}>{t.hours}h</div>
+                    {t.billable && <span className={s.billableTag}>BILLABLE</span>}
+                    {!t.billable && <span className={s.nonBillTag}>NON-BILL</span>}
                   </div>
                 </div>
               );
             })}
             {/* Overall billable rate */}
-            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Billable Rate</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: billableRatio >= 80 ? "#16a34a" : billableRatio >= 50 ? "#d97706" : "#dc2626" }}>{billableRatio}%</span>
+            <div className={s.summaryBar}>
+              <span className={s.summaryLabel}>Billable Rate</span>
+              <span className={s.summaryValue} style={{ color: billableRatio >= 80 ? "#16a34a" : billableRatio >= 50 ? "#d97706" : "#dc2626" }}>{billableRatio}%</span>
             </div>
           </div>
         </div>
@@ -722,27 +702,27 @@ const Dashboard = ({ onNav }) => {
               const jobMargin = invoiced > 0 ? Math.round(((invoiced - costs) / invoiced) * 100) : (quoted > 0 ? Math.round(((quoted - costs) / quoted) * 100) : null);
               const costPct = quoted > 0 ? Math.min(100, Math.round((costs / quoted) * 100)) : 0;
               return (
-                <div key={job.id} style={{ marginBottom: 14 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                    <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                <div key={job.id} className={s.profitRow}>
+                  <div className={s.profitRowHeader}>
+                    <span className={s.profitJobTitle}>
                       {job.title}
                       <StatusBadge status={job.status} />
                     </span>
-                    {jobMargin !== null && <span style={{ fontWeight: 700, color: jobMargin >= 20 ? "#16a34a" : jobMargin >= 0 ? "#d97706" : "#dc2626" }}>{jobMargin}% margin</span>}
+                    {jobMargin !== null && <span className={s.profitMargin} style={{ color: jobMargin >= 20 ? "#16a34a" : jobMargin >= 0 ? "#d97706" : "#dc2626" }}>{jobMargin}% margin</span>}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <div style={{ flex: 1, height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden", position: "relative" }}>
-                      <div style={{ position: "absolute", height: "100%", width: `${costPct}%`, background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#16a34a", borderRadius: 3, transition: "width 0.3s" }} />
+                  <div className={s.profitBarRow}>
+                    <div className={s.profitTrack}>
+                      <div className={s.profitFill} style={{ width: `${costPct}%`, background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#16a34a" }} />
                     </div>
-                    <span style={{ fontSize: 11, color: "#999", minWidth: 80, textAlign: "right" }}>{fmt(costs)} / {fmt(quoted || invoiced)}</span>
+                    <span className={s.profitAmount}>{fmt(costs)} / {fmt(quoted || invoiced)}</span>
                   </div>
                 </div>
               );
             })}
             {/* Total margin */}
-            <div style={{ marginTop: 4, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Overall Margin</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
+            <div className={`${s.summaryBar} ${s.summaryBarTop}`}>
+              <span className={s.summaryLabel}>Overall Margin</span>
+              <span className={s.summaryValue} style={{ color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
             </div>
           </div>
         </div>

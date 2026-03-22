@@ -1,6 +1,7 @@
 import { Icon } from './Icon';
 import { STATUS_BG, STATUS_TEXT, ORDER_STATUS_COLORS, ORDER_STATUS_PROGRESS, ORDER_BAR_COLORS } from '../fixtures/seedData.jsx';
 import { daysUntil, orderFmtDate, fmt } from '../utils/helpers';
+import s from './shared.module.css';
 
 // ── Status Badge ─────────────────────────────────────────────────────────────
 export const StatusBadge = ({ status }) => {
@@ -22,8 +23,8 @@ export const XeroSyncBadge = ({ syncStatus, xeroId }) => {
   };
   const c = colors[syncStatus] || (xeroId ? colors.synced : { bg: "#f5f5f5", text: "#888", label: "Not synced" });
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 6px", borderRadius: 4, fontSize: 9, fontWeight: 700, background: c.bg, color: c.text, letterSpacing: "0.04em", textTransform: "uppercase" }}>
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.text }} />
+    <span className={s.xeroSyncBadge} style={{ background: c.bg, color: c.text }}>
+      <span className={s.xeroSyncDot} style={{ background: c.text }} />
       Xero
     </span>
   );
@@ -47,7 +48,7 @@ export const AvatarGroup = ({ names = [], max = 3 }) => {
 
 // ── Close Button ─────────────────────────────────────────────────────────────
 export const CloseBtn = ({ onClick }) => (
-  <button onClick={onClick} className="btn btn-ghost" style={{ padding: "6px", borderRadius: "6px" }}><Icon name="close" size={16} /></button>
+  <button onClick={onClick} className={`btn btn-ghost ${s.closeBtn}`}><Icon name="close" size={16} /></button>
 );
 
 // ── Order Icon ───────────────────────────────────────────────────────────────
@@ -94,12 +95,11 @@ export const OrderStatusBadge = ({ status }) => {
 export const DueDateChip = ({ dateStr, isTerminal }) => {
   if (!dateStr) return null;
   const days = daysUntil(dateStr);
-  const base = { display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 12 };
-  if (isTerminal) return <span style={{ ...base, color: "#94a3b8" }}><OrderIcon name="calendar" size={11} /> {orderFmtDate(dateStr)}</span>;
-  if (days < 0) return <span style={{ ...base, color: "#dc2626", background: "#fef2f2" }}><OrderIcon name="warning" size={11} /> {Math.abs(days)}d overdue</span>;
-  if (days === 0) return <span style={{ ...base, color: "#ea580c", background: "#fff7ed" }}><OrderIcon name="clock" size={11} /> Due today</span>;
-  if (days <= 3) return <span style={{ ...base, color: "#d97706", background: "#fffbeb" }}><OrderIcon name="clock" size={11} /> {days}d left</span>;
-  return <span style={{ ...base, color: "#64748b" }}><OrderIcon name="calendar" size={11} /> {orderFmtDate(dateStr)}</span>;
+  if (isTerminal) return <span className={s.dueDateTerminal}><OrderIcon name="calendar" size={11} /> {orderFmtDate(dateStr)}</span>;
+  if (days < 0) return <span className={s.dueDateOverdue}><OrderIcon name="warning" size={11} /> {Math.abs(days)}d overdue</span>;
+  if (days === 0) return <span className={s.dueDateToday}><OrderIcon name="clock" size={11} /> Due today</span>;
+  if (days <= 3) return <span className={s.dueDateSoon}><OrderIcon name="clock" size={11} /> {days}d left</span>;
+  return <span className={s.dueDateNormal}><OrderIcon name="calendar" size={11} /> {orderFmtDate(dateStr)}</span>;
 };
 
 // ── Order Progress Bar ───────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ export const FileIconBadge = ({ name }) => {
   else if (["jpg","jpeg","png","gif","webp","heic"].includes(ext)) { icon = "IMG"; color = "#8b5cf6"; bg = "#f5f3ff"; }
   else if (["doc","docx"].includes(ext)) { icon = "DOC"; color = "#2563eb"; bg = "#eff6ff"; }
   else if (["xls","xlsx","csv"].includes(ext)) { icon = "XLS"; color = "#059669"; bg = "#ecfdf5"; }
-  return <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 6px", borderRadius: 4, color, background: bg }}>{icon}</span>;
+  return <span className={s.fileIconBadge} style={{ color, background: bg }}>{icon}</span>;
 };
 
 // ── Bill Status Badge ────────────────────────────────────────────────────────
@@ -163,7 +163,7 @@ export const BillStatusBadge = ({ status }) => {
 
 // ── Section Label ────────────────────────────────────────────────────────────
 export const SectionLabel = ({ children }) => (
-  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#999", marginBottom: 10, marginTop: 4 }}>{children}</div>
+  <div className={s.sectionLabel}>{children}</div>
 );
 
 // ── Section Drawer ───────────────────────────────────────────────────────────
@@ -172,23 +172,23 @@ export const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mod
     <div className="section-drawer-backdrop" onClick={onClose} />
     <div className="section-drawer">
       {/* Header */}
-      <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#fff", background: accent, flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-          {icon && <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>}
-          <div style={{ minWidth: 0 }}>
-            {typeLabel && <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.7, letterSpacing: "0.05em", textTransform: "uppercase" }}>{typeLabel}</div>}
-            <div style={{ fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
+      <div className={s.drawerHeader} style={{ background: accent }}>
+        <div className={s.drawerHeaderLeft}>
+          {icon && <div className={s.drawerHeaderIcon}>{icon}</div>}
+          <div className={s.drawerHeaderTitleWrap}>
+            {typeLabel && <div className={s.drawerTypeLabel}>{typeLabel}</div>}
+            <div className={s.drawerTitle}>{title}</div>
           </div>
           {statusBadge}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <div className={s.drawerHeaderRight}>
           {showToggle && !isNew && (
-            <div style={{ display: "flex", background: "rgba(255,255,255,0.15)", borderRadius: 8, padding: 2, gap: 2 }}>
-              <button style={{ padding: "4px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: mode === "view" ? "#fff" : "transparent", color: mode === "view" ? "#1e293b" : "rgba(255,255,255,0.8)" }} onClick={() => setMode("view")}>View</button>
-              <button style={{ padding: "4px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: mode === "edit" ? "#fff" : "transparent", color: mode === "edit" ? "#1e293b" : "rgba(255,255,255,0.8)" }} onClick={() => setMode("edit")}>Edit</button>
+            <div className={s.drawerToggleWrap}>
+              <button className={mode === "view" ? s.drawerToggleBtnActive : s.drawerToggleBtnInactive} onClick={() => setMode("view")}>View</button>
+              <button className={mode === "edit" ? s.drawerToggleBtnActive : s.drawerToggleBtnInactive} onClick={() => setMode("edit")}>Edit</button>
             </div>
           )}
-          <button style={{ padding: 6, borderRadius: 8, background: "rgba(255,255,255,0.2)", border: "none", cursor: "pointer", color: "#fff", display: "flex" }} onClick={onClose}>
+          <button className={s.drawerCloseBtn} onClick={onClose}>
             <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -196,9 +196,9 @@ export const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mod
       {/* Status strip */}
       {statusStrip}
       {/* Body */}
-      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>{children}</div>
+      <div className={s.drawerBody}>{children}</div>
       {/* Footer */}
-      {footer && <div style={{ padding: "16px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0 }}>{footer}</div>}
+      {footer && <div className={s.drawerFooter}>{footer}</div>}
     </div>
   </div>
 );
@@ -231,19 +231,19 @@ export const LineItemsEditor = ({ items, onChange }) => {
               <td><input value={it.desc} onChange={e => update(i, "desc", e.target.value)} placeholder="Description" /></td>
               <td><input type="number" value={it.qty} onChange={e => update(i, "qty", e.target.value)} min="0" /></td>
               <td>
-                <select style={{ width: "100%", border: "1.5px solid #e8e8e8", borderRadius: 4, padding: "5px 7px", fontFamily: "'Open Sans', sans-serif", fontSize: 12 }} value={it.unit} onChange={e => update(i, "unit", e.target.value)}>
+                <select className={s.lineItemSelect} value={it.unit} onChange={e => update(i, "unit", e.target.value)}>
                   {["hrs","ea","m²","lm","lot","day","m³","kg"].map(u => <option key={u}>{u}</option>)}
                 </select>
               </td>
               <td><input type="number" value={it.rate} onChange={e => update(i, "rate", e.target.value)} min="0" /></td>
-              <td style={{ fontWeight: 600 }}>{fmt(it.qty * it.rate)}</td>
-              <td><button onClick={() => remove(i)} className="btn btn-ghost btn-xs" style={{ color: "#c00", padding: "4px" }}><Icon name="trash" size={12} /></button></td>
+              <td className={s.lineItemTotal}>{fmt(it.qty * it.rate)}</td>
+              <td><button onClick={() => remove(i)} className={`btn btn-ghost btn-xs ${s.lineItemDeleteBtn}`}><Icon name="trash" size={12} /></button></td>
             </tr>
           ))}
         </tbody>
       </table>
       <button onClick={add} className="btn btn-secondary btn-sm"><Icon name="plus" size={12} />Add Line</button>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+      <div className={s.totalsWrap}>
         <div className="totals-box">
           <div className="totals-row"><span>Subtotal</span><span>{fmt(sub)}</span></div>
           <div className="totals-row"><span>GST (10%)</span><span>{fmt(sub * 0.1)}</span></div>
@@ -256,16 +256,16 @@ export const LineItemsEditor = ({ items, onChange }) => {
 
 // ── Activity Log ─────────────────────────────────────────────────────────────
 export const ActivityLog = ({ entries = [] }) => {
-  if (!entries.length) return <div style={{ color: "#bbb", fontSize: 13, padding: "20px 0", textAlign: "center" }}>No activity recorded yet.</div>;
+  if (!entries.length) return <div className={s.activityEmpty}>No activity recorded yet.</div>;
   return (
     <div className="timeline">
       {[...entries].reverse().map((e, i) => (
         <div key={i} className="timeline-item">
           <div className="timeline-dot" />
-          <div style={{ fontSize: 13, lineHeight: 1.5 }}>
-            <span style={{ fontWeight: 600 }}>{e.action}</span>
-            <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>
-              <span style={{ fontWeight: 600, color: "#777" }}>{e.user}</span> · {e.ts}
+          <div className={s.activityText}>
+            <span className={s.activityAction}>{e.action}</span>
+            <div className={s.activityMeta}>
+              <span className={s.activityUser}>{e.user}</span> · {e.ts}
             </div>
           </div>
         </div>

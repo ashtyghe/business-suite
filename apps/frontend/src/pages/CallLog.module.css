@@ -1,0 +1,217 @@
+.wrapper {
+  padding: 0;
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.searchWrapper {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.selectInput {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  font-size: 13px;
+  background: #fff;
+  color: #333;
+  font-family: 'Open Sans', sans-serif;
+  min-width: 120px;
+}
+
+.searchInput {
+  composes: selectInput;
+  width: 100%;
+  padding-left: 32px;
+}
+
+.filterCount {
+  font-size: 12px;
+  color: #888;
+}
+
+.tableContainer {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 40px 1fr 140px 100px 90px 90px;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e5e5;
+  gap: 8px;
+}
+
+.colHeader {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #555;
+}
+
+.colHeaderSortable {
+  composes: colHeader;
+  cursor: pointer;
+  user-select: none;
+}
+
+.colHeaderCenter {
+  composes: colHeader;
+  text-align: center;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px;
+  color: #aaa;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 40px 1fr 140px 100px 90px 90px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  gap: 8px;
+  align-items: center;
+  transition: background 0.15s;
+}
+
+.dirCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dirIcon {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.contactName {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.contactSub {
+  font-size: 11px;
+  color: #888;
+}
+
+.phoneCell {
+  font-size: 12px;
+  color: #666;
+}
+
+.dateText {
+  font-size: 12px;
+  color: #333;
+}
+
+.timeText {
+  font-size: 11px;
+  color: #888;
+}
+
+.durationCell {
+  font-size: 13px;
+  color: #333;
+  font-variant-numeric: tabular-nums;
+}
+
+.statusCell {
+  text-align: center;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.expandedPanel {
+  padding: 0 14px 14px 54px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.expandedTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.actionRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  margin: 0 -10px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.actionIcon {
+  font-size: 14px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.actionContent {
+  flex: 1;
+}
+
+.actionDesc {
+  font-size: 13px;
+  color: #333;
+}
+
+.actionDescLink {
+  composes: actionDesc;
+  color: #2563eb;
+}
+
+.actionChevron {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.actionTime {
+  font-size: 11px;
+  color: #999;
+  white-space: nowrap;
+}
+
+.emptyActions {
+  padding: 12px 14px 12px 54px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e5e5;
+  font-size: 13px;
+  color: #999;
+  font-style: italic;
+}

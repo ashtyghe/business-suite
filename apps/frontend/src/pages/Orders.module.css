@@ -1,0 +1,137 @@
+/* Orders CSS Module */
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.summaryCard {
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.summaryValue {
+  font-size: 22px;
+}
+
+/* ── Toolbar controls ── */
+.searchBar {
+  flex: 1;
+  min-width: 120px;
+  max-width: 320px;
+}
+
+.filterSelect {
+  width: auto;
+  min-width: 120px;
+}
+
+.filterSelectWide {
+  width: auto;
+  min-width: 140px;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 4px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.viewBtnActive {
+  background: #2563eb;
+  color: #fff;
+}
+
+.newWoBtn {
+  background: #2563eb;
+}
+
+.newPoBtn {
+  background: #059669;
+}
+
+/* ── Kanban ── */
+.kanbanBadge {
+  background: #e0e0e0;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.kanbanCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.typeBadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.typeBadgeWo {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.typeBadgePo {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.kanbanRef {
+  font-weight: 700;
+  font-size: 12px;
+  flex: 1;
+}
+
+.kanbanParty {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.kanbanJob {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.kanbanDue {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+/* ── List view ── */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.clickableRow {
+  cursor: pointer;
+}
+
+.refCell {
+  font-weight: 600;
+}
+
+.emptyParty {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.deleteBtn {
+  padding: 4px;
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  cursor: pointer;
+}

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
 import { hexToRgba } from '../utils/helpers';
 import { Icon } from '../components/Icon';
+import s from './MyAssistant.module.css';
 
 const VOICE_OPTIONS = {
   voices: [
@@ -47,20 +48,19 @@ const DEFAULT_OUTBOUND_SETTINGS = {
 const VoiceOptionCard = ({ option, selected, onSelect, accent }) => (
   <div
     onClick={onSelect}
+    className={s.voiceCard}
     style={{
-      padding: "12px 16px", borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
       border: selected ? `2px solid ${accent}` : "2px solid #e8e8e8",
       background: selected ? hexToRgba(accent, 0.06) : "#fff",
     }}
   >
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div style={{
-        width: 16, height: 16, borderRadius: "50%", border: selected ? `5px solid ${accent}` : "2px solid #ccc",
-        background: "#fff", flexShrink: 0,
+    <div className={s.voiceCardRow}>
+      <div className={s.voiceRadio} style={{
+        border: selected ? `5px solid ${accent}` : "2px solid #ccc",
       }} />
       <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#111" : "#333" }}>{option.label}</div>
-        <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{option.desc}</div>
+        <div className={selected ? s.voiceLabelSelected : s.voiceLabelUnselected}>{option.label}</div>
+        <div className={s.voiceDesc}>{option.desc}</div>
       </div>
     </div>
   </div>
@@ -193,14 +193,7 @@ const MyAssistant = () => {
   const updateInbound = (key, value) => { setInboundSettings(prev => ({ ...prev, [key]: value })); setDirty(true); setSaved(false); };
   const updateOutbound = (key, value) => { setOutboundSettings(prev => ({ ...prev, [key]: value })); setDirty(true); setSaved(false); };
 
-  const cardStyle = { background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 };
-  const labelStyle = { display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 12 };
-  const inputStyle = { width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" };
-  const textareaStyle = { width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" };
-  const disabledInputStyle = { ...inputStyle, background: "#f5f5f5", color: "#999", cursor: "not-allowed" };
-  const disabledTextareaStyle = { ...textareaStyle, background: "#f5f5f5", color: "#999", cursor: "not-allowed" };
-
-  if (loading) return <div style={{ textAlign: "center", padding: 40, color: "#888" }}>Loading...</div>;
+  if (loading) return <div className={s.loadingState}>Loading...</div>;
 
   const isPersonalised = personalised[activeTab];
   const currentSettings = activeTab === 'inbound' ? inboundSettings : outboundSettings;
@@ -210,76 +203,71 @@ const MyAssistant = () => {
   return (
     <div>
       {/* Tab navigation */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #e8e8e8", paddingBottom: 0 }}>
+      <div className={s.tabNav}>
         {[{ id: "inbound", label: "Inbound" }, { id: "outbound", label: "Outbound" }].map(t => (
-          <button key={t.id} onClick={() => { setActiveTab(t.id); setDirty(false); setSaved(false); }} className="btn" style={{
-            display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", fontSize: 13, fontWeight: 600,
-            border: "none", borderBottom: activeTab === t.id ? `2px solid ${accent}` : "2px solid transparent",
-            borderRadius: 0, background: "transparent", color: activeTab === t.id ? "#111" : "#888",
-            cursor: "pointer", transition: "all 0.15s",
-          }}>{t.label}</button>
+          <button key={t.id} onClick={() => { setActiveTab(t.id); setDirty(false); setSaved(false); }} className="btn"
+            style={{
+              display: "flex", alignItems: "center", gap: "6px", padding: "10px 16px", fontSize: 13, fontWeight: 600,
+              border: "none", borderBottom: activeTab === t.id ? `2px solid ${accent}` : "2px solid transparent",
+              borderRadius: 0, background: "transparent", color: activeTab === t.id ? "#111" : "#888",
+              cursor: "pointer", transition: "all 0.15s",
+            }}>{t.label}</button>
         ))}
       </div>
 
       {/* Personalisation toggle */}
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className={s.toggleCard}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>Personalise my {activeTab} assistant</div>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+          <div className={s.toggleTitle}>Personalise my {activeTab} assistant</div>
+          <div className={s.toggleDesc}>
             {isPersonalised ? "Your custom settings are active." : "When off, the company default settings apply. Turn on to customise your own assistant."}
           </div>
         </div>
-        <button onClick={() => togglePersonalised(activeTab)} style={{
-          width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s",
-          background: isPersonalised ? accent : "#ccc",
-        }}>
-          <div style={{
-            width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, transition: "left 0.2s",
-            left: isPersonalised ? 23 : 3, boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-          }} />
+        <button onClick={() => togglePersonalised(activeTab)} className={s.toggleSwitch} style={{ background: isPersonalised ? accent : "#ccc" }}>
+          <div className={s.toggleKnob} style={{ left: isPersonalised ? 23 : 3 }} />
         </button>
       </div>
 
       {/* Saved banner */}
       {saved && (
-        <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+        <div className={s.savedBanner}>
           <Icon name="check" size={14} /> Settings saved. Changes will apply to the next call.
         </div>
       )}
 
       {!isPersonalised && (
-        <div style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: 10, padding: "14px 20px", marginBottom: 16, fontSize: 12, color: "#888" }}>
+        <div className={s.defaultsBanner}>
           Company Defaults — these settings are managed by your admin.
         </div>
       )}
 
       {/* Assistant Name */}
-      <div style={cardStyle}>
-        <div style={labelStyle}>Assistant Name</div>
+      <div className={s.card}>
+        <div className={s.label}>Assistant Name</div>
         {isPersonalised ? (
-          <input type="text" value={currentSettings.name} onChange={e => updateFn("name", e.target.value)} placeholder="e.g. Iris, Billy, Sage" style={{ ...inputStyle, maxWidth: 300 }} />
+          <input type="text" value={currentSettings.name} onChange={e => updateFn("name", e.target.value)} placeholder="e.g. Iris, Billy, Sage" className={`${s.input} ${s.inputNarrow}`} />
         ) : (
-          <input type="text" value={currentDefaults.name} disabled style={{ ...disabledInputStyle, maxWidth: 300 }} />
+          <input type="text" value={currentDefaults.name} disabled className={`${s.inputDisabled} ${s.inputNarrow}`} />
         )}
-        <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>The name your assistant introduces itself as on calls</div>
+        <div className={s.helpText}>The name your assistant introduces itself as on calls</div>
       </div>
 
       {/* Voice Selection */}
-      <div style={cardStyle}>
-        <div style={labelStyle}>Voice</div>
+      <div className={s.card}>
+        <div className={s.label}>Voice</div>
         {activeTab === 'inbound' ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8, opacity: isPersonalised ? 1 : 0.6, pointerEvents: isPersonalised ? "auto" : "none" }}>
+          <div className={isPersonalised ? s.voiceGrid : s.voiceGridDisabled}>
             {VOICE_OPTIONS.voices.map(v => (
               <VoiceOptionCard key={v.id} option={v} selected={(isPersonalised ? currentSettings : currentDefaults).voice === v.id} onSelect={() => updateFn("voice", v.id)} accent={accent} />
             ))}
           </div>
         ) : (
           isPersonalised ? (
-            <select value={currentSettings.voice} onChange={e => updateFn("voice", e.target.value)} style={{ ...inputStyle, maxWidth: 400 }}>
+            <select value={currentSettings.voice} onChange={e => updateFn("voice", e.target.value)} className={`${s.input} ${s.selectNarrow}`}>
               {VOICE_OPTIONS.voices.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}
             </select>
           ) : (
-            <select value={currentDefaults.voice} disabled style={{ ...disabledInputStyle, maxWidth: 400 }}>
+            <select value={currentDefaults.voice} disabled className={`${s.inputDisabled} ${s.selectNarrow}`}>
               {VOICE_OPTIONS.voices.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}
             </select>
           )
@@ -287,42 +275,42 @@ const MyAssistant = () => {
       </div>
 
       {/* Greeting Style */}
-      <div style={cardStyle}>
-        <div style={labelStyle}>Greeting Style</div>
+      <div className={s.card}>
+        <div className={s.label}>Greeting Style</div>
         {isPersonalised ? (
-          <textarea value={currentSettings.greetingStyle} onChange={e => updateFn("greetingStyle", e.target.value)} placeholder={VOICE_OPTIONS.greetingStylePlaceholder} rows={3} style={textareaStyle} />
+          <textarea value={currentSettings.greetingStyle} onChange={e => updateFn("greetingStyle", e.target.value)} placeholder={VOICE_OPTIONS.greetingStylePlaceholder} rows={3} className={s.textarea} />
         ) : (
-          <textarea value={currentDefaults.greetingStyle || ""} disabled rows={3} style={disabledTextareaStyle} />
+          <textarea value={currentDefaults.greetingStyle || ""} disabled rows={3} className={s.textareaDisabled} />
         )}
       </div>
 
       {/* Personality */}
-      <div style={cardStyle}>
-        <div style={labelStyle}>Personality</div>
+      <div className={s.card}>
+        <div className={s.label}>Personality</div>
         {isPersonalised ? (
-          <textarea value={currentSettings.personality} onChange={e => updateFn("personality", e.target.value)} placeholder={VOICE_OPTIONS.personalityPlaceholder} rows={3} style={textareaStyle} />
+          <textarea value={currentSettings.personality} onChange={e => updateFn("personality", e.target.value)} placeholder={VOICE_OPTIONS.personalityPlaceholder} rows={3} className={s.textarea} />
         ) : (
-          <textarea value={currentDefaults.personality || ""} disabled rows={3} style={disabledTextareaStyle} />
+          <textarea value={currentDefaults.personality || ""} disabled rows={3} className={s.textareaDisabled} />
         )}
       </div>
 
       {/* General Knowledge — inbound only */}
       {activeTab === 'inbound' && (
-        <div style={cardStyle}>
-          <div style={labelStyle}>General Knowledge</div>
+        <div className={s.card}>
+          <div className={s.label}>General Knowledge</div>
           {isPersonalised ? (
-            <textarea value={currentSettings.generalKnowledge} onChange={e => updateFn("generalKnowledge", e.target.value)} placeholder={VOICE_OPTIONS.generalKnowledgePlaceholder} rows={3} style={textareaStyle} />
+            <textarea value={currentSettings.generalKnowledge} onChange={e => updateFn("generalKnowledge", e.target.value)} placeholder={VOICE_OPTIONS.generalKnowledgePlaceholder} rows={3} className={s.textarea} />
           ) : (
-            <textarea value={currentDefaults.generalKnowledge || ""} disabled rows={3} style={disabledTextareaStyle} />
+            <textarea value={currentDefaults.generalKnowledge || ""} disabled rows={3} className={s.textareaDisabled} />
           )}
-          <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>Any background knowledge your assistant should have — local area, industry, etc.</div>
+          <div className={s.helpText}>Any background knowledge your assistant should have — local area, industry, etc.</div>
         </div>
       )}
 
       {/* Save button — only when personalised and dirty */}
       {isPersonalised && dirty && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-          <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 12, fontWeight: 600 }} onClick={() => saveSettings(activeTab)}>
+        <div className={s.saveRow}>
+          <button className="btn btn-primary btn-sm" style={{ background: accent }} onClick={() => saveSettings(activeTab)}>
             Save Changes
           </button>
         </div>

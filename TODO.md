@@ -1,7 +1,7 @@
 # Todo List
 
 ## Cleanup
-- [ ] Extract Notes tab (~210 lines) from JobDetail — tightly coupled with modals
+- [x] Extract Notes tab (~210 lines) from JobDetail — tightly coupled with modals
 
 ## Features
 - [ ] Digital asset management (DAM) for templates, contracts, compliance docs

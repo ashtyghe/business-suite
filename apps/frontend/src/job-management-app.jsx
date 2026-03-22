@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense, Component } from "react";
+import { useState, useEffect, lazy, Suspense, Component, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 // db imports used by extracted pages — kept here only for re-export if needed
 // Individual pages import directly from '../lib/db'
@@ -8,6 +8,7 @@ import { useAuth } from './lib/AuthContext';
 import { changePassword, adminResetUserPassword } from './lib/auth';
 import { buildQuotePdfHtml, buildInvoicePdfHtml, buildOrderPdfHtml, htmlToPdfBase64 } from './lib/pdf';
 import NotesTab from './NotesTab';
+import QuickAddNoteModal from './components/QuickAddNoteModal';
 import './styles/global.css';
 import sh from './styles/app-shell.module.css';
 import db from './styles/dashboard.module.css';
@@ -4614,9 +4615,20 @@ export default function App() {
   const location = useLocation();
   const routerNavigate = useNavigate();
   const page = PATH_TO_ID[location.pathname] || "dashboard";
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return sessionStorage.getItem('fieldops_sidebar_collapsed') === 'true'; } catch { return false; }
+  }); // desktop collapse
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth > 1024);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1025px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  const collapsed = sidebarCollapsed && isDesktop;
   const [moreOpen, setMoreOpen] = useState(false);
-  const [hoverNav, setHoverNav] = useState(null);
+  const [showQuickNote, setShowQuickNote] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
 
@@ -4688,10 +4700,16 @@ export default function App() {
     { id: "status", label: "System Status", icon: "activity" },
   ];
 
-  // Bottom nav shows first 6; rest in "More"
-  const bottomNavItems = navItems.slice(0, 6);
-  const moreNavItems = navItems.slice(6);
-  const moreIsActive = moreNavItems.some(n => n.id === page);
+  // Bottom nav: fixed set of field-worker shortcuts
+  const bottomNavIds = ["schedule", "time", "notes", "reminders"];
+  const bottomNavItems = [
+    { id: "schedule", label: "Schedule", icon: "schedule" },
+    { id: "time", label: "Time", icon: "time" },
+    { id: "notes", label: "Notes", icon: "quotes" },
+    { id: "reminders", label: "Reminders", icon: "notification", badge: overdueRemindersCount || null, badgeColor: "#dc2626" },
+  ];
+  const moreNavItems = navItems.filter(n => !bottomNavIds.includes(n.id));
+  const moreIsActive = moreNavItems.some(n => n.id === page) && !bottomNavIds.includes(page);
 
   const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", actions: "Actions", reminders: "Reminders", activity: "Activity Log", status: "System Status", settings: "Settings", files: "Files", calllog: "Call Log", assistant: "My Assistant", memory: "Caller Memory" };
 
@@ -4699,6 +4717,14 @@ export default function App() {
     routerNavigate(ROUTE_MAP[id] || "/");
     setSidebarOpen(false);
     setMoreOpen(false);
+  };
+
+  const toggleSidebarCollapse = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      try { sessionStorage.setItem('fieldops_sidebar_collapsed', String(next)); } catch {}
+      return next;
+    });
   };
 
   const routeElements = (
@@ -4765,11 +4791,11 @@ export default function App() {
       <div className={`jm-sidebar-overlay ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
 
       {/* Sidebar */}
-      <nav className={`jm-sidebar ${sidebarOpen ? "open" : ""}`}>
+      <nav className={`jm-sidebar ${sidebarOpen ? "open" : ""} ${collapsed ? "collapsed" : ""}`}>
         <div className={`jm-logo ${sh.logoRow}`}>
-          <div>
-            <div className="jm-logo-mark">FieldOps</div>
-            <div className="jm-logo-sub">Job Management</div>
+          <div className={collapsed ? "jm-logo-collapsed" : ""}>
+            <div className="jm-logo-mark">{collapsed ? "FO" : "FieldOps"}</div>
+            {!collapsed && <div className="jm-logo-sub">Job Management</div>}
           </div>
           {/* Close btn visible only on mobile */}
           <button
@@ -4787,58 +4813,53 @@ export default function App() {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
-              onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
-              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
-              <Icon name={n.icon} size={15} />{n.label}
-              {n.badge ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
+              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : undefined}>
+              <Icon name={n.icon} size={15} />{!collapsed && n.label}
+              {n.badge && !collapsed ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
             </div>
             );
           })}
-          <div className="jm-nav-section">Main</div>
+          {!collapsed && <div className="jm-nav-section">Main</div>}{collapsed && <div className="jm-nav-divider" />}
           {navItems.slice(5, 7).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
-              onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
-              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
-              <Icon name={n.icon} size={15} />{n.label}
-              {n.badge ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
+              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : undefined}>
+              <Icon name={n.icon} size={15} />{!collapsed && n.label}
+              {n.badge && !collapsed ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
             </div>
             );
           })}
-          <div className="jm-nav-section">Finance</div>
+          {!collapsed && <div className="jm-nav-section">Finance</div>}{collapsed && <div className="jm-nav-divider" />}
           {navItems.slice(7, 11).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
-              onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
-              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
-              <Icon name={n.icon} size={15} />{n.label}
-              {n.badge ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
+              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : undefined}>
+              <Icon name={n.icon} size={15} />{!collapsed && n.label}
+              {n.badge && !collapsed ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
             </div>
             );
           })}
-          <div className="jm-nav-section">Partners</div>
+          {!collapsed && <div className="jm-nav-section">Partners</div>}{collapsed && <div className="jm-nav-divider" />}
           {navItems.slice(11, 14).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
-              onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
-              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
-              <Icon name={n.icon} size={15} />{n.label}
-              {n.badge ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
+              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : undefined}>
+              <Icon name={n.icon} size={15} />{!collapsed && n.label}
+              {n.badge && !collapsed ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
             </div>
             );
           })}
-          <div className="jm-nav-section">System</div>
+          {!collapsed && <div className="jm-nav-section">System</div>}{collapsed && <div className="jm-nav-divider" />}
           {navItems.slice(14).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.activity)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
-              onMouseEnter={() => setHoverNav(n.id)} onMouseLeave={() => setHoverNav(null)}
-              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : hoverNav === n.id ? { borderLeftColor: accent, color: '#fff', background: hexToRgba(accent, 0.10) } : undefined}>
-              <Icon name={n.icon} size={15} />{n.label}
-              {n.badge ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
+              style={page === n.id ? { borderLeftColor: accent, background: hexToRgba(accent, 0.12) } : undefined}>
+              <Icon name={n.icon} size={15} />{!collapsed && n.label}
+              {n.badge && !collapsed ? <span className="badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
             </div>
             );
           })}
@@ -4861,21 +4882,32 @@ export default function App() {
             <div className={sh.userAvatar}>
               {(auth.staff?.name || "AJ").split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase()}
             </div>
-            <div className={sh.userInfo}>
-              <div className={sh.userName}>{auth.staff?.name || "Alex Jones"}</div>
-              <div className={sh.userRole}>{auth.staff?.role || "Admin"}</div>
-            </div>
-            {!auth.isLocalDev && (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={showUserMenu ? "#fff" : "#555"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={pg.sidebarChevron} style={{ transform: showUserMenu ? "rotate(180deg)" : "rotate(0)" }}>
-                <polyline points="18 15 12 9 6 15"/>
-              </svg>
+            {!collapsed && (
+              <>
+                <div className={sh.userInfo}>
+                  <div className={sh.userName}>{auth.staff?.name || "Alex Jones"}</div>
+                  <div className={sh.userRole}>{auth.staff?.role || "Admin"}</div>
+                </div>
+                {!auth.isLocalDev && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={showUserMenu ? "#fff" : "#555"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={pg.sidebarChevron} style={{ transform: showUserMenu ? "rotate(180deg)" : "rotate(0)" }}>
+                    <polyline points="18 15 12 9 6 15"/>
+                  </svg>
+                )}
+              </>
             )}
           </div>
         </div>
+        {/* Desktop collapse toggle */}
+        <button className="jm-sidebar-collapse-btn" onClick={toggleSidebarCollapse} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: collapsed ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          {!collapsed && <span>Collapse</span>}
+        </button>
       </nav>
 
       {/* Main content */}
-      <div className="jm-main">
+      <div className={`jm-main ${sidebarCollapsed ? "jm-main-collapsed" : ""}`}>
         {/* Top bar */}
         <div className="jm-topbar">
           <div className={sh.topbarLeft}>
@@ -4921,9 +4953,12 @@ export default function App() {
         <div className="jm-bottom-nav-inner">
           {bottomNavItems.map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.dashboard)?.accent;
+            const isNotes = n.id === "notes";
+            const isActive = isNotes ? showQuickNote : page === n.id;
             return (
-            <button key={n.id} className={`jm-bottom-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
-              style={page === n.id ? { color: accent, boxShadow: `inset 0 2px 0 ${accent}` } : undefined}>
+            <button key={n.id} className={`jm-bottom-nav-item ${isActive ? "active" : ""}`}
+              onClick={() => isNotes ? setShowQuickNote(true) : navigate(n.id)}
+              style={isActive ? { color: accent || "#111", boxShadow: `inset 0 2px 0 ${accent || "#111"}` } : undefined}>
               {n.badge ? <span className="bnav-badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
               <Icon name={n.icon} size={20} />
               <span>{n.label}</span>
@@ -4950,6 +4985,8 @@ export default function App() {
 
       {/* Change Password Modal */}
       {showChangePassword && <ChangePasswordModal onClose={() => setShowChangePassword(false)} />}
+      {/* Quick Add Note Modal (from bottom nav) */}
+      {showQuickNote && <QuickAddNoteModal onClose={() => setShowQuickNote(false)} />}
     </div>
   );
 }

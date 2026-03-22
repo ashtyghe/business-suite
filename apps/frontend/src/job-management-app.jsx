@@ -12,6 +12,7 @@ import db from './styles/dashboard.module.css';
 import jb from './styles/jobs.module.css';
 import sc from './styles/schedule.module.css';
 import bl from './styles/bills.module.css';
+import tm from './styles/time.module.css';
 // Heavy libraries loaded dynamically where used (fabric, pdfjs-dist, pdf-lib, signature_pad)
 
 // ── Google Font ──────────────────────────────────────────────────────────────
@@ -7446,7 +7447,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
       onClose={onClose}
     >
       {mode === "view" ? (
-        <div style={{ padding: "20px 24px" }}>
+        <div className={jb.drawerBody}>
           <div className="grid-2">
             <ViewField label="Job" value={jobName} />
             <ViewField label="Worker" value={form.worker} />
@@ -7456,19 +7457,19 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
             <ViewField label="Start Time" value={form.startTime} />
             <ViewField label="End Time" value={form.endTime} />
           </div>
-          <div style={{ textAlign: "center", padding: "12px 16px", background: SECTION_COLORS.time.light, borderRadius: 8, marginBottom: 16 }}>
-            <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.04em", color: SECTION_COLORS.time.accent, lineHeight: 1 }}>
+          <div className={tm.hoursDisplay} style={{ background: SECTION_COLORS.time.light }}>
+            <div className={tm.hoursValue} style={{ color: SECTION_COLORS.time.accent }}>
               {hours > 0 ? `${hours.toFixed(1)}h` : "0.0h"}
             </div>
-            <div style={{ fontSize: 11, color: "#999", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4 }}>hours logged</div>
+            <div className={tm.hoursLabel}>hours logged</div>
           </div>
           {form.description && <ViewField label="Description" value={form.description} />}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: form.billable ? "#ecfdf5" : "#f5f5f5", color: form.billable ? "#059669" : "#888" }}>
+          <div className={tm.billableTag} style={{ background: form.billable ? "#ecfdf5" : "#f5f5f5", color: form.billable ? "#059669" : "#888" }}>
             {form.billable ? "Billable" : "Non-billable"}
           </div>
         </div>
       ) : (
-      <div style={{ padding: "20px 24px" }}>
+      <div className={jb.drawerBody}>
         {/* Job + Worker */}
         <div className="grid-2">
           <div className="form-group">
@@ -7510,16 +7511,16 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
         </div>
 
         {/* Hours display */}
-        <div style={{ textAlign: "center", padding: "12px 16px", background: SECTION_COLORS.time.light, borderRadius: 8, marginBottom: 16 }}>
-          <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.04em", color: hours > 0 ? SECTION_COLORS.time.accent : "#ccc", lineHeight: 1 }}>
+        <div className={tm.hoursDisplay} style={{ background: SECTION_COLORS.time.light }}>
+          <div className={tm.hoursValue} style={{ color: hours > 0 ? SECTION_COLORS.time.accent : "#ccc" }}>
             {hours > 0 ? `${hours.toFixed(1)}h` : "0.0h"}
           </div>
-          <div style={{ fontSize: 11, color: "#999", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4 }}>hours logged</div>
+          <div className={tm.hoursLabel}>hours logged</div>
         </div>
 
         {/* Quick-select presets */}
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Quick Select</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 16 }}>
+        <div className={tm.quickSelectLabel}>Quick Select</div>
+        <div className={tm.presetGrid}>
           {TIME_PRESETS.map(p => (
             <button key={p.label}
               onClick={() => applyPreset(p.mins, p.label)}
@@ -7585,15 +7586,13 @@ const TimeCalendar = ({ timeEntries, selectedWorker, onDayClick, calMonth, setCa
     cells.push(
       <div key={iso}
         onClick={() => hrs > 0 && onDayClick(iso)}
-        style={{
-          background: "#fff", borderRadius: 8, padding: "6px 4px", minHeight: 48, textAlign: "center",
+        className={tm.calDay} style={{
           boxShadow: isToday ? "0 0 0 2px #111" : "0 1px 4px rgba(0,0,0,0.06)",
           opacity: isFuture ? 0.4 : 1,
           cursor: hrs > 0 ? "pointer" : "default",
-          transition: "box-shadow 0.15s",
         }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: "#999", marginBottom: 3 }}>{d}</div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: hrs > 0 ? clr : "#ddd", lineHeight: 1 }}>
+        <div className={tm.calDayNum}>{d}</div>
+        <div className={tm.calDayHours} style={{ color: hrs > 0 ? clr : "#ddd" }}>
           {hrs > 0 ? `${hrs.toFixed(1)}h` : "·"}
         </div>
       </div>
@@ -7602,13 +7601,13 @@ const TimeCalendar = ({ timeEntries, selectedWorker, onDayClick, calMonth, setCa
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <button className="btn btn-ghost btn-sm" onClick={() => setCalMonth(m => m - 1)} style={{ padding: "4px 10px", fontSize: 18 }}>‹</button>
-        <span style={{ fontWeight: 700, fontSize: 14 }}>{monthLabel}</span>
-        <button className="btn btn-ghost btn-sm" onClick={() => setCalMonth(m => m + 1)} style={{ padding: "4px 10px", fontSize: 18 }}>›</button>
+      <div className={tm.calHeader}>
+        <button className={`btn btn-ghost btn-sm ${tm.calNavBtn}`} onClick={() => setCalMonth(m => m - 1)}>‹</button>
+        <span className={tm.calMonthLabel}>{monthLabel}</span>
+        <button className="btn btn-ghost btn-sm" onClick={() => setCalMonth(m => m + 1)} className={tm.calNavBtn}>›</button>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3, marginBottom: 6 }}>
-        {DOW.map(d => <div key={d} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.04em", padding: "2px 0" }}>{d}</div>)}
+      <div className={tm.calGrid}>
+        {DOW.map(d => <div key={d} className={tm.calDow}>{d}</div>)}
         {cells}
       </div>
     </div>
@@ -7632,13 +7631,13 @@ const WeekStrip = ({ timeEntries, selectedWorker, weekOffset, setWeekOffset, sel
   const weekLabel = `${days[0].toLocaleDateString("en-AU", { day:"numeric", month:"short" })} – ${days[6].toLocaleDateString("en-AU", { day:"numeric", month:"short" })}`;
 
   return (
-    <div style={{ background: "#fff", borderBottom: "1px solid #e8e8e8", padding: "12px 16px 0" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w - 1)} style={{ fontSize: 20, padding: "2px 10px" }}>‹</button>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#555" }}>{weekLabel}</span>
-        <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)} style={{ fontSize: 20, padding: "2px 10px" }}>›</button>
+    <div className={tm.weekStripWrap}>
+      <div className={tm.weekStripHeader}>
+        <button className={`btn btn-ghost btn-sm ${tm.weekStripNavBtn}`} onClick={() => setWeekOffset(w => w - 1)}>‹</button>
+        <span className={tm.weekStripLabel}>{weekLabel}</span>
+        <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)} className={tm.weekStripNavBtn}>›</button>
       </div>
-      <div style={{ display: "flex", gap: 3, overflowX: "auto", paddingBottom: 1 }}>
+      <div className={tm.weekStripDays}>
         {days.map(d => {
           const iso = d.toISOString().slice(0, 10);
           const hrs = timeEntries
@@ -7652,18 +7651,15 @@ const WeekStrip = ({ timeEntries, selectedWorker, weekOffset, setWeekOffset, sel
           return (
             <div key={iso}
               onClick={() => setSelectedDay(iso)}
-              style={{
-                flex: 1, minWidth: 40, textAlign: "center", padding: "8px 2px 10px",
-                borderRadius: "8px 8px 0 0", cursor: "pointer",
+              className={tm.weekDay} style={{
                 background: isActive ? "#f5f5f5" : "transparent",
                 borderBottom: isActive ? "3px solid #111" : "3px solid transparent",
-                transition: "all 0.15s",
               }}>
-              <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: isActive ? "#111" : "#aaa", marginBottom: 3 }}>
+              <div className={tm.weekDayName} style={{ color: isActive ? "#111" : "#aaa" }}>
                 {DAYS[d.getDay()]}
               </div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: isToday ? "#111" : "#444", marginBottom: 2 }}>{d.getDate()}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, height: 14, color: hrs > 0 || isPast ? clr : "transparent" }}>
+              <div className={tm.weekDayDate} style={{ color: isToday ? "#111" : "#444" }}>{d.getDate()}</div>
+              <div className={tm.weekDayHours} style={{ color: hrs > 0 || isPast ? clr : "transparent" }}>
                 {hrs > 0 ? `${hrs.toFixed(1)}h` : isPast ? "" : ""}
               </div>
             </div>
@@ -7792,7 +7788,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
       </div>
 
       {/* Sub-tabs */}
-      <div className="tabs" style={{ marginBottom: 0 }}>
+      <div className={`tabs ${tm.tabsNoMb}`}>
         {[["week","Week View"],["team","Team"],["calendar","Calendar"]].map(([id,label]) => (
           <div key={id} className={`tab ${tsTab === id ? "active" : ""}`} onClick={() => setTsTab(id)}>{label}</div>
         ))}
@@ -7800,13 +7796,13 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
 
       {/* ── Week View ── */}
       {tsTab === "week" && (
-        <div style={{ background: "#fafafa", borderRadius: "0 0 10px 10px", border: "1px solid #e8e8e8", borderTop: "none", marginBottom: 20 }}>
+        <div className={tm.weekViewWrap}>
           <WeekStrip timeEntries={timeEntries} selectedWorker={selectedWorker === "all" ? null : selectedWorker}
             weekOffset={weekOffset} setWeekOffset={setWeekOffset}
             selectedDay={selectedDay} setSelectedDay={setSelectedDay} />
 
-          <div style={{ padding: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+          <div className={tm.weekViewContent}>
+            <div className={tm.dayHeader}>
               {new Date(selectedDay + "T12:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
               {" · "}
               <span style={{ color: dayColour(dayEntries.reduce((s,t) => s+t.hours, 0)) }}>
@@ -7830,26 +7826,26 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                     border: "1px solid #e8e8e8", borderLeft: `4px solid ${clr}`,
                     display: "flex", gap: 14, alignItems: "flex-start", cursor: canEditEntry(entry) ? "pointer" : "default", transition: "border-color 0.15s",
                   }}>
-                    <div style={{ minWidth: 56, textAlign: "center" }}>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: clr, lineHeight: 1 }}>{entry.hours.toFixed(1)}h</div>
-                      {entry.startTime && <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{entry.startTime}–{entry.endTime}</div>}
+                    <div className={tm.entryHoursCol}>
+                      <div className={tm.entryHoursValue} style={{ color: clr }}>{entry.hours.toFixed(1)}h</div>
+                      {entry.startTime && <div className={tm.entryTimeRange}>{entry.startTime}–{entry.endTime}</div>}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className={tm.entryMain}>
                       <div className={jb.metaRow}>
                         <div className="avatar" style={{ width: 22, height: 22, fontSize: 9, margin: 0, flexShrink: 0 }}>
                           {entry.worker.split(" ").map(w=>w[0]).join("")}
                         </div>
-                        <span style={{ fontWeight: 700, fontSize: 13 }}>{entry.worker}</span>
+                        <span className={tm.entryWorkerName}>{entry.worker}</span>
                         <span className="badge" style={{ background: entry.billable ? "#111" : "#f0f0f0", color: entry.billable ? "#fff" : "#999", fontSize: 10 }}>
                           {entry.billable ? "Billable" : "Non-bill"}
                         </span>
                       </div>
-                      {job && <div style={{ fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 3 }}>{job.title}</div>}
-                      {entry.description && <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>{entry.description}</div>}
+                      {job && <div className={tm.entryJobTitle}>{job.title}</div>}
+                      {entry.description && <div className={tm.entryDesc}>{entry.description}</div>}
                     </div>
                     {canDeleteEntry(entry) && (
-                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                      <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>
+                    <div className={tm.entryActions} onClick={e => e.stopPropagation()}>
+                      <button className={`btn btn-ghost btn-xs ${jb.deleteBtn}`} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>
                     </div>
                     )}
                   </div>
@@ -7862,23 +7858,23 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
 
       {/* ── Team View ── */}
       {tsTab === "team" && (
-        <div style={{ marginTop: 16 }}>
+        <div className={tm.teamSection}>
           {byWorker.length === 0 ? (
             <div className="empty-state"><div className="empty-state-icon">👥</div><div className="empty-state-text">No time logged yet</div></div>
           ) : (
             byWorker.map(w => (
-              <div key={w.name} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 16, marginBottom: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div key={w.name} className={tm.teamCard}>
+                <div className={tm.teamCardHeader}>
+                  <div className={tm.teamCardLeft}>
                     <div className="avatar" style={{ width: 36, height: 36, fontSize: 13, margin: 0 }}>{w.name.split(" ").map(p=>p[0]).join("")}</div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>{w.name}</div>
-                      <div style={{ fontSize: 11, color: "#aaa" }}>{w.count} entries</div>
+                      <div className={tm.teamCardName}>{w.name}</div>
+                      <div className={tm.teamCardCount}>{w.count} entries</div>
                     </div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: dayColour(w.total / 20) }}>{w.total.toFixed(1)}h</div>
-                    <div style={{ fontSize: 11, color: "#aaa" }}>all time</div>
+                  <div className={tm.teamCardRight}>
+                    <div className={tm.teamCardTotal} style={{ color: dayColour(w.total / 20) }}>{w.total.toFixed(1)}h</div>
+                    <div className={tm.teamCardSub}>all time</div>
                   </div>
                 </div>
                 <div className="time-team-stats">
@@ -7888,17 +7884,17 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                     { label: "Billable", val: w.billable, clr: "#27ae60" },
                     { label: "Non-Bill", val: w.total - w.billable, clr: "#e67e22" },
                   ].map(s => (
-                    <div key={s.label} style={{ background: "#f8f8f8", borderRadius: 7, padding: "8px 10px", textAlign: "center" }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: s.clr }}>{s.val.toFixed(1)}h</div>
-                      <div style={{ fontSize: 10, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
+                    <div key={s.label} className={tm.teamStatCell}>
+                      <div className={tm.teamStatValue} style={{ color: s.clr }}>{s.val.toFixed(1)}h</div>
+                      <div className={tm.teamStatLabel}>{s.label}</div>
                     </div>
                   ))}
                 </div>
-                <div style={{ marginTop: 12 }}>
+                <div className={tm.teamProgressWrap}>
                   <div className="progress-bar" style={{ height: 6 }}>
                     <div className="progress-fill" style={{ width: `${(w.billable / (w.total || 1)) * 100}%`, background: "#27ae60" }} />
                   </div>
-                  <div style={{ fontSize: 10, color: "#aaa", marginTop: 4 }}>
+                  <div className={tm.teamProgressText}>
                     {w.total > 0 ? Math.round((w.billable/w.total)*100) : 0}% billable
                   </div>
                 </div>
@@ -7910,7 +7906,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
 
       {/* ── Calendar View ── */}
       {tsTab === "calendar" && (
-        <div style={{ marginTop: 16 }}>
+        <div className={tm.teamSection}>
           <div className="card" style={{ padding: 16, marginBottom: 16 }}>
             <TimeCalendar
               timeEntries={timeEntries}
@@ -7919,10 +7915,10 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
               onDayClick={(iso) => setCalDrillDay(calDrillDay === iso ? null : iso)}
             />
             {/* Colour legend */}
-            <div style={{ display: "flex", gap: 14, marginTop: 10, justifyContent: "center" }}>
+            <div className={tm.calLegend}>
               {[["#e74c3c",`< ${DAY_THR.orange}h`],["#e67e22",`${DAY_THR.orange}–${DAY_THR.green}h`],["#27ae60",`≥ ${DAY_THR.green}h`]].map(([c,l]) => (
-                <div key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#888" }}>
-                  <span style={{ width: 10, height: 10, borderRadius: "50%", background: c, display: "inline-block" }} />
+                <div key={l} className={tm.calLegendItem}>
+                  <span className={tm.calLegendDot} style={{ background: c }} />
                   {l}
                 </div>
               ))}
@@ -7938,30 +7934,30 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
             const d = new Date(calDrillDay + "T12:00:00");
             return (
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>
+                <div className={tm.drillHeader}>
+                  <div className={tm.drillTitle}>
                     {d.toLocaleDateString("en-AU", { weekday:"long", day:"numeric", month:"long" })}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 18, fontWeight: 800, color: dayColour(dayTotal) }}>{dayTotal.toFixed(1)}h</span>
+                  <div className={tm.drillRight}>
+                    <span className={tm.drillTotal} style={{ color: dayColour(dayTotal) }}>{dayTotal.toFixed(1)}h</span>
                     <button className="btn btn-ghost btn-xs" onClick={() => setCalDrillDay(null)}>✕</button>
                   </div>
                 </div>
                 {dayE.length === 0 ? (
-                  <div style={{ fontSize: 13, color: "#aaa", textAlign: "center", padding: 20 }}>No entries</div>
+                  <div className={tm.drillEmpty}>No entries</div>
                 ) : dayE.map(entry => {
                   const job = jobs.find(j => j.id === entry.jobId);
                   return (
-                    <div key={entry.id} style={{ background: "#fff", border: "1px solid #e8e8e8", borderLeft: `4px solid ${dayColour(entry.hours)}`, borderRadius: 10, padding: "12px 14px", marginBottom: 8, display: "flex", gap: 12, alignItems: "center" }}>
-                      <div style={{ fontWeight: 800, fontSize: 18, color: dayColour(entry.hours), minWidth: 44 }}>{entry.hours.toFixed(1)}h</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 13 }}>{entry.worker}</div>
-                        {job && <div style={{ fontSize: 12, color: "#888" }}>{job.title}</div>}
-                        {entry.description && <div style={{ fontSize: 11, color: "#aaa" }}>{entry.description}</div>}
+                    <div key={entry.id} className={tm.drillCard} style={{ borderLeft: `4px solid ${dayColour(entry.hours)}` }}>
+                      <div className={tm.drillCardHours} style={{ color: dayColour(entry.hours) }}>{entry.hours.toFixed(1)}h</div>
+                      <div className={tm.drillCardMain}>
+                        <div className={tm.drillCardWorker}>{entry.worker}</div>
+                        {job && <div className={tm.drillCardJob}>{job.title}</div>}
+                        {entry.description && <div className={tm.drillCardDesc}>{entry.description}</div>}
                       </div>
-                      <div style={{ display: "flex", gap: 4 }}>
+                      <div className={tm.drillCardActions}>
                         {canEditEntry(entry) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(entry)}><Icon name="edit" size={12} /></button>}
-                        {canDeleteEntry(entry) && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>}
+                        {canDeleteEntry(entry) && <button className={`btn btn-ghost btn-xs ${jb.deleteBtn}`} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button>}
                       </div>
                     </div>
                   );

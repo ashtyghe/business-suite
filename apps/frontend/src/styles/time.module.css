@@ -1,0 +1,79 @@
+/* ── Log Time Modal ── */
+.hoursDisplay { text-align: center; border-radius: 8px; margin-bottom: 16px; padding: 12px 16px; }
+.hoursValue { font-size: 34px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+.hoursLabel { font-size: 11px; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+.quickSelectLabel { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+.presetGrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 16px; }
+.presetBtn { padding: 7px 4px; border-radius: 20px; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; font-family: inherit; transition: all 0.12s; }
+.billableTag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+/* ── Mini Calendar ── */
+.calHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.calNavBtn { padding: 4px 10px; font-size: 18px; }
+.calMonthLabel { font-weight: 700; font-size: 14px; }
+.calGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 6px; }
+.calDow { text-align: center; font-size: 9px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 0; }
+.calDay { background: #fff; border-radius: 8px; padding: 6px 4px; min-height: 48px; text-align: center; transition: box-shadow 0.15s; }
+.calDayNum { font-size: 10px; font-weight: 700; color: #999; margin-bottom: 3px; }
+.calDayHours { font-size: 13px; font-weight: 700; line-height: 1; }
+.calLegend { display: flex; gap: 14px; margin-top: 10px; justify-content: center; }
+.calLegendItem { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #888; }
+.calLegendDot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+/* ── Week Strip ── */
+.weekStripWrap { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 12px 16px 0; }
+.weekStripHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.weekStripNavBtn { font-size: 20px; padding: 2px 10px; }
+.weekStripLabel { font-size: 13px; font-weight: 700; color: #555; }
+.weekStripDays { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 1px; }
+.weekDay { flex: 1; min-width: 40px; text-align: center; padding: 8px 2px 10px; border-radius: 8px 8px 0 0; cursor: pointer; transition: all 0.15s; }
+.weekDayName { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; }
+.weekDayDate { font-size: 16px; font-weight: 800; margin-bottom: 2px; }
+.weekDayHours { font-size: 10px; font-weight: 700; height: 14px; }
+
+/* ── Week View entries ── */
+.weekViewWrap { background: #fafafa; border-radius: 0 0 10px 10px; border: 1px solid #e8e8e8; border-top: none; margin-bottom: 20px; }
+.weekViewContent { padding: 16px; }
+.dayHeader { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+.entryCard { background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 10px; border: 1px solid #e8e8e8; display: flex; gap: 14px; align-items: flex-start; transition: border-color 0.15s; }
+.entryHoursCol { min-width: 56px; text-align: center; }
+.entryHoursValue { font-size: 22px; font-weight: 800; line-height: 1; }
+.entryTimeRange { font-size: 11px; color: #aaa; margin-top: 3px; }
+.entryMain { flex: 1; min-width: 0; }
+.entryWorkerName { font-weight: 700; font-size: 13px; }
+.entryJobTitle { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 3px; }
+.entryDesc { font-size: 12px; color: #888; line-height: 1.5; }
+.entryActions { display: flex; gap: 4px; flex-shrink: 0; }
+
+/* ── Team View ── */
+.teamSection { margin-top: 16px; }
+.teamCard { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.teamCardHeader { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.teamCardLeft { display: flex; align-items: center; gap: 10px; }
+.teamCardName { font-weight: 700; font-size: 14px; }
+.teamCardCount { font-size: 11px; color: #aaa; }
+.teamCardRight { text-align: right; }
+.teamCardTotal { font-size: 22px; font-weight: 800; }
+.teamCardSub { font-size: 11px; color: #aaa; }
+.teamStatCell { background: #f8f8f8; border-radius: 7px; padding: 8px 10px; text-align: center; }
+.teamStatValue { font-size: 16px; font-weight: 800; }
+.teamStatLabel { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+.teamProgressWrap { margin-top: 12px; }
+.teamProgressText { font-size: 10px; color: #aaa; margin-top: 4px; }
+
+/* ── Calendar drill-down ── */
+.drillHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.drillTitle { font-weight: 700; font-size: 14px; }
+.drillRight { display: flex; align-items: center; gap: 10px; }
+.drillTotal { font-size: 18px; font-weight: 800; }
+.drillEmpty { font-size: 13px; color: #aaa; text-align: center; padding: 20px; }
+.drillCard { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; display: flex; gap: 12px; align-items: center; }
+.drillCardHours { font-weight: 800; font-size: 18px; min-width: 44px; }
+.drillCardMain { flex: 1; min-width: 0; }
+.drillCardWorker { font-weight: 600; font-size: 13px; }
+.drillCardJob { font-size: 12px; color: #888; }
+.drillCardDesc { font-size: 11px; color: #aaa; }
+.drillCardActions { display: flex; gap: 4px; }
+
+/* ── Tabs override ── */
+.tabsNoMb { margin-bottom: 0; }

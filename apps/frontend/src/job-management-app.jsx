@@ -659,7 +659,7 @@ const XeroSyncBadge = ({ syncStatus, xeroId }) => {
   const c = colors[syncStatus] || (xeroId ? colors.synced : { bg: "#f5f5f5", text: "#888", label: "Not synced" });
   return (
     <span className={sh.xeroBadge} style={{ background: c.bg, color: c.text }}>
-      <span className={sh.xeroDot} style={{ background: c.text }} />
+      <span className={sh.xeroDot} className={pg.u1} />
       Xero
     </span>
   );
@@ -672,11 +672,11 @@ const AvatarGroup = ({ names = [], max = 3 }) => {
   return (
     <div className="avatar-group">
       {shown.map((n, i) => (
-        <div key={i} className="avatar" title={n} style={{ background: ["#111","#333","#555","#777","#999"][i % 5] }}>
+        <div key={i} className="avatar" title={n} className={pg.u2}>
           {n.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase()}
         </div>
       ))}
-      {extra > 0 && <div className="avatar" style={{ background: "#ccc", color: "#666" }}>+{extra}</div>}
+      {extra > 0 && <div className="avatar" className={pg.u3}>+{extra}</div>}
     </div>
   );
 };
@@ -700,12 +700,12 @@ const LineItemsEditor = ({ items, onChange }) => {
       <table className="line-items-table">
         <thead>
           <tr>
-            <th style={{ width: "40%" }}>Description</th>
-            <th style={{ width: "10%" }}>Qty</th>
-            <th style={{ width: "12%" }}>Unit</th>
-            <th style={{ width: "15%" }}>Rate ($)</th>
-            <th style={{ width: "15%" }}>Total</th>
-            <th style={{ width: "8%" }}></th>
+            <th className={pg.u4}>Description</th>
+            <th className={pg.u5}>Qty</th>
+            <th className={pg.u6}>Unit</th>
+            <th className={pg.p2_0}>Rate ($)</th>
+            <th className={pg.p2_0}>Total</th>
+            <th className={pg.u7}></th>
           </tr>
         </thead>
         <tbody>
@@ -841,22 +841,22 @@ const OrderFileAttachments = ({ files, onChange, onMarkup, onLightbox }) => {
     e.target.value = "";
   };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div className={pg.u9}>
       {files.length > 0 && files.map(f => (
-        <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 10, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-          {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 40, height: 40, borderRadius: 4, objectFit: "cover", border: "1px solid #e2e8f0", cursor: "pointer" }} onClick={() => onLightbox && onLightbox(f.dataUrl)} />
-            : <div style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}><FileIconBadge name={f.name} /></div>}
+        <div key={f.id} className={pg.u10}>
+          {f.dataUrl ? <img src={f.dataUrl} alt={f.name} className={pg.u11} onClick={() => onLightbox && onLightbox(f.dataUrl)} />
+            : <div className={pg.u12}><FileIconBadge name={f.name} /></div>}
           <div className={pg.listItemMain}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div>
+            <div className={pg.u13}>{f.name}</div>
             <div className={pg.textSubSm}>{fmtFileSize(f.size)}</div>
           </div>
-          {f.dataUrl && f.type?.startsWith("image/") && onMarkup && <button onClick={() => onMarkup(f.dataUrl, f.id)} style={{ padding: 2, background: "none", border: "none", color: "#0891b2", cursor: "pointer", fontSize: 11 }} title="Mark up">✏️</button>}
+          {f.dataUrl && f.type?.startsWith("image/") && onMarkup && <button onClick={() => onMarkup(f.dataUrl, f.id)} className={pg.p2_1} title="Mark up">✏️</button>}
           <button onClick={() => onChange(prev => prev.filter(x => x.id !== f.id))} className={pg.ghostBtn}>
             <OrderIcon name="x" size={14} />
           </button>
         </div>
       ))}
-      <label style={{ display: "flex", alignItems: "center", gap: 8, padding: 10, border: "2px dashed #e2e8f0", borderRadius: 8, cursor: "pointer", color: "#64748b", fontSize: 13, fontWeight: 500 }}>
+      <label className={pg.u14}>
         <OrderIcon name="upload" size={16} />
         {files.length > 0 ? "Add more files" : "Attach files — drawings, specs, photos…"}
         <input type="file" multiple className={pg.hidden} onChange={handleFiles} accept="*/*" />
@@ -871,11 +871,11 @@ const OrderLineItems = ({ lines, onChange }) => {
   const update = (id, field, val) => onChange(lines.map(l => l.id === id ? { ...l, [field]: val } : l));
   return (
     <div className={pg.flexColGap8}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 30px", gap: 8, fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#94a3b8", padding: "0 4px" }}>
+      <div className={pg.u15}>
         <span>Description</span><span>Qty</span><span>Unit</span><span></span>
       </div>
       {lines.map(l => (
-        <div key={l.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 30px", gap: 8, alignItems: "center" }}>
+        <div key={l.id} className={pg.u16}>
           <input className="form-control" className={pg.h36fs13} placeholder="Description" value={l.desc} onChange={e => update(l.id, "desc", e.target.value)} />
           <input className="form-control" className={pg.h36fs13} type="number" min="0" placeholder="Qty" value={l.qty} onChange={e => update(l.id, "qty", e.target.value)} />
           <select className="form-control" className={pg.h36fs13} value={l.unit} onChange={e => update(l.id, "unit", e.target.value)}>
@@ -884,7 +884,7 @@ const OrderLineItems = ({ lines, onChange }) => {
           <button onClick={() => remove(l.id)} className={pg.ghostBtn}><OrderIcon name="x" size={14} /></button>
         </div>
       ))}
-      <button onClick={add} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#2563eb", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}>
+      <button onClick={add} className={pg.u17}>
         <OrderIcon name="plus" size={14} /> Add line item
       </button>
     </div>
@@ -892,7 +892,7 @@ const OrderLineItems = ({ lines, onChange }) => {
 };
 
 const OrderAuditLog = ({ log }) => {
-  if (!log || log.length === 0) return <div style={{ fontSize: 13, color: "#94a3b8", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>No activity recorded yet.</div>;
+  if (!log || log.length === 0) return <div className={pg.u18}>No activity recorded yet.</div>;
   const getColor = (action) => {
     if (action.startsWith("Created")) return { bg: "#f1f5f9", text: "#64748b" };
     if (action.startsWith("Status")) return { bg: "#dbeafe", text: "#2563eb" };
@@ -908,11 +908,11 @@ const OrderAuditLog = ({ log }) => {
             <OrderIcon name={entry.auto ? "zap" : "activity"} size={10} />
           </div>
           <div className={pg.listItemMain}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+            <div className={pg.u20}>
               <span className={pg.fs13fw600c334155}>{entry.action}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                {entry.auto && <span style={{ fontSize: 10, fontWeight: 600, color: "#d97706", background: "#fffbeb", padding: "1px 6px", borderRadius: 4, border: "1px solid #fcd34d" }}>auto</span>}
-                <span style={{ fontSize: 11, color: "#94a3b8", whiteSpace: "nowrap" }}>{orderFmtTs(entry.ts)}</span>
+              <div className={pg.u21}>
+                {entry.auto && <span className={pg.u22}>auto</span>}
+                <span className={pg.u23}>{orderFmtTs(entry.ts)}</span>
               </div>
             </div>
             {entry.detail && <div className={pg.fs12c64748bmt2}>{entry.detail}</div>}
@@ -988,10 +988,10 @@ const OrderEmailModal = ({ type, order, jobs, companyInfo, onClose, onSent }) =>
   };
   if (sent) return (
     <div className="order-email-overlay">
-      <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxWidth: 400, width: "100%", padding: 32, textAlign: "center" }}>
-        <div style={{ width: 56, height: 56, background: "#d1fae5", borderRadius: 28, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}><OrderIcon name="check" size={24} cls="" /></div>
-        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Email Sent</h3>
-        <p style={{ fontSize: 13, color: "#64748b", marginBottom: 24 }}>{isWO ? "Work order" : "Purchase order"} {order.ref} has been sent to {to}.</p>
+      <div className={pg.u24}>
+        <div className={pg.u25}><OrderIcon name="check" size={24} cls="" /></div>
+        <h3 className={pg.u26}>Email Sent</h3>
+        <p className={pg.u27}>{isWO ? "Work order" : "Purchase order"} {order.ref} has been sent to {to}.</p>
         <button className="btn btn-primary" style={{ background: accent }} onClick={onClose}>Done</button>
       </div>
     </div>
@@ -1002,32 +1002,32 @@ const OrderEmailModal = ({ type, order, jobs, companyInfo, onClose, onSent }) =>
         <div style={{ padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#fff", background: accent }}>
           <div className={pg.flexCenterGap12}>
             <OrderIcon name="mail" size={18} />
-            <div><div style={{ fontSize: 11, fontWeight: 500, opacity: 0.75 }}>Send via Email</div><div className={pg.cellAmount}>{order.ref}</div></div>
+            <div><div className={pg.u30}>Send via Email</div><div className={pg.cellAmount}>{order.ref}</div></div>
           </div>
-          <button onClick={onClose} style={{ padding: 6, background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, cursor: "pointer", color: "#fff" }}><OrderIcon name="x" size={16} /></button>
+          <button onClick={onClose} className={pg.u31}><OrderIcon name="x" size={16} /></button>
         </div>
-        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-          {sendError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#dc2626" }}>{sendError}</div>}
+        <div className={pg.p2_2}>
+          {sendError && <div className={pg.u32}>{sendError}</div>}
           <div className="grid-2">
-            <div className="form-group"><label className="form-label">To</label><input className="form-control" type="email" placeholder="recipient@example.com" value={to} onChange={e => setTo(e.target.value)} />{partyName && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>{partyName}</div>}</div>
-            <div className="form-group"><label className="form-label">CC <span style={{ fontWeight: 400, color: "#cbd5e1", textTransform: "none" }}>optional</span></label><input className="form-control" type="text" placeholder="cc@example.com" value={cc} onChange={e => setCc(e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">To</label><input className="form-control" type="email" placeholder="recipient@example.com" value={to} onChange={e => setTo(e.target.value)} />{partyName && <div className={pg.u33}>{partyName}</div>}</div>
+            <div className="form-group"><label className="form-label">CC <span className={pg.u34}>optional</span></label><input className="form-control" type="text" placeholder="cc@example.com" value={cc} onChange={e => setCc(e.target.value)} /></div>
           </div>
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden" }}>
-            <div style={{ padding: "10px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#475569" }}>Email Options</div>
-            <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+          <div className={pg.u35}>
+            <div className={pg.u36}>Email Options</div>
+            <div className={pg.u37}>
+              <div className={pg.u38}>
                 <ToggleBtn on={includePdf} onChange={v => setIncludePdf(v)} />
                 <div className={pg.flex1}>
                   <div className={pg.flexCenter}>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: "#ef4444", background: "#fef2f2", padding: "2px 6px", borderRadius: 4 }}>PDF</span>
+                    <span className={pg.u39}>PDF</span>
                     <span className={pg.fs13fw500}>Attach {order.ref}.pdf</span>
-                    <button onClick={() => printOrderPdf(type, order, jobs)} style={{ fontSize: 11, color: "#2563eb", background: "none", border: "none", cursor: "pointer" }}>Preview</button>
+                    <button onClick={() => printOrderPdf(type, order, jobs)} className={pg.u40}>Preview</button>
                   </div>
                   <div className={pg.fs11c94a3b8mt2}>Professional PDF with all document details attached to the email</div>
                 </div>
               </div>
               {acceptUrl && (
-                <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16, display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div className={pg.u41}>
                   <ToggleBtn on={includeAcceptLink} onChange={v => setIncludeAcceptLink(v)} />
                   <div className={pg.flex1}>
                     <div className={pg.fs13fw500}>✅ Accept Button</div>
@@ -1037,11 +1037,11 @@ const OrderEmailModal = ({ type, order, jobs, companyInfo, onClose, onSent }) =>
               )}
             </div>
           </div>
-          <div style={{ background: "#f8fafc", borderRadius: 8, padding: "12px 16px", fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
-            <strong style={{ color: "#334155" }}>Email preview:</strong> Branded HTML email with {isWO ? "work order" : "purchase order"} details, {includePdf ? "PDF attachment" : "no attachment"}{includeAcceptLink && acceptUrl ? ", and Accept button" : ""}. Sent from <strong>FieldOps</strong> via Resend.
+          <div className={pg.u42}>
+            <strong className={pg.u43}>Email preview:</strong> Branded HTML email with {isWO ? "work order" : "purchase order"} details, {includePdf ? "PDF attachment" : "no attachment"}{includeAcceptLink && acceptUrl ? ", and Accept button" : ""}. Sent from <strong>FieldOps</strong> via Resend.
           </div>
         </div>
-        <div style={{ padding: "16px 24px", borderTop: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className={pg.u44}>
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
           <button className="btn btn-primary" style={{ background: accent, opacity: sending ? 0.6 : 1 }} disabled={!to || sending} onClick={handleSend}>
             <OrderIcon name="send" size={14} /> {sending ? "Sending..." : `Send ${isWO ? "to Contractor" : "to Supplier"}`}
@@ -1059,22 +1059,22 @@ const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mode, setM
     <div className="section-drawer">
       {/* Header */}
       <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#fff", background: accent, flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-          {icon && <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>}
-          <div style={{ minWidth: 0 }}>
-            {typeLabel && <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.7, letterSpacing: "0.05em", textTransform: "uppercase" }}>{typeLabel}</div>}
-            <div style={{ fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
+        <div className={pg.u46}>
+          {icon && <div className={pg.u47}>{icon}</div>}
+          <div className={pg.u48}>
+            {typeLabel && <div className={pg.u49}>{typeLabel}</div>}
+            <div className={pg.u50}>{title}</div>
           </div>
           {statusBadge}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <div className={pg.u51}>
           {showToggle && !isNew && (
-            <div style={{ display: "flex", background: "rgba(255,255,255,0.15)", borderRadius: 8, padding: 2, gap: 2 }}>
+            <div className={pg.u52}>
               <button style={{ padding: "4px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: mode === "view" ? "#fff" : "transparent", color: mode === "view" ? "#1e293b" : "rgba(255,255,255,0.8)" }} onClick={() => setMode("view")}>View</button>
               <button style={{ padding: "4px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: mode === "edit" ? "#fff" : "transparent", color: mode === "edit" ? "#1e293b" : "rgba(255,255,255,0.8)" }} onClick={() => setMode("edit")}>Edit</button>
             </div>
           )}
-          <button style={{ padding: 6, borderRadius: 8, background: "rgba(255,255,255,0.2)", border: "none", cursor: "pointer", color: "#fff", display: "flex" }} onClick={onClose}>
+          <button className={pg.u55} onClick={onClose}>
             <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -1082,9 +1082,9 @@ const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mode, setM
       {/* Status strip */}
       {statusStrip}
       {/* Body */}
-      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>{children}</div>
+      <div className={pg.u56}>{children}</div>
       {/* Footer */}
-      {footer && <div style={{ padding: "16px 20px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexShrink: 0 }}>{footer}</div>}
+      {footer && <div className={pg.u57}>{footer}</div>}
     </div>
   </div>
 );
@@ -1199,7 +1199,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
   const statusStripEl = (
     <div style={{ padding: "12px 20px", background: lightTint, flexShrink: 0 }}>
       <div className={pg.flexBetweenMb6Alt}>
-        <div style={{ display: "flex", gap: 4, overflowX: "auto", overflowY: "hidden" }}>
+        <div className={pg.u58}>
           {availableTransitions.map(s => (
             <button key={s} onClick={() => handleTransition(s)} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 8, border: ORDER_STATUS_TRIGGERS[s] ? "1px solid #fcd34d" : "1px solid #cbd5e1", background: ORDER_STATUS_TRIGGERS[s] ? "#fef3c7" : "#fff", color: ORDER_STATUS_TRIGGERS[s] ? "#92400e" : "#475569", cursor: "pointer" }}>
               {ORDER_STATUS_TRIGGERS[s] && <OrderIcon name="zap" size={10} />}{s}
@@ -1210,7 +1210,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
         <DueDateChip dateStr={form.dueDate} isTerminal={isTerminal} />
       </div>
       <OrderProgressBar status={form.status} />
-      <div style={{ display: "flex", gap: 8, marginTop: 6, overflowX: "auto" }}>
+      <div className={pg.u60}>
         {ORDER_STATUSES.filter(s => s !== "Cancelled").map(s => (
           <span key={s} style={{ fontSize: 11, whiteSpace: "nowrap", fontWeight: form.status === s ? 700 : 400, color: form.status === s ? "#334155" : "#cbd5e1" }}>{s}</span>
         ))}
@@ -1245,32 +1245,32 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
       onClose={() => { if (!dirty) onClose(); }}
     >
       {mode === "view" ? (
-        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className={pg.u61}>
           {orderEmailStatus && <div style={{ padding: "10px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: orderEmailStatus.type === "success" ? "#ecfdf5" : "#fef2f2", color: orderEmailStatus.type === "success" ? "#059669" : "#dc2626", border: `1px solid ${orderEmailStatus.type === "success" ? "#a7f3d0" : "#fecaca"}` }}>{orderEmailStatus.msg}</div>}
           <div className="grid-2">
             <div>
               <div className="form-label">{isWO ? "Contractor" : "Supplier"}</div>
-              <div style={{ fontWeight: 600, color: "#1e293b" }}>{partyName || <span className={pg.italicMuted}>None selected</span>}</div>
+              <div className={pg.u62}>{partyName || <span className={pg.italicMuted}>None selected</span>}</div>
               {isWO ? <><div className={pg.fs13c64748b}>{form.contractorContact}</div><div className={pg.fs13c64748b}>{form.contractorEmail}</div><div className={pg.fs13c64748b}>{form.contractorPhone}</div></> :
                 <><div className={pg.fs13c64748b}>{form.supplierContact}</div><div className={pg.fs13c64748b}>{form.supplierEmail}</div><div className={pg.textSubSm}>ABN: {form.supplierAbn}</div></>}
             </div>
-            <div style={{ fontSize: 13, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div className={pg.u63}>
               <div><span className={pg.textSubSm}>Issue Date</span><div className={pg.fw500}>{orderFmtDate(form.issueDate)}</div></div>
               <div><span className={pg.textSubSm}>{isWO ? "Due Date" : "Delivery Date"}</span><div className={pg.fw500}>{orderFmtDate(form.dueDate)}</div></div>
               {jd && <div><span className={pg.textSubSm}>Linked Job</span><div className={pg.fw500}>{jd.ref} · {jd.name}</div></div>}
-              {form.poLimit && <div><span className={pg.textSubSm}>PO Limit</span><div style={{ fontWeight: 700, color: "#b45309" }}>${parseFloat(form.poLimit).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</div></div>}
+              {form.poLimit && <div><span className={pg.textSubSm}>PO Limit</span><div className={pg.u64}>${parseFloat(form.poLimit).toLocaleString("en-AU", { minimumFractionDigits: 2 })}</div></div>}
             </div>
           </div>
-          {isWO && form.scopeOfWork && <div style={{ background: lightTint, borderRadius: 12, padding: 16 }}><div className="form-label" style={{ color: accent }}>Scope of Work</div><div style={{ fontSize: 13, color: "#334155", whiteSpace: "pre-line", lineHeight: 1.6 }}>{form.scopeOfWork}</div></div>}
+          {isWO && form.scopeOfWork && <div style={{ background: lightTint, borderRadius: 12, padding: 16 }}><div className="form-label" style={{ color: accent }}>Scope of Work</div><div className={pg.u66}>{form.scopeOfWork}</div></div>}
           {!isWO && form.deliveryAddress && <div style={{ background: lightTint, borderRadius: 12, padding: 16 }}><div className="form-label" style={{ color: accent }}>Delivery Address</div><div className={pg.fs13}>{form.deliveryAddress}</div></div>}
           {!isWO && form.lines && form.lines.length > 0 && (
-            <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
-              <thead><tr style={{ borderBottom: "2px solid #e2e8f0" }}><th style={{ textAlign: "left", padding: "8px 4px", fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#94a3b8" }}>Description</th><th style={{ textAlign: "center", padding: "8px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#94a3b8", width: 60 }}>Qty</th><th style={{ textAlign: "center", padding: "8px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#94a3b8", width: 60 }}>Unit</th></tr></thead>
-              <tbody>{form.lines.map(l => <tr key={l.id} style={{ borderBottom: "1px solid #f1f5f9" }}><td style={{ padding: "10px 4px" }}>{l.desc || "—"}</td><td style={{ padding: "10px 4px", textAlign: "center", color: "#475569" }}>{l.qty}</td><td style={{ padding: "10px 4px", textAlign: "center", color: "#94a3b8" }}>{l.unit}</td></tr>)}</tbody>
+            <table className={pg.u67}>
+              <thead><tr className={pg.u68}><th className={pg.u69}>Description</th><th className={pg.p2_3}>Qty</th><th className={pg.p2_3}>Unit</th></tr></thead>
+              <tbody>{form.lines.map(l => <tr key={l.id} className={pg.u70}><td className={pg.u71}>{l.desc || "—"}</td><td className={pg.u72}>{l.qty}</td><td className={pg.u73}>{l.unit}</td></tr>)}</tbody>
             </table>
           )}
-          {form.notes && <div className={pg.borderTopPt16}><div className="form-label">Notes / Terms</div><div style={{ fontSize: 13, color: "#475569", whiteSpace: "pre-line" }}>{form.notes}</div></div>}
-          {form.internalNotes && <div style={{ background: "#fffbeb", borderRadius: 8, padding: 10 }}><div style={{ fontSize: 11, fontWeight: 700, color: "#b45309", marginBottom: 4 }}>Internal Notes</div><div style={{ fontSize: 13, color: "#92400e" }}>{form.internalNotes}</div></div>}
+          {form.notes && <div className={pg.borderTopPt16}><div className="form-label">Notes / Terms</div><div className={pg.u74}>{form.notes}</div></div>}
+          {form.internalNotes && <div className={pg.u75}><div className={pg.u76}>Internal Notes</div><div className={pg.u77}>{form.internalNotes}</div></div>}
           {form.attachments && form.attachments.length > 0 && (
             <div className={pg.borderTopPt16}>
               <div className="form-label" className={pg.cardStatusRow}><OrderIcon name="paperclip" size={11} /> Attachments ({form.attachments.length})</div>
@@ -1278,9 +1278,9 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
                 {form.attachments.map(f => (
                   <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0", cursor: f.dataUrl ? "pointer" : "default" }}
                     onClick={() => f.dataUrl && setLightboxImg(f.dataUrl)}>
-                    {f.dataUrl ? <img src={f.dataUrl} alt={f.name} style={{ width: 32, height: 32, borderRadius: 4, objectFit: "cover" }} /> : <FileIconBadge name={f.name} />}
-                    <div className={pg.listItemMain}><div style={{ fontSize: 11, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</div><div style={{ fontSize: 10, color: "#94a3b8" }}>{fmtFileSize(f.size)}</div></div>
-                    {f.dataUrl && f.type?.startsWith("image/") && <button onClick={e => { e.stopPropagation(); setMarkupImg({ src: f.dataUrl, attachmentId: f.id }); }} style={{ padding: 2, background: "none", border: "none", color: "#0891b2", cursor: "pointer", fontSize: 11 }} title="Mark up">✏️</button>}
+                    {f.dataUrl ? <img src={f.dataUrl} alt={f.name} className={pg.u78} /> : <FileIconBadge name={f.name} />}
+                    <div className={pg.listItemMain}><div className={pg.u79}>{f.name}</div><div className={pg.u80}>{fmtFileSize(f.size)}</div></div>
+                    {f.dataUrl && f.type?.startsWith("image/") && <button onClick={e => { e.stopPropagation(); setMarkupImg({ src: f.dataUrl, attachmentId: f.id }); }} className={pg.p2_1} title="Mark up">✏️</button>}
                   </div>
                 ))}
               </div>
@@ -1292,7 +1292,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
           </div>
         </div>
       ) : (
-        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className={pg.p2_2}>
           <div className="grid-2">
             <div className="form-group"><label className="form-label">{isWO ? "Contractor" : "Supplier"}</label><select className="form-control" value={partyId} onChange={e => selectParty(e.target.value)}><option value="">{"— Select " + (isWO ? "contractor" : "supplier") + " —"}</option>{parties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
             <div className="form-group"><label className="form-label">Linked Job</label><select className="form-control" value={form.jobId} onChange={e => set("jobId", e.target.value ? Number(e.target.value) : "")}><option value="">— No linked job —</option>{jobs.map(j => { const d = orderJobDisplay(j); return <option key={j.id} value={j.id}>{d.ref + " · " + d.name}</option>; })}</select></div>
@@ -1301,14 +1301,14 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
             <div className="form-group"><label className="form-label">Issue Date</label><input type="date" className="form-control" value={form.issueDate} onChange={e => set("issueDate", e.target.value)} /></div>
             <div className="form-group"><label className="form-label">{isWO ? "Due Date" : "Delivery Date"}</label><input type="date" className="form-control" value={form.dueDate} onChange={e => set("dueDate", e.target.value)} /></div>
           </div>
-          {isWO && <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div className={pg.posRel}><span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 13 }}>$</span><input type="number" min="0" step="0.01" className="form-control" style={{ paddingLeft: 28 }} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>}
+          {isWO && <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div className={pg.posRel}><span className={pg.p2_4}>$</span><input type="number" min="0" step="0.01" className="form-control" className={pg.p2_5} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>}
           {isWO ? (
             <div className="form-group"><label className="form-label">Scope of Work</label><textarea rows={6} className="form-control" className={pg.heightAuto} placeholder="Describe the full scope of work..." value={form.scopeOfWork} onChange={e => set("scopeOfWork", e.target.value)} /></div>
           ) : (
             <>
               <div className="form-group"><label className="form-label">Delivery Address</label><input type="text" className="form-control" placeholder="Site or warehouse delivery address" value={form.deliveryAddress} onChange={e => set("deliveryAddress", e.target.value)} /></div>
               <div className="form-group"><label className="form-label">Items to Order</label><OrderLineItems lines={form.lines} onChange={v => set("lines", v)} /></div>
-              <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div className={pg.posRel}><span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 13 }}>$</span><input type="number" min="0" step="0.01" className="form-control" style={{ paddingLeft: 28 }} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>
+              <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div className={pg.posRel}><span className={pg.p2_4}>$</span><input type="number" min="0" step="0.01" className="form-control" className={pg.p2_5} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>
             </>
           )}
           <div className="grid-2">
@@ -1317,11 +1317,11 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
           </div>
           <div className="form-group">
             <div className={pg.flexBetweenMb6Alt}>
-              <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 0 }}><OrderIcon name="paperclip" size={12} /> Attachments</label>
+              <label className="form-label" className={pg.u81}><OrderIcon name="paperclip" size={12} /> Attachments</label>
               <div className={pg.flexGap6}>
-                <button type="button" className="btn btn-sm" style={{ background: "#7c3aed", color: "#fff", border: "none", fontSize: 12 }} onClick={() => orderPdfInputRef.current?.click()}>📄 Fill PDF</button>
+                <button type="button" className="btn btn-sm" className={pg.u82} onClick={() => orderPdfInputRef.current?.click()}>📄 Fill PDF</button>
                 <input ref={orderPdfInputRef} type="file" accept=".pdf" className={pg.hidden} onChange={handleOrderPdfFile} />
-                <button type="button" className="btn btn-sm" style={{ background: "#059669", color: "#fff", border: "none", fontSize: 12 }} onClick={() => setShowPlanDrawing(true)}>📐 Draw Plan</button>
+                <button type="button" className="btn btn-sm" className={pg.u83} onClick={() => setShowPlanDrawing(true)}>📐 Draw Plan</button>
               </div>
             </div>
             <OrderFileAttachments files={form.attachments} onChange={updater => { setForm(f => ({ ...f, attachments: typeof updater === "function" ? updater(f.attachments) : updater })); setDirty(true); }}
@@ -1334,13 +1334,13 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
 
     {/* Lightbox */}
     {lightboxImg && (
-      <div onClick={() => setLightboxImg(null)} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-        <img src={lightboxImg} alt="Attachment" style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: 8, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }} />
+      <div onClick={() => setLightboxImg(null)} className={pg.p2_6}>
+        <img src={lightboxImg} alt="Attachment" className={pg.p2_7} />
         <button onClick={e => { e.stopPropagation(); setMarkupImg({ src: lightboxImg }); setLightboxImg(null); }}
-          style={{ position: "absolute", bottom: 30, left: "50%", transform: "translateX(-50%)", padding: "10px 24px", borderRadius: 8, background: "#0891b2", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+          className={pg.p2_8}>
           ✏️ Mark Up Photo
         </button>
-        <button onClick={() => setLightboxImg(null)} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 20, width: 36, height: 36, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+        <button onClick={() => setLightboxImg(null)} className={pg.p2_9}>✕</button>
       </div>
     )}
 
@@ -1392,15 +1392,15 @@ const OrderCard = ({ type, order, onOpen, onDelete, jobs }) => {
       <div className={jb.gridCardClient}>
         {partyName || <span className={pg.italicMuted}>{"No " + (isWO ? "contractor" : "supplier")}</span>}
       </div>
-      {jd && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}><OrderIcon name="link" size={10} /> {jd.ref + " · " + jd.name}</div>}
+      {jd && <div className={pg.u84}><OrderIcon name="link" size={10} /> {jd.ref + " · " + jd.name}</div>}
       <div className={jb.metaRow}>
-        {hasPoLimit && <span style={{ fontSize: 11, fontWeight: 600, color: "#b45309", background: "#fffbeb", padding: "2px 8px", borderRadius: 12, border: "1px solid #fcd34d" }}>${parseFloat(order.poLimit).toLocaleString("en-AU")} limit</span>}
-        {attachCount > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12, display: "flex", alignItems: "center", gap: 4 }}><OrderIcon name="paperclip" size={10} /> {attachCount}</span>}
+        {hasPoLimit && <span className={pg.u85}>${parseFloat(order.poLimit).toLocaleString("en-AU")} limit</span>}
+        {attachCount > 0 && <span className={pg.u86}><OrderIcon name="paperclip" size={10} /> {attachCount}</span>}
       </div>
       <OrderProgressBar status={order.status} />
       <div className={jb.gridCardFooter}>
         <DueDateChip dateStr={order.dueDate} isTerminal={isTerminal} />
-        <span style={{ fontSize: 11, color: "#cbd5e1", display: "flex", alignItems: "center", gap: 4 }}><OrderIcon name="eye" size={11} /> Open</span>
+        <span className={pg.u87}><OrderIcon name="eye" size={11} /> Open</span>
       </div>
     </div>
   );
@@ -1432,30 +1432,30 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
     const isTerminal = ORDER_TERMINAL.includes(order.status); const transitions = ORDER_TRANSITIONS[order.status] || [];
     const pName = isWO ? order.contractorName : order.supplierName;
     return (
-      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e8e8" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 16, cursor: "pointer" }} onClick={() => onView(order._type, order)}>
+      <div className={pg.u88}>
+        <div className={pg.u89} onClick={() => onView(order._type, order)}>
           <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669", flexShrink: 0 }}>
             <OrderIcon name={isWO ? "briefcase" : "shopping"} size={14} />
           </div>
           <div className={pg.listItemMain}>
             <div className={pg.flexCenter}><span className={pg.fs13fw700}>{order.ref}</span><OrderStatusBadge status={order.status} /></div>
-            <div style={{ fontSize: 12, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{pName || <span style={{ fontStyle: "italic" }}>No party</span>}</div>
-            {jd && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}><OrderIcon name="link" size={9} />{jd.ref} · {jd.name}</div>}
+            <div className={pg.u90}>{pName || <span className={pg.u91}>No party</span>}</div>
+            {jd && <div className={pg.u92}><OrderIcon name="link" size={9} />{jd.ref} · {jd.name}</div>}
           </div>
-          <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+          <div className={pg.u93}>
             <DueDateChip dateStr={order.dueDate} isTerminal={isTerminal} />
-            {order.poLimit && <span style={{ fontSize: 11, fontWeight: 600, color: "#b45309", background: "#fffbeb", padding: "1px 6px", borderRadius: 4, border: "1px solid #fcd34d" }}>${parseFloat(order.poLimit).toLocaleString("en-AU")}</span>}
+            {order.poLimit && <span className={pg.u94}>${parseFloat(order.poLimit).toLocaleString("en-AU")}</span>}
           </div>
         </div>
         {!isTerminal && transitions.length > 0 && (
-          <div style={{ padding: "0 16px 12px", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", borderTop: "1px solid #f1f5f9", paddingTop: 10 }}>
-            <span style={{ fontSize: 11, color: "#94a3b8", marginRight: 4 }}>Move to:</span>
+          <div className={pg.u95}>
+            <span className={pg.u96}>Move to:</span>
             {transitions.map(s => (
               <button key={s} onClick={e => { e.stopPropagation(); handleDashTransition(order, s); }} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 8, border: ORDER_STATUS_TRIGGERS[s] ? "1px solid #fcd34d" : "1px solid #e2e8f0", background: ORDER_STATUS_TRIGGERS[s] ? "#fffbeb" : "#f8fafc", color: ORDER_STATUS_TRIGGERS[s] ? "#b45309" : "#475569", cursor: "pointer" }}>
                 {ORDER_STATUS_TRIGGERS[s] && <OrderIcon name="zap" size={9} />}{s}
               </button>
             ))}
-            <button onClick={e => { e.stopPropagation(); onEdit(order._type, order); }} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#94a3b8", background: "none", border: "none", cursor: "pointer" }}><OrderIcon name="edit" size={11} /> Edit</button>
+            <button onClick={e => { e.stopPropagation(); onEdit(order._type, order); }} className={pg.u98}><OrderIcon name="edit" size={11} /> Edit</button>
           </div>
         )}
       </div>
@@ -1465,11 +1465,11 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
     const isWO = order._type === "wo"; const jd = orderJobDisplay(jobs.find(j => j.id === order.jobId));
     const isTerminal = ORDER_TERMINAL.includes(order.status);
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", borderRadius: 8, cursor: "pointer" }} onClick={() => onView(order._type, order)}>
+      <div className={pg.u99} onClick={() => onView(order._type, order)}>
         <div style={{ width: 24, height: 24, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669", flexShrink: 0 }}><OrderIcon name={isWO ? "briefcase" : "shopping"} size={12} /></div>
         <div className={pg.listItemMain}>
           <div className={pg.cardStatusRow}><span className={pg.fs13fw600}>{order.ref}</span><OrderStatusBadge status={order.status} /></div>
-          <div style={{ fontSize: 11, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(isWO ? order.contractorName : order.supplierName) || "—"}{jd ? " · " + jd.ref : ""}</div>
+          <div className={pg.u100}>{(isWO ? order.contractorName : order.supplierName) || "—"}{jd ? " · " + jd.ref : ""}</div>
         </div>
         <DueDateChip dateStr={order.dueDate} isTerminal={isTerminal} />
       </div>
@@ -1479,7 +1479,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
     const isWO = pType === "wo";
     return (
       <div className="card"><div className="card-body">
-        <h3 style={{ fontWeight: 700, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+        <h3 className={pg.u101}>
           <div style={{ width: 20, height: 20, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5" }}><OrderIcon name={isWO ? "briefcase" : "shopping"} size={11} cls="" /></div>
           {title}
         </h3>
@@ -1489,8 +1489,8 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
             const count = matched.length; const pct = pipelineOrders.length > 0 ? (count / pipelineOrders.length) * 100 : 0;
             return (
               <div key={s} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 8px", borderRadius: 8, opacity: count > 0 ? 1 : 0.4, cursor: count > 0 ? "pointer" : "default" }} onClick={() => count > 0 && openPanel(s + " — " + title, matched.map(o => ({ ...o, _type: pType })))}>
-                <span style={{ fontSize: 11, color: "#64748b", width: 80, flexShrink: 0 }}>{s}</span>
-                <div style={{ flex: 1, height: 8, background: "#f1f5f9", borderRadius: 999, overflow: "hidden" }}><div style={{ height: "100%", borderRadius: 999, background: ORDER_BAR_COLORS[s], width: pct + "%" }} /></div>
+                <span className={pg.u103}>{s}</span>
+                <div className={pg.u104}><div style={{ height: "100%", borderRadius: 999, background: ORDER_BAR_COLORS[s], width: pct + "%" }} /></div>
                 <span style={{ fontSize: 12, fontWeight: 700, width: 16, textAlign: "right", color: count > 0 ? "#334155" : "#cbd5e1" }}>{count}</span>
               </div>
             );
@@ -1506,7 +1506,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
     { label: "All Open", value: openList.length, sub: localWO.length + " WO · " + localPO.length + " PO", highlight: false, borderColor: "#e8e8e8", bg: "#fff", textColor: "#111", orders: openList },
   ];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className={pg.u107}>
       <div className="order-kpi-grid">
         {kpis.map(k => (
           <div key={k.label} className="order-kpi-card" style={{ border: `1px solid ${k.borderColor}`, background: k.bg, cursor: "pointer" }} onClick={() => openPanel(k.label, k.orders)}>
@@ -1529,14 +1529,14 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
           <div key={title} className="card" style={{ borderColor }}>
             <div className="card-header" style={{ cursor: orders.length > 0 ? "pointer" : "default" }} onClick={() => orders.length > 0 && openPanel(title, orders)}>
               <div className={pg.flexCenter}>
-                <div style={{ width: 24, height: 24, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: iconBg }}><OrderIcon name={icon} size={13} cls="" style={{ color: iconColor }} /></div>
+                <div className={pg.u110}><OrderIcon name={icon} size={13} cls="" className={pg.u111} /></div>
                 <span className="card-title">{title}</span>
                 {orders.length > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: iconColor, padding: "1px 6px", borderRadius: 10 }}>{orders.length}</span>}
               </div>
             </div>
             <div className="card-body">
-              {orders.length === 0 ? <div style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", padding: 24 }}>{empty}</div>
-                : <>{orders.slice(0, 5).map(o => <DashRow key={o.id} order={o} />)}{orders.length > 5 && <div style={{ fontSize: 12, color: "#94a3b8", textAlign: "center", cursor: "pointer", paddingTop: 8 }} onClick={() => openPanel(title, orders)}>+{orders.length - 5} more</div>}</>}
+              {orders.length === 0 ? <div className={pg.u112}>{empty}</div>
+                : <>{orders.slice(0, 5).map(o => <DashRow key={o.id} order={o} />)}{orders.length > 5 && <div className={pg.u113} onClick={() => openPanel(title, orders)}>+{orders.length - 5} more</div>}</>}
             </div>
           </div>
         ))}
@@ -1546,12 +1546,12 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
         <div className="order-panel">
           <div className="order-panel-backdrop" onClick={() => setPanel(null)} />
           <div className="order-panel-body">
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8e8e8", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", flexShrink: 0 }}>
+            <div className={pg.u114}>
               <div><div className={pg.fs10fw700label94noMb}>Dashboard</div><div className={pg.fw700fs15}>{panel.label}</div><div className={pg.fs11c94a3b8mt2}>{panel.orders.length} order{panel.orders.length !== 1 ? "s" : ""}</div></div>
-              <button onClick={() => setPanel(null)} style={{ padding: 8, borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}><OrderIcon name="x" size={16} /></button>
+              <button onClick={() => setPanel(null)} className={pg.u115}><OrderIcon name="x" size={16} /></button>
             </div>
-            <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-              {panel.orders.length === 0 ? <div style={{ fontSize: 13, color: "#94a3b8", fontStyle: "italic", textAlign: "center", padding: 48 }}>No orders in this view</div>
+            <div className={pg.u116}>
+              {panel.orders.length === 0 ? <div className={pg.u117}>No orders in this view</div>
                 : panel.orders.map(o => <PanelRow key={o.id + o.status} order={o} />)}
             </div>
           </div>
@@ -1609,7 +1609,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
             <div key={status} className={`stat-card ${jb.summaryCard}`} style={{ borderTop: `3px solid ${color}` }}
               onClick={() => { setFilterStatus(status); setView("list"); }}>
               <div className="stat-label">{status}</div>
-              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
+              <div className="stat-value" className={pg.u118}>{count}</div>
               <div className="stat-sub">{woCount} WO · {poCount} PO</div>
             </div>
           );
@@ -1617,16 +1617,16 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
       </div>
 
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120, maxWidth: 320 }}>
+        <div className="search-bar" className={pg.u119}>
           <Icon name="search" size={14} />
           <input placeholder="Search orders, jobs, contractors..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="form-control" style={{ width: "auto", minWidth: 120 }} value={filterType} onChange={e => setFilterType(e.target.value)}>
+        <select className="form-control" className={pg.u120} value={filterType} onChange={e => setFilterType(e.target.value)}>
           <option value="all">All Types</option>
           <option value="wo">Work Orders</option>
           <option value="po">Purchase Orders</option>
         </select>
-        <select className="form-control" style={{ width: "auto", minWidth: 140 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className="form-control" className={pg.u121} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="All">All Statuses</option>
           {ORDER_STATUSES.map(s => <option key={s}>{s}</option>)}
         </select>
@@ -1636,8 +1636,8 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
           <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: accentColor, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
         </div>
         <div className="section-action-btns">
-          <button className="btn btn-primary" style={{ background: "#2563eb" }} onClick={() => openNew("wo")}><OrderIcon name="plus" size={14} /> New WO</button>
-          <button className="btn btn-primary" style={{ background: "#059669" }} onClick={() => openNew("po")}><OrderIcon name="plus" size={14} /> New PO</button>
+          <button className="btn btn-primary" className={pg.p2_10} onClick={() => openNew("wo")}><OrderIcon name="plus" size={14} /> New WO</button>
+          <button className="btn btn-primary" className={pg.u122} onClick={() => openNew("po")}><OrderIcon name="plus" size={14} /> New PO</button>
         </div>
       </div>
       {filtered.length === 0 ? (
@@ -1661,13 +1661,13 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
                   const partyName = o._type === "wo" ? o.contractorName : o.supplierName;
                   return (
                     <div key={o._type + o.id} className="kanban-card" onClick={() => openOrder(o._type, o, "view")}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                      <div className={pg.u123}>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: o._type === "wo" ? "#dbeafe" : "#d1fae5", color: o._type === "wo" ? "#2563eb" : "#059669" }}>{o._type === "wo" ? "WO" : "PO"}</span>
-                        <span style={{ fontWeight: 700, fontSize: 12, flex: 1 }}>{o.ref}</span>
+                        <span className={pg.u125}>{o.ref}</span>
                       </div>
                       {partyName && <div className={pg.fs11c999mb4}>{partyName}</div>}
-                      {jd && <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>{jd.ref} · {jd.name}</div>}
-                      {o.dueDate && <div style={{ fontSize: 11, marginBottom: 4 }}><DueDateChip dateStr={o.dueDate} isTerminal={ORDER_TERMINAL.includes(o.status)} /></div>}
+                      {jd && <div className={pg.u126}>{jd.ref} · {jd.name}</div>}
+                      {o.dueDate && <div className={pg.u127}><DueDateChip dateStr={o.dueDate} isTerminal={ORDER_TERMINAL.includes(o.status)} /></div>}
                     </div>
                   );
                 })}
@@ -1697,7 +1697,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
                 <tr key={o._type + o.id} className={pg.pointer} onClick={() => openOrder(o._type, o, "view")}>
                   <td><span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: o._type === "wo" ? "#dbeafe" : "#d1fae5", color: o._type === "wo" ? "#2563eb" : "#059669" }}>{o._type === "wo" ? "WO" : "PO"}</span></td>
                   <td className={pg.fw600}>{o.ref}</td>
-                  <td>{partyName || <span style={{ color: "#94a3b8", fontStyle: "italic" }}>—</span>}</td>
+                  <td>{partyName || <span className={pg.u128}>—</span>}</td>
                   <td>{jd ? jd.ref + " · " + jd.name : "—"}</td>
                   <td><OrderStatusBadge status={o.status} /></td>
                   <td>{orderFmtDate(o.issueDate)}</td>
@@ -1937,14 +1937,14 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                               borderRadius: msg.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
                               padding: "10px 14px",
                             }}>
-                              {msg.role === "assistant" && <div style={{ fontSize: 10, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>AI Analyst</div>}
+                              {msg.role === "assistant" && <div className={pg.u131}>AI Analyst</div>}
                               <div style={{ fontSize: 13, lineHeight: 1.6, color: msg.role === "user" ? "#e2e8f0" : "#cbd5e1", whiteSpace: "pre-wrap" }}>{msg.content}</div>
                             </div>
                           </div>
                         ))}
                         {aiChatLoading && (
-                          <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
-                            <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px 12px 12px 4px", padding: "10px 14px" }}>
+                          <div className={pg.u133}>
+                            <div className={pg.u134}>
                               <div className={db.aiThinking}>Thinking...</div>
                             </div>
                           </div>
@@ -1957,11 +1957,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                     {aiChatMessages.length <= 1 && (
                       <div className={db.aiSuggestions}>
                         {suggestedQuestions.map((q, i) => (
-                          <button key={i} onClick={() => { setAiChatInput(q); }} style={{
-                            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20,
-                            padding: "6px 14px", fontSize: 12, color: "#94a3b8", cursor: "pointer", fontFamily: "'Open Sans', sans-serif",
-                            transition: "all 0.15s",
-                          }}
+                          <button key={i} onClick={() => { setAiChatInput(q); }} className={pg.u135}
                           onMouseEnter={e => { e.target.style.background = "rgba(255,255,255,0.12)"; e.target.style.color = "#e2e8f0"; }}
                           onMouseLeave={e => { e.target.style.background = "rgba(255,255,255,0.06)"; e.target.style.color = "#94a3b8"; }}
                           >{q}</button>
@@ -1977,11 +1973,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                         onChange={e => setAiChatInput(e.target.value)}
                         onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
                         placeholder="Ask a follow-up question..."
-                        style={{
-                          flex: 1, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
-                          borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#fff",
-                          fontFamily: "'Open Sans', sans-serif", outline: "none",
-                        }}
+                        className={pg.u136}
                       />
                       <button
                         onClick={sendChatMessage}
@@ -2004,7 +1996,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
       })()}
 
       {/* ── ROW 1: Financial Hero Strip (full width) ── */}
-      <div className="stat-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 24 }}>
+      <div className="stat-grid" className={pg.u137}>
         <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.quotes.accent}`, cursor: "pointer" }} onClick={() => onNav("quotes")}>
           <div className={pg.flexCenterGap6mb2}><Icon name="quotes" size={13} /><div className="stat-label">Total Quoted</div></div>
           <div className="stat-value">{fmt(totalQuoted)}</div>
@@ -2028,7 +2020,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
         <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.bills.accent}`, cursor: "pointer" }} onClick={() => onNav("bills")}>
           <div className={pg.flexCenterGap6mb2}><Icon name="bills" size={13} /><div className="stat-label">Costs to Process</div></div>
           <div className="stat-value">{fmt(unpostedBillsTotal)}</div>
-          <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
+          <div className={pg.u139}>
             {["inbox", "linked", "approved"].map(st => {
               const c = bills.filter(b => b.status === st).length;
               return c > 0 ? <span key={st} style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10, background: billStatusColors[st], color: "#fff" }}>{c} {billStatusLabels[st]}</span> : null;
@@ -2039,7 +2031,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
 
       {/* ── ROW 2: Operational KPI Cards (5 cards with progress/actions) ── */}
       <SectionLabel>Operations</SectionLabel>
-      <div className="stat-grid" style={{ gridTemplateColumns: "repeat(5, 1fr)", marginBottom: 24 }}>
+      <div className="stat-grid" className={pg.u141}>
         {/* Active Jobs */}
         <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.jobs.accent}`, cursor: "pointer" }} onClick={() => onNav("jobs")}>
           <div className={pg.flexCenterGap6mb2}><Icon name="jobs" size={13} /><div className="stat-label">Active Jobs</div></div>
@@ -2050,7 +2042,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
             </div>
             <span className={pg.fs11c999fw600}>{completedJobs}/{jobs.length}</span>
           </div>
-          {overdueJobs > 0 && <div style={{ fontSize: 11, color: "#dc2626", fontWeight: 600, marginTop: 4 }}>⚠ {overdueJobs} overdue</div>}
+          {overdueJobs > 0 && <div className={pg.u142}>⚠ {overdueJobs} overdue</div>}
         </div>
 
         {/* Work Orders */}
@@ -2113,7 +2105,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
           return (
             <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`} style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? schAccent : "#e5e5e5", cursor: "pointer" }} onClick={() => onNav("schedule")}>
               <div className="schedule-day-header" style={{ background: isToday ? schAccent : isPast ? "#e0e0e0" : "#f5f5f5", color: isToday ? "#fff" : isPast ? "#999" : "#333" }}>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>{dayName}</span>
+                <span className={pg.u143}>{dayName}</span>
                 <span style={{ fontSize: isCompact ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</span>
               </div>
               <div className="schedule-day-body">
@@ -2141,7 +2133,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               <span className="card-title" className={pg.flexCenter}>
                 <Icon name="schedule" size={16} /> This Week
                 {todaySchedule.length > 0 && <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: schAccent, color: "#fff" }}>{todaySchedule.length} today</span>}
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#999" }}>{thisWeekTotal} task{thisWeekTotal !== 1 ? "s" : ""}</span>
+                <span className={pg.u144}>{thisWeekTotal} task{thisWeekTotal !== 1 ? "s" : ""}</span>
               </span>
               <button className="btn btn-ghost btn-sm" onClick={() => onNav("schedule")}>View all <Icon name="arrow_right" size={12} /></button>
             </div>
@@ -2169,7 +2161,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               onMouseEnter={e => { e.currentTarget.style.background = item.color + "10"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}>
               <Icon name={item.icon} size={12} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: item.color }}>{item.label}</span>
+              <span className={pg.u145}>{item.label}</span>
               <Icon name="arrow_right" size={10} />
             </div>
           ))}
@@ -2191,7 +2183,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               const pct = jobs.length ? (count / jobs.length) * 100 : 0;
               return (
                 <div key={s} className={pg.mb12}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 5 }}>
+                  <div className={pg.u146}>
                     <span className={pg.fw600flexGap6}>
                       <span style={{ width: 8, height: 8, borderRadius: "50%", background: jobStatusColors[s], display: "inline-block" }} />
                       {jobStatusLabels[s]}
@@ -2218,7 +2210,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
             <span className="card-title">Quote & Invoice Pipeline</span>
           </div>
           <div className="card-body">
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div className={pg.u149}>
               <SectionLabel>Quotes</SectionLabel>
               <button className="btn btn-ghost btn-sm" onClick={() => onNav("quotes")} className={pg.mt_4}>View all <Icon name="arrow_right" size={12} /></button>
             </div>
@@ -2239,12 +2231,12 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
             })}
             {/* Quote conversion rate */}
             {quotes.length > 0 && (
-              <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className={pg.u150}>
                 <span className={pg.fs12fw600c555}>Conversion Rate</span>
-                <span style={{ fontSize: 14, fontWeight: 800, color: "#16a34a" }}>{Math.round((quotes.filter(q => q.status === "accepted").length / quotes.length) * 100)}%</span>
+                <span className={pg.u151}>{Math.round((quotes.filter(q => q.status === "accepted").length / quotes.length) * 100)}%</span>
               </div>
             )}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, marginBottom: 8 }}>
+            <div className={pg.u152}>
               <SectionLabel>Invoices</SectionLabel>
               <button className="btn btn-ghost btn-sm" onClick={() => onNav("invoices")} className={pg.mt_4}>View all <Icon name="arrow_right" size={12} /></button>
             </div>
@@ -2285,7 +2277,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                       <div style={{ fontSize: 16, fontWeight: 800, color: count > 0 ? billStatusColors[st] : "#ccc" }}>{count}</div>
                       <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", color: count > 0 ? billStatusColors[st] : "#bbb", letterSpacing: "0.04em" }}>{billStatusLabels[st]}</div>
                     </div>
-                    {i < 3 && <span style={{ color: "#ccc", fontSize: 12 }}>→</span>}
+                    {i < 3 && <span className={pg.u155}>→</span>}
                   </Fragment>
                 );
               })}
@@ -2351,8 +2343,8 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                     <div className={pg.textSub}>{po.supplierName}{po.dueDate ? ` · Due ${po.dueDate}` : ""}</div>
                   </div>
                   <div className={pg.cardStatusRow}>
-                    {overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#dc2626" }}>OVERDUE</span>}
-                    {dueSoon && !overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#d97706" }}>DUE SOON</span>}
+                    {overdue && <span className={pg.u157}>OVERDUE</span>}
+                    {dueSoon && !overdue && <span className={pg.u158}>DUE SOON</span>}
                     <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: (ORDER_STATUS_COLORS[po.status] || {}).bg || "#f0f0f0", color: (ORDER_STATUS_COLORS[po.status] || {}).text || "#666" }}>{po.status}</span>
                   </div>
                 </div>
@@ -2361,7 +2353,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
             {/* Order value summary */}
             <div className={db.summaryBox}>
               <span className={db.summaryLabel}>Total Committed</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: "#333" }}>{fmt(workOrders.reduce((s, wo) => s + (parseFloat(wo.poLimit) || 0), 0) + purchaseOrders.reduce((s, po) => s + ((po.lines || []).reduce((ls, l) => ls + (l.qty || 0) * (l.rate || 0), 0)), 0))}</span>
+              <span className={pg.u159}>{fmt(workOrders.reduce((s, wo) => s + (parseFloat(wo.poLimit) || 0), 0) + purchaseOrders.reduce((s, po) => s + ((po.lines || []).reduce((ls, l) => ls + (l.qty || 0) * (l.rate || 0), 0)), 0))}</span>
             </div>
           </div>
         </div>
@@ -2380,12 +2372,12 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                 <div key={name} className={pg.mb12}>
                   <div className={pg.flexBetweenFs12mb4}>
                     <span className={pg.fw600flexGap6}>
-                      <span style={{ width: 22, height: 22, borderRadius: "50%", background: "#111", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700 }}>{name.split(" ").map(n => n[0]).join("")}</span>
+                      <span className={pg.u160}>{name.split(" ").map(n => n[0]).join("")}</span>
                       {name}
                     </span>
                     <span className={pg.color999}>{hrs.total}h <span style={{ color: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : "#dc2626", fontWeight: 700 }}>({Math.round(ratio)}%)</span></span>
                   </div>
-                  <div style={{ height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
+                  <div className={pg.u162}>
                     <div style={{ height: "100%", width: `${ratio}%`, background: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : SECTION_COLORS.time.accent, borderRadius: 2 }} />
                   </div>
                 </div>
@@ -2443,10 +2435,10 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                     {jobMargin !== null && <span style={{ fontWeight: 700, color: jobMargin >= 20 ? "#16a34a" : jobMargin >= 0 ? "#d97706" : "#dc2626" }}>{jobMargin}% margin</span>}
                   </div>
                   <div className={pg.cardStatusRow}>
-                    <div style={{ flex: 1, height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden", position: "relative" }}>
+                    <div className={pg.u165}>
                       <div style={{ position: "absolute", height: "100%", width: `${costPct}%`, background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#16a34a", borderRadius: 3, transition: "width 0.3s" }} />
                     </div>
-                    <span style={{ fontSize: 11, color: "#999", minWidth: 80, textAlign: "right" }}>{fmt(costs)} / {fmt(quoted || invoiced)}</span>
+                    <span className={pg.u166}>{fmt(costs)} / {fmt(quoted || invoiced)}</span>
                   </div>
                 </div>
               );
@@ -2466,7 +2458,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
 
 // ── Section Label ─────────────────────────────────────────────────────────────
 const SectionLabel = ({ children }) => (
-  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "#999", marginBottom: 10, marginTop: 4 }}>{children}</div>
+  <div className={pg.u167}>{children}</div>
 );
 
 // ── Photo Markup Editor (fabric.js) ───────────────────────────────────────────
@@ -2603,22 +2595,22 @@ const PhotoMarkupEditor = ({ imageSrc, onSave, onClose }) => {
   ];
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.88)", display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div className={pg.u168}>
       {/* Toolbar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", background: "#1e1e1e", borderRadius: "0 0 12px 12px", flexWrap: "wrap", justifyContent: "center", maxWidth: "100%" }}>
+      <div className={pg.u169}>
         {tools.map(t => (
           <button key={t.id} onClick={() => { if (t.action) t.action(); else setTool(t.id); }}
             style={{ padding: "6px 10px", borderRadius: 6, border: tool === t.id ? "2px solid #fff" : "2px solid transparent", background: tool === t.id ? "rgba(255,255,255,0.15)" : "transparent", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: 15 }}>{t.icon}</span> {t.label}
+            <span className={pg.u170}>{t.icon}</span> {t.label}
           </button>
         ))}
         <div className={pg.vertDivider} />
-        <button onClick={deleteSelected} style={{ padding: "6px 10px", borderRadius: 6, border: "2px solid transparent", background: "transparent", color: "#f87171", cursor: "pointer", fontSize: 13, fontWeight: 600 }} title="Delete selected">🗑 Delete</button>
-        <button onClick={clearAll} style={{ padding: "6px 10px", borderRadius: 6, border: "2px solid transparent", background: "transparent", color: "#fbbf24", cursor: "pointer", fontSize: 13, fontWeight: 600 }} title="Clear all markups">✕ Clear</button>
+        <button onClick={deleteSelected} className={pg.u171} title="Delete selected">🗑 Delete</button>
+        <button onClick={clearAll} className={pg.u172} title="Clear all markups">✕ Clear</button>
         <div className={pg.vertDivider} />
         {/* Brush size */}
         <div className={pg.cardStatusRow}>
-          <span style={{ color: "#aaa", fontSize: 11, fontWeight: 600 }}>Size</span>
+          <span className={pg.u173}>Size</span>
           <input type="range" min="1" max="12" value={brushSize} onChange={e => setBrushSize(Number(e.target.value))} style={{ width: 70, accentColor: color }} />
         </div>
         <div className={pg.vertDivider} />
@@ -2632,16 +2624,16 @@ const PhotoMarkupEditor = ({ imageSrc, onSave, onClose }) => {
       </div>
 
       {/* Canvas area */}
-      <div ref={containerRef} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", width: "100%", padding: 20, overflow: "auto" }}>
-        <div style={{ borderRadius: 8, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.5)" }}>
+      <div ref={containerRef} className={pg.u175}>
+        <div className={pg.u176}>
           <canvas ref={canvasRef} />
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div style={{ display: "flex", gap: 10, padding: "12px 20px", background: "#1e1e1e", borderRadius: "12px 12px 0 0", width: "100%", justifyContent: "center" }}>
-        <button onClick={onClose} style={{ padding: "8px 24px", borderRadius: 8, border: "1px solid #555", background: "transparent", color: "#ccc", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>Cancel</button>
-        <button onClick={handleSave} style={{ padding: "8px 24px", borderRadius: 8, border: "none", background: "#0891b2", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>💾 Save Markup</button>
+      <div className={pg.u177}>
+        <button onClick={onClose} className={pg.p2_12}>Cancel</button>
+        <button onClick={handleSave} className={pg.p2_13}>💾 Save Markup</button>
       </div>
     </div>
   );
@@ -2949,9 +2941,9 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
   const toggleStyle = (on) => ({ padding: "4px 8px", borderRadius: 5, border: "none", background: on ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.06)", color: on ? "#fff" : "#888", cursor: "pointer", fontSize: 11, fontWeight: 600 });
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.92)", display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div className={pg.u178}>
       {/* Top Toolbar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 12px", background: "#1e1e1e", borderRadius: "0 0 12px 12px", flexWrap: "wrap", justifyContent: "center", maxWidth: "100%", position: "relative", zIndex: 10 }}>
+      <div className={pg.u179}>
         {tools.map(t => (
           <button key={t.id} onClick={() => { if (t.action) t.action(); else setTool(t.id); }} style={btnStyle(tool === t.id)}>
             <span className={pg.fs14}>{t.icon}</span> {t.label}
@@ -2962,8 +2954,8 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
         <button onClick={clearAll} style={{ ...btnStyle(false), color: "#fbbf24" }}>✕ Clear</button>
         <div className={pg.vertDividerSm} />
         {/* Line width */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <span style={{ color: "#aaa", fontSize: 10, fontWeight: 600 }}>Width</span>
+        <div className={pg.p2_14}>
+          <span className={pg.u180}>Width</span>
           {PLAN_LINE_WIDTHS.map(w => (
             <button key={w} onClick={() => setLineWidth(w)}
               style={{ width: 22, height: 22, borderRadius: 4, border: lineWidth === w ? "2px solid #fff" : "1px solid #555", background: lineWidth === w ? "rgba(255,255,255,0.15)" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -2982,22 +2974,22 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
       </div>
 
       {/* Snap/Options Bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: "#161616", width: "100%", justifyContent: "center", flexWrap: "wrap", position: "relative", zIndex: 10 }}>
+      <div className={pg.u181}>
         <button onClick={() => setSnapGrid(v => !v)} style={toggleStyle(snapGrid)}>⊞ Snap Grid</button>
         <button onClick={() => setSnapEndpoints(v => !v)} style={toggleStyle(snapEndpoints)}>⊙ Snap Endpoints</button>
         <button onClick={() => setShowLengths(v => !v)} style={toggleStyle(showLengths)}>📏 Show Lengths</button>
         <button onClick={() => setConstrainAngle(v => !v)} style={toggleStyle(constrainAngle)}>📐 Constrain Angle</button>
         {constrainAngle && (
-          <select value={angleStep} onChange={e => setAngleStep(Number(e.target.value))} style={{ padding: "3px 6px", borderRadius: 4, background: "#333", color: "#fff", border: "1px solid #555", fontSize: 11 }}>
+          <select value={angleStep} onChange={e => setAngleStep(Number(e.target.value))} className={pg.p2_15}>
             <option value={15}>15°</option>
             <option value={30}>30°</option>
             <option value={45}>45°</option>
             <option value={90}>90°</option>
           </select>
         )}
-        <div style={{ width: 1, height: 18, background: "#444" }} />
-        <span style={{ color: "#888", fontSize: 11 }}>Scale:</span>
-        <select value={scale} onChange={e => setScale(Number(e.target.value))} style={{ padding: "3px 6px", borderRadius: 4, background: "#333", color: "#fff", border: "1px solid #555", fontSize: 11 }}>
+        <div className={pg.p2_16} />
+        <span className={pg.u182}>Scale:</span>
+        <select value={scale} onChange={e => setScale(Number(e.target.value))} className={pg.p2_15}>
           <option value={100}>100mm = 10px</option>
           <option value={250}>100mm = 25px</option>
           <option value={500}>100mm = 50px</option>
@@ -3005,8 +2997,8 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
         </select>
         {cursorInfo && (
           <>
-            <div style={{ width: 1, height: 18, background: "#444" }} />
-            <span style={{ color: "#0891b2", fontSize: 12, fontWeight: 700, fontFamily: "monospace" }}>
+            <div className={pg.p2_16} />
+            <span className={pg.u183}>
               {cursorInfo.length}mm &nbsp; {cursorInfo.angle}°
             </span>
           </>
@@ -3014,16 +3006,16 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
       </div>
 
       {/* Canvas */}
-      <div ref={containerRef} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", width: "100%", padding: "10px 20px", overflow: "auto" }}>
-        <div style={{ borderRadius: 8, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.5)", border: "1px solid #333" }}>
+      <div ref={containerRef} className={pg.u184}>
+        <div className={pg.u185}>
           <canvas ref={canvasRef} />
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div style={{ display: "flex", gap: 10, padding: "10px 20px", background: "#1e1e1e", borderRadius: "12px 12px 0 0", width: "100%", justifyContent: "center", position: "relative", zIndex: 10 }}>
-        <button onClick={onClose} style={{ padding: "8px 24px", borderRadius: 8, border: "1px solid #555", background: "transparent", color: "#ccc", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>Cancel</button>
-        <button onClick={handleSave} style={{ padding: "8px 24px", borderRadius: 8, border: "none", background: "#0891b2", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>💾 Save Plan</button>
+      <div className={pg.u186}>
+        <button onClick={onClose} className={pg.p2_12}>Cancel</button>
+        <button onClick={handleSave} className={pg.p2_13}>💾 Save Plan</button>
       </div>
     </div>
   );
@@ -3322,14 +3314,14 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
     <div className={pg.flexShrink0}>
       <div style={{ padding: "10px 20px", background: jobLight, display: "flex", alignItems: "center", gap: 6, overflowX: "auto", overflowY: "hidden" }}>
         {["draft","scheduled","in_progress","completed","cancelled"].filter(s => s !== job.status).map(s => (
-          <button key={s} className="btn btn-xs" style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#475569", borderRadius: 8, whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => {
+          <button key={s} className="btn btn-xs" className={pg.u187} onClick={() => {
             const updated = { ...job, status: s, activityLog: addLog(job.activityLog, `Status → ${s.replace("_"," ")}`) };
             setJobs(js => js.map(j => j.id === job.id ? updated : j));
           }}>{s.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</button>
         ))}
       </div>
       {/* Tabs */}
-      <div className="tabs" style={{ marginBottom: 0, padding: "0 20px", overflowX: "auto", flexShrink: 0 }}>
+      <div className="tabs" className={pg.u188}>
         {tabs.map(t => <div key={t.id} className={`tab ${tab === t.id ? "active" : ""}`} onClick={() => setTab(t.id)} style={{ whiteSpace: "nowrap", borderBottomColor: tab === t.id ? jobAccent : "transparent" }}>{t.label}</div>)}
       </div>
     </div>
@@ -3425,8 +3417,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           </div>
           <div className={pg.mb16}>
             <div className={pg.textLabelMb8}>Estimate</div>
-            <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 14 }}>
-              <div className="grid-2" style={{ marginBottom: 8 }}>
+            <div className={pg.u189}>
+              <div className="grid-2" className={pg.p2_17}>
                 <div className={`form-group ${jb.formGroupNoMb}`}>
                   <label className={`form-label ${jb.formLabelSm}`}>Labour ($)</label>
                   <input type="number" className="form-control" min="0" step="100" value={detailForm.estimate?.labour || ""} onChange={e => setDetailForm(f => ({ ...f, estimate: { ...f.estimate, labour: Number(e.target.value) || 0 } }))} placeholder="0" />
@@ -3463,7 +3455,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           {/* ── Overview ── */}
           {tab === "overview" && (
             <div>
-              {job.description && <p style={{ fontSize: 13, color: "#555", lineHeight: 1.6, marginBottom: 20 }}>{job.description}</p>}
+              {job.description && <p className={pg.u190}>{job.description}</p>}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px,1fr))", gap: 12, marginBottom: 20 }}>
                 {[
                   { label: "Estimate", val: (() => { const e = job.estimate || {}; const t = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0); return t > 0 ? fmt(t) : "—"; })(), sub: (() => { const e = job.estimate || {}; const t = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0); return t > 0 ? "Budget set" : "Not set"; })() },
@@ -3488,11 +3480,11 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                       { label: "Site", val: (() => { const s = client?.sites?.find(x => x.id === job.siteId); return s ? s.name : "—"; })() },
                       { label: "Site Contact", val: (() => { const s = client?.sites?.find(x => x.id === job.siteId); return s?.contactName ? `${s.contactName}${s.contactPhone ? " · " + s.contactPhone : ""}` : "—"; })() },
                       { label: "Status", val: <StatusBadge status={job.status} /> },
-                      { label: "Priority", val: <span style={{ textTransform: "capitalize" }}>{job.priority}</span> },
+                      { label: "Priority", val: <span className={pg.u191}>{job.priority}</span> },
                       { label: "Start Date", val: job.startDate || "—" },
                       { label: "Due Date", val: job.dueDate || "—" },
                     ].map((r,i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, borderBottom: "1px solid #f5f5f5", paddingBottom: 6 }}>
+                      <div key={i} className={pg.u192}>
                         <span className={pg.color888}>{r.label}</span><span className={pg.fw600}>{r.val}</span>
                       </div>
                     ))}
@@ -3501,18 +3493,18 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 <div>
                   <SectionLabel>Team</SectionLabel>
                   {job.assignedTo.length === 0
-                    ? <div style={{ fontSize: 13, color: "#bbb" }}>No team assigned</div>
+                    ? <div className={pg.u193}>No team assigned</div>
                     : job.assignedTo.map((w,i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                        <div className="avatar" style={{ margin: 0 }}>{w.split(" ").map(p=>p[0]).join("")}</div>
+                      <div key={i} className={pg.u194}>
+                        <div className="avatar" className={pg.u195}>{w.split(" ").map(p=>p[0]).join("")}</div>
                         <span className={pg.fs13fw600}>{w}</span>
-                        <span style={{ fontSize: 11, color: "#bbb", marginLeft: "auto" }}>{jobTime.filter(t=>t.worker===w).reduce((s,t)=>s+t.hours,0)}h</span>
+                        <span className={pg.u196}>{jobTime.filter(t=>t.worker===w).reduce((s,t)=>s+t.hours,0)}h</span>
                       </div>
                     ))
                   }
                   {job.tags.length > 0 && <>
                     <SectionLabel>Tags</SectionLabel>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>{job.tags.map((t,i) => <span key={i} className="tag">{t}</span>)}</div>
+                    <div className={pg.u197}>{job.tags.map((t,i) => <span key={i} className="tag">{t}</span>)}</div>
                   </>}
                 </div>
               </div>
@@ -3522,7 +3514,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           {/* ── Quotes ── */}
           {tab === "quotes" && (
             <div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+              <div className={pg.u198}>
                 <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.quotes.accent }} onClick={async () => {
                   try {
                     const newQ = { jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" };
@@ -3539,13 +3531,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   const sub = q.lineItems.reduce((s,l) => s + l.qty * l.rate, 0);
                   const alreadyInvoiced = invoices.some(i => i.fromQuoteId === q.id);
                   return (
-                    <div key={q.id} style={{ border: "1px solid #e8e8e8", borderRadius: 10, padding: 16, marginBottom: 12 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                    <div key={q.id} className={pg.p2_18}>
+                      <div className={pg.p2_19}>
                         <div>
-                          <div style={{ fontWeight: 700, fontFamily: "monospace", fontSize: 14 }}>{q.number}</div>
-                          <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>{q.createdAt}</div>
+                          <div className={pg.p2_20}>{q.number}</div>
+                          <div className={pg.p2_21}>{q.createdAt}</div>
                         </div>
-                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <div className={pg.p2_22}>
                           <StatusBadge status={q.status} />
                           {q.status !== "accepted" && <button className="btn btn-secondary btn-xs" onClick={() => acceptQuote(q.id)}>Accept</button>}
                           {q.status === "accepted" && !alreadyInvoiced && (
@@ -3558,12 +3550,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                           <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => delQuote(q.id)}><Icon name="trash" size={11} /></button>
                         </div>
                       </div>
-                      <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
-                        <thead><tr>{["Description","Qty","Unit","Rate","Total"].map(h => <th key={h} style={{ textAlign: "left", color: "#bbb", fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", paddingBottom: 4, borderBottom: "1px solid #f0f0f0" }}>{h}</th>)}</tr></thead>
+                      <table className={pg.p2_23}>
+                        <thead><tr>{["Description","Qty","Unit","Rate","Total"].map(h => <th key={h} className={pg.p2_24}>{h}</th>)}</tr></thead>
                         <tbody>
                           {q.lineItems.map((l,i) => (
                             <tr key={i}>
-                              <td style={{ padding: "5px 0", color: "#444" }}>{l.desc}</td>
+                              <td className={pg.p2_25}>{l.desc}</td>
                               <td className={pg.color666}>{l.qty}</td>
                               <td className={pg.color666}>{l.unit}</td>
                               <td className={pg.color666}>{fmt(l.rate)}</td>
@@ -3572,12 +3564,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                           ))}
                         </tbody>
                       </table>
-                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10, gap: 20, fontSize: 13 }}>
+                      <div className={pg.p2_26}>
                         <span className={pg.color999}>Subtotal <strong className={pg.color111}>{fmt(sub)}</strong></span>
                         <span className={pg.color999}>GST <strong className={pg.color111}>{fmt(sub * q.tax / 100)}</strong></span>
-                        <span style={{ fontWeight: 800, fontSize: 14 }}>Total {fmt(calcQuoteTotal(q))}</span>
+                        <span className={pg.p2_27}>Total {fmt(calcQuoteTotal(q))}</span>
                       </div>
-                      {q.notes && <div style={{ marginTop: 8, fontSize: 12, color: "#999", fontStyle: "italic", borderTop: "1px solid #f5f5f5", paddingTop: 8 }}>{q.notes}</div>}
+                      {q.notes && <div className={pg.u201}>{q.notes}</div>}
                     </div>
                   );
                 })
@@ -3608,17 +3600,17 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   const sub = inv.lineItems.reduce((s,l) => s + l.qty * l.rate, 0);
                   const fromQuote = inv.fromQuoteId ? quotes.find(q => q.id === inv.fromQuoteId) : null;
                   return (
-                    <div key={inv.id} style={{ border: "1px solid #e8e8e8", borderRadius: 10, padding: 16, marginBottom: 12 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                    <div key={inv.id} className={pg.p2_18}>
+                      <div className={pg.p2_19}>
                         <div>
-                          <div style={{ fontWeight: 700, fontFamily: "monospace", fontSize: 14 }}>{inv.number}</div>
-                          <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>
+                          <div className={pg.p2_20}>{inv.number}</div>
+                          <div className={pg.p2_21}>
                             {inv.createdAt}
-                            {fromQuote && <span style={{ marginLeft: 8, color: "#bbb" }}>from {fromQuote.number}</span>}
-                            {inv.dueDate && <span style={{ marginLeft: 8 }}>· Due {inv.dueDate}</span>}
+                            {fromQuote && <span className={pg.u202}>from {fromQuote.number}</span>}
+                            {inv.dueDate && <span className={pg.u203}>· Due {inv.dueDate}</span>}
                           </div>
                         </div>
-                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <div className={pg.p2_22}>
                           <StatusBadge status={inv.status} />
                           <XeroSyncBadge syncStatus={inv.xeroSyncStatus} xeroId={inv.xeroInvoiceId} />
                           {inv.status !== "paid" && inv.status !== "void" && (
@@ -3631,18 +3623,18 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                           <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => delInvoice(inv.id)}><Icon name="trash" size={11} /></button>
                         </div>
                       </div>
-                      <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
-                        <thead><tr>{["Description","Qty","Unit","Rate","Total"].map(h => <th key={h} style={{ textAlign: "left", color: "#bbb", fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", paddingBottom: 4, borderBottom: "1px solid #f0f0f0" }}>{h}</th>)}</tr></thead>
+                      <table className={pg.p2_23}>
+                        <thead><tr>{["Description","Qty","Unit","Rate","Total"].map(h => <th key={h} className={pg.p2_24}>{h}</th>)}</tr></thead>
                         <tbody>
                           {inv.lineItems.map((l,i) => (
-                            <tr key={i}><td style={{ padding: "5px 0", color: "#444" }}>{l.desc}</td><td className={pg.color666}>{l.qty}</td><td className={pg.color666}>{l.unit}</td><td className={pg.color666}>{fmt(l.rate)}</td><td className={pg.fw600}>{fmt(l.qty*l.rate)}</td></tr>
+                            <tr key={i}><td className={pg.p2_25}>{l.desc}</td><td className={pg.color666}>{l.qty}</td><td className={pg.color666}>{l.unit}</td><td className={pg.color666}>{fmt(l.rate)}</td><td className={pg.fw600}>{fmt(l.qty*l.rate)}</td></tr>
                           ))}
                         </tbody>
                       </table>
-                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10, gap: 20, fontSize: 13 }}>
+                      <div className={pg.p2_26}>
                         <span className={pg.color999}>Subtotal <strong className={pg.color111}>{fmt(sub)}</strong></span>
                         <span className={pg.color999}>GST <strong className={pg.color111}>{fmt(sub * inv.tax / 100)}</strong></span>
-                        <span style={{ fontWeight: 800, fontSize: 14 }}>Total {fmt(calcQuoteTotal(inv))}</span>
+                        <span className={pg.p2_27}>Total {fmt(calcQuoteTotal(inv))}</span>
                       </div>
                     </div>
                   );
@@ -3661,7 +3653,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.time.accent }} onClick={() => setShowTimeForm(v => !v)}><Icon name="plus" size={12} />Log Time</button>
               </div>
               {showTimeForm && (
-                <div style={{ background: "#f8f8f8", borderRadius: 10, padding: 16, marginBottom: 16, border: "1px solid #e8e8e8" }}>
+                <div className={pg.u205}>
                   <div className="grid-3" className={pg.mb10}>
                     <div className={`form-group ${jb.formGroupNoMb}`}>
                       <label className="form-label">Worker</label>
@@ -3713,7 +3705,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     <tbody>
                       {[...jobTime].sort((a,b) => b.date > a.date ? 1 : -1).map(t => (
                         <tr key={t.id}>
-                          <td><div className={pg.flexCenter}><div className="avatar" style={{ width: 26, height: 26, fontSize: 10, background: "#333", margin: 0 }}>{t.worker.split(" ").map(w=>w[0]).join("")}</div><span className={pg.textBold13}>{t.worker}</span></div></td>
+                          <td><div className={pg.flexCenter}><div className="avatar" className={pg.u207}>{t.worker.split(" ").map(w=>w[0]).join("")}</div><span className={pg.textBold13}>{t.worker}</span></div></td>
                           <td className={pg.textSub}>{t.date}</td>
                           <td><span className={pg.cellAmount}>{t.hours}h</span></td>
                           <td><span className="badge" style={{ background: t.billable ? "#111" : "#f0f0f0", color: t.billable ? "#fff" : "#999" }}>{t.billable ? "Billable" : "Non-bill"}</span></td>
@@ -3756,17 +3748,17 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                         return (
                           <tr key={b.id}>
                             <td>
-                              <div className={pg.textBold13}>{b.supplier || <span style={{ color: "#ccc" }}>—</span>}</div>
-                              {b.description && <div style={{ fontSize: 11, color: "#aaa", marginTop: 1 }}>{b.description.slice(0,40)}{b.description.length>40?"…":""}</div>}
+                              <div className={pg.textBold13}>{b.supplier || <span className={pg.p2_28}>—</span>}</div>
+                              {b.description && <div className={pg.u209}>{b.description.slice(0,40)}{b.description.length>40?"…":""}</div>}
                             </td>
-                            <td><span style={{ fontFamily: "monospace", fontSize: 12, color: "#666" }}>{b.invoiceNo || "—"}</span></td>
+                            <td><span className={pg.u210}>{b.invoiceNo || "—"}</span></td>
                             <td><span className="chip">{b.category}</span></td>
                             <td className={pg.textSub}>{b.date}</td>
                             <td className={pg.fs13}>{fmt(exGst)}</td>
                             <td className={pg.cellAmount}>{fmt(b.amount||0)}</td>
                             <td className={pg.fs12}>
                               {(b.markup||0) > 0
-                                ? <span style={{ color: "#555" }}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span>
+                                ? <span className={pg.p2_29}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span>
                                 : <span className={pg.colorDdd}>—</span>}
                             </td>
                             <td><BillStatusBadge status={b.status} /> <XeroSyncBadge syncStatus={b.xeroSyncStatus} xeroId={b.xeroBillId} /></td>
@@ -3810,17 +3802,17 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   const schClient = clients.find(c => c.id === job.clientId);
                   const schSite = schClient?.sites?.find(st => st.id === job.siteId);
                   return (
-                    <div key={s.id} style={{ display: "flex", gap: 14, alignItems: "flex-start", borderBottom: "1px solid #f5f5f5", paddingBottom: 14, marginBottom: 14 }}>
-                      <div style={{ background: "#111", color: "#fff", borderRadius: 6, padding: "8px 12px", textAlign: "center", minWidth: 68, flexShrink: 0 }}>
-                        <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.04em" }}>{new Date(s.date+"T12:00:00").toLocaleString("en", { month: "short" })}</div>
-                        <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1 }}>{new Date(s.date+"T12:00:00").getDate()}</div>
+                    <div key={s.id} className={pg.u211}>
+                      <div className={pg.u212}>
+                        <div className={pg.u213}>{new Date(s.date+"T12:00:00").toLocaleString("en", { month: "short" })}</div>
+                        <div className={pg.u214}>{new Date(s.date+"T12:00:00").getDate()}</div>
                       </div>
                       <div className={pg.flex1}>
                         <div className={pg.textBold14}>{s.date} · {new Date(s.date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long"})}</div>
                         {schSite && <div className={pg.fs12c888mt2}>📍 {schSite.name}</div>}
                         {schSite?.contactName && <div className={pg.textMuted}>👤 {schSite.contactName} {schSite.contactPhone && `· ${schSite.contactPhone}`}</div>}
-                        {s.notes && <div style={{ fontSize: 12, color: "#999", fontStyle: "italic", marginTop: 4 }}>{s.notes}</div>}
-                        {(s.assignedTo||[]).length > 0 && <div style={{ marginTop: 8 }}><AvatarGroup names={s.assignedTo} max={4} /></div>}
+                        {s.notes && <div className={pg.u215}>{s.notes}</div>}
+                        {(s.assignedTo||[]).length > 0 && <div className={pg.p2_30}><AvatarGroup names={s.assignedTo} max={4} /></div>}
                       </div>
                     </div>
                   );
@@ -3839,18 +3831,18 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     : "No orders yet"}
                 </div>
                 <div className={pg.flexGap6}>
-                  <button className="btn btn-primary btn-sm" style={{ background: "#2563eb" }} onClick={() => {
+                  <button className="btn btn-primary btn-sm" className={pg.p2_10} onClick={() => {
                     const newWo = { id: genId(), ref: "WO-" + String((workOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", contractorId: "", contractorName: "", contractorContact: "", contractorEmail: "", contractorPhone: "", trade: "", scopeOfWork: "", notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Work order created")] };
                     setWorkOrders(prev => [...prev, newWo]);
                   }}><Icon name="plus" size={12} />New WO</button>
-                  <button className="btn btn-primary btn-sm" style={{ background: "#16a34a" }} onClick={() => {
+                  <button className="btn btn-primary btn-sm" className={pg.u216} onClick={() => {
                     const newPo = { id: genId(), ref: "PO-" + String((purchaseOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", supplierId: "", supplierName: "", supplierContact: "", supplierEmail: "", supplierAbn: "", deliveryAddress: "", lines: [{ id: genId(), desc: "", qty: 1, unit: "ea" }], notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Purchase order created")] };
                     setPurchaseOrders(prev => [...prev, newPo]);
                   }}><Icon name="plus" size={12} />New PO</button>
                 </div>
               </div>
               {jobWOs.length + jobPOs.length === 0
-                ? <div style={{ textAlign: "center", padding: "40px 0", color: "#999", fontSize: 13 }}>No work orders or purchase orders linked to this job yet.</div>
+                ? <div className={pg.u217}>No work orders or purchase orders linked to this job yet.</div>
                 : <div className="order-cards-grid">
                     {[...jobWOs.map(o => ({ ...o, _type: "wo" })), ...jobPOs.map(o => ({ ...o, _type: "po" }))].sort((a,b) => b.id - a.id).map(o => (
                       <OrderCard key={o.id} type={o._type} order={o} jobs={jobs} onOpen={() => {}} onDelete={() => {
@@ -3924,8 +3916,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               return (
                 <tr key={label}>
                   <td className={pg.textBold13}>{label}</td>
-                  <td style={{ textAlign: "right", fontSize: 13 }}>{fmt(estimated)}</td>
-                  <td style={{ textAlign: "right", fontSize: 13 }}>{fmt(actual)}</td>
+                  <td className={pg.p2_31}>{fmt(estimated)}</td>
+                  <td className={pg.p2_31}>{fmt(actual)}</td>
                   <td style={{ textAlign: "right", fontSize: 13, color: overBudget ? "#dc2626" : "#059669", fontWeight: 600 }}>{variance >= 0 ? "+" : ""}{fmt(variance)}</td>
                   <td style={{ textAlign: "right", fontSize: 13, color: overBudget ? "#dc2626" : "#059669" }}>{pct}%</td>
                 </tr>
@@ -3940,7 +3932,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
             return (
             <div>
               {/* Hero stat cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20 }}>
+              <div className={pg.u218}>
                 <div className={pg.grayBox}>
                   <div className={pg.fs10fw700label}>Total Estimate</div>
                   <div className={pg.fs20fw800tight}>{totalEstimate > 0 ? fmt(totalEstimate) : "—"}</div>
@@ -3954,11 +3946,11 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 <div className={pg.grayBox}>
                   <div className={pg.fs10fw700label}>Total Costs</div>
                   <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: totalEstimate > 0 && totalActual > totalEstimate ? "#dc2626" : "#111" }}>{fmt(totalActual)}</div>
-                  {totalEstimate > 0 && <div style={{ marginTop: 6 }}>
-                    <div style={{ height: 4, background: "#e5e7eb", borderRadius: 2, overflow: "hidden" }}>
+                  {totalEstimate > 0 && <div className={pg.u219}>
+                    <div className={pg.u220}>
                       <div style={{ width: `${costPct}%`, height: "100%", background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#059669", borderRadius: 2 }} />
                     </div>
-                    <div style={{ fontSize: 10, color: "#999", marginTop: 2 }}>{costPct}% of estimate</div>
+                    <div className={pg.u221}>{costPct}% of estimate</div>
                   </div>}
                 </div>
                 <div style={{ background: profit >= 0 ? "#ecfdf5" : "#fef2f2", borderRadius: 8, padding: "14px 16px", borderLeft: `3px solid ${profit >= 0 ? "#059669" : "#dc2626"}` }}>
@@ -3970,24 +3962,24 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
               {/* Estimate Breakdown — editable */}
               <div className={pg.mb20}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <div className={pg.u225}>
                   <div className={pg.textLabelNoMb}>Estimate Breakdown</div>
                   {!editingEstimate && <button className="btn btn-ghost btn-xs" onClick={() => { setEstimateForm({ ...defaultEstimate, ...(job.estimate || {}) }); setEditingEstimate(true); }}><Icon name="edit" size={11} /> Edit</button>}
                 </div>
                 {editingEstimate ? (
-                  <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 16 }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div className={pg.u226}>
+                    <div className={pg.u227}>
                       {[{ key: "labour", label: "Labour" }, { key: "materials", label: "Materials" }, { key: "subcontractors", label: "Subcontractors" }, { key: "other", label: "Other" }].map(f => (
                         <div key={f.key} className={`form-group ${jb.formGroupNoMb}`}>
                           <label className="form-label">{f.label}</label>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                            <span style={{ fontSize: 13, color: "#999" }}>$</span>
+                          <div className={pg.p2_14}>
+                            <span className={pg.p2_32}>$</span>
                             <input type="number" className="form-control" value={estimateForm[f.key] || ""} onChange={e => setEstimateForm(prev => ({ ...prev, [f.key]: parseFloat(e.target.value) || 0 }))} className={pg.flex1} />
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, paddingTop: 12, borderTop: "1px solid #e2e8f0" }}>
+                    <div className={pg.u228}>
                       <div className={pg.fs14fw700}>Total: {fmt((estimateForm.labour || 0) + (estimateForm.materials || 0) + (estimateForm.subcontractors || 0) + (estimateForm.other || 0))}</div>
                       <div className={pg.flexGap8}>
                         <button className="btn btn-ghost btn-sm" onClick={() => setEditingEstimate(false)}>Cancel</button>
@@ -3996,11 +3988,11 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+                  <div className={pg.u229}>
                     {[{ label: "Labour", val: est.labour }, { label: "Materials", val: est.materials }, { label: "Subcontractors", val: est.subcontractors }, { label: "Other", val: est.other }].map(c => (
-                      <div key={c.label} style={{ background: "#f8f8f8", borderRadius: 8, padding: "10px 14px" }}>
-                        <div style={{ fontSize: 11, color: "#999", marginBottom: 2 }}>{c.label}</div>
-                        <div style={{ fontSize: 15, fontWeight: 700 }}>{c.val ? fmt(c.val) : "—"}</div>
+                      <div key={c.label} className={pg.u230}>
+                        <div className={pg.p2_33}>{c.label}</div>
+                        <div className={pg.u231}>{c.val ? fmt(c.val) : "—"}</div>
                       </div>
                     ))}
                   </div>
@@ -4074,15 +4066,15 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               {totalEstimate > 0 && (
                 <div className={pg.mb20}>
                   <div className={pg.textLabelMb10}>Estimate vs Actual</div>
-                  <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, overflow: "hidden" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <div className={pg.p2_34}>
+                    <table className={pg.u232}>
                       <thead>
-                        <tr style={{ background: "#f8f8f8" }}>
-                          <th style={{ padding: "10px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Category</th>
-                          <th style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Estimate</th>
-                          <th style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Actual</th>
-                          <th style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Variance</th>
-                          <th style={{ padding: "10px 16px", textAlign: "right", fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>Used</th>
+                        <tr className={pg.p2_35}>
+                          <th className={pg.u233}>Category</th>
+                          <th className={pg.u234}>Estimate</th>
+                          <th className={pg.u234}>Actual</th>
+                          <th className={pg.u234}>Variance</th>
+                          <th className={pg.u234}>Used</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4090,10 +4082,10 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                         {varRow("Materials", est.materials || 0, actualMaterials)}
                         {varRow("Subcontractors", est.subcontractors || 0, actualSubs)}
                         {varRow("Other", est.other || 0, actualOther)}
-                        <tr style={{ borderTop: "2px solid #e8e8e8", background: "#f8f8f8" }}>
-                          <td style={{ padding: "10px 16px", fontWeight: 800, fontSize: 13 }}>Total</td>
-                          <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 800, fontSize: 13 }}>{fmt(totalEstimate)}</td>
-                          <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 800, fontSize: 13 }}>{fmt(totalActual)}</td>
+                        <tr className={pg.u235}>
+                          <td className={pg.u236}>Total</td>
+                          <td className={pg.p2_36}>{fmt(totalEstimate)}</td>
+                          <td className={pg.p2_36}>{fmt(totalActual)}</td>
                           <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 800, fontSize: 13, color: totalActual > totalEstimate ? "#dc2626" : "#059669" }}>{totalEstimate - totalActual >= 0 ? "+" : ""}{fmt(totalEstimate - totalActual)}</td>
                           <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 800, fontSize: 13, color: costPct > 100 ? "#dc2626" : "#059669" }}>{costPct}%</td>
                         </tr>
@@ -4106,7 +4098,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               {/* Revenue Breakdown */}
               <div>
                 <div className={pg.textLabelMb10}>Revenue Breakdown</div>
-                <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 16 }}>
+                <div className={pg.p2_37}>
                   {[{ label: "Accepted Quotes", val: totalQuoted, count: jobQuotes.filter(q => q.status === "accepted").length },
                     { label: "Total Invoiced", val: totalInvoiced, count: jobInvoices.length },
                     { label: "Paid", val: totalPaid, count: jobInvoices.filter(i => i.status === "paid").length }
@@ -4123,19 +4115,19 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               {clientLabourRate > 0 && (
               <div className={pg.mt20}>
                 <div className={pg.textLabelMb10}>Revenue at Client Rates</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-                  <div style={{ background: "#f0fdf4", borderRadius: 8, padding: "12px 16px", borderLeft: "3px solid #059669" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#059669", marginBottom: 4 }}>Calculated Revenue</div>
-                    <div style={{ fontSize: 20, fontWeight: 800 }}>{fmt(clientTotalRevenue)}</div>
-                    <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>Based on {client?.name} rates</div>
+                <div className={pg.p2_38}>
+                  <div className={pg.u239}>
+                    <div className={pg.u240}>Calculated Revenue</div>
+                    <div className={pg.u241}>{fmt(clientTotalRevenue)}</div>
+                    <div className={pg.p2_39}>Based on {client?.name} rates</div>
                   </div>
                   <div style={{ background: clientProfit >= 0 ? "#f0fdf4" : "#fef2f2", borderRadius: 8, padding: "12px 16px", borderLeft: `3px solid ${clientProfit >= 0 ? "#059669" : "#dc2626"}` }}>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: clientProfit >= 0 ? "#059669" : "#dc2626", marginBottom: 4 }}>Projected Profit</div>
                     <div style={{ fontSize: 20, fontWeight: 800, color: clientProfit >= 0 ? "#059669" : "#dc2626" }}>{fmt(clientProfit)}</div>
-                    <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{clientMarginPct}% margin</div>
+                    <div className={pg.p2_39}>{clientMarginPct}% margin</div>
                   </div>
                 </div>
-                <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 16 }}>
+                <div className={pg.p2_37}>
                   <div className={pg.listItemBorder}>
                     <span className={pg.fs13c555}>Labour <span className={pg.color999}>({totalLabourHours}h × ${clientLabourRate}/hr)</span></span>
                     <span className={pg.fs14fw700}>{fmt(clientLabourRevenue)}</span>
@@ -4148,13 +4140,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     <span className={pg.fs13c555}>Subcontractors <span className={pg.color999}>({fmt(actualSubs)} + {clientSubMargin}% margin)</span></span>
                     <span className={pg.fs14fw700}>{fmt(clientSubRevenue)}</span>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
+                  <div className={pg.u244}>
                     <span className={pg.fs13c555}>Other</span>
                     <span className={pg.fs14fw700}>{fmt(actualOther)}</span>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0 2px", borderTop: "2px solid #e8e8e8", marginTop: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 800 }}>Total</span>
-                    <span style={{ fontSize: 15, fontWeight: 800 }}>{fmt(clientTotalRevenue)}</span>
+                  <div className={pg.u245}>
+                    <span className={pg.u246}>Total</span>
+                    <span className={pg.u247}>{fmt(clientTotalRevenue)}</span>
                   </div>
                 </div>
               </div>
@@ -4170,7 +4162,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               return (
                 <div>
                   <div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">No project phases yet</div></div>
-                  <div style={{ textAlign: "center", marginTop: 12 }}>
+                  <div className={pg.u248}>
                     <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
                   </div>
                 </div>
@@ -4215,23 +4207,23 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
             return (
             <div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-                <div style={{ flex: 1, fontSize: 12, color: "#888" }}>{phases.length} phase{phases.length !== 1 ? "s" : ""} · {minDate} → {maxDate}</div>
+              <div className={pg.p2_40}>
+                <div className={pg.u249}>{phases.length} phase{phases.length !== 1 ? "s" : ""} · {minDate} → {maxDate}</div>
                 <button className="btn btn-ghost btn-sm" onClick={printGanttPdf}>🖨️ Export PDF</button>
                 <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
               </div>
 
               {showPhaseForm && (
-                <div style={{ padding: 16, background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 16 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                <div className={pg.p2_41}>
+                  <div className={pg.p2_42}>
                     <div><label className={pg.fs11fw600c888}>Phase Name</label><input className="form-control" value={phaseForm.name} onChange={e => setPhaseForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Demolition" /></div>
-                    <div><label className={pg.fs11fw600c888}>Color</label><input type="color" value={phaseForm.color} onChange={e => setPhaseForm(f => ({ ...f, color: e.target.value }))} style={{ width: "100%", height: 36, border: "1px solid #e2e8f0", borderRadius: 6, cursor: "pointer" }} /></div>
+                    <div><label className={pg.fs11fw600c888}>Color</label><input type="color" value={phaseForm.color} onChange={e => setPhaseForm(f => ({ ...f, color: e.target.value }))} className={pg.u250} /></div>
                     <div><label className={pg.fs11fw600c888}>Start Date</label><input type="date" className="form-control" value={phaseForm.startDate} onChange={e => setPhaseForm(f => ({ ...f, startDate: e.target.value }))} /></div>
                     <div><label className={pg.fs11fw600c888}>End Date</label><input type="date" className="form-control" value={phaseForm.endDate} onChange={e => setPhaseForm(f => ({ ...f, endDate: e.target.value }))} /></div>
                   </div>
                   <div className={pg.mb10}>
                     <label className={pg.fs11fw600c888}>Progress: {phaseForm.progress}%</label>
-                    <input type="range" min="0" max="100" step="5" value={phaseForm.progress} onChange={e => setPhaseForm(f => ({ ...f, progress: parseInt(e.target.value) }))} style={{ width: "100%" }} />
+                    <input type="range" min="0" max="100" step="5" value={phaseForm.progress} onChange={e => setPhaseForm(f => ({ ...f, progress: parseInt(e.target.value) }))} className={pg.p2_43} />
                   </div>
                   <div className={pg.flexEndGap8}>
                     <button className="btn btn-ghost btn-sm" onClick={() => { setShowPhaseForm(false); setEditPhase(null); }}>Cancel</button>
@@ -4243,13 +4235,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               )}
 
               {/* Gantt Chart */}
-              <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, overflow: "hidden" }}>
+              <div className={pg.p2_34}>
                 {/* Header with date markers */}
-                <div style={{ display: "flex", borderBottom: "1px solid #e8e8e8" }}>
-                  <div style={{ width: 160, minWidth: 160, padding: "8px 12px", fontWeight: 700, fontSize: 11, color: "#888", borderRight: "1px solid #e8e8e8" }}>Phase</div>
-                  <div style={{ flex: 1, position: "relative", padding: "8px 0", fontSize: 10, color: "#aaa" }}>
-                    <span style={{ position: "absolute", left: 4 }}>{minDate}</span>
-                    <span style={{ position: "absolute", right: 4 }}>{maxDate}</span>
+                <div className={pg.u251}>
+                  <div className={pg.u252}>Phase</div>
+                  <div className={pg.u253}>
+                    <span className={pg.u254}>{minDate}</span>
+                    <span className={pg.u255}>{maxDate}</span>
                   </div>
                 </div>
                 {phases.map(p => {
@@ -4258,14 +4250,14 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   const leftPct = ((pStartMs - startMs) / rangeMs) * 100;
                   const widthPct = Math.max(2, ((pEndMs - pStartMs) / rangeMs) * 100);
                   return (
-                    <div key={p.id} style={{ display: "flex", borderBottom: "1px solid #f0f0f0", minHeight: 40, alignItems: "center" }}>
-                      <div style={{ width: 160, minWidth: 160, padding: "6px 12px", borderRight: "1px solid #e8e8e8", display: "flex", alignItems: "center", gap: 6 }}>
+                    <div key={p.id} className={pg.u256}>
+                      <div className={pg.u257}>
                         <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, flexShrink: 0 }} />
-                        <span style={{ fontSize: 12, fontWeight: 600, flex: 1 }}>{p.name}</span>
-                        <button className="btn btn-ghost" style={{ padding: 2, fontSize: 10 }} onClick={() => { setEditPhase(p); setPhaseForm({ name: p.name, startDate: p.startDate, endDate: p.endDate, color: p.color, progress: p.progress }); setShowPhaseForm(true); }}>✏️</button>
-                        <button className="btn btn-ghost" style={{ padding: 2, fontSize: 10, color: "#c00" }} onClick={() => deletePhase(p.id)}>🗑</button>
+                        <span className={pg.u258}>{p.name}</span>
+                        <button className="btn btn-ghost" className={pg.u259} onClick={() => { setEditPhase(p); setPhaseForm({ name: p.name, startDate: p.startDate, endDate: p.endDate, color: p.color, progress: p.progress }); setShowPhaseForm(true); }}>✏️</button>
+                        <button className="btn btn-ghost" className={pg.u260} onClick={() => deletePhase(p.id)}>🗑</button>
                       </div>
-                      <div style={{ flex: 1, position: "relative", height: 24, margin: "0 8px" }}>
+                      <div className={pg.u261}>
                         {todayPct > 0 && todayPct < 100 && <div style={{ position: "absolute", left: `${todayPct}%`, top: -2, bottom: -2, width: 2, background: "#ef4444", zIndex: 2, borderRadius: 1 }} />}
                         <div style={{ position: "absolute", left: `${leftPct}%`, width: `${widthPct}%`, height: "100%", background: p.color + "25", borderRadius: 4, overflow: "hidden" }}>
                           <div style={{ width: `${p.progress}%`, height: "100%", background: p.color, borderRadius: 4, transition: "width 0.3s" }} />
@@ -4312,11 +4304,11 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
             return (
             <div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+              <div className={pg.p2_40}>
                 {tasks.length > 0 && (
-                  <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
+                  <div className={pg.u262}>
                     <span className={pg.fs13fw600}>{done} of {tasks.length} complete</span>
-                    <div style={{ flex: 1, maxWidth: 200, height: 6, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}>
+                    <div className={pg.u263}>
                       <div style={{ width: `${tasks.length > 0 ? (done / tasks.length) * 100 : 0}%`, height: "100%", background: done === tasks.length ? "#059669" : jobAccent, borderRadius: 3, transition: "width 0.3s" }} />
                     </div>
                   </div>
@@ -4327,9 +4319,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               </div>
 
               {showTaskForm && (
-                <div style={{ padding: 16, background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 16 }}>
+                <div className={pg.p2_41}>
                   <input className="form-control" value={taskForm.text} onChange={e => setTaskForm(f => ({ ...f, text: e.target.value }))} placeholder="Task description…" className={pg.mb10} />
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                  <div className={pg.p2_42}>
                     <div><label className={pg.fs11fw600c888}>Due Date</label><input type="date" className="form-control" value={taskForm.dueDate} onChange={e => setTaskForm(f => ({ ...f, dueDate: e.target.value }))} /></div>
                     <div><label className={pg.fs11fw600c888}>Assigned To</label>
                       <select className="form-control" value={taskForm.assignedTo} onChange={e => setTaskForm(f => ({ ...f, assignedTo: e.target.value }))}>
@@ -4350,7 +4342,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               )}
 
               {tasks.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div className={pg.p2_44}>
                   {tasks.map(task => {
                     const isOverdue = !task.done && task.dueDate && task.dueDate < todayStr;
                     return (
@@ -4358,12 +4350,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                         <input type="checkbox" checked={task.done} onChange={() => toggleTask(task.id)} style={{ width: 18, height: 18, cursor: "pointer", accentColor: jobAccent }} />
                         <div className={pg.flex1}>
                           <div style={{ fontSize: 13, fontWeight: 500, textDecoration: task.done ? "line-through" : "none", color: task.done ? "#999" : "#333" }}>{task.text}</div>
-                          <div style={{ display: "flex", gap: 8, marginTop: 3, fontSize: 11, color: "#888" }}>
+                          <div className={pg.u265}>
                             {task.dueDate && <span style={{ color: isOverdue ? "#dc2626" : "#888", fontWeight: isOverdue ? 700 : 400 }}>{isOverdue ? "⚠️ " : ""}{task.dueDate}</span>}
                             {task.assignedTo && <span>· {task.assignedTo}</span>}
                           </div>
                         </div>
-                        <button className="btn btn-ghost" style={{ padding: 4, color: "#ccc", fontSize: 12 }} onClick={() => deleteTask(task.id)}>✕</button>
+                        <button className="btn btn-ghost" className={pg.u266} onClick={() => deleteTask(task.id)}>✕</button>
                       </div>
                     );
                   })}
@@ -4395,7 +4387,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
           {tab === "activity" && (
             <div>
-              <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className={pg.u267}>
                 <div className={pg.fs13c888}>{(job.activityLog||[]).length} event{(job.activityLog||[]).length !== 1 ? "s" : ""} recorded</div>
               </div>
               <ActivityLog entries={job.activityLog || []} />
@@ -4408,13 +4400,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
     {/* ── Image Lightbox ────────────────────────────────────────────── */}
     {lightboxImg && (
-      <div onClick={() => setLightboxImg(null)} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-        <img src={lightboxImg} alt="Attachment" style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: 8, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }} />
+      <div onClick={() => setLightboxImg(null)} className={pg.p2_6}>
+        <img src={lightboxImg} alt="Attachment" className={pg.p2_7} />
         <button onClick={(e) => { e.stopPropagation(); setMarkupImg({ src: lightboxImg, target: "new" }); setLightboxImg(null); }}
-          style={{ position: "absolute", bottom: 30, left: "50%", transform: "translateX(-50%)", padding: "10px 24px", borderRadius: 8, background: "#0891b2", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+          className={pg.p2_8}>
           ✏️ Mark Up Photo
         </button>
-        <button onClick={() => setLightboxImg(null)} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: 20, width: 36, height: 36, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+        <button onClick={() => setLightboxImg(null)} className={pg.p2_9}>✕</button>
       </div>
     )}
 
@@ -4467,34 +4459,34 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
       const tmpl = FORM_TEMPLATES.find(t => t.id === viewingForm.formType);
       const data = viewingForm.formData || {};
       return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setViewingForm(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, width: "90%", maxWidth: 560, maxHeight: "85vh", overflow: "auto", padding: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-              <span style={{ fontSize: 20 }}>{tmpl?.icon}</span>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{tmpl?.name || "Form"}</h3>
+        <div className={pg.p2_45} onClick={() => setViewingForm(null)}>
+          <div onClick={e => e.stopPropagation()} className={pg.p2_46}>
+            <div className={pg.u268}>
+              <span className={pg.p2_47}>{tmpl?.icon}</span>
+              <h3 className={pg.p2_48}>{tmpl?.name || "Form"}</h3>
               <div className={pg.flex1} />
               <button className="btn btn-ghost btn-sm" onClick={() => { printFormPdf(viewingForm, tmpl); }}>🖨️ Print PDF</button>
               <button onClick={() => setViewingForm(null)} className={pg.plainBtn}>✕</button>
             </div>
-            <div style={{ fontSize: 11, color: "#888", marginBottom: 16 }}>Completed {new Date(viewingForm.createdAt).toLocaleString()} by {viewingForm.createdBy}</div>
+            <div className={pg.u269}>Completed {new Date(viewingForm.createdAt).toLocaleString()} by {viewingForm.createdBy}</div>
             {(tmpl?.fields || []).map(field => {
               const val = data[field.key];
               return (
                 <div key={field.key} className={pg.cardMb}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{field.label}</div>
+                  <div className={pg.u270}>{field.label}</div>
                   {field.type === "checklist" ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div className={pg.p2_44}>
                       {(field.options || []).map((opt, i) => (
-                        <div key={i} style={{ fontSize: 13, display: "flex", gap: 6, alignItems: "center" }}>
+                        <div key={i} className={pg.u271}>
                           <span style={{ color: (val || []).includes(opt) ? "#059669" : "#dc2626", fontWeight: 700 }}>{(val || []).includes(opt) ? "✓" : "✗"}</span>
                           <span style={{ color: (val || []).includes(opt) ? "#333" : "#999" }}>{opt}</span>
                         </div>
                       ))}
                     </div>
                   ) : field.type === "signature" ? (
-                    val ? <img src={val} alt="Signature" style={{ maxWidth: 300, height: 80, border: "1px solid #e2e8f0", borderRadius: 6 }} /> : <span style={{ fontSize: 13, color: "#999" }}>No signature</span>
+                    val ? <img src={val} alt="Signature" className={pg.u274} /> : <span className={pg.p2_32}>No signature</span>
                   ) : (
-                    <div style={{ fontSize: 13, color: "#333", whiteSpace: "pre-wrap" }}>{val || "—"}</div>
+                    <div className={pg.u275}>{val || "—"}</div>
                   )}
                 </div>
               );
@@ -4522,7 +4514,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         statusStrip={inlineQuoteMode === "edit" ?
           <div style={{ padding: "8px 20px", background: SECTION_COLORS.quotes.light, display: "flex", alignItems: "center", gap: 6, overflowX: "auto", overflowY: "hidden" }}>
             {["draft","sent","accepted","declined"].filter(s => s !== editingQuote.status).map(s => (
-              <button key={s} className="btn btn-xs" style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#475569", borderRadius: 8 }}
+              <button key={s} className="btn btn-xs" className={pg.p2_49}
                 onClick={() => setEditingQuote(q => ({ ...q, status: s }))}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>
             ))}
           </div>
@@ -4543,7 +4535,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
       >
         {inlineQuoteMode === "view" ? (
         <div className={pg.drawerBody}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+          <div className={pg.p2_50}>
             <ViewField label="Status" value={editingQuote.status?.charAt(0).toUpperCase() + editingQuote.status?.slice(1)} />
             <ViewField label="GST" value={`${editingQuote.tax}%`} />
           </div>
@@ -4573,7 +4565,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           <div className={pg.grayRoundedBox}>
             <div className={pg.flexBetweenMb6}><span className={pg.color888}>Subtotal</span><span className={pg.fw600}>{fmt(qSub)}</span></div>
             <div className={pg.flexBetweenMb6}><span className={pg.color888}>GST ({editingQuote.tax}%)</span><span className={pg.fw600}>{fmt(qGst)}</span></div>
-            <div className={pg.totalRow}><span className={pg.cellAmount}>Total</span><span style={{ fontWeight: 800, color: qAccent }}>{fmt(qTotal)}</span></div>
+            <div className={pg.totalRow}><span className={pg.cellAmount}>Total</span><span className={pg.u276}>{fmt(qTotal)}</span></div>
           </div>
           {editingQuote.notes && <ViewField label="Notes / Terms" value={editingQuote.notes} />}
         </div>
@@ -4598,7 +4590,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
             <LineItemsEditor items={editingQuote.lineItems}
               onChange={items => setEditingQuote(q => ({ ...q, lineItems: items }))} />
           </div>
-          <div style={{ marginTop: 12, padding: "12px 16px", background: "#f8f8f8", borderRadius: 8, display: "flex", justifyContent: "flex-end", gap: 16 }}>
+          <div className={pg.p2_51}>
             <span className={pg.textMuted}>Subtotal <strong>{fmt(qSub)}</strong></span>
             <span className={pg.textMuted}>GST <strong>{fmt(qGst)}</strong></span>
             <span className={pg.fs14fw700}>Total {fmt(qTotal)}</span>
@@ -4633,7 +4625,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         statusStrip={inlineInvMode === "edit" ?
           <div style={{ padding: "8px 20px", background: SECTION_COLORS.invoices.light, display: "flex", alignItems: "center", gap: 6, overflowX: "auto", overflowY: "hidden" }}>
             {["draft","sent","paid","overdue","void"].filter(s => s !== editingInvoice.status).map(s => (
-              <button key={s} className="btn btn-xs" style={{ background: "#fff", border: "1px solid #cbd5e1", color: "#475569", borderRadius: 8 }}
+              <button key={s} className="btn btn-xs" className={pg.p2_49}
                 onClick={() => setEditingInvoice(i => ({ ...i, status: s }))}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>
             ))}
           </div>
@@ -4654,7 +4646,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
       >
         {inlineInvMode === "view" ? (
         <div className={pg.drawerBody}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 20 }}>
+          <div className={pg.u277}>
             <ViewField label="Status" value={editingInvoice.status?.charAt(0).toUpperCase() + editingInvoice.status?.slice(1)} />
             <ViewField label="Due Date" value={editingInvoice.dueDate || "—"} />
             <ViewField label="GST" value={`${editingInvoice.tax}%`} />
@@ -4685,7 +4677,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           <div className={pg.grayRoundedBox}>
             <div className={pg.flexBetweenMb6}><span className={pg.color888}>Subtotal</span><span className={pg.fw600}>{fmt(iSub)}</span></div>
             <div className={pg.flexBetweenMb6}><span className={pg.color888}>GST ({editingInvoice.tax}%)</span><span className={pg.fw600}>{fmt(iGst)}</span></div>
-            <div className={pg.totalRow}><span className={pg.cellAmount}>Total</span><span style={{ fontWeight: 800, color: iAccent }}>{fmt(iTotal)}</span></div>
+            <div className={pg.totalRow}><span className={pg.cellAmount}>Total</span><span className={pg.u278}>{fmt(iTotal)}</span></div>
           </div>
           {editingInvoice.notes && <ViewField label="Notes" value={editingInvoice.notes} />}
         </div>
@@ -4715,7 +4707,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
             <LineItemsEditor items={editingInvoice.lineItems}
               onChange={items => setEditingInvoice(i => ({ ...i, lineItems: items }))} />
           </div>
-          <div style={{ marginTop: 12, padding: "12px 16px", background: "#f8f8f8", borderRadius: 8, display: "flex", justifyContent: "flex-end", gap: 16 }}>
+          <div className={pg.p2_51}>
             <span className={pg.textMuted}>Subtotal <strong>{fmt(iSub)}</strong></span>
             <span className={pg.textMuted}>GST <strong>{fmt(iGst)}</strong></span>
             <span className={pg.fs14fw700}>Total {fmt(iTotal)}</span>
@@ -4836,7 +4828,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
             <div key={key} className={`stat-card ${jb.summaryCard}`} style={{ borderTop: `3px solid ${color}` }}
               onClick={() => { setFilterStatus(key); setView("list"); }}>
               <div className="stat-label">{label}</div>
-              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
+              <div className="stat-value" className={pg.u118}>{count}</div>
               <div className="stat-sub">{count === 1 ? "job" : "jobs"}</div>
             </div>
           );
@@ -5158,7 +5150,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
             <div className={jb.editEstimateWrap}>
               <div className={jb.estimateLabel}>Estimate *</div>
               <div className={jb.editEstimateBox}>
-                <div className="grid-2" style={{ marginBottom: 8 }}>
+                <div className="grid-2" className={pg.p2_17}>
                   <div className={`form-group ${jb.formGroupNoMb}`}>
                     <label className={`form-label ${jb.formLabelSm}`}>Labour ($)</label>
                     <input type="number" className="form-control" min="0" step="100" value={form.estimate?.labour || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, labour: Number(e.target.value) || 0 } }))} placeholder="0" />
@@ -5348,7 +5340,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                       <td className={pg.fs12c666}>{client.phone || "—"}</td>
                       <td>{(client.sites || []).length}</td>
                       <td>{clientJobs.length}</td>
-                      <td>{active > 0 ? <span className="chip" style={{ background: "#111", color: "#fff" }}>{active}</span> : "—"}</td>
+                      <td>{active > 0 ? <span className="chip" className={pg.p2_52}>{active}</span> : "—"}</td>
                       <td onClick={e => e.stopPropagation()}><button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(client.id)}><Icon name="trash" size={12} /></button></td>
                     </tr>
                   );
@@ -5359,7 +5351,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
         </div>
       )}
 
-      {view === "grid" && <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {view === "grid" && <div className={pg.p2_53}>
         {filtered.map(client => {
           const clientJobs = jobs.filter(j => j.clientId === client.id);
           const active = clientJobs.filter(j => j.status === "in_progress").length;
@@ -5368,28 +5360,28 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
           return (
             <div key={client.id} className="card">
               {/* Client header */}
-              <div onClick={() => openEdit(client)} style={{ padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", cursor: "pointer", transition: "background 0.15s" }}>
-                <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flex: 1, minWidth: 0 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#111", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, flexShrink: 0 }}>
+              <div onClick={() => openEdit(client)} className={pg.u282}>
+                <div className={pg.u283}>
+                  <div className={pg.u284}>
                     {client.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                   </div>
                   <div className={pg.listItemMain}>
-                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{client.name}</div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
+                    <div className={pg.u285}>{client.name}</div>
+                    <div className={pg.u286}>
                       {client.email  && <span className={pg.fs12c666}>📧 {client.email}</span>}
                       {client.phone  && <span className={pg.fs12c666}>📞 {client.phone}</span>}
                       {client.address && <span className={pg.fs12c666}>📍 {client.address}</span>}
                     </div>
-                    {client.mainContact?.name && <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>👤 {client.mainContact.name} — Main Contact</div>}
+                    {client.mainContact?.name && <div className={pg.u287}>👤 {client.mainContact.name} — Main Contact</div>}
                     {client.rates?.labourRate > 0 && <div className={pg.fs11c888mt2}>${client.rates.labourRate}/hr labour rate</div>}
-                    <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                    <div className={pg.u288}>
                       <span className="chip">{clientJobs.length} jobs</span>
-                      {active > 0 && <span className="chip" style={{ background: "#111", color: "#fff" }}>{active} active</span>}
+                      {active > 0 && <span className="chip" className={pg.p2_52}>{active} active</span>}
                       <span className="chip">🏢 {sites.length} site{sites.length !== 1 ? "s" : ""}</span>
                     </div>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 4, flexShrink: 0, marginLeft: 12 }} onClick={e => e.stopPropagation()}>
+                <div className={pg.u289} onClick={e => e.stopPropagation()}>
                   <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(client.id)}><Icon name="trash" size={12} /></button>
                 </div>
               </div>
@@ -5399,11 +5391,11 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                 style={{ borderTop: "1px solid #f0f0f0", padding: "10px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", background: sitesOpen ? "#fafafa" : "transparent" }}
                 onClick={() => toggleSites(client.id)}
               >
-                <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888" }}>
+                <span className={pg.u290}>
                   Sites &amp; Contacts ({sites.length})
                 </span>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <button className="btn btn-ghost btn-xs" style={{ fontSize: 11, padding: "3px 8px" }}
+                <div className={pg.u291}>
+                  <button className="btn btn-ghost btn-xs" className={pg.u292}
                     onClick={e => { e.stopPropagation(); openNewSite(client.id); }}>
                     <Icon name="plus" size={10} /> Add Site
                   </button>
@@ -5416,27 +5408,27 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
 
               {/* Sites list */}
               {sitesOpen && (
-                <div style={{ borderTop: "1px solid #f5f5f5" }}>
+                <div className={pg.u293}>
                   {sites.length === 0 ? (
-                    <div style={{ padding: "16px 20px", fontSize: 13, color: "#bbb", textAlign: "center" }}>
+                    <div className={pg.u294}>
                       No sites added yet. Click "+ Add Site" to add one.
                     </div>
                   ) : (
                     sites.map((site, si) => (
                       <div key={site.id} style={{ padding: "14px 20px", borderBottom: si < sites.length - 1 ? "1px solid #f5f5f5" : "none", display: "flex", gap: 14, alignItems: "flex-start" }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16 }}>🏢</div>
+                        <div className={pg.u296}>🏢</div>
                         <div className={pg.listItemMain}>
-                          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 3 }}>{site.name}</div>
-                          {site.address && <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>📍 {site.address}</div>}
+                          <div className={pg.u297}>{site.name}</div>
+                          {site.address && <div className={pg.u298}>📍 {site.address}</div>}
                           {(site.contactName || site.contactPhone || site.contactEmail) && (
-                            <div style={{ display: "flex", gap: "4px 14px", flexWrap: "wrap", marginTop: 4 }}>
-                              {site.contactName  && <span style={{ fontSize: 12, color: "#555", fontWeight: 600 }}>👤 {site.contactName}</span>}
+                            <div className={pg.u299}>
+                              {site.contactName  && <span className={pg.u300}>👤 {site.contactName}</span>}
                               {site.contactPhone && <span className={pg.fs12c555}>📞 {site.contactPhone}</span>}
                               {site.contactEmail && <span className={pg.fs12c555}>✉ {site.contactEmail}</span>}
                             </div>
                           )}
                         </div>
-                        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                        <div className={pg.p2_54}>
                           <button className="btn btn-ghost btn-xs" onClick={() => openEditSite(client.id, site)}><Icon name="edit" size={11} /></button>
                           <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => delSite(client.id, site.id)}><Icon name="trash" size={11} /></button>
                         </div>
@@ -5448,11 +5440,11 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
 
               {/* Recent jobs */}
               {clientJobs.length > 0 && (
-                <div style={{ borderTop: "1px solid #f0f0f0", padding: "12px 20px" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", marginBottom: 8 }}>Recent Jobs</div>
+                <div className={pg.u301}>
+                  <div className={pg.u302}>Recent Jobs</div>
                   {clientJobs.slice(0, 2).map(j => (
-                    <div key={j.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                      <span style={{ fontSize: 12, fontWeight: 600 }}>{j.title}</span>
+                    <div key={j.id} className={pg.p2_55}>
+                      <span className={pg.u303}>{j.title}</span>
                       <StatusBadge status={j.status} />
                     </div>
                   ))}
@@ -5499,18 +5491,18 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
               </div>
               <ViewField label="Address" value={form.address} />
               {/* Contact cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+              <div className={pg.u304}>
                 {form.mainContact?.name && (
-                  <div style={{ padding: "10px 14px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 6 }}>Main Contact</div>
+                  <div className={pg.p2_56}>
+                    <div className={pg.p2_57}>Main Contact</div>
                     <div className={pg.fs13fw600c334155}>{form.mainContact.name}</div>
                     {form.mainContact.phone && <div className={pg.fs12c64748bmt2}>📞 {form.mainContact.phone}</div>}
                     {form.mainContact.email && <div className={pg.fs12c64748bmt2}>✉ {form.mainContact.email}</div>}
                   </div>
                 )}
                 {form.accountsContact?.name && (
-                  <div style={{ padding: "10px 14px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 6 }}>Accounts Contact</div>
+                  <div className={pg.p2_56}>
+                    <div className={pg.p2_57}>Accounts Contact</div>
                     <div className={pg.fs13fw600c334155}>{form.accountsContact.name}</div>
                     {form.accountsContact.phone && <div className={pg.fs12c64748bmt2}>📞 {form.accountsContact.phone}</div>}
                     {form.accountsContact.email && <div className={pg.fs12c64748bmt2}>✉ {form.accountsContact.email}</div>}
@@ -5519,7 +5511,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
               </div>
               {/* Rates */}
               {(form.rates?.labourRate || form.rates?.materialMargin || form.rates?.subcontractorMargin) ? (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}>
+                <div className={pg.u305}>
                   <div className={pg.infoBoxSm}>
                     <div className={pg.fs10fw700label94}>Labour Rate</div>
                     <div className={pg.fs15fw700c334155}>${form.rates.labourRate || 0}/hr</div>
@@ -5535,7 +5527,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                 </div>
               ) : null}
               {/* Template Preferences */}
-              <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 12, marginTop: 12 }}>
+              <div className={pg.u306}>
                 <div className={pg.textLabelMb8}>Template Preferences</div>
                 <div className={pg.grid2colGap8}>
                   {[{ key: "quote", label: "Quotes" }, { key: "invoice", label: "Invoices" }, { key: "work_order", label: "Work Orders" }, { key: "purchase_order", label: "Purchase Orders" }].map(dt => {
@@ -5543,8 +5535,8 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                     const currentVal = form.templatePreferences?.[dt.key] || opts.find(t => t.isDefault)?.id || "";
                     return (
                       <div key={dt.key}>
-                        <label style={{ display: "block", fontSize: 10, fontWeight: 700, color: "#999", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{dt.label}</label>
-                        <select value={currentVal} onChange={e => setForm(f => ({ ...f, templatePreferences: { ...(f.templatePreferences || {}), [dt.key]: Number(e.target.value) } }))} style={{ width: "100%", padding: "6px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 12, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }}>
+                        <label className={pg.u307}>{dt.label}</label>
+                        <select value={currentVal} onChange={e => setForm(f => ({ ...f, templatePreferences: { ...(f.templatePreferences || {}), [dt.key]: Number(e.target.value) } }))} className={pg.u308}>
                           {opts.map(t => <option key={t.id} value={t.id}>{t.name}{t.isDefault ? " (Default)" : ""}</option>)}
                         </select>
                       </div>
@@ -5552,7 +5544,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                   })}
                 </div>
               </div>
-              <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 12 }}>
+              <div className={pg.u309}>
                 <div className={pg.flexGap8}>
                   <span className="chip">{clientJobCount} jobs</span>
                   <span className="chip">🏢 {clientSites.length} site{clientSites.length !== 1 ? "s" : ""}</span>
@@ -5562,9 +5554,9 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                 <div className={pg.mt16}>
                   <div className={pg.textLabelMb8sq}>Sites</div>
                   {clientSites.map(s => (
-                    <div key={s.id} style={{ padding: "10px 14px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6 }}>
+                    <div key={s.id} className={pg.u310}>
                       <div className={pg.textBold13}>{s.name}</div>
-                      {s.address && <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{s.address}</div>}
+                      {s.address && <div className={pg.u311}>{s.address}</div>}
                       {s.contactName && <div className={pg.fs12c888mt2}>👤 {s.contactName}{s.contactPhone ? ` · ${s.contactPhone}` : ""}{s.contactEmail ? ` · ${s.contactEmail}` : ""}</div>}
                     </div>
                   ))}
@@ -5616,7 +5608,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
       {showSiteModal && (
         <SectionDrawer
           accent={SECTION_COLORS.clients.accent}
-          icon={<span style={{ fontSize: 16 }}>🏢</span>}
+          icon={<span className={pg.u312}>🏢</span>}
           typeLabel="Site"
           title={editSite ? editSite.name : "Add Site"}
           mode="edit" setMode={() => {}}
@@ -5633,7 +5625,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
           <div className={jb.drawerBody}>
             <div className="form-group"><label className="form-label">Site Name *</label><input className="form-control" value={siteForm.name} onChange={e => setSiteForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Head Office, Warehouse, Site A" /></div>
             <div className="form-group"><label className="form-label">Address</label><input className="form-control" value={siteForm.address} onChange={e => setSiteForm(f => ({ ...f, address: e.target.value }))} placeholder="Physical address" /></div>
-            <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4, marginBottom: 16 }}>
+            <div className={pg.u313}>
               <div className={pg.textLabelMb12}>Site Contact</div>
               <div className={pg.grid3col}>
                 <div className="form-group"><label className="form-label">Contact Name</label><input className="form-control" value={siteForm.contactName} onChange={e => setSiteForm(f => ({ ...f, contactName: e.target.value }))} placeholder="Full name" /></div>
@@ -5786,8 +5778,8 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
 
   const ComplianceBadge = ({ contractor }) => {
     const issues = getContractorComplianceCount(contractor);
-    if (issues === 0) return <span className="badge" style={{ background: "#ecfdf5", color: "#059669", fontSize: 10 }}>Compliant</span>;
-    return <span className="badge" style={{ background: "#fef2f2", color: "#dc2626", fontSize: 10 }}>{issues} issue{issues > 1 ? "s" : ""}</span>;
+    if (issues === 0) return <span className="badge" className={pg.u314}>Compliant</span>;
+    return <span className="badge" className={pg.u315}>{issues} issue{issues > 1 ? "s" : ""}</span>;
   };
 
   return (
@@ -5827,7 +5819,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                   return (
                   <tr key={c.id} className={pg.pointer} onClick={() => openEdit(c)}>
                     <td className={pg.cellAmount}>{c.name}</td>
-                    <td>{c.contact || "—"}<div style={{ fontSize: 11, color: "#999" }}>{c.phone}</div></td>
+                    <td>{c.contact || "—"}<div className={pg.p2_58}>{c.phone}</div></td>
                     <td><span className="chip" className={pg.fs10}>{c.trade}</span></td>
                     <td><ComplianceBadge contractor={c} /></td>
                     <td><span style={{ fontWeight: 600, color: getActiveWOs(c).length > 0 ? accent : "#ccc" }}>{getActiveWOs(c).length}</span></td>
@@ -5844,24 +5836,24 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
       )}
 
       {view === "grid" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+        <div className={pg.p2_59}>
           {filtered.length === 0 && <div className={`empty-state ${jb.emptyFullSpan}`}><div className="empty-state-icon">🏗️</div><div className="empty-state-text">No contractors found</div></div>}
           {filtered.map(c => {
             const activeWOs = getActiveWOs(c);
             const billCount = getContractorBills(c).length;
             const billTotal = getBillTotal(c);
             return (
-              <div key={c.id} className="card" onClick={() => openEdit(c)} style={{ cursor: "pointer", padding: 18 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+              <div key={c.id} className="card" onClick={() => openEdit(c)} className={pg.p2_60}>
+                <div className={pg.u319}>
                   <span className={pg.textBold14}>{c.name}</span>
-                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                  <div className={pg.p2_61}>
                     <ComplianceBadge contractor={c} />
                     <span className="chip" style={{ fontSize: 10, background: hexToRgba(accent, 0.12), color: accent }}>{c.trade}</span>
                   </div>
                 </div>
-                {c.contact && <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>{c.contact}</div>}
+                {c.contact && <div className={pg.p2_62}>{c.contact}</div>}
                 {c.email && <div className={pg.fs12c999mb2}>{c.email}</div>}
-                {c.phone && <div style={{ fontSize: 12, color: "#999", marginBottom: 8 }}>{c.phone}</div>}
+                {c.phone && <div className={pg.u320}>{c.phone}</div>}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: billCount > 0 ? 8 : 0 }}>
                   <div className={pg.flexGap6}>
                     <span className="chip" className={pg.fs10}>{getWOCount(c)} WO{getWOCount(c) !== 1 ? "s" : ""} · {activeWOs.length} active</span>
@@ -5869,7 +5861,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                   </div>
                   <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={e => { e.stopPropagation(); del(c.id); }}><Icon name="trash" size={12} /></button>
                 </div>
-                {billTotal > 0 && <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>Bills total: <span className={pg.color111}>{fmt(billTotal)}</span></div>}
+                {billTotal > 0 && <div className={pg.p2_63}>Bills total: <span className={pg.color111}>{fmt(billTotal)}</span></div>}
               </div>
             );
           })}
@@ -5891,13 +5883,13 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                   const billCount = getContractorBills(c).length;
                   return (
                     <div key={c.id} className="kanban-card" onClick={() => openEdit(c)}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-                        <div style={{ fontWeight: 700, fontSize: 12 }}>{c.name}</div>
+                      <div className={pg.u322}>
+                        <div className={pg.u323}>{c.name}</div>
                         <ComplianceBadge contractor={c} />
                       </div>
-                      {c.contact && <div style={{ fontSize: 11, color: "#999", marginBottom: 2 }}>{c.contact}</div>}
-                      {c.phone && <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{c.phone}</div>}
-                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {c.contact && <div className={pg.p2_33}>{c.contact}</div>}
+                      {c.phone && <div className={pg.u324}>{c.phone}</div>}
+                      <div className={pg.u325}>
                         {activeWOs.length > 0 && <span className="chip" className={pg.fs10}>{activeWOs.length} active WO{activeWOs.length > 1 ? "s" : ""}</span>}
                         {billCount > 0 && <span className="chip" className={pg.fs10}>{billCount} bill{billCount > 1 ? "s" : ""}</span>}
                       </div>
@@ -5949,7 +5941,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                         <div key={wo.id} className={pg.grayPillSm}>
                           <span className={pg.cellAmount}>{wo.ref}</span>
                           <OrderStatusBadge status={wo.status} />
-                          {wo.dueDate && <span style={{ float: "right", color: "#888" }}>{wo.dueDate}</span>}
+                          {wo.dueDate && <span className={pg.p2_64}>{wo.dueDate}</span>}
                         </div>
                       ))}
                     </div>
@@ -5958,27 +5950,27 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                     <div className={pg.mt20}>
                       <div className={pg.flexBetweenMb8}>
                         <div className={pg.textLabelNoMb}>Bills</div>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: "#111" }}>{fmt(linkedBillTotal)}</span>
+                        <span className={pg.u326}>{fmt(linkedBillTotal)}</span>
                       </div>
                       {linkedBills.map(b => {
                         const bsc = BILL_STATUS_COLORS[b.status] || { bg: "#f0f0f0", text: "#666" };
                         return (
-                        <div key={b.id} style={{ padding: "10px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                        <div key={b.id} className={pg.u327}>
+                          <div className={pg.p2_55}>
                             <div>
                               <span className={pg.cellAmount}>{b.supplier}</span>
-                              {b.invoiceNo && <span style={{ color: "#aaa", fontFamily: "monospace", fontSize: 11, marginLeft: 8 }}>{b.invoiceNo}</span>}
+                              {b.invoiceNo && <span className={pg.u328}>{b.invoiceNo}</span>}
                             </div>
                             <span className={pg.cellAmount}>{fmt(b.amount)}</span>
                           </div>
                           <div className={pg.flexBetween}>
-                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            <div className={pg.u329}>
                               <span className="badge" style={{ background: bsc.bg, color: bsc.text, fontSize: 10 }}>{BILL_STATUS_LABELS[b.status] || b.status}</span>
                               <span className="chip" className={pg.fs10}>{b.category}</span>
                             </div>
-                            <span style={{ fontSize: 11, color: "#999" }}>{b.date}</span>
+                            <span className={pg.p2_58}>{b.date}</span>
                           </div>
-                          {b.description && <div style={{ fontSize: 11, color: "#777", marginTop: 4 }}>{b.description}</div>}
+                          {b.description && <div className={pg.u330}>{b.description}</div>}
                         </div>
                         );
                       })}
@@ -5986,9 +5978,9 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                   )}
 
                   {/* Compliance Documents */}
-                  <div style={{ marginTop: 24 }}>
+                  <div className={pg.u331}>
                     {compEmailStatus && <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 12, fontSize: 13, fontWeight: 600, background: compEmailStatus.type === "success" ? "#ecfdf5" : "#fef2f2", color: compEmailStatus.type === "success" ? "#059669" : "#dc2626", border: `1px solid ${compEmailStatus.type === "success" ? "#a7f3d0" : "#fecaca"}` }}>{compEmailStatus.msg}</div>}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <div className={pg.u332}>
                       <div className={pg.textLabelNoMb}>Compliance Documents</div>
                       <ComplianceBadge contractor={editItem} />
                     </div>
@@ -6004,8 +5996,8 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                               <span className={pg.textBold13}>{dt.label}</span>
                               <span className="badge" style={{ background: sc.bg, color: sc.text, fontSize: 10 }}>{sc.label}</span>
                             </div>
-                            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                              {doc && (status === "expired" || status === "expiring_soon") && <button className="btn btn-ghost btn-xs" style={{ color: "#d97706" }} disabled={compEmailSending === doc.id} onClick={e => { e.stopPropagation(); handleSendComplianceReminder(editItem, doc, dt); }} title="Send Reminder"><Icon name="send" size={10} />{compEmailSending === doc.id ? "..." : ""}</button>}
+                            <div className={pg.p2_61}>
+                              {doc && (status === "expired" || status === "expiring_soon") && <button className="btn btn-ghost btn-xs" className={pg.u333} disabled={compEmailSending === doc.id} onClick={e => { e.stopPropagation(); handleSendComplianceReminder(editItem, doc, dt); }} title="Send Reminder"><Icon name="send" size={10} />{compEmailSending === doc.id ? "..." : ""}</button>}
                               {doc && <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={e => { e.stopPropagation(); deleteDoc(doc.id); }}><Icon name="trash" size={10} /></button>}
                             </div>
                           </div>
@@ -6032,7 +6024,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                               {doc.approvalDate && <div>Approved: {doc.approvalDate}</div>}
                             </div>
                           )}
-                          {!doc && <div style={{ fontSize: 11, color: "#bbb", marginTop: 4 }}>Not uploaded</div>}
+                          {!doc && <div className={pg.u335}>Not uploaded</div>}
                         </div>
                       );
                     })}
@@ -6058,39 +6050,39 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
       {showDocForm && (() => {
         const dt = COMPLIANCE_DOC_TYPES.find(t => t.id === docForm.type);
         return (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 10001, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => setShowDocForm(false)}>
-            <div style={{ background: "#fff", borderRadius: 12, width: "100%", maxWidth: 480, maxHeight: "90vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
-              <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8e8e8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div className={pg.u336} onClick={() => setShowDocForm(false)}>
+            <div className={pg.u337} onClick={e => e.stopPropagation()}>
+              <div className={pg.u338}>
                 <span className={pg.fw700fs15}>{editDoc ? "Edit" : "Add"} {dt?.label || "Document"}</span>
                 <button className="btn btn-ghost btn-xs" onClick={() => setShowDocForm(false)}><Icon name="close" size={14} /></button>
               </div>
               <div className={pg.pad20}>
                 {/* AI Capture */}
-                <div style={{ marginBottom: 16, padding: 16, border: "2px dashed #d0d0d0", borderRadius: 8, textAlign: "center", background: "#fafafa", cursor: "pointer" }}
+                <div className={pg.u339}
                   onClick={() => docFileRef.current?.click()}
                   onDragOver={e => e.preventDefault()}
                   onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f && (f.type.startsWith("image/") || f.type === "application/pdf")) handleDocFile(f); }}
                 >
                   <input ref={docFileRef} type="file" accept="image/*,application/pdf" capture="environment" className={pg.hidden} onChange={e => { const f = e.target.files?.[0]; if (f) handleDocFile(f); }} />
                   {docExtracting ? (
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: 12 }}>
+                    <div className={pg.u340}>
                       <div style={{ width: 24, height: 24, border: "3px solid #e8e8e8", borderTopColor: accent, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                       <span className={pg.textMuted}>Extracting document details...</span>
                     </div>
                   ) : docImagePreview ? (
                     <div>
-                      <img src={docImagePreview} alt="Document" style={{ maxWidth: "100%", maxHeight: 120, borderRadius: 6, marginBottom: 8 }} />
+                      <img src={docImagePreview} alt="Document" className={pg.u341} />
                       <div className={pg.fs11c888}>Tap to replace</div>
                     </div>
                   ) : (
-                    <div style={{ padding: 8 }}>
-                      <div style={{ fontSize: 20, marginBottom: 4 }}>📷</div>
+                    <div className={pg.u342}>
+                      <div className={pg.u343}>📷</div>
                       <div className={pg.textMuted}>Take photo or upload document</div>
-                      <div style={{ fontSize: 11, color: "#bbb" }}>AI will extract key details</div>
+                      <div className={pg.p2_65}>AI will extract key details</div>
                     </div>
                   )}
                 </div>
-                {docExtractError && <div style={{ fontSize: 11, color: "#d97706", background: "#fffbeb", padding: "6px 10px", borderRadius: 6, marginBottom: 12 }}>{docExtractError}</div>}
+                {docExtractError && <div className={pg.u344}>{docExtractError}</div>}
 
                 {/* Document type selector (only for new) */}
                 {!editDoc && (
@@ -6223,7 +6215,7 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
                     <td className={pg.cellAmount}>{s.name}</td>
                     <td>{s.contact || "—"}</td>
                     <td className={pg.color666}>{s.email || "—"}</td>
-                    <td style={{ fontFamily: "monospace", fontSize: 12, color: "#888" }}>{s.abn || "—"}</td>
+                    <td className={pg.u345}>{s.abn || "—"}</td>
                     <td className={pg.color666}>{s.phone || "—"}</td>
                     <td><span style={{ fontWeight: 600, color: getActivePOs(s).length > 0 ? accent : "#ccc" }}>{getPOCount(s)}</span></td>
                     <td><span style={{ fontWeight: 600, color: getBillCount(s) > 0 ? "#dc2626" : "#ccc" }}>{getBillCount(s)}</span></td>
@@ -6237,15 +6229,15 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
       )}
 
       {view === "grid" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+        <div className={pg.p2_59}>
           {filtered.length === 0 && <div className={`empty-state ${jb.emptyFullSpan}`}><div className="empty-state-icon">📦</div><div className="empty-state-text">No suppliers found</div></div>}
           {filtered.map(s => (
-            <div key={s.id} className="card" onClick={() => openEdit(s)} style={{ cursor: "pointer", padding: 18 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{s.name}</div>
-              {s.contact && <div style={{ fontSize: 12, color: "#666", marginBottom: 2 }}>{s.contact}</div>}
+            <div key={s.id} className="card" onClick={() => openEdit(s)} className={pg.p2_60}>
+              <div className={pg.u348}>{s.name}</div>
+              {s.contact && <div className={pg.p2_62}>{s.contact}</div>}
               {s.email && <div className={pg.fs12c999mb2}>{s.email}</div>}
               {s.phone && <div className={pg.fs12c999mb2}>{s.phone}</div>}
-              {s.abn && <div style={{ fontSize: 11, color: "#bbb", fontFamily: "monospace", marginBottom: 8 }}>ABN {s.abn}</div>}
+              {s.abn && <div className={pg.u349}>ABN {s.abn}</div>}
               <div className={pg.flexBetween}>
                 <div className={pg.flexGap6}>
                   <span className="chip" className={pg.fs10}>{getPOCount(s)} PO{getPOCount(s) !== 1 ? "s" : ""}</span>
@@ -6268,7 +6260,7 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
               </div>
               {items.map(s => (
                 <div key={s.id} className="kanban-card" onClick={() => openEdit(s)}>
-                  <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>{s.name}</div>
+                  <div className={pg.u350}>{s.name}</div>
                   {s.contact && <div className={pg.fs11c999mb4}>{s.contact}</div>}
                   <div className={pg.flexGap4}>
                     {getPOCount(s) > 0 && <span className="chip" className={pg.fs10}>{getPOCount(s)} PO{getPOCount(s) > 1 ? "s" : ""}</span>}
@@ -6316,7 +6308,7 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
                         <div key={po.id} className={pg.grayPillSm}>
                           <span className={pg.cellAmount}>{po.ref}</span>
                           <OrderStatusBadge status={po.status} />
-                          {po.poLimit && <span style={{ float: "right", color: "#888" }}>${parseFloat(po.poLimit).toLocaleString()}</span>}
+                          {po.poLimit && <span className={pg.p2_64}>${parseFloat(po.poLimit).toLocaleString()}</span>}
                         </div>
                       ))}
                     </div>
@@ -6327,8 +6319,8 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
                       {linkedBills.map(b => (
                         <div key={b.id} className={pg.grayPillSm}>
                           <span className={pg.cellAmount}>{b.supplier}</span>
-                          {b.invoiceNo && <span style={{ color: "#999", marginLeft: 8 }}>{b.invoiceNo}</span>}
-                          <span style={{ float: "right", fontWeight: 600 }}>{fmt(b.amount)}</span>
+                          {b.invoiceNo && <span className={pg.u351}>{b.invoiceNo}</span>}
+                          <span className={pg.u352}>{fmt(b.amount)}</span>
                         </div>
                       ))}
                     </div>
@@ -6420,18 +6412,18 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, width: "90%", maxWidth: 560, maxHeight: "85vh", overflow: "auto", padding: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-          <span style={{ fontSize: 20 }}>{template.icon}</span>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{template.name}</h3>
+    <div className={pg.p2_45} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className={pg.p2_46}>
+        <div className={pg.p2_66}>
+          <span className={pg.p2_47}>{template.icon}</span>
+          <h3 className={pg.p2_48}>{template.name}</h3>
           <div className={pg.flex1} />
           <button onClick={onClose} className={pg.plainBtn}>✕</button>
         </div>
 
         {template.fields.map(field => (
           <div key={field.key} className={pg.mb16}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4, display: "block" }}>{field.label}</label>
+            <label className={pg.u353}>{field.label}</label>
             {field.type === "text" && (
               <input className="form-control" value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} />
             )}
@@ -6442,12 +6434,12 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
               <input type="time" className="form-control" value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} />
             )}
             {field.type === "textarea" && (
-              <textarea className="form-control" rows={3} value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} style={{ resize: "vertical", fontFamily: "inherit" }} />
+              <textarea className="form-control" rows={3} value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} className={pg.u354} />
             )}
             {field.type === "checklist" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
+              <div className={pg.u355}>
                 {(field.options || []).map((opt, i) => (
-                  <label key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", padding: "4px 0" }}>
+                  <label key={i} className={pg.u356}>
                     <input type="checkbox" checked={(formData[field.key] || []).includes(opt)} onChange={() => toggleChecklist(field.key, opt)} style={{ width: 16, height: 16, accentColor: "#2563eb" }} />
                     {opt}
                   </label>
@@ -6458,20 +6450,20 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
               <div>
                 {formData[field.key] && sigField !== field.key ? (
                   <div>
-                    <img src={formData[field.key]} alt="Signature" style={{ maxWidth: 300, height: 80, border: "1px solid #e2e8f0", borderRadius: 6, marginBottom: 4 }} />
+                    <img src={formData[field.key]} alt="Signature" className={pg.u358} />
                     <button className="btn btn-ghost btn-xs" onClick={() => { setSigField(field.key); setFormData(d => ({ ...d, [field.key]: "" })); }}>Re-sign</button>
                   </div>
                 ) : (
                   <div>
                     <canvas ref={sigField === field.key ? canvasRef : undefined} width={400} height={120}
-                      style={{ border: "2px solid #e2e8f0", borderRadius: 8, cursor: "crosshair", touchAction: "none", display: "block", background: "#fafafa" }}
+                      className={pg.u359}
                       onMouseDown={e => { setSigField(field.key); startDraw(e); }}
                       onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
                       onTouchStart={e => { setSigField(field.key); startDraw(e); }}
                       onTouchMove={draw} onTouchEnd={endDraw}
                       onClick={() => setSigField(field.key)}
                     />
-                    <button className="btn btn-ghost btn-xs" style={{ marginTop: 4 }} onClick={clearSig}>Clear</button>
+                    <button className="btn btn-ghost btn-xs" className={pg.u360} onClick={clearSig}>Clear</button>
                   </div>
                 )}
               </div>
@@ -6479,10 +6471,10 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
           </div>
         ))}
 
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 20, paddingTop: 16, borderTop: "1px solid #e2e8f0" }}>
+        <div className={pg.u361}>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
           <button className="btn btn-sm" className={pg.bluePrimaryBtn} onClick={() => onSave(formData, false)}>Save to Notes</button>
-          <button className="btn btn-sm" style={{ background: "#059669", color: "#fff", border: "none" }} onClick={() => onSave(formData, true)}>Save & Print PDF</button>
+          <button className="btn btn-sm" className={pg.u362} onClick={() => onSave(formData, true)}>Save & Print PDF</button>
         </div>
       </div>
     </div>
@@ -7097,7 +7089,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
             <div key={key} className={`stat-card ${jb.summaryCard}`} style={{ borderTop: `3px solid ${color}` }}
               onClick={() => { setFilterStatus(key); setView("list"); }}>
               <div className="stat-label">{label}</div>
-              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
+              <div className="stat-value" className={pg.u118}>{count}</div>
               <div className="stat-sub">{fmt(total)}</div>
             </div>
           );
@@ -7120,7 +7112,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
       </div>
 
       {view === "kanban" && (
-        <div className="kanban" style={{ gridTemplateColumns: "repeat(4, minmax(200px,1fr))" }}>
+        <div className="kanban" className={pg.p2_67}>
           {["draft", "sent", "accepted", "declined"].map(col => {
             const colQuotes = filtered.filter(q => q.status === col);
             const labels = { draft: "Draft", sent: "Sent", accepted: "Accepted", declined: "Declined" };
@@ -7181,7 +7173,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
                 <div className={jb.gridCardClient}>
                   {job?.title || <span className={jb.noClient}>No job</span>}
                 </div>
-                {client && <div className={jb.gridCardDate} style={{ marginBottom: 4 }}>{client.name}</div>}
+                {client && <div className={jb.gridCardDate} className={pg.u363}>{client.name}</div>}
                 <div className={jb.metaRow}>
                   <span className={db.listRowAmount} className={pg.fs14}>{fmt(total)}</span>
                   <span className={pg.chipTag}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
@@ -7258,7 +7250,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
           isNew={isNewQ}
           footer={quoteMode === "view" ? <>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
-            <div className={jb.actionBtns} style={{ gap: 6 }}>
+            <div className={jb.actionBtns} className={pg.p2_68}>
               <button className="btn btn-sm" className={pg.bluePrimaryBtn} disabled={emailSending} onClick={() => handleSendQuoteEmail(form)}>
                 <Icon name="send" size={13} /> {emailSending ? "Sending..." : "Send to Client"}
               </button>
@@ -7282,18 +7274,18 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
                 <ViewField label="Client" value={qClient?.name} />
               </div>
               <ViewField label="Status" value={form.status?.charAt(0).toUpperCase() + form.status?.slice(1)} />
-              <div style={{ borderTop: "1px solid #f0f0f0", marginTop: 4, paddingTop: 16, marginBottom: 16 }}>
+              <div className={pg.u364}>
                 <div className={jb.estimateLabel}>Line Items</div>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                  <thead><tr><th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", borderBottom: "1px solid #f0f0f0" }}>Description</th><th className={pg.thRightSm}>Qty</th><th className={pg.thRightSm}>Rate</th><th className={pg.thRightSm}>Total</th></tr></thead>
+                <table className={pg.p2_69}>
+                  <thead><tr><th className={pg.u365}>Description</th><th className={pg.thRightSm}>Qty</th><th className={pg.thRightSm}>Rate</th><th className={pg.thRightSm}>Total</th></tr></thead>
                   <tbody>
                     {(form.lineItems || []).map((l, i) => (
-                      <tr key={i}><td style={{ padding: "8px" }}>{l.desc || "—"}</td><td style={{ textAlign: "right", padding: "8px" }}>{l.qty} {l.unit}</td><td style={{ textAlign: "right", padding: "8px" }}>{fmt(l.rate)}</td><td style={{ textAlign: "right", padding: "8px", fontWeight: 600 }}>{fmt(l.qty * l.rate)}</td></tr>
+                      <tr key={i}><td className={pg.u366}>{l.desc || "—"}</td><td className={pg.p2_70}>{l.qty} {l.unit}</td><td className={pg.p2_70}>{fmt(l.rate)}</td><td className={pg.u367}>{fmt(l.qty * l.rate)}</td></tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="totals-box" style={{ marginLeft: "auto", maxWidth: 260 }}>
+              <div className="totals-box" className={pg.u368}>
                 <div className="totals-row"><span>Subtotal</span><span>{fmt(qSub)}</span></div>
                 <div className="totals-row"><span>GST ({form.tax}%)</span><span>{fmt(qTax)}</span></div>
                 <div className="totals-row total"><span>Total</span><span>{fmt(qTotal)}</span></div>
@@ -7482,7 +7474,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
           <div className="form-group">
             <label className="form-label">Worker</label>
             {isStaffRole ? (
-              <input className="form-control" value={auth.currentUserName} disabled style={{ background: "#f5f5f5" }} />
+              <input className="form-control" value={auth.currentUserName} disabled className={pg.u370} />
             ) : (
               <select className="form-control" value={form.worker} onChange={e => setForm(f => ({ ...f, worker: e.target.value }))}>
                 {staffNames.map(t => <option key={t}>{t}</option>)}
@@ -7770,7 +7762,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
           return (
             <div key={s.label} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}` }}>
               <div className="stat-label">{s.label}</div>
-              <div className="stat-value" style={{ fontSize: 22, color }}>{s.val.toFixed(1)}h</div>
+              <div className="stat-value" className={pg.u118}>{s.val.toFixed(1)}h</div>
               <div className="stat-sub">{s.val > 0 ? `${(s.val / s.g * 100).toFixed(0)}% of target` : "No hours logged"}</div>
             </div>
           );
@@ -7812,7 +7804,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
             </div>
 
             {dayEntries.length === 0 ? (
-              <div className="empty-state" style={{ padding: "28px 0" }}>
+              <div className="empty-state" className={pg.u374}>
                 <div className="empty-state-icon">⏱</div>
                 <div className="empty-state-text">No entries for this day</div>
                 <div className="empty-state-sub">Click "Log Time" to add one</div>
@@ -7828,12 +7820,12 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                     display: "flex", gap: 14, alignItems: "flex-start", cursor: canEditEntry(entry) ? "pointer" : "default", transition: "border-color 0.15s",
                   }}>
                     <div className={tm.entryHoursCol}>
-                      <div className={tm.entryHoursValue} style={{ color: clr }}>{entry.hours.toFixed(1)}h</div>
+                      <div className={tm.entryHoursValue} className={pg.u375}>{entry.hours.toFixed(1)}h</div>
                       {entry.startTime && <div className={tm.entryTimeRange}>{entry.startTime}–{entry.endTime}</div>}
                     </div>
                     <div className={tm.entryMain}>
                       <div className={jb.metaRow}>
-                        <div className="avatar" style={{ width: 22, height: 22, fontSize: 9, margin: 0, flexShrink: 0 }}>
+                        <div className="avatar" className={pg.u376}>
                           {entry.worker.split(" ").map(w=>w[0]).join("")}
                         </div>
                         <span className={tm.entryWorkerName}>{entry.worker}</span>
@@ -7867,14 +7859,14 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
               <div key={w.name} className={tm.teamCard}>
                 <div className={tm.teamCardHeader}>
                   <div className={tm.teamCardLeft}>
-                    <div className="avatar" style={{ width: 36, height: 36, fontSize: 13, margin: 0 }}>{w.name.split(" ").map(p=>p[0]).join("")}</div>
+                    <div className="avatar" className={pg.u377}>{w.name.split(" ").map(p=>p[0]).join("")}</div>
                     <div>
                       <div className={tm.teamCardName}>{w.name}</div>
                       <div className={tm.teamCardCount}>{w.count} entries</div>
                     </div>
                   </div>
                   <div className={tm.teamCardRight}>
-                    <div className={tm.teamCardTotal} style={{ color: dayColour(w.total / 20) }}>{w.total.toFixed(1)}h</div>
+                    <div className={tm.teamCardTotal} className={pg.u378}>{w.total.toFixed(1)}h</div>
                     <div className={tm.teamCardSub}>all time</div>
                   </div>
                 </div>
@@ -7886,13 +7878,13 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                     { label: "Non-Bill", val: w.total - w.billable, clr: "#e67e22" },
                   ].map(s => (
                     <div key={s.label} className={tm.teamStatCell}>
-                      <div className={tm.teamStatValue} style={{ color: s.clr }}>{s.val.toFixed(1)}h</div>
+                      <div className={tm.teamStatValue} className={pg.u379}>{s.val.toFixed(1)}h</div>
                       <div className={tm.teamStatLabel}>{s.label}</div>
                     </div>
                   ))}
                 </div>
                 <div className={tm.teamProgressWrap}>
-                  <div className="progress-bar" style={{ height: 6 }}>
+                  <div className="progress-bar" className={pg.u380}>
                     <div className="progress-fill" style={{ width: `${(w.billable / (w.total || 1)) * 100}%`, background: "#27ae60" }} />
                   </div>
                   <div className={tm.teamProgressText}>
@@ -7908,7 +7900,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
       {/* ── Calendar View ── */}
       {tsTab === "calendar" && (
         <div className={tm.teamSection}>
-          <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+          <div className="card" className={pg.u381}>
             <TimeCalendar
               timeEntries={timeEntries}
               selectedWorker={selectedWorker === "all" ? null : selectedWorker}
@@ -7919,7 +7911,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
             <div className={tm.calLegend}>
               {[["#e74c3c",`< ${DAY_THR.orange}h`],["#e67e22",`${DAY_THR.orange}–${DAY_THR.green}h`],["#27ae60",`≥ ${DAY_THR.green}h`]].map(([c,l]) => (
                 <div key={l} className={tm.calLegendItem}>
-                  <span className={tm.calLegendDot} style={{ background: c }} />
+                  <span className={tm.calLegendDot} className={pg.u382} />
                   {l}
                 </div>
               ))}
@@ -7940,7 +7932,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                     {d.toLocaleDateString("en-AU", { weekday:"long", day:"numeric", month:"long" })}
                   </div>
                   <div className={tm.drillRight}>
-                    <span className={tm.drillTotal} style={{ color: dayColour(dayTotal) }}>{dayTotal.toFixed(1)}h</span>
+                    <span className={tm.drillTotal} className={pg.u383}>{dayTotal.toFixed(1)}h</span>
                     <button className="btn btn-ghost btn-xs" onClick={() => setCalDrillDay(null)}>✕</button>
                   </div>
                 </div>
@@ -7950,7 +7942,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                   const job = jobs.find(j => j.id === entry.jobId);
                   return (
                     <div key={entry.id} className={tm.drillCard} style={{ borderLeft: `4px solid ${dayColour(entry.hours)}` }}>
-                      <div className={tm.drillCardHours} style={{ color: dayColour(entry.hours) }}>{entry.hours.toFixed(1)}h</div>
+                      <div className={tm.drillCardHours} className={pg.u384}>{entry.hours.toFixed(1)}h</div>
                       <div className={tm.drillCardMain}>
                         <div className={tm.drillCardWorker}>{entry.worker}</div>
                         {job && <div className={tm.drillCardJob}>{job.title}</div>}
@@ -8142,7 +8134,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
               <div className={bl.gstBreakdown} style={{ background: SECTION_COLORS.bills.light }}>
                 <div><span className={bl.gstLabel}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
                 <div><span className={pg.color999}>GST </span><strong>{fmt(gst)}</strong></div>
-                <div style={{ marginLeft: "auto" }}><span className={pg.color999}>Total </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
+                <div className={pg.p2_72}><span className={pg.color999}>Total </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
               </div>
             )}
           </div>
@@ -8203,7 +8195,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
                     {extractError && !extracting && (
                       <div className={bl.extractError}>{extractError}</div>
                     )}
-                    <button className="btn btn-secondary btn-sm" style={{ marginTop: 8 }} onClick={() => { setImagePreview(null); setExtracted(false); setExtractError(null); setLineItems([]); }}>
+                    <button className="btn btn-secondary btn-sm" className={pg.p2_30} onClick={() => { setImagePreview(null); setExtracted(false); setExtractError(null); setLineItems([]); }}>
                       Remove image
                     </button>
                   </div>
@@ -8219,7 +8211,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
               <table className="line-items-table">
                 <thead>
                   <tr>
-                    <th style={{ width: "50%" }}>Item</th>
+                    <th className={pg.u387}>Item</th>
                     <th className={pg.textRight}>Qty</th>
                     <th className={pg.textRight}>Unit Price</th>
                     <th className={pg.textRight}>Total</th>
@@ -8231,7 +8223,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
                       <td>{item.description}</td>
                       <td className={pg.textRight}>{item.qty ?? "—"}</td>
                       <td className={pg.textRight}>{item.unitPrice != null ? fmt(item.unitPrice) : "—"}</td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>{item.total != null ? fmt(item.total) : "—"}</td>
+                      <td className={pg.u388}>{item.total != null ? fmt(item.total) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -8291,10 +8283,10 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
             </div>
             {/* GST breakdown */}
             {parseFloat(form.amount) > 0 && (
-              <div className={bl.gstBreakdown} style={{ background: "#f8f8f8" }}>
+              <div className={bl.gstBreakdown} className={pg.p2_35}>
                 <div><span className={bl.gstLabel}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
                 <div><span className={pg.color999}>GST </span><strong>{fmt(gst)}</strong></div>
-                <div style={{ marginLeft: "auto" }}><span className={pg.color999}>Total (inc.) </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
+                <div className={pg.p2_72}><span className={pg.color999}>Total (inc.) </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
               </div>
             )}
           </div>
@@ -8329,7 +8321,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           <div className={bl.sectionBorderOnly}>
             <div className={`form-group ${jb.formGroupNoMb}`}>
               <label className="form-label">Internal Notes</label>
-              <textarea className="form-control" value={form.notes} onChange={e => setForm(f=>({...f, notes: e.target.value}))} placeholder="Any notes for approver, discrepancies, receipt condition…" style={{ minHeight: 60 }} />
+              <textarea className="form-control" value={form.notes} onChange={e => setForm(f=>({...f, notes: e.target.value}))} placeholder="Any notes for approver, discrepancies, receipt condition…" className={pg.u389} />
             </div>
           </div>
 
@@ -8541,7 +8533,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
           <div key={s.label} className={`stat-card ${jb.summaryCard}`} style={{ borderTop: `3px solid ${s.color}` }}
             onClick={() => { setFilterStatus(s.label.toLowerCase()); setTab("list"); }}>
             <div className="stat-label">{s.label}</div>
-            <div className="stat-value" style={{ fontSize: 22, color: s.color }}>{s.count}</div>
+            <div className="stat-value" className={pg.u390}>{s.count}</div>
             <div className="stat-sub">{fmt(s.total)}</div>
           </div>
         ))}
@@ -8625,7 +8617,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
 
       {/* ══ KANBAN VIEW ══ */}
       {tab === "kanban" && (
-        <div className="kanban" style={{ gridTemplateColumns: "repeat(4, minmax(200px,1fr))" }}>
+        <div className="kanban" className={pg.p2_67}>
           {BILL_STATUSES.map(status => {
             const stageBills = filtered.filter(b => b.status === status);
             const sc = BILL_STATUS_COLORS[status];
@@ -8679,7 +8671,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
               <span className={pg.color888}>Showing <strong className={pg.color111}>{filtered.length}</strong> bills</span>
               <span className={pg.color888}>Total <strong className={pg.color111}>{fmt(filtered.reduce((s,b)=>s+b.amount,0))}</strong></span>
               <span className={pg.color888}>Ex-GST <strong className={pg.color111}>{fmt(filtered.reduce((s,b)=>s+(b.hasGst?b.amount/1.1:b.amount),0))}</strong></span>
-              {selectedIds.length > 0 && <span style={{ marginLeft: "auto", color: "#2c5fa8", fontWeight: 600 }}>{selectedIds.length} selected · {fmt(bills.filter(b=>selectedIds.includes(b.id)).reduce((s,b)=>s+b.amount,0))}</span>}
+              {selectedIds.length > 0 && <span className={pg.u391}>{selectedIds.length} selected · {fmt(bills.filter(b=>selectedIds.includes(b.id)).reduce((s,b)=>s+b.amount,0))}</span>}
             </div>
           )}
 
@@ -8688,7 +8680,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
               <table>
                 <thead>
                   <tr>
-                    <th style={{ width: 32 }}>
+                    <th className={pg.u392}>
                       <input type="checkbox" checked={filtered.length > 0 && selectedIds.length === filtered.length} onChange={toggleAll} />
                     </th>
                     <th>Supplier</th><th>Invoice #</th><th>Job</th><th>Category</th>
@@ -8723,7 +8715,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                         <td className={pg.textSub}>{b.hasGst ? fmt(gst) : <span className={pg.colorDdd}>—</span>}</td>
                         <td className={pg.cellAmount}>{fmt(b.amount)}</td>
                         <td className={pg.fs12}>
-                          {b.markup > 0 ? <span style={{ color: "#555" }}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span> : <span className={pg.colorDdd}>—</span>}
+                          {b.markup > 0 ? <span className={pg.p2_29}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span> : <span className={pg.colorDdd}>—</span>}
                         </td>
                         <td><BillStatusBadge status={b.status} /> <XeroSyncBadge syncStatus={b.xeroSyncStatus} xeroId={b.xeroBillId} /></td>
                         <td>
@@ -8890,7 +8882,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
             <div key={key} className={`stat-card ${jb.summaryCard}`} style={{ borderTop: `3px solid ${color}` }}
               onClick={() => { setFilterStatus(key); setView("list"); }}>
               <div className="stat-label">{label}</div>
-              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
+              <div className="stat-value" className={pg.u118}>{count}</div>
               <div className="stat-sub">{fmt(total)}</div>
             </div>
           );
@@ -8929,14 +8921,14 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                   <span>{labels[col]}</span>
                   <span className={jb.kanbanCount}>{colInvoices.length}</span>
                 </div>
-                {colTotal > 0 && <div className={jb.kanbanClient} style={{ fontWeight: 600, color: "#888" }}>{fmt(colTotal)}</div>}
+                {colTotal > 0 && <div className={jb.kanbanClient} className={pg.u394}>{fmt(colTotal)}</div>}
                 {colInvoices.map(inv => {
                   const job = jobs.find(j => j.id === inv.jobId);
                   const client = clients.find(c => c.id === job?.clientId);
                   const total = calcQuoteTotal(inv);
                   return (
                     <div key={inv.id} className="kanban-card" onClick={() => openEdit(inv)}>
-                      <div className={jb.kanbanCardHeader} style={{ justifyContent: "space-between" }}>
+                      <div className={jb.kanbanCardHeader} className={pg.u395}>
                         <span className={jb.listRowTitleMono}>{inv.number}</span>
                         <StatusBadge status={inv.status} />
                       </div>
@@ -8947,7 +8939,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                         <span className={jb.gridCardDate} style={{ color: inv.dueDate ? "#111" : "#ccc" }}>{inv.dueDate || "No due"}</span>
                       </div>
                       {inv.status !== "paid" && inv.status !== "void" && (
-                        <div className={jb.actionBtns} style={{ marginTop: 8, justifyContent: "flex-end" }} onClick={e => e.stopPropagation()}>
+                        <div className={jb.actionBtns} className={pg.u396} onClick={e => e.stopPropagation()}>
                           <button className="btn btn-ghost btn-xs" className={pg.color2a7} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>
                         </div>
                       )}
@@ -8988,7 +8980,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                 <div className={jb.gridCardClient}>
                   {job?.title || <span className={pg.italicMuted}>No job</span>}
                 </div>
-                {client && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>{client.name}</div>}
+                {client && <div className={pg.u397}>{client.name}</div>}
                 <div className={jb.metaRow}>
                   <span className={pg.fs14fw700c111}>{fmt(total)}</span>
                   <span className={pg.chipTag}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
@@ -9021,9 +9013,9 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                 const fromQuote = inv.fromQuoteId ? quotes.find(q => q.id === inv.fromQuoteId) : null;
                 return (
                   <tr key={inv.id} className={pg.pointer} onClick={() => openEdit(inv)}>
-                    <td><span style={{ fontWeight: 700, fontFamily: "monospace", fontSize: 13 }}>{inv.number}</span>{fromQuote && <div style={{ fontSize: 10, color: "#bbb", marginTop: 2 }}>from {fromQuote.number}</div>}</td>
+                    <td><span className={pg.u398}>{inv.number}</span>{fromQuote && <div className={pg.u399}>from {fromQuote.number}</div>}</td>
                     <td className={pg.textBold13}>{job?.title}</td>
-                    <td style={{ fontSize: 13, color: "#666" }}>{client?.name}</td>
+                    <td className={pg.u400}>{client?.name}</td>
                     <td><StatusBadge status={inv.status} /> <XeroSyncBadge syncStatus={inv.xeroSyncStatus} xeroId={inv.xeroInvoiceId} /></td>
                     <td>{fmt(sub)}</td>
                     <td>{fmt(sub * inv.tax / 100)}</td>
@@ -9065,7 +9057,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
           footer={invMode === "view" && !isNewInv ? <>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
             <div className={pg.flexGap6}>
-              {(form.status === "sent" || form.status === "overdue") && <button className="btn btn-sm" style={{ background: "#dc2626", color: "#fff", border: "none" }} disabled={emailSending} onClick={() => handleSendPaymentReminder(form)}>
+              {(form.status === "sent" || form.status === "overdue") && <button className="btn btn-sm" className={pg.u401} disabled={emailSending} onClick={() => handleSendPaymentReminder(form)}>
                 <Icon name="notification" size={13} /> {emailSending ? "Sending..." : "Payment Reminder"}
               </button>}
               <button className="btn btn-sm" className={pg.bluePrimaryBtn} disabled={emailSending} onClick={() => handleSendInvoiceEmail(form)}>
@@ -9086,7 +9078,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
           {invMode === "view" && !isNewInv ? (
           <div className={pg.drawerBody}>
             {emailStatus && <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 16, fontSize: 13, fontWeight: 600, background: emailStatus.type === "success" ? "#ecfdf5" : "#fef2f2", color: emailStatus.type === "success" ? "#059669" : "#dc2626", border: `1px solid ${emailStatus.type === "success" ? "#a7f3d0" : "#fecaca"}` }}>{emailStatus.msg}</div>}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+            <div className={pg.p2_50}>
               <ViewField label="Job" value={iJob?.title} />
               <ViewField label="Client" value={iClient?.name} />
               <ViewField label="Status" value={form.status?.charAt(0).toUpperCase() + form.status?.slice(1)} />
@@ -9255,52 +9247,52 @@ const Actions = ({ jobs, quotes, invoices, bills, workOrders, purchaseOrders, co
   return (
     <div>
       {/* Summary */}
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "20px 24px", marginBottom: 20, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+      <div className={pg.u403}>
+        <div className={pg.u404}>
           <span style={{ fontSize: 28, fontWeight: 800, color: totalCount > 0 ? accent : "#059669" }}>{totalCount}</span>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#666" }}>{totalCount === 1 ? "item needs attention" : "items need attention"}</span>
+          <span className={pg.u406}>{totalCount === 1 ? "item needs attention" : "items need attention"}</span>
         </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginLeft: "auto", alignItems: "center" }}>
+        <div className={pg.u407}>
           {categories.map(c => (
             <span key={c.id} style={{ fontSize: 11, fontWeight: 600, background: hexToRgba(c.color, 0.1), color: c.color, padding: "3px 10px", borderRadius: 12 }}>{c.items.length} {c.label}</span>
           ))}
           {outboundTeam.length > 0 && highSeverityItems.length > 0 && (
-            <div style={{ position: "relative", display: "inline-block" }}>
+            <div className={pg.u408}>
               <select onChange={e => { const m = outboundTeam.find(t => t.id === Number(e.target.value)); if (m) triggerOutboundCall(m, highSeverityItems); e.target.value = ""; }} style={{ padding: "4px 10px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", appearance: "none", paddingRight: 24 }} defaultValue="">
                 <option value="" disabled>Call Team...</option>
                 {outboundTeam.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
-              <svg style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="#fff" strokeWidth="2.5"><polyline points="5 8 10 13 15 8"/></svg>
+              <svg className={pg.u409} width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="#fff" strokeWidth="2.5"><polyline points="5 8 10 13 15 8"/></svg>
             </div>
           )}
         </div>
       </div>
       {callStatus && (
-        <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#1d4ed8" }}>{callStatus}</div>
+        <div className={pg.p2_73}>{callStatus}</div>
       )}
 
       {totalCount === 0 ? (
-        <div style={{ textAlign: "center", padding: 60, color: "#aaa", fontSize: 14 }}>All clear — nothing needs attention right now.</div>
+        <div className={pg.u410}>All clear — nothing needs attention right now.</div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className={pg.p2_53}>
           {categories.map(cat => (
             <div key={cat.id}>
               {/* Category header */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <div style={{ width: 4, height: 18, borderRadius: 2, background: cat.color }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{cat.label}</span>
+              <div className={pg.u411}>
+                <div className={pg.u412} />
+                <span className={pg.u413}>{cat.label}</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: cat.color, borderRadius: 10, padding: "1px 8px", minWidth: 18, textAlign: "center" }}>{cat.items.length}</span>
               </div>
               {/* Items */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div className={pg.u414}>
                 {cat.items.map(item => (
-                  <div key={item.id} onClick={() => onNav(cat.nav)} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "box-shadow 0.15s" }} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+                  <div key={item.id} onClick={() => onNav(cat.nav)} className={pg.u415} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
                     {/* Severity dot */}
                     <div style={{ width: 8, height: 8, borderRadius: 4, background: item.severity === "high" ? "#dc2626" : item.severity === "medium" ? "#f59e0b" : "#94a3b8", flexShrink: 0 }} />
                     {/* Content */}
                     <div className={pg.listItemMain}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</div>
-                      {item.sub && <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{item.sub}</div>}
+                      <div className={pg.u417}>{item.title}</div>
+                      {item.sub && <div className={pg.p2_74}>{item.sub}</div>}
                     </div>
                     {/* Detail */}
                     <div style={{ fontSize: 11, fontWeight: 600, color: item.severity === "high" ? "#dc2626" : "#888", flexShrink: 0, textAlign: "right" }}>{item.detail}</div>
@@ -9404,16 +9396,16 @@ const Reminders = ({ reminders, setReminders, jobs }) => {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 20 }}>
         {stats.map(s => (
           <div key={s.label} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", borderLeft: `4px solid ${s.color}` }}>
-            <div style={{ fontSize: 24, fontWeight: 800, color: s.color }}>{s.count}</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>{s.label}</div>
+            <div className={pg.u419}>{s.count}</div>
+            <div className={pg.u420}>{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Toolbar */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reminders..." style={{ flex: 1, minWidth: 180, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif" }} />
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif" }}>
+      <div className={pg.u421}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reminders..." className={pg.u422} />
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className={pg.u423}>
           <option value="all">All</option>
           <option value="overdue">Overdue</option>
           <option value="pending">Pending</option>
@@ -9425,7 +9417,7 @@ const Reminders = ({ reminders, setReminders, jobs }) => {
 
       {/* List */}
       {sorted.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 40, color: "#aaa", fontSize: 13 }}>No reminders found</div>
+        <div className={pg.p2_75}>No reminders found</div>
       ) : (
         <div className={pg.flexColGap8}>
           {sorted.map(r => {
@@ -9437,27 +9429,27 @@ const Reminders = ({ reminders, setReminders, jobs }) => {
                 <div className={pg.flexCenterGap12}>
                   {/* Round checkbox */}
                   <button onClick={e => { e.stopPropagation(); toggleComplete(r.id); }} style={{ width: 22, height: 22, borderRadius: 11, border: r.status === "completed" ? `2px solid ${accent}` : "2px solid #ccc", background: r.status === "completed" ? accent : "transparent", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
-                    {r.status === "completed" && <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>✓</span>}
+                    {r.status === "completed" && <span className={pg.u424}>✓</span>}
                   </button>
                   {/* Content */}
                   <div className={pg.listItemMain}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: r.status === "completed" ? "#aaa" : "#111", textDecoration: r.status === "completed" ? "line-through" : "none" }}>{r.text}</div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap", alignItems: "center" }}>
+                    <div className={pg.u426}>
                       <span style={{ fontSize: 11, fontWeight: 600, color: dueDateColor(r.dueDate, r.status) }}>{dueDateLabel(r.dueDate, r.status)}</span>
-                      {checklistProgress && <span style={{ fontSize: 10, fontWeight: 600, background: "#f0f0f0", padding: "2px 8px", borderRadius: 4, color: "#555" }}>{checklistProgress} done</span>}
-                      {job && <span style={{ fontSize: 10, fontWeight: 600, background: "#f0f0f0", padding: "2px 8px", borderRadius: 4, color: "#555" }}>{job.title}</span>}
-                      {r.status === "dismissed" && <span style={{ fontSize: 10, fontWeight: 600, background: "#f5f5f5", padding: "2px 8px", borderRadius: 4, color: "#999" }}>Dismissed</span>}
+                      {checklistProgress && <span className={pg.p2_76}>{checklistProgress} done</span>}
+                      {job && <span className={pg.p2_76}>{job.title}</span>}
+                      {r.status === "dismissed" && <span className={pg.u427}>Dismissed</span>}
                     </div>
                   </div>
                   {/* Actions */}
-                  <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                    {r.status === "pending" && <button onClick={() => dismissReminder(r.id)} title="Dismiss" style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 13, padding: 4 }}>✕</button>}
+                  <div className={pg.p2_54} onClick={e => e.stopPropagation()}>
+                    {r.status === "pending" && <button onClick={() => dismissReminder(r.id)} title="Dismiss" className={pg.p2_77}>✕</button>}
                     <button onClick={() => deleteReminder(r.id)} title="Delete" className={pg.plainBtnSm}>🗑</button>
                   </div>
                 </div>
                 {/* Checklist items inline */}
                 {r.type === "checklist" && r.items?.length > 0 && r.status === "pending" && (
-                  <div onClick={e => e.stopPropagation()} style={{ marginTop: 10, marginLeft: 34, display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div onClick={e => e.stopPropagation()} className={pg.u428}>
                     {r.items.map(item => (
                       <label key={item.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: item.done ? "#aaa" : "#333" }}>
                         <input type="checkbox" checked={item.done} onChange={() => toggleChecklistItem(r.id, item.id)} style={{ width: 15, height: 15, accentColor: accent, cursor: "pointer" }} />
@@ -9474,40 +9466,40 @@ const Reminders = ({ reminders, setReminders, jobs }) => {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowModal(false)}>
-          <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 440, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{editReminder ? "Edit Reminder" : "New Reminder"}</div>
+        <div className={pg.u429} onClick={() => setShowModal(false)}>
+          <div className={pg.u430} onClick={e => e.stopPropagation()}>
+            <div className={pg.p2_78}>{editReminder ? "Edit Reminder" : "New Reminder"}</div>
 
             {/* Type toggle */}
-            <div style={{ display: "flex", gap: 0, marginBottom: 16, border: "1px solid #ddd", borderRadius: 6, overflow: "hidden" }}>
+            <div className={pg.u431}>
               <button onClick={() => setForm(f => ({ ...f, type: "text" }))} style={{ flex: 1, padding: "8px 12px", fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", fontFamily: "'Open Sans', sans-serif", background: form.type === "text" ? accent : "#f5f5f5", color: form.type === "text" ? "#fff" : "#666" }}>Text</button>
               <button onClick={() => setForm(f => ({ ...f, type: "checklist" }))} style={{ flex: 1, padding: "8px 12px", fontSize: 12, fontWeight: 600, border: "none", borderLeft: "1px solid #ddd", cursor: "pointer", fontFamily: "'Open Sans', sans-serif", background: form.type === "checklist" ? accent : "#f5f5f5", color: form.type === "checklist" ? "#fff" : "#666" }}>Checklist</button>
             </div>
 
             <label className={pg.fieldLabelAlt}>{form.type === "checklist" ? "Title" : "Reminder"}</label>
             {form.type === "text" ? (
-              <textarea value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="What do you need to remember?" rows={3} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 16 }} autoFocus />
+              <textarea value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="What do you need to remember?" rows={3} className={pg.u434} autoFocus />
             ) : (
               <>
                 <input value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="e.g. Site prep checklist" className={pg.formInputLg14mb12} autoFocus />
                 <label className={pg.fieldLabelAlt}>Items</label>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+                <div className={pg.u435}>
                   {form.items.map(item => (
                     <div key={item.id} className={pg.flexCenter}>
                       <input type="checkbox" checked={item.done} onChange={() => toggleFormItem(item.id)} style={{ width: 15, height: 15, accentColor: accent, cursor: "pointer" }} />
                       <span style={{ flex: 1, fontSize: 13, color: item.done ? "#aaa" : "#333", textDecoration: item.done ? "line-through" : "none" }}>{item.text}</span>
-                      <button onClick={() => removeFormItem(item.id)} style={{ background: "none", border: "none", color: "#ccc", cursor: "pointer", fontSize: 13, padding: 2 }}>✕</button>
+                      <button onClick={() => removeFormItem(item.id)} className={pg.u436}>✕</button>
                     </div>
                   ))}
                 </div>
-                <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-                  <input value={newItemText} onChange={e => setNewItemText(e.target.value)} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addFormItem())} placeholder="Add an item..." style={{ flex: 1, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
-                  <button onClick={addFormItem} style={{ padding: "8px 12px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Add</button>
+                <div className={pg.u437}>
+                  <input value={newItemText} onChange={e => setNewItemText(e.target.value)} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addFormItem())} placeholder="Add an item..." className={pg.u438} />
+                  <button onClick={addFormItem} className={pg.u439}>Add</button>
                 </div>
               </>
             )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+            <div className={pg.u440}>
               <div>
                 <label className={pg.fieldLabelAlt}>Due Date</label>
                 <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={pg.formInput} />
@@ -9555,8 +9547,8 @@ const ActivityPage = ({ jobs, clients, quotes, invoices, bills, timeEntries, sch
   return (
     <div>
       {/* Filters */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
+      <div className={pg.u441}>
+        <div className={pg.u442}>
           {["all","job"].map(t => (
             <button key={t} className={`btn btn-sm ${filterType === t ? "" : "btn-secondary"}`}
               onClick={() => setFilterType(t)} style={filterType === t ? { background: SECTION_COLORS.activity.accent, color: '#fff', textTransform: "capitalize" } : { textTransform: "capitalize" }}>
@@ -9571,15 +9563,15 @@ const ActivityPage = ({ jobs, clients, quotes, invoices, bills, timeEntries, sch
       </div>
 
       {/* Summary stats */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+      <div className={pg.u443}>
         {[
           { label: "Total Events", val: allEvents.length },
           { label: "Today", val: allEvents.filter(e => e.ts.startsWith(new Date().toLocaleDateString("en-AU",{day:"2-digit",month:"short",year:"numeric"}))).length },
           { label: "This Week", val: (() => { const d=new Date(); d.setDate(d.getDate()-7); const w=d.toISOString().slice(0,10); return allEvents.filter(e => e.ts >= w).length; })() },
         ].map(s => (
-          <div key={s.label} className="stat-card" style={{ flex: 1, padding: "14px 18px" }}>
+          <div key={s.label} className="stat-card" className={pg.u444}>
             <div className="stat-label">{s.label}</div>
-            <div className="stat-value" style={{ fontSize: 24 }}>{s.val}</div>
+            <div className="stat-value" className={pg.u445}>{s.val}</div>
           </div>
         ))}
       </div>
@@ -9588,22 +9580,22 @@ const ActivityPage = ({ jobs, clients, quotes, invoices, bills, timeEntries, sch
         <div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">No activity events found</div></div>
       ) : (
         <div className="card">
-          <div style={{ padding: "0 4px" }}>
-            <div className="timeline" style={{ padding: "16px 24px 16px 40px" }}>
+          <div className={pg.u446}>
+            <div className="timeline" className={pg.u447}>
               {filtered.map((e, i) => (
                 <div key={i} className="timeline-item">
                   <div className="timeline-dot" style={{ background: typeColors[e.entityType] || "#111" }} />
-                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-                    <div style={{ flex: 1, minWidth: 200 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.4 }}>{e.action}</div>
-                      <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>
-                        <span style={{ fontWeight: 600, color: "#555" }}>{e.entityLabel}</span>
-                        {e.entitySub && <span style={{ color: "#bbb" }}> · {e.entitySub}</span>}
+                  <div className={pg.u449}>
+                    <div className={pg.u450}>
+                      <div className={pg.u451}>{e.action}</div>
+                      <div className={pg.u452}>
+                        <span className={pg.u453}>{e.entityLabel}</span>
+                        {e.entitySub && <span className={pg.u454}> · {e.entitySub}</span>}
                       </div>
                     </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>{e.user}</div>
-                      <div style={{ fontSize: 11, color: "#bbb", marginTop: 1 }}>{e.ts}</div>
+                    <div className={pg.u455}>
+                      <div className={pg.p2_63}>{e.user}</div>
+                      <div className={pg.u456}>{e.ts}</div>
                     </div>
                   </div>
                 </div>
@@ -9752,14 +9744,14 @@ const DisplaySchedule = ({ schedule, jobs, clients }) => {
     const weekend = days.slice(5);
     return (
       <div style={{ flex, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexShrink: 0 }}>
+        <div className={pg.u457}>
           <span style={{ fontSize: isLarge ? 32 : 25, fontWeight: 700, color: "#111" }}>{label}</span>
         </div>
-        <div style={{ display: "flex", gap: 10, flex: 1, minHeight: 0 }}>
+        <div className={pg.u458}>
           {weekdays.map(dateStr => (
             <DayCol key={dateStr} dateStr={dateStr} isLarge={isLarge} />
           ))}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0, flex: 1 }}>
+          <div className={pg.u459}>
             {weekend.map(dateStr => (
               <DayCol key={dateStr} dateStr={dateStr} isLarge={isLarge} isCompact />
             ))}
@@ -9825,7 +9817,7 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
       <div style={cardStyle(SECTION_COLORS.schedule.accent)}>
         <div style={{ ...DS.heading, marginBottom: 16 }}>Deliver This Week</div>
         {deliverJobs.length === 0 ? <div className={pg.caafs20}>No deliveries scheduled</div> :
-          <ol style={{ margin: 0, paddingLeft: 30, fontSize: 22, lineHeight: 2.2, color: "#333" }}>
+          <ol className={pg.u460}>
             {deliverJobs.map(j => <li key={j.id}>{j.title}</li>)}
           </ol>
         }
@@ -9833,7 +9825,7 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
       <div style={cardStyle(SECTION_COLORS.jobs.accent)}>
         <div style={{ ...DS.heading, marginBottom: 16 }}>Priorities</div>
         {priorities.length === 0 ? <div className={pg.caafs20}>No high-priority jobs</div> :
-          <ol style={{ margin: 0, paddingLeft: 30, fontSize: 22, lineHeight: 2.2, color: "#333" }}>
+          <ol className={pg.u460}>
             {priorities.map(j => <li key={j.id}>{j.title}</li>)}
           </ol>
         }
@@ -9841,7 +9833,7 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
       <div style={cardStyle(SECTION_COLORS.quotes.accent)}>
         <div style={{ ...DS.heading, marginBottom: 16 }}>Quotes</div>
         {openQuotes.length === 0 ? <div className={pg.caafs20}>No open quotes</div> :
-          <ol style={{ margin: 0, paddingLeft: 30, fontSize: 22, lineHeight: 2.2, color: "#333" }}>
+          <ol className={pg.u460}>
             {openQuotes.map(q => {
               const job = jobs.find(j => j.id === q.jobId);
               return <li key={q.id}>{job?.title || q.number}</li>;
@@ -9852,15 +9844,15 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
 
       {/* Row 2: Hours (spans 2 cols), Targets */}
       <div style={{ ...cardStyle(SECTION_COLORS.time.accent), gridColumn: "1 / 3" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexShrink: 0 }}>
+        <div className={pg.u461}>
           <div style={{ ...DS.heading, marginBottom: 0 }}>Hours</div>
-          <div style={{ display: "flex", gap: 16, fontSize: 15, color: "#999" }}>
+          <div className={pg.u462}>
             <span><span style={{ color: accent }}>■</span> Actual</span>
-            <span><span style={{ color: "#ccc" }}>●</span> Average</span>
+            <span><span className={pg.p2_28}>●</span> Average</span>
           </div>
         </div>
         {/* Bar chart */}
-        <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
+        <div className={pg.u463}>
           {/* Y-axis labels */}
           {[0, 25, 50, 75, 100, 125].map(v => (
             <div key={v} style={{ position: "absolute", left: 0, bottom: `calc(${(v / 125) * 100}% * 0.85 + 30px)`, fontSize: 13, color: "#aaa", width: 36, textAlign: "right" }}>{v}</div>
@@ -9870,11 +9862,11 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
             <div key={v} style={{ position: "absolute", left: 44, right: 0, bottom: `calc(${(v / 125) * 100}% * 0.85 + 30px)`, height: 1, background: "#f0f0f0" }} />
           ))}
           {/* Bars */}
-          <div style={{ position: "absolute", left: 44, right: 0, bottom: 30, top: 0, display: "flex", alignItems: "flex-end", gap: 4 }}>
+          <div className={pg.u464}>
             {weeksData.map((w, i) => {
               const barPct = (w.hours / 125) * 100;
               return (
-                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, height: "100%", justifyContent: "flex-end" }}>
+                <div key={i} className={pg.u465}>
                   <div className={pg.fs12c999mb2}>{w.hours > 0 ? w.hours : ""}</div>
                   <div style={{ width: "70%", height: `${barPct}%`, background: accent, borderRadius: "3px 3px 0 0", opacity: 0.85 }} />
                 </div>
@@ -9884,9 +9876,9 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
           {/* Average line */}
           <div style={{ position: "absolute", left: 44, right: 0, bottom: `calc(${(avgHours / 125) * 100}% * 0.85 + 30px)`, height: 2, borderTop: "2px dashed #ccc", zIndex: 2 }} />
           {/* X-axis labels */}
-          <div style={{ position: "absolute", left: 44, right: 0, bottom: 0, display: "flex" }}>
+          <div className={pg.u466}>
             {weeksData.map((w, i) => (
-              <div key={i} style={{ flex: 1, textAlign: "center", fontSize: 10, color: "#aaa", transform: "rotate(-45deg)", transformOrigin: "top center", whiteSpace: "nowrap" }}>{w.label}</div>
+              <div key={i} className={pg.u467}>{w.label}</div>
             ))}
           </div>
         </div>
@@ -9894,35 +9886,35 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
 
       <div style={cardStyle(SECTION_COLORS.invoices.accent)}>
         <div style={{ ...DS.heading, marginBottom: 24, flexShrink: 0 }}>Targets</div>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 28 }}>
+        <div className={pg.u468}>
           {/* Last Week */}
           <div>
-            <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 14, color: "#555" }}>Last Week</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+            <div className={pg.p2_79}>Last Week</div>
+            <div className={pg.p2_80}>
               <div style={{ width: `${Math.min((lastWeekHours / weeklyTarget) * 100, 100)}%`, height: 26, background: accent, borderRadius: 4 }} />
-              <span style={{ fontSize: 20, fontWeight: 700, color: "#333", whiteSpace: "nowrap" }}>{lastWeekHours}</span>
+              <span className={pg.p2_81}>{lastWeekHours}</span>
             </div>
             <div className={pg.flexCenterGap12}>
-              <div style={{ width: "100%", height: 26, background: "#e5e5e5", borderRadius: 4 }} />
-              <span style={{ fontSize: 20, fontWeight: 700, color: "#999", whiteSpace: "nowrap" }}>{weeklyTarget}</span>
+              <div className={pg.p2_82} />
+              <span className={pg.p2_83}>{weeklyTarget}</span>
             </div>
           </div>
           {/* Last Month */}
           <div>
-            <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 14, color: "#555" }}>Last Month</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+            <div className={pg.p2_79}>Last Month</div>
+            <div className={pg.p2_80}>
               <div style={{ width: `${Math.min((lastMonthHours / monthlyTarget) * 100, 100)}%`, height: 26, background: accent, borderRadius: 4 }} />
-              <span style={{ fontSize: 20, fontWeight: 700, color: "#333", whiteSpace: "nowrap" }}>{lastMonthHours}</span>
+              <span className={pg.p2_81}>{lastMonthHours}</span>
             </div>
             <div className={pg.flexCenterGap12}>
-              <div style={{ width: "100%", height: 26, background: "#e5e5e5", borderRadius: 4 }} />
-              <span style={{ fontSize: 20, fontWeight: 700, color: "#999", whiteSpace: "nowrap" }}>{monthlyTarget}</span>
+              <div className={pg.p2_82} />
+              <span className={pg.p2_83}>{monthlyTarget}</span>
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 16, fontSize: 15, color: "#999", marginTop: 16, flexShrink: 0 }}>
+        <div className={pg.u469}>
           <span><span style={{ color: accent }}>■</span> Actual</span>
-          <span><span style={{ color: "#e5e5e5" }}>■</span> Target</span>
+          <span><span className={pg.u470}>■</span> Target</span>
         </div>
       </div>
     </div>
@@ -10055,13 +10047,13 @@ const XeroAccountMappingSection = ({ accent, xeroAccounts, setXeroAccounts, mapp
   return (
     <div>
       {mappingError && (
-        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#dc2626", display: "flex", alignItems: "center", gap: 8 }}>
+        <div className={pg.u471}>
           {mappingError}
-          <button onClick={() => setMappingError(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#dc2626", fontSize: 14 }}>&times;</button>
+          <button onClick={() => setMappingError(null)} className={pg.p2_84}>&times;</button>
         </div>
       )}
       {mappingSaved && (
-        <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#166534" }}>
+        <div className={pg.u472}>
           Account mappings saved successfully.
         </div>
       )}
@@ -10075,7 +10067,7 @@ const XeroAccountMappingSection = ({ accent, xeroAccounts, setXeroAccounts, mapp
         </div>
       ) : (
         <div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <div className={pg.p2_85}>
             <div className={pg.fs12c666}>{xeroAccounts.length} accounts loaded from Xero ({revenueAccounts.length} revenue, {expenseAccounts.length} expense)</div>
             <button onClick={handleFetchAccounts} disabled={fetchingAccounts} style={{ ...btnStyle, background: "#f8f8f8", color: "#666", fontSize: 11, padding: "6px 12px" }}>
               {fetchingAccounts ? "Refreshing..." : "Refresh Accounts"}
@@ -10084,7 +10076,7 @@ const XeroAccountMappingSection = ({ accent, xeroAccounts, setXeroAccounts, mapp
 
           {/* Revenue Accounts (Invoices) */}
           <div className={pg.mb20}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#111", marginBottom: 10 }}>Revenue Accounts (Invoices)</div>
+            <div className={pg.p2_86}>Revenue Accounts (Invoices)</div>
             <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "1fr 1fr", gap: 12 }}>
               {renderAccountSelect("invoice", "", "Default Invoice Account", revenueAccounts)}
             </div>
@@ -10092,7 +10084,7 @@ const XeroAccountMappingSection = ({ accent, xeroAccounts, setXeroAccounts, mapp
 
           {/* Expense Accounts (Bills) */}
           <div className={pg.mb16}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#111", marginBottom: 10 }}>Expense Accounts (Bills)</div>
+            <div className={pg.p2_86}>Expense Accounts (Bills)</div>
             <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "1fr 1fr", gap: 12 }}>
               {BILL_CATEGORIES.map(cat =>
                 renderAccountSelect("bill", cat, cat, expenseAccounts)
@@ -10219,7 +10211,7 @@ const XeroSettingsTab = ({ accent }) => {
     try { setXeroPollResult(await xeroPollUpdates()); } catch (e) { setXeroError(e.message); } finally { setXeroSyncing(false); }
   };
 
-  if (xeroLoading) return <div style={{ padding: 40, textAlign: "center", color: "#888" }}>Loading Xero status...</div>;
+  if (xeroLoading) return <div className={pg.u473}>Loading Xero status...</div>;
 
   const cardStyle = { background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16 };
   const labelStyle = { display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 };
@@ -10233,16 +10225,16 @@ const XeroSettingsTab = ({ accent }) => {
 
   return (
     <div>
-      <div style={{ fontSize: 16, fontWeight: 700, color: "#111", marginBottom: 4 }}>Xero Accounting Integration</div>
+      <div className={pg.u474}>Xero Accounting Integration</div>
       <div className={pg.fs12c888mb20}>Sync invoices, bills, and contacts with your Xero organisation</div>
       {xeroError && (
-        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#dc2626", display: "flex", alignItems: "center", gap: 8 }}>
+        <div className={pg.u475}>
           <Icon name="notification" size={14} /> {xeroError}
-          <button onClick={() => setXeroError(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#dc2626", fontSize: 14 }}>&times;</button>
+          <button onClick={() => setXeroError(null)} className={pg.p2_84}>&times;</button>
         </div>
       )}
       <div style={cardStyle}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className={pg.p2_87}>
           <div className={pg.flexCenterGap12}>
             <div style={{ width: 40, height: 40, borderRadius: 8, background: xeroStatus?.connected ? "#ecfdf5" : "#f8f8f8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: xeroStatus?.connected ? "#16a34a" : "#888" }}>X</div>
             <div>
@@ -10257,14 +10249,14 @@ const XeroSettingsTab = ({ accent }) => {
       </div>
       {xeroStatus?.connected && xeroSetupStep > 0 && xeroSetupStep <= 4 && (
         <div style={{ ...cardStyle, border: `2px solid ${accent}` }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 4 }}>Setup Wizard — Step {xeroSetupStep} of 4</div>
-          <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>
+          <div className={pg.p2_88}>Setup Wizard — Step {xeroSetupStep} of 4</div>
+          <div className={pg.p2_89}>
             {xeroSetupStep === 1 && "Match your existing contacts with Xero to avoid duplicates"}
             {xeroSetupStep === 2 && "Map your Xero account codes for invoices and bills"}
             {xeroSetupStep === 3 && "Mark items that are already in Xero to skip during sync"}
             {xeroSetupStep === 4 && "Preview what will be synced before running"}
           </div>
-          {xeroSetupStep === 1 && (<div>{!xeroMatchResults ? <button onClick={runContactMatch} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Matching..." : "Run Contact Matching"}</button> : (<div><div className={pg.fs12c666mb12}>Found {xeroMatchResults.xeroContactCount} contacts in Xero. {xeroMatchResults.matches?.length || 0} FieldOps contacts to review.</div>{(xeroMatchResults.matches || []).map((m, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid #f0f0f0", fontSize: 12 }}><input type="checkbox" checked={m.confirmed || false} onChange={() => { const updated = [...xeroMatchResults.matches]; updated[i] = { ...updated[i], confirmed: !updated[i].confirmed }; setXeroMatchResults({ ...xeroMatchResults, matches: updated }); }} /><div className={pg.flex1}><span className={pg.fw600}>{m.name}</span><span style={{ color: "#888", marginLeft: 8 }}>({m.entityType})</span></div><div style={{ flex: 1, color: m.xeroMatch ? "#16a34a" : "#888" }}>{m.xeroMatch ? `→ ${m.xeroMatch.name} (${m.xeroMatch.confidence})` : "No match — will create new"}</div></div>))}<div style={{ display: "flex", gap: 8, marginTop: 12 }}><button onClick={() => confirmMatches(xeroMatchResults.matches)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Confirm & Continue</button><button onClick={() => setXeroSetupStep(2)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip</button></div></div>)}</div>)}
+          {xeroSetupStep === 1 && (<div>{!xeroMatchResults ? <button onClick={runContactMatch} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Matching..." : "Run Contact Matching"}</button> : (<div><div className={pg.fs12c666mb12}>Found {xeroMatchResults.xeroContactCount} contacts in Xero. {xeroMatchResults.matches?.length || 0} FieldOps contacts to review.</div>{(xeroMatchResults.matches || []).map((m, i) => (<div key={i} className={pg.u476}><input type="checkbox" checked={m.confirmed || false} onChange={() => { const updated = [...xeroMatchResults.matches]; updated[i] = { ...updated[i], confirmed: !updated[i].confirmed }; setXeroMatchResults({ ...xeroMatchResults, matches: updated }); }} /><div className={pg.flex1}><span className={pg.fw600}>{m.name}</span><span className={pg.u477}>({m.entityType})</span></div><div style={{ flex: 1, color: m.xeroMatch ? "#16a34a" : "#888" }}>{m.xeroMatch ? `→ ${m.xeroMatch.name} (${m.xeroMatch.confidence})` : "No match — will create new"}</div></div>))}<div className={pg.p2_90}><button onClick={() => confirmMatches(xeroMatchResults.matches)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Confirm & Continue</button><button onClick={() => setXeroSetupStep(2)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip</button></div></div>)}</div>)}
           {xeroSetupStep === 2 && (
             <div>
               <XeroAccountMappingSection
@@ -10276,39 +10268,39 @@ const XeroSettingsTab = ({ accent }) => {
                 onSaved={() => {}}
                 compact={false}
               />
-              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <div className={pg.p2_90}>
                 <button onClick={() => setXeroSetupStep(3)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue</button>
                 <button onClick={() => setXeroSetupStep(3)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip</button>
               </div>
             </div>
           )}
           {xeroSetupStep === 3 && (<div><div className={pg.fs12c666mb12}>If any invoices or bills have already been entered in Xero manually, mark them here to prevent duplicates.</div><div className={pg.flexGap8}><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue to Preview</button><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip — None to mark</button></div></div>)}
-          {xeroSetupStep === 4 && (<div>{!xeroDryRun ? <button onClick={runDryRun} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Checking..." : "Preview Sync"}</button> : (<div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 12 }}><div style={{ background: "#f0fdf4", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#16a34a" }}>{xeroDryRun.invoices?.wouldSync || 0}</div><div className={pg.fs11c666}>Invoices to sync</div></div><div style={{ background: "#eff6ff", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#2563eb" }}>{xeroDryRun.bills?.wouldSync || 0}</div><div className={pg.fs11c666}>Bills to sync</div></div></div><div className={pg.flexGap8}><button onClick={() => { runBulkSync("invoices"); runBulkSync("bills"); setXeroSetupStep(0); }} style={{ ...btnStyle, background: accent, color: "#fff" }}>Start Sync</button><button onClick={() => setXeroSetupStep(0)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Close Wizard</button></div></div>)}</div>)}
+          {xeroSetupStep === 4 && (<div>{!xeroDryRun ? <button onClick={runDryRun} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Checking..." : "Preview Sync"}</button> : (<div><div className={pg.u478}><div className={pg.u479}><div className={pg.u480}>{xeroDryRun.invoices?.wouldSync || 0}</div><div className={pg.fs11c666}>Invoices to sync</div></div><div className={pg.u481}><div className={pg.u482}>{xeroDryRun.bills?.wouldSync || 0}</div><div className={pg.fs11c666}>Bills to sync</div></div></div><div className={pg.flexGap8}><button onClick={() => { runBulkSync("invoices"); runBulkSync("bills"); setXeroSetupStep(0); }} style={{ ...btnStyle, background: accent, color: "#fff" }}>Start Sync</button><button onClick={() => setXeroSetupStep(0)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Close Wizard</button></div></div>)}</div>)}
         </div>
       )}
       {xeroStatus?.connected && xeroSetupStep === 0 && (
         <>
           {/* Account Mapping Section */}
           <div style={cardStyle}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 4 }}>Account Mapping</div>
-            <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>Configure which Xero accounts invoices and bills are posted to</div>
+            <div className={pg.p2_88}>Account Mapping</div>
+            <div className={pg.p2_89}>Configure which Xero accounts invoices and bills are posted to</div>
             {/* Current mappings summary */}
             {mappings.length > 0 && !xeroAccounts.length && (
               <div className={pg.mb16}>
-                <div style={{ display: "grid", gap: 8 }}>
+                <div className={pg.u483}>
                   {getMappingSummary("invoice") && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#16a34a" }} />
-                      <span style={{ fontWeight: 600, minWidth: 140 }}>Invoices:</span>
+                    <div className={pg.p2_91}>
+                      <div className={pg.u484} />
+                      <span className={pg.p2_92}>Invoices:</span>
                       <span className={pg.color333}>{getMappingSummary("invoice")}</span>
                     </div>
                   )}
                   {BILL_CATEGORIES.map(cat => {
                     const summary = getMappingSummary("bill", cat);
                     return summary ? (
-                      <div key={cat} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2563eb" }} />
-                        <span style={{ fontWeight: 600, minWidth: 140 }}>Bills ({cat}):</span>
+                      <div key={cat} className={pg.p2_91}>
+                        <div className={pg.u485} />
+                        <span className={pg.p2_92}>Bills ({cat}):</span>
                         <span className={pg.color333}>{summary}</span>
                       </div>
                     ) : null;
@@ -10327,25 +10319,25 @@ const XeroSettingsTab = ({ accent }) => {
           </div>
 
           <div style={cardStyle}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 16 }}>Sync Actions</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div className={pg.u486}>Sync Actions</div>
+            <div className={pg.p2_93}>
               <button onClick={() => runBulkSync("invoices")} disabled={xeroSyncing} style={{ ...btnStyle, background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }}>{xeroSyncing ? "Syncing..." : "Sync All Invoices"}</button>
               <button onClick={() => runBulkSync("bills")} disabled={xeroSyncing} style={{ ...btnStyle, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe" }}>{xeroSyncing ? "Syncing..." : "Sync All Bills"}</button>
               <button onClick={handlePoll} disabled={xeroSyncing} style={{ ...btnStyle, background: "#faf5ff", color: "#7c3aed", border: "1px solid #ddd6fe" }}>{xeroSyncing ? "Checking..." : "Check for Updates"}</button>
               <button onClick={() => setXeroSetupStep(1)} style={{ ...btnStyle, background: "#f8f8f8", color: "#666" }}>Re-run Setup Wizard</button>
             </div>
             {xeroSyncResult && <div style={{ marginTop: 12, background: xeroSyncResult.errors > 0 ? "#fffbeb" : "#f0fdf4", borderRadius: 8, padding: 12, fontSize: 12 }}><span className={pg.fw600}>{xeroSyncResult.type}:</span> {xeroSyncResult.synced} synced, {xeroSyncResult.errors} errors, {xeroSyncResult.total} total</div>}
-            {xeroPollResult && <div style={{ marginTop: 12, background: "#f0fdf4", borderRadius: 8, padding: 12, fontSize: 12 }}><span className={pg.fw600}>Updates:</span> {xeroPollResult.invoices?.updated || 0} invoices, {xeroPollResult.bills?.updated || 0} bills updated</div>}
+            {xeroPollResult && <div className={pg.u488}><span className={pg.fw600}>Updates:</span> {xeroPollResult.invoices?.updated || 0} invoices, {xeroPollResult.bills?.updated || 0} bills updated</div>}
           </div>
           {xeroSyncLog.length > 0 && (
             <div style={cardStyle}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#111", marginBottom: 12 }}>Recent Sync Activity</div>
+              <div className={pg.u489}>Recent Sync Activity</div>
               {xeroSyncLog.map((log, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < xeroSyncLog.length - 1 ? "1px solid #f0f0f0" : "none", fontSize: 12 }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: log.status === "success" ? "#16a34a" : log.status === "error" ? "#dc2626" : "#f59e0b" }} />
-                  <div className={pg.flex1}><span className={pg.fw600}>{log.entity_type}</span><span style={{ color: "#888", marginLeft: 4 }}>{log.direction}</span></div>
+                  <div className={pg.flex1}><span className={pg.fw600}>{log.entity_type}</span><span className={pg.u492}>{log.direction}</span></div>
                   <div style={{ color: log.status === "error" ? "#dc2626" : "#888", fontSize: 11 }}>{log.error_message ? log.error_message.slice(0, 50) : log.status}</div>
-                  <div style={{ color: "#aaa", fontSize: 10 }}>{log.created_at ? new Date(log.created_at).toLocaleString() : ""}</div>
+                  <div className={pg.u494}>{log.created_at ? new Date(log.created_at).toLocaleString() : ""}</div>
                 </div>
               ))}
             </div>
@@ -10491,7 +10483,7 @@ const MyAssistant = () => {
   const disabledInputStyle = { ...inputStyle, background: "#f5f5f5", color: "#999", cursor: "not-allowed" };
   const disabledTextareaStyle = { ...textareaStyle, background: "#f5f5f5", color: "#999", cursor: "not-allowed" };
 
-  if (loading) return <div style={{ textAlign: "center", padding: 40, color: "#888" }}>Loading...</div>;
+  if (loading) return <div className={pg.p2_94}>Loading...</div>;
 
   const isPersonalised = personalised[activeTab];
   const currentSettings = activeTab === 'inbound' ? inboundSettings : outboundSettings;
@@ -10501,7 +10493,7 @@ const MyAssistant = () => {
   return (
     <div>
       {/* Tab navigation */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #e8e8e8", paddingBottom: 0 }}>
+      <div className={pg.p2_95}>
         {[{ id: "inbound", label: "Inbound" }, { id: "outbound", label: "Outbound" }].map(t => (
           <button key={t.id} onClick={() => { setActiveTab(t.id); setDirty(false); setSaved(false); }} className="btn" style={{
             display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", fontSize: 13, fontWeight: 600,
@@ -10513,7 +10505,7 @@ const MyAssistant = () => {
       </div>
 
       {/* Personalisation toggle */}
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className={pg.u495}>
         <div>
           <div className={pg.fs14fw700c111}>Personalise my {activeTab} assistant</div>
           <div className={pg.fs12c888mt2}>
@@ -10533,13 +10525,13 @@ const MyAssistant = () => {
 
       {/* Saved banner */}
       {saved && (
-        <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+        <div className={pg.u496}>
           <Icon name="check" size={14} /> Settings saved. Changes will apply to the next call.
         </div>
       )}
 
       {!isPersonalised && (
-        <div style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: 10, padding: "14px 20px", marginBottom: 16, fontSize: 12, color: "#888" }}>
+        <div className={pg.u497}>
           Company Defaults — these settings are managed by your admin.
         </div>
       )}
@@ -10612,7 +10604,7 @@ const MyAssistant = () => {
 
       {/* Save button — only when personalised and dirty */}
       {isPersonalised && dirty && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+        <div className={pg.u498}>
           <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 12, fontWeight: 600 }} onClick={() => saveSettings(activeTab)}>
             Save Changes
           </button>
@@ -10638,7 +10630,7 @@ const VoiceOptionCard = ({ option, selected, onSelect, accent }) => (
       }} />
       <div>
         <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#111" : "#333" }}>{option.label}</div>
-        <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{option.desc}</div>
+        <div className={pg.p2_74}>{option.desc}</div>
       </div>
     </div>
   </div>
@@ -10815,22 +10807,22 @@ const CallerMemory = () => {
   const cardStyle = { background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, marginBottom: 8, overflow: "hidden" };
   const inputStyle = { width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" };
 
-  if (loading) return <div style={{ textAlign: "center", padding: 40, color: "#888" }}>Loading...</div>;
+  if (loading) return <div className={pg.p2_94}>Loading...</div>;
 
   return (
     <div>
       {/* Info banner */}
       <div style={{ background: hexToRgba(accent, 0.06), border: `1px solid ${hexToRgba(accent, 0.15)}`, borderRadius: 10, padding: "14px 18px", marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
         <Icon name="info" size={16} style={{ color: accent, marginTop: 1, flexShrink: 0 }} />
-        <div style={{ fontSize: 12, color: "#666", lineHeight: 1.5 }}>
+        <div className={pg.u499}>
           <strong className={pg.color333}>Caller Memory</strong> gives your voice assistant context from previous calls. Key points are stored per phone number and linked to your account via your phone number in Settings → Users. Limited to {CALLER_NOTES_MAX} notes per caller, auto-pruned after {CALLER_NOTES_MAX_AGE_DAYS} days.
         </div>
       </div>
 
       {/* Search + Add */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
-        <div style={{ flex: 1, position: "relative" }}>
-          <Icon name="search" size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#aaa" }} />
+      <div className={pg.u500}>
+        <div className={pg.u501}>
+          <Icon name="search" size={14} className={pg.u502} />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search callers, notes..." style={{ ...inputStyle, paddingLeft: 32 }} />
         </div>
         <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)} style={{ background: accent, whiteSpace: "nowrap", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
@@ -10841,14 +10833,14 @@ const CallerMemory = () => {
       {/* Add new caller form */}
       {showAdd && (
         <div style={{ ...cardStyle, padding: 16, marginBottom: 16, border: `2px solid ${accent}` }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#111", marginBottom: 12 }}>Add New Caller</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+          <div className={pg.u503}>Add New Caller</div>
+          <div className={pg.p2_38}>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Phone Number *</div>
+              <div className={pg.p2_96}>Phone Number *</div>
               <input type="tel" value={addPhone} onChange={e => setAddPhone(e.target.value)} placeholder="0412 345 678" style={inputStyle} />
             </div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#888", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Name (optional)</div>
+              <div className={pg.p2_96}>Name (optional)</div>
               <input type="text" value={addName} onChange={e => setAddName(e.target.value)} placeholder="John Smith" style={inputStyle} />
             </div>
           </div>
@@ -10861,9 +10853,9 @@ const CallerMemory = () => {
 
       {/* Caller list */}
       {filtered.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 20px", color: "#999" }}>
-          <Icon name="send" size={32} style={{ color: "#ddd", marginBottom: 12 }} />
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#888", marginBottom: 4 }}>
+        <div className={pg.u504}>
+          <Icon name="send" size={32} className={pg.u505} />
+          <div className={pg.u506}>
             {callers.length === 0 ? "No caller memory yet" : "No matches"}
           </div>
           <div className={pg.fs12}>
@@ -10877,39 +10869,39 @@ const CallerMemory = () => {
           return (
             <div key={caller.id} style={cardStyle}>
               {/* Caller header */}
-              <div onClick={() => setExpandedId(isExpanded ? null : caller.id)} style={{ padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, transition: "background 0.1s" }}>
+              <div onClick={() => setExpandedId(isExpanded ? null : caller.id)} className={pg.u507}>
                 {/* Avatar */}
                 <div style={{ width: 36, height: 36, borderRadius: "50%", background: hexToRgba(accent, 0.1), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Icon name="clients" size={16} style={{ color: accent }} />
                 </div>
                 <div className={pg.listItemMain}>
                   <div className={pg.flexCenter}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#111", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div className={pg.u508}>
                       {caller.caller_name || formatPhone(caller.phone)}
                     </div>
                     {caller.caller_name && (
                       <div className={pg.textSub}>{formatPhone(caller.phone)}</div>
                     )}
                   </div>
-                  <div style={{ fontSize: 11, color: "#999", marginTop: 2, display: "flex", gap: 12 }}>
+                  <div className={pg.u509}>
                     <span>{noteCount} note{noteCount !== 1 ? "s" : ""}</span>
                     {caller.last_call_at && <span>Last contact: {timeAgo(caller.last_call_at)}</span>}
                   </div>
                 </div>
                 {/* Latest note preview */}
                 {!isExpanded && noteCount > 0 && (
-                  <div style={{ fontSize: 12, color: "#888", maxWidth: 250, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexShrink: 0 }}>
+                  <div className={pg.u510}>
                     {caller.notes[0].text}
                   </div>
                 )}
-                <Icon name={isExpanded ? "up" : "down"} size={14} style={{ color: "#ccc", flexShrink: 0 }} />
+                <Icon name={isExpanded ? "up" : "down"} size={14} className={pg.u511} />
               </div>
 
               {/* Expanded detail */}
               {isExpanded && (
-                <div style={{ borderTop: "1px solid #f0f0f0", padding: "12px 16px" }}>
+                <div className={pg.u512}>
                   {/* Caller name edit */}
-                  <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
+                  <div className={pg.u513}>
                     {editingCaller === caller.id ? (
                       <>
                         <input type="text" value={editName} onChange={e => setEditName(e.target.value)} placeholder="Caller name" style={{ ...inputStyle, flex: 1, maxWidth: 250 }} autoFocus />
@@ -10918,14 +10910,14 @@ const CallerMemory = () => {
                       </>
                     ) : (
                       <>
-                        <button className="btn btn-sm" onClick={() => { setEditingCaller(caller.id); setEditName(caller.caller_name || ""); }} style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                        <button className="btn btn-sm" onClick={() => { setEditingCaller(caller.id); setEditName(caller.caller_name || ""); }} className={pg.p2_97}>
                           <Icon name="edit" size={12} /> {caller.caller_name ? "Edit Name" : "Add Name"}
                         </button>
-                        <button className="btn btn-sm" onClick={() => { setAddingNote(addingNote === caller.id ? null : caller.id); setNewNote(""); }} style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                        <button className="btn btn-sm" onClick={() => { setAddingNote(addingNote === caller.id ? null : caller.id); setNewNote(""); }} className={pg.p2_97}>
                           <Icon name="add" size={12} /> Add Note
                         </button>
                         <div className={pg.flex1} />
-                        <button className="btn btn-sm" onClick={() => { if (confirm("Delete all memory for this caller?")) deleteCaller(caller.id); }} style={{ fontSize: 11, color: "#dc2626" }}>
+                        <button className="btn btn-sm" onClick={() => { if (confirm("Delete all memory for this caller?")) deleteCaller(caller.id); }} className={pg.u514}>
                           Delete Caller
                         </button>
                       </>
@@ -10934,10 +10926,10 @@ const CallerMemory = () => {
 
                   {/* Add note inline form */}
                   {addingNote === caller.id && (
-                    <div style={{ background: "#fafafa", border: "1px solid #e8e8e8", borderRadius: 8, padding: 12, marginBottom: 12 }}>
-                      <textarea value={newNote} onChange={e => setNewNote(e.target.value.slice(0, CALLER_NOTE_MAX_CHARS))} placeholder="Key point from call... e.g. 'Needs quote for bathroom reno at 42 Smith St'" rows={2} style={{ width: "100%", padding: "8px 10px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }} autoFocus />
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
-                        <span style={{ fontSize: 11, color: "#bbb" }}>{newNote.length}/{CALLER_NOTE_MAX_CHARS}</span>
+                    <div className={pg.u515}>
+                      <textarea value={newNote} onChange={e => setNewNote(e.target.value.slice(0, CALLER_NOTE_MAX_CHARS))} placeholder="Key point from call... e.g. 'Needs quote for bathroom reno at 42 Smith St'" rows={2} className={pg.u516} autoFocus />
+                      <div className={pg.u517}>
+                        <span className={pg.p2_65}>{newNote.length}/{CALLER_NOTE_MAX_CHARS}</span>
                         <div className={pg.flexGap6}>
                           <button className="btn btn-sm" onClick={() => { setAddingNote(null); setNewNote(""); }} className={pg.fs11}>Cancel</button>
                           <button className="btn btn-primary btn-sm" onClick={() => addNote(caller.id)} disabled={!newNote.trim() || saving} style={{ background: accent, fontSize: 11 }}>{saving ? "Saving..." : "Save Note"}</button>
@@ -10948,17 +10940,17 @@ const CallerMemory = () => {
 
                   {/* Notes list */}
                   {(caller.notes || []).length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "16px 0", fontSize: 12, color: "#bbb" }}>No notes yet — add a key point from a call.</div>
+                    <div className={pg.u518}>No notes yet — add a key point from a call.</div>
                   ) : (
                     <div>
                       {(caller.notes || []).map((note, idx) => (
                         <div key={idx} style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: idx < caller.notes.length - 1 ? "1px solid #f5f5f5" : "none", alignItems: "flex-start" }}>
                           <div style={{ width: 6, height: 6, borderRadius: "50%", background: accent, marginTop: 6, flexShrink: 0, opacity: 0.5 }} />
                           <div className={pg.flex1}>
-                            <div style={{ fontSize: 13, color: "#333", lineHeight: 1.5 }}>{note.text}</div>
-                            <div style={{ fontSize: 11, color: "#bbb", marginTop: 2 }}>{formatDate(note.date)}</div>
+                            <div className={pg.u520}>{note.text}</div>
+                            <div className={pg.u521}>{formatDate(note.date)}</div>
                           </div>
-                          <button onClick={() => deleteNote(caller.id, idx)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#ccc", fontSize: 11 }} title="Delete note">
+                          <button onClick={() => deleteNote(caller.id, idx)} className={pg.u522} title="Delete note">
                             <Icon name="close" size={12} />
                           </button>
                         </div>
@@ -10967,7 +10959,7 @@ const CallerMemory = () => {
                   )}
 
                   {noteCount >= CALLER_NOTES_MAX && (
-                    <div style={{ fontSize: 11, color: "#f59e0b", marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                    <div className={pg.u523}>
                       <Icon name="notification" size={12} /> Maximum {CALLER_NOTES_MAX} notes reached — oldest will be replaced.
                     </div>
                   )}
@@ -10980,7 +10972,7 @@ const CallerMemory = () => {
 
       {/* Summary stats */}
       {callers.length > 0 && (
-        <div style={{ textAlign: "center", padding: "16px 0", fontSize: 11, color: "#ccc" }}>
+        <div className={pg.u524}>
           {callers.length} caller{callers.length !== 1 ? "s" : ""} · {callers.reduce((sum, c) => sum + (c.notes || []).length, 0)} total notes · Auto-prunes after {CALLER_NOTES_MAX_AGE_DAYS} days
         </div>
       )}
@@ -11202,7 +11194,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
         <div>
           <div className={pg.fs16fw700}>Voice Assistant</div>
           <div className={pg.fs12c888mt2}>Configure your Iris voice assistant — powered by OpenAI Realtime + Twilio</div>
-          <div style={{ fontSize: 11, color: "#b0b0b0", marginTop: 4 }}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
+          <div className={pg.p2_98}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
         </div>
         <div className={pg.flexGap8}>
           <button className="btn btn-ghost btn-sm" onClick={resetVoiceSettings} className={pg.fs11}>Reset Defaults</button>
@@ -11213,7 +11205,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
       </div>
 
       {saved && (
-        <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+        <div className={pg.u496}>
           <Icon name="check" size={14} /> Voice settings saved. Changes will apply to the next call.
         </div>
       )}
@@ -11225,7 +11217,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           type="text" value={voiceSettings.name}
           onChange={e => updateVoice("name", e.target.value)}
           placeholder="e.g. Iris, Billy, Sage"
-          style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif" }}
+          className={pg.u525}
         />
         <div className={pg.fs11c999mt6}>The name your assistant introduces itself as on calls</div>
       </div>
@@ -11281,9 +11273,9 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
 
       {/* Advanced Settings */}
       <div className={pg.whiteCard}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 16 }}>Advanced</div>
-        <div style={{ display: "grid", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className={pg.p2_99}>Advanced</div>
+        <div className={pg.u526}>
+          <div className={pg.p2_87}>
             <div>
               <div className={pg.fs13fw600c111}>Confirm before writing</div>
               <div className={pg.fs11c888}>Ask for confirmation before creating or updating records</div>
@@ -11314,7 +11306,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               onChange={e => updateVoice("silenceDuration", Number(e.target.value))}
               style={{ width: "100%", maxWidth: 400, accentColor: accent }}
             />
-            <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 400, fontSize: 10, color: "#bbb" }}>
+            <div className={pg.p2_100}>
               <span>200ms (fast)</span><span>1500ms (patient)</span>
             </div>
           </div>
@@ -11331,7 +11323,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               onChange={e => updateVoice("vadThreshold", Number(e.target.value))}
               style={{ width: "100%", maxWidth: 400, accentColor: accent }}
             />
-            <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 400, fontSize: 10, color: "#bbb" }}>
+            <div className={pg.p2_100}>
               <span>0.1 (very sensitive)</span><span>0.9 (less sensitive)</span>
             </div>
           </div>
@@ -11339,7 +11331,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
       </div>
 
       {/* Current Config Summary */}
-      <div style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20 }}>
+      <div className={pg.u528}>
         <div className={pg.textLabelMb12}>Current Configuration</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, fontSize: 12 }}>
           <div><span className={pg.color888}>Name:</span> <span className={pg.fw600}>{voiceSettings.name}</span></div>
@@ -11473,33 +11465,33 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
         </div>
 
         {updateError && (
-          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#dc2626" }}>{updateError}</div>
+          <div className={pg.u529}>{updateError}</div>
         )}
 
         {/* Invite form */}
         {showInvite && (
           <div className={pg.whiteCard}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div className={pg.u530}>
               <div className={pg.fs14fw700c111}>Invite New User</div>
               <CloseBtn onClick={() => { setShowInvite(false); setInviteSuccess(null); }} />
             </div>
             {inviteSuccess ? (
-              <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: 16 }}>
-                <div style={{ fontWeight: 700, color: "#166534", marginBottom: 8, fontSize: 13 }}><Icon name="check" size={14} /> User created successfully</div>
-                <div style={{ display: "grid", gap: 6, fontSize: 12 }}>
+              <div className={pg.u531}>
+                <div className={pg.u532}><Icon name="check" size={14} /> User created successfully</div>
+                <div className={pg.u533}>
                   <div><span className={pg.color888}>Name:</span> <span className={pg.fw600}>{inviteSuccess.fullName}</span></div>
                   <div><span className={pg.color888}>Email:</span> <span className={pg.fw600}>{inviteSuccess.email}</span></div>
-                  <div style={{ background: "#fff", border: "1px solid #bbf7d0", borderRadius: 6, padding: "10px 14px", marginTop: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 4, letterSpacing: "0.06em", textTransform: "uppercase" }}>Temporary Password</div>
-                    <div style={{ fontFamily: "monospace", fontSize: 15, fontWeight: 700, color: "#111", letterSpacing: "0.05em" }}>{inviteSuccess.temporaryPassword}</div>
-                    <div style={{ fontSize: 10, color: "#888", marginTop: 4 }}>Share this securely. They should change it on first login.</div>
+                  <div className={pg.u534}>
+                    <div className={pg.u535}>Temporary Password</div>
+                    <div className={pg.u536}>{inviteSuccess.temporaryPassword}</div>
+                    <div className={pg.u537}>Share this securely. They should change it on first login.</div>
                   </div>
                 </div>
-                <button className="btn btn-sm" style={{ marginTop: 12, fontSize: 11 }} onClick={() => setInviteSuccess(null)}>Invite Another</button>
+                <button className="btn btn-sm" className={pg.u538} onClick={() => setInviteSuccess(null)}>Invite Another</button>
               </div>
             ) : (
               <form onSubmit={handleInvite}>
-                {inviteError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#dc2626" }}>{inviteError}</div>}
+                {inviteError && <div className={pg.u539}>{inviteError}</div>}
                 <div className={pg.grid2col}>
                   <div>
                     <label className={pg.fieldLabelAlt}>Full Name</label>
@@ -11513,7 +11505,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                 <div className={pg.mb12}>
                   <label className={pg.fieldLabelAlt}>Phone Number</label>
                   <input type="tel" value={inviteForm.phone} onChange={e => setInviteForm(f => ({ ...f, phone: e.target.value }))} placeholder="0412 345 678" className={pg.formInputSm} />
-                  <div style={{ fontSize: 10, color: "#aaa", marginTop: 4 }}>Used by the voice assistant to route calls to this user's caller memory</div>
+                  <div className={pg.u540}>Used by the voice assistant to route calls to this user's caller memory</div>
                 </div>
                 <div className={pg.mb16}>
                   <label className={pg.fieldLabelAlt}>Password (optional)</label>
@@ -11530,7 +11522,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
 
         {/* Users list */}
         <div className={pg.flexColGap8}>
-          {staff.length === 0 && <div style={{ textAlign: "center", padding: 24, color: "#999", fontSize: 13 }}>No users found</div>}
+          {staff.length === 0 && <div className={pg.u541}>No users found</div>}
           {staff.map(s => {
             const initials = s.name?.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase() || "?";
             const isSelf = auth.staff?.id === s.id;
@@ -11542,13 +11534,13 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: s.active ? "#111" : "#ddd", color: s.active ? "#fff" : "#999", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, flexShrink: 0 }}>{initials}</div>
                   <div className={pg.flex1}>
                     <div className={pg.fs14fw600c111}>{s.name}{isSelf ? " (you)" : ""}</div>
-                    <div style={{ fontSize: 11, color: "#888", display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className={pg.u542}>
                       <span>{s.email}</span>
                       {editPhoneId === s.id ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          <input type="tel" value={editPhoneVal} onChange={e => setEditPhoneVal(e.target.value)} placeholder="0412 345 678" autoFocus onKeyDown={e => { if (e.key === "Enter") handleSavePhone(s); if (e.key === "Escape") setEditPhoneId(null); }} style={{ width: 130, padding: "2px 6px", border: "1px solid #ccc", borderRadius: 4, fontSize: 11, fontFamily: "'Open Sans', sans-serif" }} />
-                          <button onClick={() => handleSavePhone(s)} style={{ background: "none", border: "none", cursor: "pointer", color: "#059669", fontSize: 11, fontWeight: 600, fontFamily: "'Open Sans', sans-serif" }}>Save</button>
-                          <button onClick={() => setEditPhoneId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#999", fontSize: 11, fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
+                        <span className={pg.u543}>
+                          <input type="tel" value={editPhoneVal} onChange={e => setEditPhoneVal(e.target.value)} placeholder="0412 345 678" autoFocus onKeyDown={e => { if (e.key === "Enter") handleSavePhone(s); if (e.key === "Escape") setEditPhoneId(null); }} className={pg.u544} />
+                          <button onClick={() => handleSavePhone(s)} className={pg.u545}>Save</button>
+                          <button onClick={() => setEditPhoneId(null)} className={pg.u546}>Cancel</button>
                         </span>
                       ) : (
                         <span onClick={() => { setEditPhoneId(s.id); setEditPhoneVal(s.phone || ""); }} style={{ cursor: "pointer", color: s.phone ? "#555" : "#ccc", borderBottom: "1px dashed #ccc" }} title="Click to edit phone">
@@ -11557,9 +11549,9 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                       )}
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                  <div className={pg.u547}>
                     <span style={{ fontSize: 10, fontWeight: 600, color: permEnabled === permTotal ? "#059669" : "#f59e0b", background: "#f5f5f5", padding: "2px 8px", borderRadius: 4 }}>{permEnabled}/{permTotal} permissions</span>
-                    <button onClick={() => openPermissions(s)} style={{ padding: "4px 10px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", fontWeight: 600 }}>Permissions</button>
+                    <button onClick={() => openPermissions(s)} className={pg.u548}>Permissions</button>
                     {!isSelf && (
                       <>
                         <button onClick={() => handleResetPassword(s)} className={pg.grayBtnSm}>Reset PW</button>
@@ -11575,12 +11567,12 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
 
         {/* Permissions modal */}
         {permEditId && permData && (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setPermEditId(null)}>
-            <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 560, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", maxHeight: "85vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
-              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Permissions</div>
+          <div className={pg.u429} onClick={() => setPermEditId(null)}>
+            <div className={pg.u549} onClick={e => e.stopPropagation()}>
+              <div className={pg.p2_101}>Permissions</div>
               <div className={pg.fs12c888mb20}>{staff.find(s => s.id === permEditId)?.name} — {(() => { const c = countPerms(permData); return `${c.enabled}/${c.total} enabled`; })()}</div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+              <div className={pg.u550}>
                 {PERMISSION_SECTIONS.map(sec => {
                   const enabled = permData[sec.id] || [];
                   const allOn = enabled.length === sec.actions.length;
@@ -11591,11 +11583,11 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                       <div onClick={() => toggleAllSection(sec.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", borderBottom: anyOn ? "1px solid #f0f0f0" : "none" }}>
                         <input type="checkbox" checked={allOn} readOnly style={{ width: 15, height: 15, accentColor: "#059669", cursor: "pointer", pointerEvents: "none" }} />
                         <span style={{ fontSize: 13, fontWeight: 600, color: anyOn ? "#111" : "#999", flex: 1 }}>{sec.label}</span>
-                        <span style={{ fontSize: 10, color: "#aaa" }}>{enabled.length}/{sec.actions.length}</span>
+                        <span className={pg.p2_102}>{enabled.length}/{sec.actions.length}</span>
                       </div>
                       {/* Action toggles */}
                       {anyOn && (
-                        <div style={{ display: "flex", gap: 6, padding: "8px 14px 10px 40px", flexWrap: "wrap" }}>
+                        <div className={pg.u552}>
                           {sec.actions.map(action => {
                             const isOn = enabled.includes(action);
                             return (
@@ -11627,7 +11619,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
   return (
     <div>
       {/* Settings sub-navigation */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid #e8e8e8", paddingBottom: 0 }}>
+      <div className={pg.p2_95}>
         {tabs.map(t => (
           <button
             key={t.id}
@@ -11657,7 +11649,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
             </button>
           </div>
           {companySaved && (
-            <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+            <div className={pg.u496}>
               <Icon name="check" size={14} /> Company information saved.
             </div>
           )}
@@ -11676,7 +11668,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               <label className={pg.fieldLabelAlt}>Address</label>
               <input value={companyForm.address} onChange={e => updateCompanyField("address", e.target.value)} className={pg.formInputLg14} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className={pg.u553}>
               <div>
                 <label className={pg.fieldLabelAlt}>Phone</label>
                 <input value={companyForm.phone} onChange={e => updateCompanyField("phone", e.target.value)} className={pg.formInputLg14} />
@@ -11687,7 +11679,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               </div>
             </div>
           </div>
-          <div style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: 10, padding: "14px 20px", fontSize: 12, color: "#888" }}>
+          <div className={pg.u554}>
             These details are used as defaults across the app. Document templates can override the email address per template in the Templates tab.
           </div>
         </div>
@@ -11699,7 +11691,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
             <div>
               <div className={pg.fs16fw700}>Outbound Call Assistant</div>
               <div className={pg.fs12c888mt2}>Configure AI-powered outbound calls to team members about urgent tasks</div>
-              <div style={{ fontSize: 11, color: "#b0b0b0", marginTop: 4 }}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
+              <div className={pg.p2_98}>These are the company defaults. Staff can personalise their own assistant in My Assistant.</div>
             </div>
             <div className={pg.flexGap8}>
               <button className="btn btn-primary btn-sm" style={{ background: accent, fontSize: 11, opacity: outboundDirty ? 1 : 0.5 }} onClick={saveOutboundSettings} disabled={!outboundDirty}>
@@ -11709,16 +11701,16 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           </div>
 
           {outboundSaved && (
-            <div style={{ background: "#ecfdf5", border: "1px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+            <div className={pg.u496}>
               <Icon name="check" size={14} /> Outbound settings saved.
             </div>
           )}
           {testCallStatus && (
-            <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#1d4ed8" }}>{testCallStatus}</div>
+            <div className={pg.p2_73}>{testCallStatus}</div>
           )}
 
           {/* Enable toggle */}
-          <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: 20, marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className={pg.u555}>
             <div>
               <div className={pg.fs14fw700c111}>Enable Outbound Calls</div>
               <div className={pg.fs12c888mt2}>Allow the AI assistant to make outbound calls to team members</div>
@@ -11734,7 +11726,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
             <div className={pg.grid2col}>
               <div>
                 <label className={pg.fieldLabelAlt}>Name</label>
-                <input value={outboundSettings.name} onChange={e => updateOutbound("name", e.target.value)} placeholder="e.g. Iris" style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <input value={outboundSettings.name} onChange={e => updateOutbound("name", e.target.value)} placeholder="e.g. Iris" className={pg.u556} />
               </div>
               <div>
                 <label className={pg.fieldLabelAlt}>Voice</label>
@@ -11744,7 +11736,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               </div>
             </div>
             <label className={pg.fieldLabelAlt}>Greeting Style</label>
-            <textarea value={outboundSettings.greetingStyle} onChange={e => updateOutbound("greetingStyle", e.target.value)} rows={2} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 12 }} />
+            <textarea value={outboundSettings.greetingStyle} onChange={e => updateOutbound("greetingStyle", e.target.value)} rows={2} className={pg.p2_103} />
             <label className={pg.fieldLabelAlt}>Personality</label>
             <textarea value={outboundSettings.personality} onChange={e => updateOutbound("personality", e.target.value)} rows={2} className={pg.formTextarea} />
           </div>
@@ -11756,11 +11748,11 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               <button onClick={openNewTeamMember} style={{ padding: "4px 12px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>+ Add</button>
             </div>
             {outboundSettings.team.length === 0 ? (
-              <div style={{ textAlign: "center", padding: 20, color: "#aaa", fontSize: 13 }}>No team members added</div>
+              <div className={pg.u557}>No team members added</div>
             ) : (
               <div className={pg.flexColGap8}>
                 {outboundSettings.team.map(m => (
-                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", border: "1px solid #e8e8e8", borderRadius: 8 }}>
+                  <div key={m.id} className={pg.u558}>
                     <button onClick={() => toggleTeamMemberCall(m.id)} style={{ width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer", position: "relative", background: m.callEnabled ? "#059669" : "#ccc", flexShrink: 0 }}>
                       <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: m.callEnabled ? 19 : 3, transition: "left 0.2s", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }} />
                     </button>
@@ -11769,7 +11761,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                       <div className={pg.fs11c888}>{m.phone} {m.role ? `· ${m.role}` : ""}</div>
                     </div>
                     <button onClick={() => triggerTestCall(m)} className={pg.grayBtnSm}>Test Call</button>
-                    <button onClick={() => openEditTeamMember(m)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 13, padding: 4 }}>✎</button>
+                    <button onClick={() => openEditTeamMember(m)} className={pg.p2_77}>✎</button>
                     <button onClick={() => removeTeamMember(m.id)} className={pg.plainBtnSm}>🗑</button>
                   </div>
                 ))}
@@ -11779,8 +11771,8 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
 
           {/* Call Rules */}
           <div className={pg.whiteCard}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 16 }}>Call Rules</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div className={pg.p2_99}>Call Rules</div>
+            <div className={pg.u559}>
               <div>
                 <label className={pg.fieldLabelAlt}>Min. Severity</label>
                 <select value={outboundSettings.callRules.minSeverity} onChange={e => updateCallRule("minSeverity", e.target.value)} className={pg.formInput}>
@@ -11806,15 +11798,15 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
 
           {/* Team member modal */}
           {showTeamModal && (
-            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowTeamModal(false)}>
-              <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }} onClick={e => e.stopPropagation()}>
-                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{editTeamMember ? "Edit Team Member" : "Add Team Member"}</div>
+            <div className={pg.u429} onClick={() => setShowTeamModal(false)}>
+              <div className={pg.u560} onClick={e => e.stopPropagation()}>
+                <div className={pg.p2_78}>{editTeamMember ? "Edit Team Member" : "Add Team Member"}</div>
                 <label className={pg.fieldLabelAlt}>Name</label>
                 <input value={teamForm.name} onChange={e => setTeamForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Tom Baker" className={pg.formInputLg14mb12} autoFocus />
                 <label className={pg.fieldLabelAlt}>Phone</label>
                 <input value={teamForm.phone} onChange={e => setTeamForm(f => ({ ...f, phone: e.target.value }))} placeholder="+61400000000" className={pg.formInputLg14mb12} />
                 <label className={pg.fieldLabelAlt}>Role</label>
-                <input value={teamForm.role} onChange={e => setTeamForm(f => ({ ...f, role: e.target.value }))} placeholder="e.g. Site Manager" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 20 }} />
+                <input value={teamForm.role} onChange={e => setTeamForm(f => ({ ...f, role: e.target.value }))} placeholder="e.g. Site Manager" className={pg.u561} />
                 <div className={pg.flexEndGap8}>
                   <button onClick={() => setShowTeamModal(false)} className={pg.grayBtn}>Cancel</button>
                   <button onClick={saveTeamMember} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>{editTeamMember ? "Save" : "Add"}</button>
@@ -11874,11 +11866,11 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           // ── Template Editor ──
           return (
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                <button onClick={() => setEditTemplate(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#888", fontSize: 16, padding: 4 }}>&larr;</button>
+              <div className={pg.p2_66}>
+                <button onClick={() => setEditTemplate(null)} className={pg.u562}>&larr;</button>
                 <div className={pg.fs16fw700}>{editTemplate === "new" ? "New Template" : "Edit Template"}</div>
-                <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                  <button onClick={() => setEditTemplate(null)} style={{ padding: "6px 14px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 12, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
+                <div className={pg.u563}>
+                  <button onClick={() => setEditTemplate(null)} className={pg.u564}>Cancel</button>
                   <button onClick={saveTemplate} style={{ padding: "6px 14px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Save Template</button>
                 </div>
               </div>
@@ -11886,16 +11878,16 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               {/* Template name */}
               <div className={pg.whiteCard}>
                 <label className={pg.fieldLabelAlt}>Template Name</label>
-                <input value={tplForm.name} onChange={e => setTplForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Premium, Minimal, Branded" style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} autoFocus />
+                <input value={tplForm.name} onChange={e => setTplForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Premium, Minimal, Branded" className={pg.u565} autoFocus />
               </div>
 
               {/* Company Details (inherited from Settings > Company) */}
               <div className={pg.whiteCard}>
                 <div className={pg.flexBetweenMb12}>
                   <div className={pg.textLabelNoMb}>Company Details</div>
-                  <span style={{ fontSize: 10, color: "#aaa" }}>From Settings &gt; Company</span>
+                  <span className={pg.p2_102}>From Settings &gt; Company</span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+                <div className={pg.u566}>
                   <div className={pg.grayPill}>
                     <div className={pg.fs10fw700labelAlt}>Company</div>
                     <div className={pg.fs12fw600c555}>{companyInfo.companyName}</div>
@@ -11914,7 +11906,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                   </div>
                 </div>
                 <div>
-                  <label className={pg.fieldLabelAlt}>Template Email <span style={{ fontWeight: 400, color: "#aaa", textTransform: "none" }}>(override per template)</span></label>
+                  <label className={pg.fieldLabelAlt}>Template Email <span className={pg.u567}>(override per template)</span></label>
                   <input value={tplForm.email} onChange={e => setTplForm(f => ({ ...f, email: e.target.value }))} className={pg.formInputSm} />
                 </div>
               </div>
@@ -11926,21 +11918,21 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                   <div>
                     <label className={pg.fieldLabelAlt}>Accent Colour</label>
                     <div className={pg.flexCenter}>
-                      <input type="color" value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} style={{ width: 36, height: 36, border: "1px solid #ddd", borderRadius: 6, cursor: "pointer", padding: 2 }} />
-                      <input value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} style={{ width: 90, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "monospace", boxSizing: "border-box" }} />
+                      <input type="color" value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} className={pg.u568} />
+                      <input value={tplForm.accentColor} onChange={e => setTplForm(f => ({ ...f, accentColor: e.target.value }))} className={pg.u569} />
                     </div>
                   </div>
                   <div>
                     <label className={pg.fieldLabelAlt}>Logo</label>
                     <div className={pg.flexCenter}>
-                      {tplForm.logo && <img src={tplForm.logo} alt="Logo" style={{ height: 32, borderRadius: 4 }} />}
+                      {tplForm.logo && <img src={tplForm.logo} alt="Logo" className={pg.u570} />}
                       <input type="file" accept="image/*" onChange={e => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onload = () => setTplForm(f => ({ ...f, logo: reader.result })); reader.readAsDataURL(file); } }} className={pg.fs12} />
-                      {tplForm.logo && <button onClick={() => setTplForm(f => ({ ...f, logo: null }))} style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 11 }}>Remove</button>}
+                      {tplForm.logo && <button onClick={() => setTplForm(f => ({ ...f, logo: null }))} className={pg.u571}>Remove</button>}
                     </div>
                   </div>
                 </div>
                 <div className={pg.flexCenter}>
-                  <label style={{ fontSize: 13, fontWeight: 500, color: "#333" }}>Show GST</label>
+                  <label className={pg.u572}>Show GST</label>
                   <button onClick={() => setTplForm(f => ({ ...f, showGst: !f.showGst }))} style={{ width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer", position: "relative", background: tplForm.showGst ? "#059669" : "#ccc" }}>
                     <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: tplForm.showGst ? 19 : 3, transition: "left 0.2s", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }} />
                   </button>
@@ -11951,7 +11943,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               {(tplForm.type === "quote" || tplForm.type === "invoice") && (
                 <div className={pg.whiteCard}>
                   <div className={pg.textLabelMb12}>Line Item Columns</div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div className={pg.p2_93}>
                     {[{ id: "description", label: "Description", required: true }, { id: "qty", label: "Quantity" }, { id: "unit", label: "Unit" }, { id: "unitPrice", label: "Unit Price" }, { id: "lineTotal", label: "Line Total" }, { id: "gst", label: "GST" }].map(col => {
                       const cols = tplForm.columns || DEFAULT_COLUMNS;
                       const isOn = cols[col.id] !== false;
@@ -11964,7 +11956,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                       );
                     })}
                   </div>
-                  <div style={{ fontSize: 11, color: "#999", marginTop: 8 }}>Toggle which columns appear on the document. Description is always shown.</div>
+                  <div className={pg.u573}>Toggle which columns appear on the document. Description is always shown.</div>
                 </div>
               )}
 
@@ -11978,7 +11970,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                     const w = window.open("", "_blank", "width=800,height=1000");
                     w.document.write(`<html><head><title>${tplForm.type} Preview</title><style>body{margin:0;padding:40px;font-family:Arial,sans-serif;font-size:12px}@media print{body{padding:20px}}</style></head><body>${el.innerHTML}<script>setTimeout(()=>window.print(),300)</script></body></html>`);
                     w.document.close();
-                  }} style={{ padding: "4px 12px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
+                  }} className={pg.u574}>
                     <span className={pg.fs13}>&#8595;</span> Download PDF
                   </button>
                 </div>
@@ -11986,7 +11978,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                   {/* Header */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, paddingBottom: 16, borderBottom: `2px solid ${tplForm.accentColor}` }}>
                     <div>
-                      {tplForm.logo && <img src={tplForm.logo} alt="Logo" style={{ height: 40, marginBottom: 8 }} />}
+                      {tplForm.logo && <img src={tplForm.logo} alt="Logo" className={pg.u575} />}
                       <div style={{ fontSize: 16, fontWeight: 800, color: tplForm.accentColor }}>{companyInfo.companyName}</div>
                       {companyInfo.abn && <div className={pg.fs10c888}>ABN: {companyInfo.abn}</div>}
                       <div className={pg.fs10c888}>{companyInfo.address}</div>
@@ -11994,13 +11986,13 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                     </div>
                     <div className={pg.textRight}>
                       <div style={{ fontSize: 18, fontWeight: 800, color: tplForm.accentColor, textTransform: "uppercase" }}>{tplForm.type === "work_order" ? "Work Order" : tplForm.type === "purchase_order" ? "Purchase Order" : tplForm.type.charAt(0).toUpperCase() + tplForm.type.slice(1)}</div>
-                      <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>#Q-0001</div>
+                      <div className={pg.u577}>#Q-0001</div>
                       <div className={pg.fs11c666}>Date: 18/03/2026</div>
                     </div>
                   </div>
                   {/* Client */}
                   <div className={pg.mb16}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", marginBottom: 4 }}>Bill To</div>
+                    <div className={pg.u578}>Bill To</div>
                     <div className={pg.fw600}>Hartwell Properties</div>
                     <div className={pg.color666}>22 King St, Sydney NSW 2000</div>
                   </div>
@@ -12017,48 +12009,48 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                     const gstAmt = tplForm.showGst ? subtotal * 0.1 : 0;
                     return (
                       <>
-                        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 12, fontSize: 11, tableLayout: "fixed" }}>
+                        <table className={pg.u579}>
                           <colgroup>
                             <col />
-                            {cols.qty !== false && <col style={{ width: colW }} />}
-                            {cols.unit !== false && <col style={{ width: colW }} />}
-                            {cols.unitPrice !== false && <col style={{ width: colW }} />}
-                            {cols.lineTotal !== false && <col style={{ width: colW }} />}
+                            {cols.qty !== false && <col className={pg.u580} />}
+                            {cols.unit !== false && <col className={pg.u580} />}
+                            {cols.unitPrice !== false && <col className={pg.u580} />}
+                            {cols.lineTotal !== false && <col className={pg.u580} />}
                           </colgroup>
                           <thead>
                             <tr style={{ background: tplForm.accentColor, color: "#fff" }}>
-                              <th style={{ padding: "6px 8px", textAlign: "left" }}>Description</th>
+                              <th className={pg.u581}>Description</th>
                               {cols.qty !== false && <th className={pg.tdRight}>Qty</th>}
-                              {cols.unit !== false && <th style={{ padding: "6px 8px", textAlign: "center" }}>Unit</th>}
+                              {cols.unit !== false && <th className={pg.p2_104}>Unit</th>}
                               {cols.unitPrice !== false && <th className={pg.tdRight}>Unit Price</th>}
                               {cols.lineTotal !== false && <th className={pg.tdRight}>Total</th>}
                             </tr>
                           </thead>
                           <tbody>
                             {sampleItems.map((item, i) => (
-                              <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
-                                <td style={{ padding: "6px 8px" }}>{item.desc}</td>
+                              <tr key={i} className={pg.u582}>
+                                <td className={pg.u583}>{item.desc}</td>
                                 {cols.qty !== false && <td className={pg.tdRight}>{item.qty}</td>}
-                                {cols.unit !== false && <td style={{ padding: "6px 8px", textAlign: "center" }}>{item.unit}</td>}
+                                {cols.unit !== false && <td className={pg.p2_104}>{item.unit}</td>}
                                 {cols.unitPrice !== false && <td className={pg.tdRight}>${item.rate.toLocaleString()}</td>}
                                 {cols.lineTotal !== false && <td className={pg.tdRight}>${(item.qty * item.rate).toLocaleString()}</td>}
                               </tr>
                             ))}
                           </tbody>
                         </table>
-                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                          <div style={{ width: 180 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 11 }}><span>Subtotal</span><span>${subtotal.toLocaleString()}</span></div>
-                            {tplForm.showGst && cols.gst !== false && <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 11 }}><span>GST (10%)</span><span>${gstAmt.toLocaleString()}</span></div>}
-                            <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13, fontWeight: 800, borderTop: "2px solid #111", marginTop: 4 }}><span>Total</span><span>${(subtotal + gstAmt).toLocaleString()}</span></div>
+                        <div className={pg.u584}>
+                          <div className={pg.u585}>
+                            <div className={pg.p2_105}><span>Subtotal</span><span>${subtotal.toLocaleString()}</span></div>
+                            {tplForm.showGst && cols.gst !== false && <div className={pg.p2_105}><span>GST (10%)</span><span>${gstAmt.toLocaleString()}</span></div>}
+                            <div className={pg.u586}><span>Total</span><span>${(subtotal + gstAmt).toLocaleString()}</span></div>
                           </div>
                         </div>
                       </>
                     );
                   })()}
                   {/* Terms & Footer */}
-                  {tplForm.terms && <div style={{ marginTop: 16, padding: "10px 12px", background: "#f8f8f8", borderRadius: 4, fontSize: 10, color: "#666" }}><strong>Terms:</strong> {tplForm.terms}</div>}
-                  {tplForm.footer && <div style={{ marginTop: 12, textAlign: "center", fontSize: 10, color: "#999" }}>{tplForm.footer}</div>}
+                  {tplForm.terms && <div className={pg.u587}><strong>Terms:</strong> {tplForm.terms}</div>}
+                  {tplForm.footer && <div className={pg.u588}>{tplForm.footer}</div>}
                 </div>
               </div>
 
@@ -12066,7 +12058,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               <div className={pg.whiteCard}>
                 <div className={pg.textLabelMb12}>Footer & Terms</div>
                 <label className={pg.fieldLabelAlt}>Footer Text</label>
-                <input value={tplForm.footer} onChange={e => setTplForm(f => ({ ...f, footer: e.target.value }))} placeholder="e.g. Thank you for your business." style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
+                <input value={tplForm.footer} onChange={e => setTplForm(f => ({ ...f, footer: e.target.value }))} placeholder="e.g. Thank you for your business." className={pg.p2_106} />
                 <label className={pg.fieldLabelAlt}>Terms & Conditions</label>
                 <textarea value={tplForm.terms} onChange={e => setTplForm(f => ({ ...f, terms: e.target.value }))} rows={3} className={pg.formTextarea} />
               </div>
@@ -12079,25 +12071,25 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                   <div className={pg.whiteCard}>
                     <div className={pg.flexBetweenMb12}>
                       <div className={pg.textLabelNoMb}>Email Template</div>
-                      <button onClick={() => setTplForm(f => ({ ...f, _showEmailPreview: !f._showEmailPreview }))} style={{ padding: "4px 12px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>
+                      <button onClick={() => setTplForm(f => ({ ...f, _showEmailPreview: !f._showEmailPreview }))} className={pg.u589}>
                         {tplForm._showEmailPreview ? "Edit" : "Preview"}
                       </button>
                     </div>
                     {tplForm._showEmailPreview ? (
-                      <div style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden" }}>
+                      <div className={pg.u590}>
                         {/* Email header */}
-                        <div style={{ background: "#f8f8f8", padding: "12px 16px", borderBottom: "1px solid #e0e0e0" }}>
-                          <div style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 12 }}>
+                        <div className={pg.u591}>
+                          <div className={pg.p2_107}>
                             <span className={pg.fw700c888w40}>From:</span>
                             <span className={pg.color333}>{companyInfo.companyName} &lt;{tplForm.email}&gt;</span>
                           </div>
-                          <div style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 12 }}>
+                          <div className={pg.p2_107}>
                             <span className={pg.fw700c888w40}>To:</span>
                             <span className={pg.color333}>James Hartwell &lt;james@hartwell.com&gt;</span>
                           </div>
-                          <div style={{ display: "flex", gap: 8, fontSize: 12 }}>
+                          <div className={pg.u592}>
                             <span className={pg.fw700c888w40}>Subject:</span>
-                            <span style={{ color: "#111", fontWeight: 600 }}>{replaceVars(tplForm.emailSubject)}</span>
+                            <span className={pg.u593}>{replaceVars(tplForm.emailSubject)}</span>
                           </div>
                         </div>
                         {/* Email body */}
@@ -12105,7 +12097,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                           {replaceVars(tplForm.emailBody)}
                         </div>
                         {/* Attachment indicator */}
-                        <div style={{ padding: "10px 16px", borderTop: "1px solid #e0e0e0", background: "#fafafa", display: "flex", alignItems: "center", gap: 8 }}>
+                        <div className={pg.u594}>
                           <span className={pg.fs14}>&#128206;</span>
                           <span className={pg.fs11c666}>{tplForm.type === "work_order" ? "Work_Order" : tplForm.type === "purchase_order" ? "Purchase_Order" : tplForm.type.charAt(0).toUpperCase() + tplForm.type.slice(1)}_Q-0001.pdf</span>
                         </div>
@@ -12113,14 +12105,14 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                     ) : (
                       <>
                         <label className={pg.fieldLabelAlt}>Subject</label>
-                        <input value={tplForm.emailSubject} onChange={e => setTplForm(f => ({ ...f, emailSubject: e.target.value }))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
+                        <input value={tplForm.emailSubject} onChange={e => setTplForm(f => ({ ...f, emailSubject: e.target.value }))} className={pg.p2_106} />
                         <label className={pg.fieldLabelAlt}>Body</label>
-                        <textarea value={tplForm.emailBody} onChange={e => setTplForm(f => ({ ...f, emailBody: e.target.value }))} rows={6} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 12 }} />
-                        <div style={{ background: "#f8f8f8", borderRadius: 6, padding: "10px 14px" }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Available Variables</div>
-                          <div className={pg.flexWrap} style={{ gap: 6 }}>
+                        <textarea value={tplForm.emailBody} onChange={e => setTplForm(f => ({ ...f, emailBody: e.target.value }))} rows={6} className={pg.p2_103} />
+                        <div className={pg.u595}>
+                          <div className={pg.u596}>Available Variables</div>
+                          <div className={pg.flexWrap} className={pg.p2_68}>
                             {TEMPLATE_VARS.map(v => (
-                              <span key={v.var} title={v.desc} style={{ fontSize: 11, fontFamily: "monospace", background: "#fff", border: "1px solid #e0e0e0", padding: "2px 8px", borderRadius: 4, color: "#555", cursor: "help" }}>{v.var}</span>
+                              <span key={v.var} title={v.desc} className={pg.u597}>{v.var}</span>
                             ))}
                           </div>
                         </div>
@@ -12145,7 +12137,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
             </div>
 
             {/* Document type tabs */}
-            <div style={{ display: "flex", gap: 0, marginBottom: 20, border: "1px solid #ddd", borderRadius: 6, overflow: "hidden" }}>
+            <div className={pg.u598}>
               {DOC_TYPES.map(dt => (
                 <button key={dt.id} onClick={() => setDocType(dt.id)} style={{ flex: 1, padding: "8px 12px", fontSize: 12, fontWeight: 600, border: "none", borderRight: "1px solid #ddd", cursor: "pointer", fontFamily: "'Open Sans', sans-serif", background: docType === dt.id ? accent : "#f5f5f5", color: docType === dt.id ? "#fff" : "#666" }}>{dt.label}</button>
               ))}
@@ -12153,20 +12145,20 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
 
             {/* Templates for selected type */}
             {typeTemplates.length === 0 ? (
-              <div style={{ textAlign: "center", padding: 40, color: "#aaa", fontSize: 13 }}>No templates for this document type</div>
+              <div className={pg.p2_75}>No templates for this document type</div>
             ) : (
               <div className={pg.flexColGap8}>
                 {typeTemplates.map(tpl => (
-                  <div key={tpl.id} onClick={() => openEditTemplate(tpl)} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "box-shadow 0.15s" }} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+                  <div key={tpl.id} onClick={() => openEditTemplate(tpl)} className={pg.u599} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
                     {/* Colour swatch */}
                     <div style={{ width: 8, height: 40, borderRadius: 4, background: tpl.accentColor, flexShrink: 0 }} />
                     <div className={pg.flex1}>
                       <div className={pg.fs14fw600c111}>{tpl.name}</div>
                       <div className={pg.fs11c888mt2}>{tpl.companyName} {tpl.logo ? "· Logo" : ""}</div>
                     </div>
-                    {tpl.isDefault && <span style={{ fontSize: 10, fontWeight: 700, background: "#ecfdf5", color: "#059669", padding: "2px 8px", borderRadius: 4 }}>Default</span>}
+                    {tpl.isDefault && <span className={pg.u600}>Default</span>}
                     {!tpl.isDefault && (
-                      <button onClick={e => { e.stopPropagation(); setDefault(tpl.id); }} style={{ fontSize: 10, fontWeight: 600, background: "#f5f5f5", border: "1px solid #ddd", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", color: "#666" }}>Set Default</button>
+                      <button onClick={e => { e.stopPropagation(); setDefault(tpl.id); }} className={pg.u601}>Set Default</button>
                     )}
                     {!tpl.isDefault && (
                       <button onClick={e => { e.stopPropagation(); deleteTemplate(tpl.id); }} className={pg.plainBtnSm}>🗑</button>
@@ -12284,11 +12276,11 @@ const FilesPage = ({ jobs = [], bills = [], contractors = [], quotes = [], invoi
   const selectStyle = { padding: "7px 10px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 13, background: "#fff", color: "#333", fontFamily: "'Open Sans', sans-serif", minWidth: 120 };
 
   return (
-    <div style={{ padding: 0 }}>
+    <div className={pg.p2_108}>
       {/* Toolbar */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 18 }}>
-        <div style={{ position: "relative", flex: "1 1 220px", minWidth: 180 }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div className={pg.p2_109}>
+        <div className={pg.p2_110}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={pg.p2_111}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search files..." style={{ ...selectStyle, width: "100%", paddingLeft: 32 }} />
         </div>
         <select value={filterSource} onChange={e => setFilterSource(e.target.value)} style={selectStyle}>
@@ -12303,35 +12295,35 @@ const FilesPage = ({ jobs = [], bills = [], contractors = [], quotes = [], invoi
       </div>
 
       {/* Table */}
-      <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e5e5", overflow: "hidden" }}>
+      <div className={pg.p2_112}>
         <div className={pg.overflowX}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <table className={pg.p2_69}>
             <thead>
-              <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e5e5" }}>
-                <th onClick={() => toggleSort("name")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Name{sortIcon("name")}</th>
-                <th onClick={() => toggleSort("type")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Type{sortIcon("type")}</th>
-                <th onClick={() => toggleSort("source")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Source{sortIcon("source")}</th>
-                <th onClick={() => toggleSort("date")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Date{sortIcon("date")}</th>
-                <th style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", whiteSpace: "nowrap" }}>Linked To</th>
-                <th style={{ textAlign: "center", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", whiteSpace: "nowrap" }}>Status</th>
+              <tr className={pg.u602}>
+                <th onClick={() => toggleSort("name")} className={pg.u603}>Name{sortIcon("name")}</th>
+                <th onClick={() => toggleSort("type")} className={pg.u603}>Type{sortIcon("type")}</th>
+                <th onClick={() => toggleSort("source")} className={pg.u603}>Source{sortIcon("source")}</th>
+                <th onClick={() => toggleSort("date")} className={pg.u603}>Date{sortIcon("date")}</th>
+                <th className={pg.u604}>Linked To</th>
+                <th className={pg.u605}>Status</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#aaa" }}>No files found</td></tr>
+                <tr><td colSpan={6} className={pg.p2_113}>No files found</td></tr>
               ) : filtered.map(f => (
-                <tr key={f.id} style={{ borderBottom: "1px solid #f0f0f0" }}
+                <tr key={f.id} className={pg.u606}
                   onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
                   onMouseLeave={e => e.currentTarget.style.background = ""}>
-                  <td style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+                  <td className={pg.u607}>
                     <Icon name={f.icon} size={14} />
                     <span className={pg.fw500}>{f.name}</span>
                   </td>
-                  <td style={{ padding: "10px 14px", color: "#666" }}>{f.type}</td>
-                  <td style={{ padding: "10px 14px", color: "#666" }}>{f.source}</td>
-                  <td style={{ padding: "10px 14px", color: "#666", whiteSpace: "nowrap" }}>{f.date || "—"}</td>
-                  <td style={{ padding: "10px 14px", color: "#888", fontSize: 12 }}>{f.linkedTo || "—"}</td>
-                  <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                  <td className={pg.p2_114}>{f.type}</td>
+                  <td className={pg.p2_114}>{f.source}</td>
+                  <td className={pg.u608}>{f.date || "—"}</td>
+                  <td className={pg.u609}>{f.linkedTo || "—"}</td>
+                  <td className={pg.u610}>
                     {f.status ? <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 600, background: statusColor(f.status) + "18", color: statusColor(f.status), textTransform: "capitalize" }}>{f.status}</span> : "—"}
                   </td>
                 </tr>
@@ -12406,10 +12398,10 @@ const CallLog = ({ callLog = [], onNav }) => {
   const selectStyle = { padding: "7px 10px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 13, background: "#fff", color: "#333", fontFamily: "'Open Sans', sans-serif", minWidth: 120 };
 
   return (
-    <div style={{ padding: 0 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 18 }}>
-        <div style={{ position: "relative", flex: "1 1 220px", minWidth: 180 }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <div className={pg.p2_108}>
+      <div className={pg.p2_109}>
+        <div className={pg.p2_110}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={pg.p2_111}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search calls..." style={{ ...selectStyle, width: "100%", paddingLeft: 32 }} />
         </div>
         <select value={filterDir} onChange={e => setFilterDir(e.target.value)} style={selectStyle}>
@@ -12426,48 +12418,48 @@ const CallLog = ({ callLog = [], onNav }) => {
         <div className={pg.textMuted}>{filtered.length} call{filtered.length !== 1 ? "s" : ""}</div>
       </div>
 
-      <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e5e5", overflow: "hidden" }}>
+      <div className={pg.p2_112}>
         {/* Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 140px 100px 90px 90px", padding: "10px 14px", background: "#f9fafb", borderBottom: "2px solid #e5e5e5", gap: 8 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555" }}></div>
-          <div onClick={() => toggleSort("name")} style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none" }}>Contact{sortIcon("name")}</div>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555" }}>Phone</div>
-          <div onClick={() => toggleSort("date")} style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none" }}>Date{sortIcon("date")}</div>
-          <div onClick={() => toggleSort("duration")} style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none" }}>Duration{sortIcon("duration")}</div>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", textAlign: "center" }}>Status</div>
+        <div className={pg.u612}>
+          <div className={pg.p2_115}></div>
+          <div onClick={() => toggleSort("name")} className={pg.u613}>Contact{sortIcon("name")}</div>
+          <div className={pg.p2_115}>Phone</div>
+          <div onClick={() => toggleSort("date")} className={pg.u613}>Date{sortIcon("date")}</div>
+          <div onClick={() => toggleSort("duration")} className={pg.u613}>Duration{sortIcon("duration")}</div>
+          <div className={pg.u614}>Status</div>
         </div>
         {/* Rows */}
         {filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 40, color: "#aaa" }}>No calls found</div>
+          <div className={pg.p2_113}>No calls found</div>
         ) : filtered.map(call => (
           <div key={call.id}>
             <div
               onClick={() => setExpandedId(expandedId === call.id ? null : call.id)}
-              style={{ display: "grid", gridTemplateColumns: "40px 1fr 140px 100px 90px 90px", padding: "12px 14px", borderBottom: "1px solid #f0f0f0", cursor: "pointer", gap: 8, alignItems: "center", transition: "background 0.15s" }}
+              className={pg.u615}
               onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
               onMouseLeave={e => e.currentTarget.style.background = expandedId === call.id ? "#f9fafb" : ""}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div className={pg.u616}>
                 <span style={{ fontSize: 16, fontWeight: 700, color: dirColor(call.direction) }}>{dirIcon(call.direction)}</span>
               </div>
               <div>
-                <div style={{ fontWeight: 500, fontSize: 13 }}>{call.from || call.to}</div>
+                <div className={pg.u618}>{call.from || call.to}</div>
                 <div className={pg.fs11c888}>{call.direction === "inbound" ? "Inbound" : "Outbound"}{call.actions?.length ? ` · ${call.actions.length} action${call.actions.length > 1 ? "s" : ""}` : ""}</div>
               </div>
               <div className={pg.fs12c666}>{call.phone}</div>
               <div>
-                <div style={{ fontSize: 12, color: "#333" }}>{formatDate(call.date)}</div>
+                <div className={pg.u619}>{formatDate(call.date)}</div>
                 <div className={pg.fs11c888}>{formatTime(call.date)}</div>
               </div>
-              <div style={{ fontSize: 13, color: "#333", fontVariantNumeric: "tabular-nums" }}>{formatDuration(call.duration)}</div>
-              <div style={{ textAlign: "center" }}>
+              <div className={pg.u620}>{formatDuration(call.duration)}</div>
+              <div className={pg.u621}>
                 <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 600, background: statusColor(call.status) + "18", color: statusColor(call.status) }}>{statusLabel[call.status] || call.status}</span>
               </div>
             </div>
             {/* Expanded actions */}
             {expandedId === call.id && call.actions?.length > 0 && (
-              <div style={{ padding: "0 14px 14px 54px", background: "#f9fafb", borderBottom: "1px solid #e5e5e5" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#888", marginBottom: 8 }}>Actions from this call</div>
+              <div className={pg.u623}>
+                <div className={pg.u624}>Actions from this call</div>
                 {call.actions.map((a, i) => (
                   <div key={i}
                     onClick={a.link ? (e) => { e.stopPropagation(); onNav && onNav(a.link.page); } : undefined}
@@ -12475,18 +12467,18 @@ const CallLog = ({ callLog = [], onNav }) => {
                     onMouseEnter={e => { if (a.link) e.currentTarget.style.background = "#eef2ff"; }}
                     onMouseLeave={e => { if (a.link) e.currentTarget.style.background = ""; }}
                   >
-                    <span style={{ fontSize: 14, minWidth: 20, textAlign: "center" }}>{actionTypeIcon[a.type] || "•"}</span>
+                    <span className={pg.u625}>{actionTypeIcon[a.type] || "•"}</span>
                     <div className={pg.flex1}>
                       <div style={{ fontSize: 13, color: a.link ? "#2563eb" : "#333" }}>{a.description}</div>
                     </div>
-                    {a.link && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2, flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>}
-                    <div style={{ fontSize: 11, color: "#999", whiteSpace: "nowrap" }}>{a.time}</div>
+                    {a.link && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={pg.u626}><polyline points="9 18 15 12 9 6"/></svg>}
+                    <div className={pg.u627}>{a.time}</div>
                   </div>
                 ))}
               </div>
             )}
             {expandedId === call.id && (!call.actions || call.actions.length === 0) && (
-              <div style={{ padding: "12px 14px 12px 54px", background: "#f9fafb", borderBottom: "1px solid #e5e5e5", fontSize: 13, color: "#999", fontStyle: "italic" }}>No actions recorded for this call</div>
+              <div className={pg.u628}>No actions recorded for this call</div>
             )}
           </div>
         ))}
@@ -12605,20 +12597,20 @@ const SystemStatus = () => {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+      <div className={pg.u629}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+          <div className={pg.u630}>
             <div style={{ width: 10, height: 10, borderRadius: "50%", background: statusColor[overallStatus], boxShadow: `0 0 8px ${statusColor[overallStatus]}` }} />
             <span style={{ fontSize: 18, fontWeight: 700, color: statusColor[overallStatus] }}>{overallLabel}</span>
           </div>
-          {lastChecked && <div style={{ fontSize: 11, color: "#999", marginLeft: 20 }}>Last checked: {lastChecked.toLocaleTimeString()}</div>}
+          {lastChecked && <div className={pg.u632}>Last checked: {lastChecked.toLocaleTimeString()}</div>}
         </div>
-        <button className="btn btn-secondary" onClick={runChecks} disabled={loading} style={{ fontSize: 12, padding: "6px 14px" }}>
+        <button className="btn btn-secondary" onClick={runChecks} disabled={loading} className={pg.u633}>
           {loading ? "Checking..." : "Refresh"}
         </button>
       </div>
 
-      <div style={{ display: "grid", gap: 12 }}>
+      <div className={pg.u634}>
         {services.map(svc => (
           <div key={svc.id} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "16px 20px", borderLeft: `3px solid ${statusColor[svc.status]}` }}>
             <div className={pg.flexBetween}>
@@ -12634,17 +12626,17 @@ const SystemStatus = () => {
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: statusColor[svc.status] }} />
                   {statusLabel[svc.status]}
                 </span>
-                {svc.latency > 0 && <div style={{ fontSize: 10, color: "#aaa", marginTop: 2 }}>{svc.latency}ms</div>}
+                {svc.latency > 0 && <div className={pg.u637}>{svc.latency}ms</div>}
               </div>
             </div>
-            {svc.detail && <div style={{ fontSize: 11, color: "#666", marginTop: 8, paddingLeft: 26 }}>{svc.detail}</div>}
+            {svc.detail && <div className={pg.u638}>{svc.detail}</div>}
           </div>
         ))}
       </div>
 
-      <div style={{ marginTop: 32, background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "20px" }}>
+      <div className={pg.u639}>
         <div className={pg.textLabelMb12}>Service Endpoints</div>
-        <div style={{ display: "grid", gap: 8, fontSize: 12 }}>
+        <div className={pg.u640}>
           <div className={pg.summaryRow}>
             <span className={pg.color666}>Frontend</span>
             <span className={pg.mono11c333}>{window.location.origin}</span>
@@ -12983,12 +12975,12 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
   ];
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "#1e293b", display: "flex", flexDirection: "column" }}>
+    <div className={pg.u641}>
       {/* Toolbar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", background: "#0f172a", borderBottom: "1px solid #334155", flexShrink: 0 }}>
-        <button onClick={onClose} style={{ background: "none", border: "none", color: "#94a3b8", fontSize: 18, cursor: "pointer", padding: "4px 8px" }}>✕</button>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", marginRight: 12 }}>{fileName || "PDF Form Filler"}</div>
-        <div style={{ display: "flex", gap: 2, background: "#1e293b", borderRadius: 8, padding: 2 }}>
+      <div className={pg.u642}>
+        <button onClick={onClose} className={pg.u643}>✕</button>
+        <div className={pg.u644}>{fileName || "PDF Form Filler"}</div>
+        <div className={pg.u645}>
           {tools.map(t => (
             <button key={t.id} onClick={() => setTool(t.id)} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: tool === t.id ? "#3b82f6" : "transparent", color: tool === t.id ? "#fff" : "#94a3b8", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
               <span className={pg.fs14}>{t.icon}</span> {t.label}
@@ -12996,15 +12988,15 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
           ))}
         </div>
         {fields.some(f => f.acroField) && (
-          <div style={{ fontSize: 11, color: "#34d399", background: "rgba(52,211,153,0.1)", padding: "4px 10px", borderRadius: 6, fontWeight: 600 }}>
+          <div className={pg.u646}>
             {fields.filter(f => f.acroField).length} form fields detected
           </div>
         )}
         <div className={pg.flex1} />
         <div className={pg.cardStatusRow}>
-          <button onClick={() => setScale(s => Math.max(0.3, s - 0.15))} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #475569", background: "#1e293b", color: "#e2e8f0", fontSize: 16, cursor: "pointer", fontWeight: 700 }}>−</button>
-          <span style={{ color: "#94a3b8", fontSize: 12, minWidth: 42, textAlign: "center" }}>{Math.round(scale * 100)}%</span>
-          <button onClick={() => setScale(s => Math.min(3, s + 0.15))} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #475569", background: "#1e293b", color: "#e2e8f0", fontSize: 16, cursor: "pointer", fontWeight: 700 }}>+</button>
+          <button onClick={() => setScale(s => Math.max(0.3, s - 0.15))} className={pg.p2_116}>−</button>
+          <span className={pg.u647}>{Math.round(scale * 100)}%</span>
+          <button onClick={() => setScale(s => Math.min(3, s + 0.15))} className={pg.p2_116}>+</button>
         </div>
         <button onClick={handleSave} disabled={saving} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#059669", color: "#fff", fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1, marginLeft: 12 }}>
           {saving ? "Saving…" : "Save & Download"}
@@ -13012,14 +13004,14 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
       </div>
 
       {/* PDF Pages */}
-      <div ref={containerRef} style={{ flex: 1, overflow: "auto", padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+      <div ref={containerRef} className={pg.u648}>
         {pages.length === 0 && (
-          <div style={{ color: "#94a3b8", fontSize: 14, marginTop: 80 }}>Loading PDF…</div>
+          <div className={pg.u649}>Loading PDF…</div>
         )}
         {pages.map((pg, idx) => (
           <div key={idx} style={{ position: "relative", boxShadow: "0 4px 24px rgba(0,0,0,0.3)", borderRadius: 4, overflow: "hidden", cursor: tool === "text" ? "crosshair" : tool === "checkbox" ? "crosshair" : tool === "signature" ? "crosshair" : tool === "delete" ? "not-allowed" : "default" }}
             onClick={(e) => handlePageClick(e, idx)}>
-            <canvas ref={el => canvasRefs.current[idx] = el} style={{ display: "block" }} />
+            <canvas ref={el => canvasRefs.current[idx] = el} className={pg.u651} />
             {/* Overlay fields */}
             {fields.filter(f => f.page === idx).map(field => (
               <div key={field.id}
@@ -13035,12 +13027,12 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
                 {field.type === "text" && (
                   <>
                     {field.acroField && field.label && !field.value && (
-                      <div style={{ position: "absolute", top: -14, left: 0, fontSize: 8, color: "#3b82f6", fontWeight: 600, whiteSpace: "nowrap", pointerEvents: "none" }}>{field.label}</div>
+                      <div className={pg.u652}>{field.label}</div>
                     )}
                     <input type="text" value={field.value} placeholder={field.label || "Type here…"}
                       onChange={(e) => setFields(prev => prev.map(f => f.id === field.id ? { ...f, value: e.target.value } : f))}
                       onClick={(e) => e.stopPropagation()}
-                      style={{ width: "100%", height: "100%", border: "none", background: "transparent", padding: "2px 4px", fontSize: Math.min(14, field.height * 0.6), fontFamily: "inherit", outline: "none", color: "#000", boxSizing: "border-box" }} />
+                      className={pg.u653} />
                   </>
                 )}
                 {field.type === "checkbox" && (
@@ -13051,9 +13043,9 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
                 )}
                 {field.type === "signature" && (
                   <div onClick={(e) => { e.stopPropagation(); setSigModal(field.id); }}
-                    style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden" }}>
+                    className={pg.u654}>
                     {field.value ? (
-                      <img src={field.value} alt="Signature" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                      <img src={field.value} alt="Signature" className={pg.u655} />
                     ) : (
                       <span className={pg.fs11c94a3b8italic}>Click to sign</span>
                     )}
@@ -13062,7 +13054,7 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
                 {/* Resize handle */}
                 {selectedField === field.id && tool === "select" && (
                   <div onMouseDown={(e) => { e.stopPropagation(); setResizing({ id: field.id }); }}
-                    style={{ position: "absolute", right: -4, bottom: -4, width: 10, height: 10, background: "#3b82f6", borderRadius: 2, cursor: "nwse-resize", border: "1px solid #fff" }} />
+                    className={pg.u656} />
                 )}
               </div>
             ))}
@@ -13072,17 +13064,17 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
 
       {/* Signature Modal */}
       {sigModal && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 10001, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
+        <div className={pg.u657}
           onClick={() => setSigModal(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 24, width: 420, maxWidth: "90vw" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Draw Signature</h3>
+          <div onClick={e => e.stopPropagation()} className={pg.u658}>
+            <div className={pg.p2_85}>
+              <h3 className={pg.u659}>Draw Signature</h3>
               <button onClick={() => setSigModal(null)} className={pg.plainBtn}>✕</button>
             </div>
-            <canvas ref={sigCanvasRef} width={380} height={150} style={{ border: "2px solid #e2e8f0", borderRadius: 8, width: "100%", height: 150, touchAction: "none" }} />
-            <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
-              <button onClick={() => sigPadRef.current?.clear()} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Clear</button>
-              <button onClick={saveSignature} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#3b82f6", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Apply Signature</button>
+            <canvas ref={sigCanvasRef} width={380} height={150} className={pg.u660} />
+            <div className={pg.u661}>
+              <button onClick={() => sigPadRef.current?.clear()} className={pg.u662}>Clear</button>
+              <button onClick={saveSignature} className={pg.u663}>Apply Signature</button>
             </div>
           </div>
         </div>
@@ -13113,24 +13105,24 @@ const ChangePasswordModal = ({ onClose }) => {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
-      <div style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: "100%", maxWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }} onClick={e => e.stopPropagation()}>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Change Password</div>
+    <div className={pg.u664} onClick={onClose}>
+      <div className={pg.u665} onClick={e => e.stopPropagation()}>
+        <div className={pg.p2_101}>Change Password</div>
         <div className={pg.fs12c888mb20}>Enter a new password for your account</div>
         {success ? (
           <>
-            <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 6, padding: "10px 14px", fontSize: 12, color: "#059669", marginBottom: 16 }}>Password updated successfully.</div>
-            <button className="btn btn-ghost btn-sm" onClick={onClose} style={{ width: "100%" }}>Close</button>
+            <div className={pg.u666}>Password updated successfully.</div>
+            <button className="btn btn-ghost btn-sm" onClick={onClose} className={pg.p2_43}>Close</button>
           </>
         ) : (
           <form onSubmit={save}>
-            {error && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, padding: "10px 14px", fontSize: 12, color: "#dc2626", marginBottom: 8 }}>{error}</div>}
+            {error && <div className={pg.u667}>{error}</div>}
             <label className={pg.fieldLabelAlt}>New Password</label>
             <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="••••••••" required autoFocus
               className={pg.formInputLg14mb12} />
             <label className={pg.fieldLabelAlt}>Confirm Password</label>
             <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="••••••••" required
-              style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 16 }} />
+              className={pg.u668} />
             <div className={pg.flexEndGap8}>
               <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
               <button type="submit" className="btn btn-sm" style={{ background: "#111", color: "#fff", border: "none", opacity: saving ? 0.6 : 1 }} disabled={saving}>

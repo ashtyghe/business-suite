@@ -7,6 +7,7 @@ import { changePassword, adminResetUserPassword } from './lib/auth';
 import { buildQuotePdfHtml, buildInvoicePdfHtml, buildOrderPdfHtml, htmlToPdfBase64 } from './lib/pdf';
 import NotesTab from './NotesTab';
 import './styles/global.css';
+import sh from './styles/app-shell.module.css';
 // Heavy libraries loaded dynamically where used (fabric, pdfjs-dist, pdf-lib, signature_pad)
 
 // ── Google Font ──────────────────────────────────────────────────────────────
@@ -370,9 +371,9 @@ const hexToRgba = (hex, a) => {
 
 // ── View Field (reusable read-only display for View mode) ─────────────────────
 const ViewField = ({ label, value }) => (
-  <div style={{ marginBottom: 14 }}>
-    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 4 }}>{label}</div>
-    <div style={{ fontSize: 14, color: '#111', fontWeight: 500 }}>{value || '—'}</div>
+  <div className={sh.viewFieldWrap}>
+    <div className={sh.viewFieldLabel}>{label}</div>
+    <div className={sh.viewFieldValue}>{value || '—'}</div>
   </div>
 );
 
@@ -521,16 +522,16 @@ const SEED_SUPPLIERS = [
 
 // ActivityLog display component
 const ActivityLog = ({ entries = [] }) => {
-  if (!entries.length) return <div style={{ color: "#bbb", fontSize: 13, padding: "20px 0", textAlign: "center" }}>No activity recorded yet.</div>;
+  if (!entries.length) return <div className={sh.activityEmpty}>No activity recorded yet.</div>;
   return (
     <div className="timeline">
       {[...entries].reverse().map((e, i) => (
         <div key={i} className="timeline-item">
           <div className="timeline-dot" />
-          <div style={{ fontSize: 13, lineHeight: 1.5 }}>
-            <span style={{ fontWeight: 600 }}>{e.action}</span>
-            <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>
-              <span style={{ fontWeight: 600, color: "#777" }}>{e.user}</span> · {e.ts}
+          <div className={sh.activityEntry}>
+            <span className={sh.activityAction}>{e.action}</span>
+            <div className={sh.activityMeta}>
+              <span className={sh.activityUser}>{e.user}</span> · {e.ts}
             </div>
           </div>
         </div>
@@ -651,8 +652,8 @@ const XeroSyncBadge = ({ syncStatus, xeroId }) => {
   };
   const c = colors[syncStatus] || (xeroId ? colors.synced : { bg: "#f5f5f5", text: "#888", label: "Not synced" });
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 6px", borderRadius: 4, fontSize: 9, fontWeight: 700, background: c.bg, color: c.text, letterSpacing: "0.04em", textTransform: "uppercase" }}>
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.text }} />
+    <span className={sh.xeroBadge} style={{ background: c.bg, color: c.text }}>
+      <span className={sh.xeroDot} style={{ background: c.text }} />
       Xero
     </span>
   );
@@ -676,7 +677,7 @@ const AvatarGroup = ({ names = [], max = 3 }) => {
 
 // ── Close Button ─────────────────────────────────────────────────────────────
 const CloseBtn = ({ onClick }) => (
-  <button onClick={onClick} className="btn btn-ghost" style={{ padding: "6px", borderRadius: "6px" }}><Icon name="close" size={16} /></button>
+  <button onClick={onClick} className={`btn btn-ghost ${sh.closeBtn}`}><Icon name="close" size={16} /></button>
 );
 
 // ── Line Items Editor ─────────────────────────────────────────────────────────
@@ -707,19 +708,19 @@ const LineItemsEditor = ({ items, onChange }) => {
               <td><input value={it.desc} onChange={e => update(i, "desc", e.target.value)} placeholder="Description" /></td>
               <td><input type="number" value={it.qty} onChange={e => update(i, "qty", e.target.value)} min="0" /></td>
               <td>
-                <select style={{ width: "100%", border: "1.5px solid #e8e8e8", borderRadius: 4, padding: "5px 7px", fontFamily: "'Open Sans', sans-serif", fontSize: 12 }} value={it.unit} onChange={e => update(i, "unit", e.target.value)}>
+                <select className={sh.lineItemSelect} value={it.unit} onChange={e => update(i, "unit", e.target.value)}>
                   {["hrs","ea","m²","lm","lot","day","m³","kg"].map(u => <option key={u}>{u}</option>)}
                 </select>
               </td>
               <td><input type="number" value={it.rate} onChange={e => update(i, "rate", e.target.value)} min="0" /></td>
-              <td style={{ fontWeight: 600 }}>{fmt(it.qty * it.rate)}</td>
-              <td><button onClick={() => remove(i)} className="btn btn-ghost btn-xs" style={{ color: "#c00", padding: "4px" }}><Icon name="trash" size={12} /></button></td>
+              <td className={sh.lineItemTotal}>{fmt(it.qty * it.rate)}</td>
+              <td><button onClick={() => remove(i)} className={`btn btn-ghost btn-xs ${sh.lineItemDeleteBtn}`}><Icon name="trash" size={12} /></button></td>
             </tr>
           ))}
         </tbody>
       </table>
       <button onClick={add} className="btn btn-secondary btn-sm"><Icon name="plus" size={12} />Add Line</button>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+      <div className={sh.totalsWrap}>
         <div className="totals-box">
           <div className="totals-row"><span>Subtotal</span><span>{fmt(sub)}</span></div>
           <div className="totals-row"><span>GST (10%)</span><span>{fmt(sub * 0.1)}</span></div>
@@ -13339,7 +13340,7 @@ export default function App() {
     return (
       <div>
         {loading ? (
-          <div style={{ background: "#000", color: "#fff", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading…</div>
+          <div className={sh.displayLoading}>Loading…</div>
         ) : routeElements}
       </div>
     );
@@ -13348,15 +13349,15 @@ export default function App() {
   return (
     <div className="jm-root" onClick={() => moreOpen && setMoreOpen(false)}>
       {loading && (
-        <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, background: "#fafafa", zIndex: 9999 }}>
-          <div style={{ width: 32, height: 32, border: "3px solid #e8e8e8", borderTopColor: "#111", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-          <div style={{ color: "#888", fontSize: 14 }}>Loading…</div>
+        <div className={sh.fullScreenOverlay}>
+          <div className={sh.spinner} />
+          <div className={sh.loadingText}>Loading…</div>
         </div>
       )}
       {dbError && (
-        <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, background: "#fafafa", zIndex: 9999 }}>
-          <div style={{ color: "#e74c3c", fontWeight: 700 }}>Failed to connect to database</div>
-          <div style={{ color: "#888", fontSize: 13 }}>{dbError}</div>
+        <div className={sh.fullScreenOverlay}>
+          <div className={sh.errorTitle}>Failed to connect to database</div>
+          <div className={sh.errorDetail}>{dbError}</div>
         </div>
       )}
       {!loading && !dbError && (
@@ -13366,7 +13367,7 @@ export default function App() {
 
       {/* Sidebar */}
       <nav className={`jm-sidebar ${sidebarOpen ? "open" : ""}`}>
-        <div className="jm-logo" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className={`jm-logo ${sh.logoRow}`}>
           <div>
             <div className="jm-logo-mark">FieldOps</div>
             <div className="jm-logo-sub">Job Management</div>
@@ -13374,8 +13375,7 @@ export default function App() {
           {/* Close btn visible only on mobile */}
           <button
             onClick={() => setSidebarOpen(false)}
-            style={{ display: "none", background: "transparent", border: "none", color: "#666", cursor: "pointer", padding: 4 }}
-            className="jm-sidebar-close"
+            className={`jm-sidebar-close ${sh.sidebarCloseBtn}`}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="3" y1="3" x2="15" y2="15"/><line x1="15" y1="3" x2="3" y2="15"/>
@@ -13444,31 +13444,27 @@ export default function App() {
             );
           })}
         </div>
-        <div style={{ padding: "16px 20px", borderTop: "1px solid #1e1e1e", position: "relative" }}>
+        <div className={sh.sidebarFooter}>
           {/* User menu popover */}
           {showUserMenu && !auth.isLocalDev && (
-            <div style={{ position: "absolute", bottom: "100%", left: 12, right: 12, background: "#1e1e1e", borderRadius: 8, border: "1px solid #333", padding: 4, marginBottom: 4, zIndex: 10 }}>
-              <button onClick={() => { setShowChangePassword(true); setShowUserMenu(false); }}
-                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px", background: "transparent", border: "none", color: "#ccc", fontSize: 12, cursor: "pointer", borderRadius: 6, fontFamily: "'Open Sans', sans-serif", textAlign: "left" }}
-                onMouseEnter={e => e.currentTarget.style.background = "#333"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+            <div className={sh.userMenuPopover}>
+              <button onClick={() => { setShowChangePassword(true); setShowUserMenu(false); }} className={sh.userMenuBtn}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                 Change Password
               </button>
-              <button onClick={() => { auth.signOut(); setShowUserMenu(false); }}
-                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px", background: "transparent", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer", borderRadius: 6, fontFamily: "'Open Sans', sans-serif", textAlign: "left" }}
-                onMouseEnter={e => e.currentTarget.style.background = "#333"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+              <button onClick={() => { auth.signOut(); setShowUserMenu(false); }} className={sh.userMenuBtnDanger}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg>
                 Sign Out
               </button>
             </div>
           )}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: auth.isLocalDev ? "default" : "pointer" }} onClick={() => !auth.isLocalDev && setShowUserMenu(v => !v)}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#fff", color: "#111", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
+          <div className={auth.isLocalDev ? sh.userRow : sh.userRowClickable} onClick={() => !auth.isLocalDev && setShowUserMenu(v => !v)}>
+            <div className={sh.userAvatar}>
               {(auth.staff?.name || "AJ").split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase()}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{auth.staff?.name || "Alex Jones"}</div>
-              <div style={{ fontSize: 10, color: "#555", textTransform: "capitalize" }}>{auth.staff?.role || "Admin"}</div>
+            <div className={sh.userInfo}>
+              <div className={sh.userName}>{auth.staff?.name || "Alex Jones"}</div>
+              <div className={sh.userRole}>{auth.staff?.role || "Admin"}</div>
             </div>
             {!auth.isLocalDev && (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={showUserMenu ? "#fff" : "#555"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transition: "transform 0.15s", transform: showUserMenu ? "rotate(180deg)" : "rotate(0)" }}>
@@ -13483,16 +13479,16 @@ export default function App() {
       <div className="jm-main">
         {/* Top bar */}
         <div className="jm-topbar">
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div className={sh.topbarLeft}>
             <button className="jm-hamburger" onClick={() => setSidebarOpen(o => !o)} aria-label="Toggle menu">
               <HamburgerIcon open={sidebarOpen} />
             </button>
             <span className="jm-page-title">{pageTitles[page]}</span>
           </div>
           <div className="jm-topbar-actions">
-            <button className="btn btn-ghost btn-sm" style={{ color: "#999" }}><Icon name="notification" size={16} /></button>
-            <div className="topbar-actions-hide" style={{ width: 1, height: 24, background: "#e8e8e8" }} />
-            <span className="topbar-actions-hide jm-topbar-date" style={{ fontSize: 12, color: "#999" }}>Mon, 9 Mar 2026</span>
+            <button className={`btn btn-ghost btn-sm ${sh.topbarNotifBtn}`}><Icon name="notification" size={16} /></button>
+            <div className={`topbar-actions-hide ${sh.topbarDivider}`} />
+            <span className={`topbar-actions-hide jm-topbar-date ${sh.topbarDate}`}>Mon, 9 Mar 2026</span>
           </div>
         </div>
 

@@ -48,8 +48,8 @@ import { buildQuotePdfHtml, buildInvoicePdfHtml, buildOrderPdfHtml, htmlToPdfBas
 //       - OrderDrawer, OrderCard, OrderEmailModal
 //
 // Phase 3 — State management (performance + scalability):
-// TODO: Replace prop drilling (22+ props per route) with Context or Zustand
-//       - Create JobsContext, FinanceContext, PartnersContext
+// DONE: Replaced prop drilling with Zustand store (useAppStore) — all route components
+//       now consume data directly from the store instead of receiving 22+ props
 // TODO: Add React.memo() boundaries to prevent full-tree re-renders on any state change
 // TODO: Add proper error boundaries around each major section
 //
@@ -1872,7 +1872,8 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
 };
 
 // ── Orders: Orders Page ───────────────────────────────────────────────────────
-const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs, companyInfo }) => {
+const OrdersPage = () => {
+  const { workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs, companyInfo } = useAppStore();
   const auth = useAuth();
   const canDeleteOrder = auth.isAdmin || auth.isLocalDev;
   const [modal, setModal] = useState(null);
@@ -2029,7 +2030,8 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedule, workOrders = [], purchaseOrders = [], contractors = [], suppliers = [], onNav }) => {
+const Dashboard = ({ onNav }) => {
+  const { jobs, clients, quotes, invoices, bills, timeEntries, schedule, workOrders, purchaseOrders, contractors, suppliers } = useAppStore();
   // ── Financial KPIs ──
   const totalQuoted = quotes.filter(q => q.status !== "declined").reduce((s, q) => s + calcQuoteTotal(q), 0);
   const revenueCollected = invoices.filter(i => i.status === "paid").reduce((s, inv) => s + calcQuoteTotal(inv), 0);
@@ -3340,7 +3342,8 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
 };
 
 // ── Job Detail Drawer ─────────────────────────────────────────────────────────
-const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, jobs, setJobs, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, onClose, onEdit }) => {
+const JobDetail = ({ job, onClose, onEdit }) => {
+  const { clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, jobs, setJobs, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders } = useAppStore();
   const [tab, setTab] = useState("overview");
   const [detailMode, setDetailMode] = useState("view");
   const [detailForm, setDetailForm] = useState({ title: job.title, clientId: job.clientId, siteId: job.siteId || null, status: job.status, priority: job.priority, description: job.description || "", startDate: job.startDate || "", dueDate: job.dueDate || "", assignedTo: job.assignedTo || [], tags: (job.tags || []).join(", "), estimate: job.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } });
@@ -5338,7 +5341,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 };
 
 // ── Jobs ──────────────────────────────────────────────────────────────────────
-const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders }) => {
+const Jobs = () => {
+  const { jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders } = useAppStore();
   const auth = useAuth();
   const canDeleteJob = auth.isAdmin || auth.isLocalDev;
   const canEditJob = (j) => auth.isAdmin || auth.isLocalDev || (j.assignedTo || []).includes(auth.currentUserName);
@@ -5593,16 +5597,6 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
       {detailJob && (
         <JobDetail
           job={jobs.find(j => j.id === detailJob.id) || detailJob}
-          clients={clients}
-          quotes={quotes} setQuotes={setQuotes}
-          invoices={invoices} setInvoices={setInvoices}
-          timeEntries={timeEntries} setTimeEntries={setTimeEntries}
-          bills={bills} setBills={setBills}
-          schedule={schedule} setSchedule={setSchedule}
-          jobs={jobs} setJobs={setJobs}
-          staff={staff}
-          workOrders={workOrders} setWorkOrders={setWorkOrders}
-          purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders}
           onClose={() => setDetailJob(null)}
           onEdit={() => { openEdit(jobs.find(j => j.id === detailJob.id) || detailJob); setDetailJob(null); }}
         />
@@ -5789,7 +5783,8 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
 };
 
 // ── Clients ───────────────────────────────────────────────────────────────────
-const Clients = ({ clients, setClients, jobs, templates = [] }) => {
+const Clients = () => {
+  const { clients, setClients, jobs, templates } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [editClient, setEditClient] = useState(null);
   const [clientMode, setClientMode] = useState("edit");
@@ -6240,7 +6235,8 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
 };
 
 // ── Contractors ───────────────────────────────────────────────────────────────
-const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
+const Contractors = () => {
+  const { contractors, setContractors, workOrders, bills } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [mode, setMode] = useState("edit");
@@ -6748,7 +6744,8 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
 };
 
 // ── Suppliers ─────────────────────────────────────────────────────────────────
-const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
+const Suppliers = () => {
+  const { suppliers, setSuppliers, purchaseOrders, bills } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [mode, setMode] = useState("edit");
@@ -7081,7 +7078,8 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
 };
 
 // ── Schedule ──────────────────────────────────────────────────────────────────
-const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jobs, clients, staff }) => {
+const Schedule = () => {
+  const { schedule, setSchedule, futureSchedule, setFutureSchedule, jobs, clients, staff } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
   const [schedMode, setSchedMode] = useState("edit");
@@ -7596,7 +7594,8 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
 
 // ── Quotes ────────────────────────────────────────────────────────────────────
 const QUOTE_STATUSES = ["all", "draft", "sent", "accepted", "declined"];
-const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
+const Quotes = () => {
+  const { quotes, setQuotes, jobs, clients, invoices } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [editQuote, setEditQuote] = useState(null);
   const [quoteMode, setQuoteMode] = useState("edit");
@@ -8269,7 +8268,8 @@ const WeekStrip = ({ timeEntries, selectedWorker, weekOffset, setWeekOffset, sel
 };
 
 // ── Main TimeTracking component ───────────────────────────────────────────────
-const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, staff }) => {
+const TimeTracking = () => {
+  const { timeEntries, setTimeEntries, jobs, setJobs, clients, staff } = useAppStore();
   const auth = useAuth();
   const isOwn = (entry) => entry.worker === auth.currentUserName;
   const canEditEntry = (entry) => auth.isAdmin || auth.isLocalDev || isOwn(entry);
@@ -9014,7 +9014,8 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
 };
 
 // ── Main Bills Component ───────────────────────────────────────────────────────
-const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
+const Bills = () => {
+  const { bills, setBills, jobs, setJobs, clients } = useAppStore();
   const auth = useAuth();
   const canApprove = auth.isAdmin || auth.isLocalDev;
   const canDelete = auth.isAdmin || auth.isLocalDev;
@@ -9361,7 +9362,8 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
 
 // ── Invoices ──────────────────────────────────────────────────────────────────
 const INV_STATUSES = ["all", "draft", "sent", "paid", "overdue", "void"];
-const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
+const Invoices = () => {
+  const { invoices, setInvoices, jobs, clients, quotes } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [editInvoice, setEditInvoice] = useState(null);
   const [invMode, setInvMode] = useState("edit");
@@ -9751,7 +9753,8 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
 };
 
 // ── Actions Page ────────────────────────────────────────────────────────────
-const Actions = ({ jobs, quotes, invoices, bills, workOrders, purchaseOrders, contractors, reminders, onNav }) => {
+const Actions = ({ onNav }) => {
+  const { jobs, quotes, invoices, bills, workOrders, purchaseOrders, contractors, reminders } = useAppStore();
   const today = new Date().toISOString().split("T")[0];
   const accent = SECTION_COLORS.actions.accent;
 
@@ -9915,7 +9918,8 @@ const Actions = ({ jobs, quotes, invoices, bills, workOrders, purchaseOrders, co
 };
 
 // ── Reminders Page ──────────────────────────────────────────────────────────
-const Reminders = ({ reminders, setReminders, jobs }) => {
+const Reminders = () => {
+  const { reminders, setReminders, jobs } = useAppStore();
   const today = new Date().toISOString().split("T")[0];
   const accent = SECTION_COLORS.reminders.accent;
   const [search, setSearch] = useState("");
@@ -10129,7 +10133,8 @@ const Reminders = ({ reminders, setReminders, jobs }) => {
 };
 
 // ── Global Activity Log Page ──────────────────────────────────────────────────
-const ActivityPage = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedule }) => {
+const ActivityPage = () => {
+  const { jobs, clients, quotes, invoices, bills, timeEntries, schedule } = useAppStore();
   const [filterType, setFilterType] = useState("all");
   const [filterJob, setFilterJob] = useState("all");
 
@@ -10259,7 +10264,8 @@ const useDisplayRefresh = (intervalMs = 30000) => {
   return tick;
 };
 
-const DisplaySchedule = ({ schedule, jobs, clients }) => {
+const DisplaySchedule = () => {
+  const { schedule, jobs, clients } = useAppStore();
   useDisplayRefresh(30000);
   const today = sydneyToday();
   const allDays = (mon) => Array.from({ length: 7 }, (_, i) => { const d = new Date(mon + "T12:00:00"); d.setDate(d.getDate() + i); return d.toISOString().slice(0, 10); });
@@ -10374,7 +10380,8 @@ const DisplaySchedule = ({ schedule, jobs, clients }) => {
   );
 };
 
-const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
+const DisplayOverview = () => {
+  const { jobs, quotes, timeEntries, schedule, clients } = useAppStore();
   useDisplayRefresh(30000);
   const today = sydneyToday();
   const todayMon = displayGetMonday(today);
@@ -11585,7 +11592,8 @@ const CallerMemory = () => {
   );
 };
 
-const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplates, companyInfo, setCompanyInfo }) => {
+const Settings = () => {
+  const { staff, setStaff, templates, setTemplates, companyInfo, setCompanyInfo } = useAppStore();
   const auth = useAuth();
   const [tab, setTab] = useState("company");
   // Template management state
@@ -12782,7 +12790,8 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
 };
 
 // ── Files Page ──────────────────────────────────────────────────────────────
-const FilesPage = ({ jobs = [], bills = [], contractors = [], quotes = [], invoices = [], workOrders = [], purchaseOrders = [] }) => {
+const FilesPage = () => {
+  const { jobs, bills, contractors, quotes, invoices, workOrders, purchaseOrders } = useAppStore();
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState("date");
   const [sortDir, setSortDir] = useState("desc");
@@ -12942,7 +12951,8 @@ const FilesPage = ({ jobs = [], bills = [], contractors = [], quotes = [], invoi
 };
 
 // ── Call Log Page ───────────────────────────────────────────────────────────
-const CallLog = ({ callLog = [], onNav }) => {
+const CallLog = ({ onNav }) => {
+  const { callLog } = useAppStore();
   const [search, setSearch] = useState("");
   const [filterDir, setFilterDir] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -13781,43 +13791,8 @@ export default function App() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
 
-  // ── Business data from Zustand store ────────────────────────────────────
-  const clients = useAppStore(s => s.clients);
-  const setClients = useAppStore(s => s.setClients);
-  const jobs = useAppStore(s => s.jobs);
-  const setJobs = useAppStore(s => s.setJobs);
-  const quotes = useAppStore(s => s.quotes);
-  const setQuotes = useAppStore(s => s.setQuotes);
-  const schedule = useAppStore(s => s.schedule);
-  const setSchedule = useAppStore(s => s.setSchedule);
-  const futureSchedule = useAppStore(s => s.futureSchedule);
-  const setFutureSchedule = useAppStore(s => s.setFutureSchedule);
-  const timeEntries = useAppStore(s => s.timeEntries);
-  const setTimeEntries = useAppStore(s => s.setTimeEntries);
-  const bills = useAppStore(s => s.bills);
-  const setBills = useAppStore(s => s.setBills);
-  const invoices = useAppStore(s => s.invoices);
-  const setInvoices = useAppStore(s => s.setInvoices);
-  const staff = useAppStore(s => s.staff);
-  const setStaff = useAppStore(s => s.setStaff);
-  const contractors = useAppStore(s => s.contractors);
-  const setContractors = useAppStore(s => s.setContractors);
-  const suppliers = useAppStore(s => s.suppliers);
-  const setSuppliers = useAppStore(s => s.setSuppliers);
-  const reminders = useAppStore(s => s.reminders);
-  const setReminders = useAppStore(s => s.setReminders);
-  const callLog = useAppStore(s => s.callLog);
-  const templates = useAppStore(s => s.templates);
-  const setTemplates = useAppStore(s => s.setTemplates);
-  const companyInfo = useAppStore(s => s.companyInfo);
-  const setCompanyInfo = useAppStore(s => s.setCompanyInfo);
-  const workOrders = useAppStore(s => s.workOrders);
-  const setWorkOrders = useAppStore(s => s.setWorkOrders);
-  const purchaseOrders = useAppStore(s => s.purchaseOrders);
-  const setPurchaseOrders = useAppStore(s => s.setPurchaseOrders);
-  const loading = useAppStore(s => s.loading);
-  const dbError = useAppStore(s => s.dbError);
-  const storeInit = useAppStore(s => s.init);
+  // ── Store: only what App itself needs (badge counts + loading state) ────
+  const { jobs, bills, invoices, quotes, workOrders, purchaseOrders, contractors, reminders, loading, dbError, init: storeInit } = useAppStore();
 
   // ── Initialise store on mount ───────────────────────────────────────────
   useEffect(() => {
@@ -13903,28 +13878,28 @@ export default function App() {
 
   const routeElements = (
     <Routes>
-      <Route path="/" element={<Dashboard jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} workOrders={workOrders} purchaseOrders={purchaseOrders} contractors={contractors} suppliers={suppliers} onNav={navigate} />} />
-      <Route path="/jobs" element={<Jobs jobs={jobs} setJobs={setJobs} clients={clients} quotes={quotes} setQuotes={setQuotes} invoices={invoices} setInvoices={setInvoices} timeEntries={timeEntries} setTimeEntries={setTimeEntries} bills={bills} setBills={setBills} schedule={schedule} setSchedule={setSchedule} staff={staff} workOrders={workOrders} setWorkOrders={setWorkOrders} purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders} />} />
-      <Route path="/orders" element={<OrdersPage workOrders={workOrders} setWorkOrders={setWorkOrders} purchaseOrders={purchaseOrders} setPurchaseOrders={setPurchaseOrders} jobs={jobs} companyInfo={companyInfo} />} />
-      <Route path="/clients" element={<Clients clients={clients} setClients={setClients} jobs={jobs} templates={templates} />} />
-      <Route path="/contractors" element={<Contractors contractors={contractors} setContractors={setContractors} workOrders={workOrders} bills={bills} />} />
-      <Route path="/suppliers" element={<Suppliers suppliers={suppliers} setSuppliers={setSuppliers} purchaseOrders={purchaseOrders} bills={bills} />} />
-      <Route path="/schedule" element={<Schedule schedule={schedule} setSchedule={setSchedule} futureSchedule={futureSchedule} setFutureSchedule={setFutureSchedule} jobs={jobs} clients={clients} staff={staff} />} />
-      <Route path="/quotes" element={<Quotes quotes={quotes} setQuotes={setQuotes} jobs={jobs} clients={clients} invoices={invoices} />} />
-      <Route path="/time" element={<TimeTracking timeEntries={timeEntries} setTimeEntries={setTimeEntries} jobs={jobs} setJobs={setJobs} clients={clients} staff={staff} />} />
-      <Route path="/bills" element={<Bills bills={bills} setBills={setBills} jobs={jobs} setJobs={setJobs} clients={clients} />} />
-      <Route path="/invoices" element={<Invoices invoices={invoices} setInvoices={setInvoices} jobs={jobs} clients={clients} quotes={quotes} />} />
-      <Route path="/actions" element={<Actions jobs={jobs} quotes={quotes} invoices={invoices} bills={bills} workOrders={workOrders} purchaseOrders={purchaseOrders} contractors={contractors} reminders={reminders} onNav={navigate} />} />
-      <Route path="/reminders" element={<Reminders reminders={reminders} setReminders={setReminders} jobs={jobs} />} />
-      <Route path="/activity" element={<ActivityPage jobs={jobs} clients={clients} quotes={quotes} invoices={invoices} bills={bills} timeEntries={timeEntries} schedule={schedule} />} />
+      <Route path="/" element={<Dashboard onNav={navigate} />} />
+      <Route path="/jobs" element={<Jobs />} />
+      <Route path="/orders" element={<OrdersPage />} />
+      <Route path="/clients" element={<Clients />} />
+      <Route path="/contractors" element={<Contractors />} />
+      <Route path="/suppliers" element={<Suppliers />} />
+      <Route path="/schedule" element={<Schedule />} />
+      <Route path="/quotes" element={<Quotes />} />
+      <Route path="/time" element={<TimeTracking />} />
+      <Route path="/bills" element={<Bills />} />
+      <Route path="/invoices" element={<Invoices />} />
+      <Route path="/actions" element={<Actions onNav={navigate} />} />
+      <Route path="/reminders" element={<Reminders />} />
+      <Route path="/activity" element={<ActivityPage />} />
       <Route path="/status" element={<SystemStatus />} />
-      <Route path="/settings" element={(auth.isAdmin || auth.isLocalDev) ? <Settings staff={staff} setStaff={setStaff} templates={templates} setTemplates={setTemplates} companyInfo={companyInfo} setCompanyInfo={setCompanyInfo} /> : <Navigate to="/" replace />} />
+      <Route path="/settings" element={(auth.isAdmin || auth.isLocalDev) ? <Settings /> : <Navigate to="/" replace />} />
       <Route path="/my-assistant" element={<MyAssistant />} />
       <Route path="/caller-memory" element={<CallerMemory />} />
-      <Route path="/call-log" element={<CallLog callLog={callLog} onNav={navigate} />} />
-      <Route path="/files" element={<FilesPage jobs={jobs} bills={bills} contractors={contractors} quotes={quotes} invoices={invoices} workOrders={workOrders} purchaseOrders={purchaseOrders} />} />
-      <Route path="/display/schedule" element={<DisplaySchedule schedule={schedule} jobs={jobs} clients={clients} />} />
-      <Route path="/display/overview" element={<DisplayOverview jobs={jobs} quotes={quotes} timeEntries={timeEntries} schedule={schedule} clients={clients} />} />
+      <Route path="/call-log" element={<CallLog onNav={navigate} />} />
+      <Route path="/files" element={<FilesPage />} />
+      <Route path="/display/schedule" element={<DisplaySchedule />} />
+      <Route path="/display/overview" element={<DisplayOverview />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

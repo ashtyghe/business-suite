@@ -10,6 +10,7 @@ import './styles/global.css';
 import sh from './styles/app-shell.module.css';
 import db from './styles/dashboard.module.css';
 import jb from './styles/jobs.module.css';
+import sc from './styles/schedule.module.css';
 // Heavy libraries loaded dynamically where used (fabric, pdfjs-dist, pdf-lib, signature_pad)
 
 // ── Google Font ──────────────────────────────────────────────────────────────
@@ -2113,7 +2114,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                 <span style={{ fontSize: isCompact ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</span>
               </div>
               <div className="schedule-day-body">
-                {dayEntries.length === 0 && <div style={{ fontSize: 11, color: "#ccc", textAlign: "center", padding: isCompact ? "6px 0" : "12px 0" }}>—</div>}
+                {dayEntries.length === 0 && <div className={sc.emptyDay} style={{ padding: isCompact ? "6px 0" : "12px 0" }}>—</div>}
                 {dayEntries.map(entry => {
                   const job = jobs.find(j => j.id === entry.jobId);
                   return (
@@ -6624,18 +6625,18 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
         onDrop={e => { counterRef.current = 0; handleDrop(dateStr, e); }}
       >
         <div className="schedule-day-header" style={{ background: isToday ? accent : isPast ? "#e0e0e0" : "#f5f5f5", color: isToday ? "#fff" : isPast ? "#999" : "#333", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>{dayName}</span>
+          <div className={sc.dayHeaderInner}>
+            <span className={sc.dayName}>{dayName}</span>
             <span style={{ fontSize: isCompact ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{d.getDate()}</span>
           </div>
           {w && !isCompact && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1, fontSize: 10, color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#bbb" : "#666" }}>
-              <span title="Temperature" style={{ fontWeight: 600 }}>{Math.round(w.minTemp)}–{Math.round(w.maxTemp)}°</span>
+            <div className={sc.weatherCol} style={{ color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#bbb" : "#666" }}>
+              <span title="Temperature" className={sc.weatherTemp}>{Math.round(w.minTemp)}–{Math.round(w.maxTemp)}°</span>
               {w.rainChance > 0 && <span title="Chance of rain" style={{ color: isToday ? "rgba(255,255,255,0.85)" : w.rainChance >= 50 ? "#2563eb" : "#888" }}>💧{w.rainChance}%{w.rain > 0 ? ` ${w.rain}mm` : ""}</span>}
             </div>
           )}
           {w && isCompact && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0, fontSize: 9, color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#bbb" : "#666" }}>
+            <div className={sc.weatherCompact} style={{ color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#bbb" : "#666" }}>
               <span>{Math.round(w.maxTemp)}°</span>
               {w.rainChance > 0 && <span>💧{w.rainChance}%</span>}
             </div>
@@ -6658,11 +6659,11 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
                 onDragEnd={e => { dragEntryRef.current = null; e.target.classList.remove("dragging"); document.querySelectorAll(".schedule-day-col.drag-over").forEach(el => el.classList.remove("drag-over")); }}
                 onClick={() => { if (!dragEntryRef.current) openEdit(entry); }}
                 style={{ borderLeft: `3px solid ${isPast ? "#ddd" : accent}` }}>
-                <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 2, lineHeight: 1.3 }}>{entry.title || job?.title || "Unknown"}</div>
-                {client && <div style={{ fontSize: 10, color: "#888", marginBottom: 3 }}>{client.name}</div>}
-                {entry.startTime && <div style={{ fontSize: 10, color: "#aaa" }}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}
+                <div className={sc.schedCardTitle}>{entry.title || job?.title || "Unknown"}</div>
+                {client && <div className={sc.schedCardClient}>{client.name}</div>}
+                {entry.startTime && <div className={sc.schedCardTime}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}
                 {(entry.assignedTo || []).length > 0 && (
-                  <div style={{ marginTop: 4 }}><AvatarGroup names={entry.assignedTo} max={2} /></div>
+                  <div className={sc.schedCardAvatars}><AvatarGroup names={entry.assignedTo} max={2} /></div>
                 )}
               </div>
             );
@@ -6676,8 +6677,8 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
     const weekdays = days.slice(0, 5);
     const weekend = days.slice(5);
     return (
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontWeight: 700, fontSize: 13, color: "#555", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+      <div className={sc.weekRow}>
+        <div className={sc.weekLabel}>{label}</div>
         <div className="schedule-week-grid">
           {weekdays.map((dateStr, i) => (
             <DayCol key={dateStr} dateStr={dateStr} dayName={DAY_NAMES[i]} allEntries={allEntries} />
@@ -6765,12 +6766,12 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
                   const client = clients.find(c => c.id === job?.clientId);
                   return (
                     <tr key={entry.id} onClick={() => openEdit(entry)} style={{ cursor: "pointer" }}>
-                      <td style={{ whiteSpace: "nowrap", fontWeight: 600 }}>{entry.date}</td>
+                      <td className={sc.dateCell}>{entry.date}</td>
                       <td>{job?.title || "Unknown Job"}</td>
-                      <td style={{ fontSize: 12, color: "#666" }}>{client?.name || "—"}</td>
+                      <td className={sc.clientCell}>{client?.name || "—"}</td>
                       <td>{(entry.assignedTo || []).length > 0 ? <AvatarGroup names={entry.assignedTo} max={3} /> : "—"}</td>
-                      <td style={{ fontSize: 12, color: "#888", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.notes || "—"}</td>
-                      <td onClick={e => e.stopPropagation()}><button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button></td>
+                      <td className={sc.notesCell}>{entry.notes || "—"}</td>
+                      <td onClick={e => e.stopPropagation()}><button className={`btn btn-ghost btn-xs ${jb.deleteBtn}`} onClick={() => del(entry.id)}><Icon name="trash" size={12} /></button></td>
                     </tr>
                   );
                 })}
@@ -6786,31 +6787,30 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
           <WeekRow label="Next Week" days={nextWeekDays} entries={displayed} />
 
           {/* Future Schedule — 6 weeks */}
-          <div style={{ marginTop: 8 }}>
-            <div style={{ fontWeight: 700, fontSize: 13, color: "#555", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Future Schedule</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
+          <div className={sc.futureSection}>
+            <div className={sc.weekLabel}>Future Schedule</div>
+            <div className={sc.futureGrid}>
               {futureWeeks.map(weekMon => {
                 const weekEntries = activeFuture.filter(e => e.weekStart === weekMon);
                 const counterRef = { current: 0 };
                 return (
-                  <div key={weekMon} className="future-week-col"
-                    style={{ background: "#fff", border: "1px solid #e5e5e5", borderRadius: 10, minHeight: 160, display: "flex", flexDirection: "column", overflow: "hidden", transition: "border-color 0.15s, box-shadow 0.15s" }}
+                  <div key={weekMon} className={`future-week-col ${sc.futureWeekCol}`}
                     onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
                     onDragEnter={e => { e.preventDefault(); counterRef.current++; e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = `0 0 0 2px ${accent}33`; }}
                     onDragLeave={e => { counterRef.current--; if (counterRef.current <= 0) { counterRef.current = 0; e.currentTarget.style.borderColor = "#e5e5e5"; e.currentTarget.style.boxShadow = "none"; } }}
                     onDrop={e => { e.preventDefault(); counterRef.current = 0; e.currentTarget.style.borderColor = "#e5e5e5"; e.currentTarget.style.boxShadow = "none"; const entryId = dragFutureRef.current; dragFutureRef.current = null; if (!entryId) return; setFutureSchedule(fs => fs.map(x => x.id === entryId ? { ...x, weekStart: weekMon } : x)); }}
                   >
-                    <div style={{ background: "#f5f5f5", padding: "8px 10px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e5e5e5" }}>
+                    <div className={sc.futureWeekHeader}>
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#888", letterSpacing: "0.04em" }}>Week of</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#333" }}>{formatWeekLabel(weekMon)}</div>
+                        <div className={sc.futureWeekOfLabel}>Week of</div>
+                        <div className={sc.futureWeekDate}>{formatWeekLabel(weekMon)}</div>
                       </div>
-                      <button className="btn btn-ghost btn-xs" style={{ padding: "2px 6px" }} onClick={() => openFutureNew(weekMon)}>
+                      <button className={`btn btn-ghost btn-xs ${sc.futureAddBtn}`} onClick={() => openFutureNew(weekMon)}>
                         <Icon name="plus" size={11} />
                       </button>
                     </div>
-                    <div style={{ flex: 1, padding: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-                      {weekEntries.length === 0 && <div style={{ fontSize: 11, color: "#ccc", textAlign: "center", padding: "16px 0" }}>No plans yet</div>}
+                    <div className={sc.futureWeekBody}>
+                      {weekEntries.length === 0 && <div className={sc.futureEmpty}>No plans yet</div>}
                       {weekEntries.map(entry => {
                         const job = jobs.find(j => j.id === entry.jobId);
                         const client = clients.find(c => c.id === job?.clientId);
@@ -6819,12 +6819,12 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
                             draggable="true"
                             onDragStart={e => { dragFutureRef.current = entry.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(entry.id)); requestAnimationFrame(() => e.target.style.opacity = "0.4"); }}
                             onDragEnd={e => { dragFutureRef.current = null; e.target.style.opacity = "1"; document.querySelectorAll('.future-week-col').forEach(el => { el.style.borderColor = "#e5e5e5"; el.style.boxShadow = "none"; }); }}
-                            style={{ background: "#f8f8f8", borderRadius: 8, padding: "8px 10px", borderLeft: `3px solid ${accent}`, cursor: "grab" }}
+                            className={sc.futureCard} style={{ borderLeft: `3px solid ${accent}` }}
                             onClick={() => { if (!dragFutureRef.current) openFutureEdit(entry); }}>
-                            <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 2, lineHeight: 1.3 }}>{entry.title || job?.title || "Unknown"}</div>
-                            {client && <div style={{ fontSize: 10, color: "#888", marginBottom: 3 }}>{client.name}</div>}
+                            <div className={sc.schedCardTitle}>{entry.title || job?.title || "Unknown"}</div>
+                            {client && <div className={sc.schedCardClient}>{client.name}</div>}
                             {(entry.assignedTo || []).length > 0 && (
-                              <div style={{ marginTop: 3 }}><AvatarGroup names={entry.assignedTo} max={3} /></div>
+                              <div className={sc.futureCardAvatars}><AvatarGroup names={entry.assignedTo} max={3} /></div>
                             )}
                           </div>
                         );
@@ -6864,13 +6864,13 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
           onClose={() => setShowModal(false)}
         >
           {schedMode === "view" ? (
-            <div style={{ padding: "20px 24px" }}>
+            <div className={jb.drawerBody}>
               <ViewField label="Job" value={schedJobName} />
               <ViewField label="Date" value={form.date} />
               {(form.assignedTo || []).length > 0 && (
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 6 }}>Assigned To</div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <div className={sc.assignedWrap}>
+                  <div className={sc.assignedLabel}>Assigned To</div>
+                  <div className={sc.assignedChips}>
                     {form.assignedTo.map(t => <span key={t} className="chip">{t}</span>)}
                   </div>
                 </div>
@@ -6878,7 +6878,7 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
               {form.notes && <ViewField label="Notes" value={form.notes} />}
             </div>
           ) : (
-          <div style={{ padding: "20px 24px" }}>
+          <div className={jb.drawerBody}>
             <div className="grid-2">
               <div className="form-group">
                 <label className="form-label">Job *</label>
@@ -6926,8 +6926,8 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
           isNew={isNewFuture}
           footer={futureMode === "view" ? <>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowFutureModal(false)}>Close</button>
-            <div style={{ display: "flex", gap: 6 }}>
-              <button className="btn btn-ghost btn-sm" style={{ color: "#c00" }} onClick={() => { delFuture(editFutureEntry.id); setShowFutureModal(false); }}>
+            <div className={sc.footerBtnGroup}>
+              <button className={`btn btn-ghost btn-sm ${jb.deleteBtn}`} onClick={() => { delFuture(editFutureEntry.id); setShowFutureModal(false); }}>
                 <Icon name="trash" size={13} /> Delete
               </button>
               <button className="btn btn-sm" style={{ background: accent, color: "#fff", border: "none" }} onClick={() => setFutureMode("edit")}>
@@ -6943,14 +6943,14 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
           onClose={() => setShowFutureModal(false)}
         >
           {futureMode === "view" ? (
-            <div style={{ padding: "20px 24px" }}>
+            <div className={jb.drawerBody}>
               <ViewField label="Job" value={futJobName} />
               <ViewField label="Week" value={formatWeekLabel(futureForm.weekStart)} />
               {futureForm.title && <ViewField label="Title" value={futureForm.title} />}
               {(futureForm.assignedTo || []).length > 0 && (
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 6 }}>Assigned To</div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <div className={sc.assignedWrap}>
+                  <div className={sc.assignedLabel}>Assigned To</div>
+                  <div className={sc.assignedChips}>
                     {futureForm.assignedTo.map(t => <span key={t} className="chip">{t}</span>)}
                   </div>
                 </div>

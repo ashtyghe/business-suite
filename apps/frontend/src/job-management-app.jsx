@@ -876,9 +876,9 @@ const OrderLineItems = ({ lines, onChange }) => {
       </div>
       {lines.map(l => (
         <div key={l.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 30px", gap: 8, alignItems: "center" }}>
-          <input className="form-control" style={{ height: 36, fontSize: 13 }} placeholder="Description" value={l.desc} onChange={e => update(l.id, "desc", e.target.value)} />
-          <input className="form-control" style={{ height: 36, fontSize: 13 }} type="number" min="0" placeholder="Qty" value={l.qty} onChange={e => update(l.id, "qty", e.target.value)} />
-          <select className="form-control" style={{ height: 36, fontSize: 13 }} value={l.unit} onChange={e => update(l.id, "unit", e.target.value)}>
+          <input className="form-control" className={pg.h36fs13} placeholder="Description" value={l.desc} onChange={e => update(l.id, "desc", e.target.value)} />
+          <input className="form-control" className={pg.h36fs13} type="number" min="0" placeholder="Qty" value={l.qty} onChange={e => update(l.id, "qty", e.target.value)} />
+          <select className="form-control" className={pg.h36fs13} value={l.unit} onChange={e => update(l.id, "unit", e.target.value)}>
             {ORDER_UNITS.map(u => <option key={u}>{u}</option>)}
           </select>
           <button onClick={() => remove(l.id)} className={pg.ghostBtn}><OrderIcon name="x" size={14} /></button>
@@ -1020,7 +1020,7 @@ const OrderEmailModal = ({ type, order, jobs, companyInfo, onClose, onSent }) =>
                 <div className={pg.flex1}>
                   <div className={pg.flexCenter}>
                     <span style={{ fontSize: 10, fontWeight: 800, color: "#ef4444", background: "#fef2f2", padding: "2px 6px", borderRadius: 4 }}>PDF</span>
-                    <span style={{ fontSize: 13, fontWeight: 500 }}>Attach {order.ref}.pdf</span>
+                    <span className={pg.fs13fw500}>Attach {order.ref}.pdf</span>
                     <button onClick={() => printOrderPdf(type, order, jobs)} style={{ fontSize: 11, color: "#2563eb", background: "none", border: "none", cursor: "pointer" }}>Preview</button>
                   </div>
                   <div className={pg.fs11c94a3b8mt2}>Professional PDF with all document details attached to the email</div>
@@ -1030,7 +1030,7 @@ const OrderEmailModal = ({ type, order, jobs, companyInfo, onClose, onSent }) =>
                 <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16, display: "flex", alignItems: "flex-start", gap: 12 }}>
                   <ToggleBtn on={includeAcceptLink} onChange={v => setIncludeAcceptLink(v)} />
                   <div className={pg.flex1}>
-                    <div style={{ fontSize: 13, fontWeight: 500 }}>✅ Accept Button</div>
+                    <div className={pg.fs13fw500}>✅ Accept Button</div>
                     <div className={pg.fs11c94a3b8mt2}>HTML button in email + link on PDF — recipient clicks to accept</div>
                   </div>
                 </div>
@@ -1205,7 +1205,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
               {ORDER_STATUS_TRIGGERS[s] && <OrderIcon name="zap" size={10} />}{s}
             </button>
           ))}
-          {availableTransitions.length === 0 && isTerminal && <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic" }}>No further transitions</span>}
+          {availableTransitions.length === 0 && isTerminal && <span className={pg.fs11c94a3b8italic}>No further transitions</span>}
         </div>
         <DueDateChip dateStr={form.dueDate} isTerminal={isTerminal} />
       </div>
@@ -1250,7 +1250,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
           <div className="grid-2">
             <div>
               <div className="form-label">{isWO ? "Contractor" : "Supplier"}</div>
-              <div style={{ fontWeight: 600, color: "#1e293b" }}>{partyName || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>None selected</span>}</div>
+              <div style={{ fontWeight: 600, color: "#1e293b" }}>{partyName || <span className={pg.italicMuted}>None selected</span>}</div>
               {isWO ? <><div className={pg.fs13c64748b}>{form.contractorContact}</div><div className={pg.fs13c64748b}>{form.contractorEmail}</div><div className={pg.fs13c64748b}>{form.contractorPhone}</div></> :
                 <><div className={pg.fs13c64748b}>{form.supplierContact}</div><div className={pg.fs13c64748b}>{form.supplierEmail}</div><div className={pg.textSubSm}>ABN: {form.supplierAbn}</div></>}
             </div>
@@ -1269,12 +1269,12 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
               <tbody>{form.lines.map(l => <tr key={l.id} style={{ borderBottom: "1px solid #f1f5f9" }}><td style={{ padding: "10px 4px" }}>{l.desc || "—"}</td><td style={{ padding: "10px 4px", textAlign: "center", color: "#475569" }}>{l.qty}</td><td style={{ padding: "10px 4px", textAlign: "center", color: "#94a3b8" }}>{l.unit}</td></tr>)}</tbody>
             </table>
           )}
-          {form.notes && <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16 }}><div className="form-label">Notes / Terms</div><div style={{ fontSize: 13, color: "#475569", whiteSpace: "pre-line" }}>{form.notes}</div></div>}
+          {form.notes && <div className={pg.borderTopPt16}><div className="form-label">Notes / Terms</div><div style={{ fontSize: 13, color: "#475569", whiteSpace: "pre-line" }}>{form.notes}</div></div>}
           {form.internalNotes && <div style={{ background: "#fffbeb", borderRadius: 8, padding: 10 }}><div style={{ fontSize: 11, fontWeight: 700, color: "#b45309", marginBottom: 4 }}>Internal Notes</div><div style={{ fontSize: 13, color: "#92400e" }}>{form.internalNotes}</div></div>}
           {form.attachments && form.attachments.length > 0 && (
-            <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16 }}>
+            <div className={pg.borderTopPt16}>
               <div className="form-label" className={pg.cardStatusRow}><OrderIcon name="paperclip" size={11} /> Attachments ({form.attachments.length})</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div className={pg.grid2colGap8}>
                 {form.attachments.map(f => (
                   <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0", cursor: f.dataUrl ? "pointer" : "default" }}
                     onClick={() => f.dataUrl && setLightboxImg(f.dataUrl)}>
@@ -1286,7 +1286,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
               </div>
             </div>
           )}
-          <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 16 }}>
+          <div className={pg.borderTopPt16}>
             <div className="form-label" className={pg.cardStatusRow}><OrderIcon name="activity" size={11} /> Activity Log</div>
             <OrderAuditLog log={form.auditLog} />
           </div>
@@ -1301,19 +1301,19 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
             <div className="form-group"><label className="form-label">Issue Date</label><input type="date" className="form-control" value={form.issueDate} onChange={e => set("issueDate", e.target.value)} /></div>
             <div className="form-group"><label className="form-label">{isWO ? "Due Date" : "Delivery Date"}</label><input type="date" className="form-control" value={form.dueDate} onChange={e => set("dueDate", e.target.value)} /></div>
           </div>
-          {isWO && <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div style={{ position: "relative" }}><span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 13 }}>$</span><input type="number" min="0" step="0.01" className="form-control" style={{ paddingLeft: 28 }} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>}
+          {isWO && <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div className={pg.posRel}><span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 13 }}>$</span><input type="number" min="0" step="0.01" className="form-control" style={{ paddingLeft: 28 }} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>}
           {isWO ? (
-            <div className="form-group"><label className="form-label">Scope of Work</label><textarea rows={6} className="form-control" style={{ height: "auto" }} placeholder="Describe the full scope of work..." value={form.scopeOfWork} onChange={e => set("scopeOfWork", e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Scope of Work</label><textarea rows={6} className="form-control" className={pg.heightAuto} placeholder="Describe the full scope of work..." value={form.scopeOfWork} onChange={e => set("scopeOfWork", e.target.value)} /></div>
           ) : (
             <>
               <div className="form-group"><label className="form-label">Delivery Address</label><input type="text" className="form-control" placeholder="Site or warehouse delivery address" value={form.deliveryAddress} onChange={e => set("deliveryAddress", e.target.value)} /></div>
               <div className="form-group"><label className="form-label">Items to Order</label><OrderLineItems lines={form.lines} onChange={v => set("lines", v)} /></div>
-              <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div style={{ position: "relative" }}><span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 13 }}>$</span><input type="number" min="0" step="0.01" className="form-control" style={{ paddingLeft: 28 }} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>
+              <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div className={pg.posRel}><span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: 13 }}>$</span><input type="number" min="0" step="0.01" className="form-control" style={{ paddingLeft: 28 }} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>
             </>
           )}
           <div className="grid-2">
-            <div className="form-group"><label className="form-label">{isWO ? "Terms & Notes (visible to contractor)" : "Notes (visible to supplier)"}</label><textarea rows={3} className="form-control" style={{ height: "auto" }} placeholder="Payment terms, special instructions..." value={form.notes} onChange={e => set("notes", e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Internal Notes</label><textarea rows={3} className="form-control" style={{ height: "auto" }} placeholder="Not shown on document" value={form.internalNotes} onChange={e => set("internalNotes", e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">{isWO ? "Terms & Notes (visible to contractor)" : "Notes (visible to supplier)"}</label><textarea rows={3} className="form-control" className={pg.heightAuto} placeholder="Payment terms, special instructions..." value={form.notes} onChange={e => set("notes", e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Internal Notes</label><textarea rows={3} className="form-control" className={pg.heightAuto} placeholder="Not shown on document" value={form.internalNotes} onChange={e => set("internalNotes", e.target.value)} /></div>
           </div>
           <div className="form-group">
             <div className={pg.flexBetweenMb6Alt}>
@@ -1390,7 +1390,7 @@ const OrderCard = ({ type, order, onOpen, onDelete, jobs }) => {
         </div>
       </div>
       <div className={jb.gridCardClient}>
-        {partyName || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>{"No " + (isWO ? "contractor" : "supplier")}</span>}
+        {partyName || <span className={pg.italicMuted}>{"No " + (isWO ? "contractor" : "supplier")}</span>}
       </div>
       {jd && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}><OrderIcon name="link" size={10} /> {jd.ref + " · " + jd.name}</div>}
       <div className={jb.metaRow}>
@@ -1468,7 +1468,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", borderRadius: 8, cursor: "pointer" }} onClick={() => onView(order._type, order)}>
         <div style={{ width: 24, height: 24, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669", flexShrink: 0 }}><OrderIcon name={isWO ? "briefcase" : "shopping"} size={12} /></div>
         <div className={pg.listItemMain}>
-          <div className={pg.cardStatusRow}><span style={{ fontSize: 13, fontWeight: 600 }}>{order.ref}</span><OrderStatusBadge status={order.status} /></div>
+          <div className={pg.cardStatusRow}><span className={pg.fs13fw600}>{order.ref}</span><OrderStatusBadge status={order.status} /></div>
           <div style={{ fontSize: 11, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(isWO ? order.contractorName : order.supplierName) || "—"}{jd ? " · " + jd.ref : ""}</div>
         </div>
         <DueDateChip dateStr={order.dueDate} isTerminal={isTerminal} />
@@ -1510,7 +1510,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
       <div className="order-kpi-grid">
         {kpis.map(k => (
           <div key={k.label} className="order-kpi-card" style={{ border: `1px solid ${k.borderColor}`, background: k.bg, cursor: "pointer" }} onClick={() => openPanel(k.label, k.orders)}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8" }}>{k.label}</div>
+            <div className={pg.fs10fw700label94noMb}>{k.label}</div>
             <div style={{ fontSize: 28, fontWeight: 800, color: k.textColor, marginTop: 4 }}>{k.value}</div>
             <div className={pg.fs11c94a3b8mt2}>{k.sub}</div>
           </div>
@@ -1547,7 +1547,7 @@ const OrdersDashboard = ({ workOrders, purchaseOrders, onView, onEdit, onStatusC
           <div className="order-panel-backdrop" onClick={() => setPanel(null)} />
           <div className="order-panel-body">
             <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8e8e8", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8fafc", flexShrink: 0 }}>
-              <div><div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8" }}>Dashboard</div><div style={{ fontWeight: 700, fontSize: 15 }}>{panel.label}</div><div className={pg.fs11c94a3b8mt2}>{panel.orders.length} order{panel.orders.length !== 1 ? "s" : ""}</div></div>
+              <div><div className={pg.fs10fw700label94noMb}>Dashboard</div><div className={pg.fw700fs15}>{panel.label}</div><div className={pg.fs11c94a3b8mt2}>{panel.orders.length} order{panel.orders.length !== 1 ? "s" : ""}</div></div>
               <button onClick={() => setPanel(null)} style={{ padding: 8, borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}><OrderIcon name="x" size={16} /></button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -1654,7 +1654,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
               <div key={col} className="kanban-col">
                 <div className="kanban-col-header">
                   <span>{col}</span>
-                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colOrders.length}</span>
+                  <span className={pg.countBadge}>{colOrders.length}</span>
                 </div>
                 {colOrders.map(o => {
                   const jd = orderJobDisplay(jobs.find(j => j.id === o.jobId));
@@ -1665,7 +1665,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
                         <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: o._type === "wo" ? "#dbeafe" : "#d1fae5", color: o._type === "wo" ? "#2563eb" : "#059669" }}>{o._type === "wo" ? "WO" : "PO"}</span>
                         <span style={{ fontWeight: 700, fontSize: 12, flex: 1 }}>{o.ref}</span>
                       </div>
-                      {partyName && <div style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>{partyName}</div>}
+                      {partyName && <div className={pg.fs11c999mb4}>{partyName}</div>}
                       {jd && <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>{jd.ref} · {jd.name}</div>}
                       {o.dueDate && <div style={{ fontSize: 11, marginBottom: 4 }}><DueDateChip dateStr={o.dueDate} isTerminal={ORDER_TERMINAL.includes(o.status)} /></div>}
                     </div>
@@ -1678,7 +1678,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
       ) : view === "grid" ? (
         <div className="order-cards-grid">{filtered.map(o => <OrderCard key={o._type + o.id} type={o._type} order={o} jobs={jobs} onOpen={o => openOrder(o._type || (workOrders.find(w => w.id === o.id) ? "wo" : "po"), o, "view")} onDelete={canDeleteOrder ? (id) => handleDelete(o._type, id) : null} />)}</div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        <div className={pg.overflowX}>
           <table className="data-table">
             <thead><tr>
               <th>TYPE</th>
@@ -2013,11 +2013,11 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
         <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.invoices.accent}`, cursor: "pointer" }} onClick={() => onNav("invoices")}>
           <div className={pg.flexCenterGap6mb2}><Icon name="invoices" size={13} /><div className="stat-label">Revenue Collected</div></div>
           <div className="stat-value">{fmt(revenueCollected)}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-            <div style={{ flex: 1, height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
+          <div className={pg.flexCenterGap6mt4}>
+            <div className={pg.progressBar}>
               <div style={{ height: "100%", width: totalQuoted > 0 ? `${Math.min(100, Math.round((revenueCollected / totalQuoted) * 100))}%` : "0%", background: SECTION_COLORS.invoices.accent, borderRadius: 2 }} />
             </div>
-            <span style={{ fontSize: 11, color: "#999", fontWeight: 600 }}>{totalQuoted > 0 ? Math.round((revenueCollected / totalQuoted) * 100) : 0}%</span>
+            <span className={pg.fs11c999fw600}>{totalQuoted > 0 ? Math.round((revenueCollected / totalQuoted) * 100) : 0}%</span>
           </div>
         </div>
         <div className="stat-card" style={{ borderTop: `3px solid ${outstandingInvCount > 0 ? "#dc2626" : "#e5e5e5"}`, cursor: "pointer" }} onClick={() => onNav("invoices")}>
@@ -2044,11 +2044,11 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
         <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.jobs.accent}`, cursor: "pointer" }} onClick={() => onNav("jobs")}>
           <div className={pg.flexCenterGap6mb2}><Icon name="jobs" size={13} /><div className="stat-label">Active Jobs</div></div>
           <div className="stat-value">{activeJobs}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-            <div style={{ flex: 1, height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
+          <div className={pg.flexCenterGap6mt4}>
+            <div className={pg.progressBar}>
               <div style={{ height: "100%", width: jobs.length > 0 ? `${Math.round((completedJobs / jobs.length) * 100)}%` : "0%", background: "#16a34a", borderRadius: 2 }} />
             </div>
-            <span style={{ fontSize: 11, color: "#999", fontWeight: 600 }}>{completedJobs}/{jobs.length}</span>
+            <span className={pg.fs11c999fw600}>{completedJobs}/{jobs.length}</span>
           </div>
           {overdueJobs > 0 && <div style={{ fontSize: 11, color: "#dc2626", fontWeight: 600, marginTop: 4 }}>⚠ {overdueJobs} overdue</div>}
         </div>
@@ -2059,7 +2059,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
           <div className="stat-value">{activeWOs}</div>
           <div className="stat-sub">{workOrders.length} total · {fmt(workOrders.reduce((s, wo) => s + (parseFloat(wo.poLimit) || 0), 0))}</div>
           {woAwaitingAcceptance > 0 && <div style={{ fontSize: 11, color: SECTION_COLORS.wo.accent, fontWeight: 600, marginTop: 2 }}>{woAwaitingAcceptance} awaiting acceptance</div>}
-          {overdueWOs > 0 && <div style={{ fontSize: 11, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>⚠ {overdueWOs} overdue</div>}
+          {overdueWOs > 0 && <div className={pg.fs11cdc2626fw600mt2}>⚠ {overdueWOs} overdue</div>}
         </div>
 
         {/* Purchase Orders */}
@@ -2067,18 +2067,18 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
           <div className={pg.flexCenterGap6mb2}><Icon name="orders" size={13} /><div className="stat-label">Purchase Orders</div></div>
           <div className="stat-value">{activePOs}</div>
           <div className="stat-sub">{purchaseOrders.length} total</div>
-          {overduePOs > 0 && <div style={{ fontSize: 11, color: "#dc2626", fontWeight: 600, marginTop: 2 }}>⚠ {overduePOs} overdue</div>}
+          {overduePOs > 0 && <div className={pg.fs11cdc2626fw600mt2}>⚠ {overduePOs} overdue</div>}
         </div>
 
         {/* Hours Logged */}
         <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.time.accent}`, cursor: "pointer" }} onClick={() => onNav("time")}>
           <div className={pg.flexCenterGap6mb2}><Icon name="time" size={13} /><div className="stat-label">Hours Logged</div></div>
           <div className="stat-value">{totalHours}h</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-            <div style={{ flex: 1, height: 4, background: "#f1f5f9", borderRadius: 2, overflow: "hidden" }}>
+          <div className={pg.flexCenterGap6mt4}>
+            <div className={pg.progressBar}>
               <div style={{ height: "100%", width: `${billableRatio}%`, background: SECTION_COLORS.time.accent, borderRadius: 2 }} />
             </div>
-            <span style={{ fontSize: 11, color: "#999", fontWeight: 600 }}>{billableRatio}%</span>
+            <span className={pg.fs11c999fw600}>{billableRatio}%</span>
           </div>
           <div className="stat-sub">{billableHours}h billable</div>
         </div>
@@ -2192,7 +2192,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               return (
                 <div key={s} className={pg.mb12}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 5 }}>
-                    <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span className={pg.fw600flexGap6}>
                       <span style={{ width: 8, height: 8, borderRadius: "50%", background: jobStatusColors[s], display: "inline-block" }} />
                       {jobStatusLabels[s]}
                     </span>
@@ -2220,7 +2220,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
           <div className="card-body">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
               <SectionLabel>Quotes</SectionLabel>
-              <button className="btn btn-ghost btn-sm" onClick={() => onNav("quotes")} style={{ marginTop: -4 }}>View all <Icon name="arrow_right" size={12} /></button>
+              <button className="btn btn-ghost btn-sm" onClick={() => onNav("quotes")} className={pg.mt_4}>View all <Icon name="arrow_right" size={12} /></button>
             </div>
             {quotes.map(q => {
               const job = jobs.find(j => j.id === q.jobId);
@@ -2246,7 +2246,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
             )}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, marginBottom: 8 }}>
               <SectionLabel>Invoices</SectionLabel>
-              <button className="btn btn-ghost btn-sm" onClick={() => onNav("invoices")} style={{ marginTop: -4 }}>View all <Icon name="arrow_right" size={12} /></button>
+              <button className="btn btn-ghost btn-sm" onClick={() => onNav("invoices")} className={pg.mt_4}>View all <Icon name="arrow_right" size={12} /></button>
             </div>
             {invoices.length === 0 && <div className={db.listRowEmpty}>No invoices yet</div>}
             {invoices.map(inv => {
@@ -2328,7 +2328,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               return (
                 <div key={wo.id} className={pg.listItemBorderLight}>
                   <div className={pg.listItemMain}>
-                    <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{wo.ref}</div>
+                    <div className={pg.monoFw600}>{wo.ref}</div>
                     <div className={pg.textSub}>{wo.contractorName}{wo.trade ? ` · ${wo.trade}` : ""}{wo.dueDate ? ` · Due ${wo.dueDate}` : ""}</div>
                   </div>
                   <div className={pg.cardStatusRow}>
@@ -2347,7 +2347,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               return (
                 <div key={po.id} className={pg.listItemBorderLight}>
                   <div className={pg.listItemMain}>
-                    <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{po.ref}</div>
+                    <div className={pg.monoFw600}>{po.ref}</div>
                     <div className={pg.textSub}>{po.supplierName}{po.dueDate ? ` · Due ${po.dueDate}` : ""}</div>
                   </div>
                   <div className={pg.cardStatusRow}>
@@ -2378,8 +2378,8 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               const ratio = hrs.total > 0 ? (hrs.billable / hrs.total) * 100 : 0;
               return (
                 <div key={name} className={pg.mb12}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                    <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className={pg.flexBetweenFs12mb4}>
+                    <span className={pg.fw600flexGap6}>
                       <span style={{ width: 22, height: 22, borderRadius: "50%", background: "#111", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700 }}>{name.split(" ").map(n => n[0]).join("")}</span>
                       {name}
                     </span>
@@ -2435,8 +2435,8 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               const costPct = quoted > 0 ? Math.min(100, Math.round((costs / quoted) * 100)) : 0;
               return (
                 <div key={job.id} className={pg.cardMb}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                    <span style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className={pg.flexBetweenFs12mb4}>
+                    <span className={pg.fw600flexGap6}>
                       {job.title}
                       <StatusBadge status={job.status} />
                     </span>
@@ -2612,18 +2612,18 @@ const PhotoMarkupEditor = ({ imageSrc, onSave, onClose }) => {
             <span style={{ fontSize: 15 }}>{t.icon}</span> {t.label}
           </button>
         ))}
-        <div style={{ width: 1, height: 24, background: "#555", margin: "0 4px" }} />
+        <div className={pg.vertDivider} />
         <button onClick={deleteSelected} style={{ padding: "6px 10px", borderRadius: 6, border: "2px solid transparent", background: "transparent", color: "#f87171", cursor: "pointer", fontSize: 13, fontWeight: 600 }} title="Delete selected">🗑 Delete</button>
         <button onClick={clearAll} style={{ padding: "6px 10px", borderRadius: 6, border: "2px solid transparent", background: "transparent", color: "#fbbf24", cursor: "pointer", fontSize: 13, fontWeight: 600 }} title="Clear all markups">✕ Clear</button>
-        <div style={{ width: 1, height: 24, background: "#555", margin: "0 4px" }} />
+        <div className={pg.vertDivider} />
         {/* Brush size */}
         <div className={pg.cardStatusRow}>
           <span style={{ color: "#aaa", fontSize: 11, fontWeight: 600 }}>Size</span>
           <input type="range" min="1" max="12" value={brushSize} onChange={e => setBrushSize(Number(e.target.value))} style={{ width: 70, accentColor: color }} />
         </div>
-        <div style={{ width: 1, height: 24, background: "#555", margin: "0 4px" }} />
+        <div className={pg.vertDivider} />
         {/* Colors */}
-        <div style={{ display: "flex", gap: 3 }}>
+        <div className={pg.flexGap3}>
           {MARKUP_COLORS.map(c => (
             <button key={c} onClick={() => setColor(c)}
               style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: color === c ? "3px solid #fff" : `2px solid ${c === "#ffffff" ? "#666" : "transparent"}`, cursor: "pointer", boxShadow: color === c ? "0 0 6px rgba(255,255,255,0.4)" : "none" }} />
@@ -2957,10 +2957,10 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
             <span className={pg.fs14}>{t.icon}</span> {t.label}
           </button>
         ))}
-        <div style={{ width: 1, height: 22, background: "#555", margin: "0 3px" }} />
+        <div className={pg.vertDividerSm} />
         <button onClick={deleteSelected} style={{ ...btnStyle(false), color: "#f87171" }}>🗑</button>
         <button onClick={clearAll} style={{ ...btnStyle(false), color: "#fbbf24" }}>✕ Clear</button>
-        <div style={{ width: 1, height: 22, background: "#555", margin: "0 3px" }} />
+        <div className={pg.vertDividerSm} />
         {/* Line width */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <span style={{ color: "#aaa", fontSize: 10, fontWeight: 600 }}>Width</span>
@@ -2971,9 +2971,9 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
             </button>
           ))}
         </div>
-        <div style={{ width: 1, height: 22, background: "#555", margin: "0 3px" }} />
+        <div className={pg.vertDividerSm} />
         {/* Colors */}
-        <div style={{ display: "flex", gap: 3 }}>
+        <div className={pg.flexGap3}>
           {PLAN_COLORS.map(c => (
             <button key={c} onClick={() => setColor(c)}
               style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: color === c ? "3px solid #fff" : `1px solid ${c === "#111111" ? "#666" : "transparent"}`, cursor: "pointer" }} />
@@ -3474,8 +3474,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                 ].map((s,i) => (
                   <div key={i} className={pg.grayBox}>
                     <div className={pg.fs10fw700label}>{s.label}</div>
-                    <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em" }}>{s.val}</div>
-                    <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{s.sub}</div>
+                    <div className={pg.fs20fw800tight}>{s.val}</div>
+                    <div className={pg.fs11caaamt3}>{s.sub}</div>
                   </div>
                 ))}
               </div>
@@ -3505,7 +3505,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     : job.assignedTo.map((w,i) => (
                       <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                         <div className="avatar" style={{ margin: 0 }}>{w.split(" ").map(p=>p[0]).join("")}</div>
-                        <span style={{ fontSize: 13, fontWeight: 600 }}>{w}</span>
+                        <span className={pg.fs13fw600}>{w}</span>
                         <span style={{ fontSize: 11, color: "#bbb", marginLeft: "auto" }}>{jobTime.filter(t=>t.worker===w).reduce((s,t)=>s+t.hours,0)}h</span>
                       </div>
                     ))
@@ -3767,7 +3767,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                             <td className={pg.fs12}>
                               {(b.markup||0) > 0
                                 ? <span style={{ color: "#555" }}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span>
-                                : <span style={{ color: "#ddd" }}>—</span>}
+                                : <span className={pg.colorDdd}>—</span>}
                             </td>
                             <td><BillStatusBadge status={b.status} /> <XeroSyncBadge syncStatus={b.xeroSyncStatus} xeroId={b.xeroBillId} /></td>
                             <td>
@@ -3943,13 +3943,13 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20 }}>
                 <div className={pg.grayBox}>
                   <div className={pg.fs10fw700label}>Total Estimate</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em" }}>{totalEstimate > 0 ? fmt(totalEstimate) : "—"}</div>
-                  <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{acceptedQuotesTotal > 0 ? `Incl. ${fmt(acceptedQuotesTotal)} quoted` : totalEstimate > 0 ? "Budget set" : "No estimate set"}</div>
+                  <div className={pg.fs20fw800tight}>{totalEstimate > 0 ? fmt(totalEstimate) : "—"}</div>
+                  <div className={pg.fs11caaamt3}>{acceptedQuotesTotal > 0 ? `Incl. ${fmt(acceptedQuotesTotal)} quoted` : totalEstimate > 0 ? "Budget set" : "No estimate set"}</div>
                 </div>
                 <div className={pg.grayBox}>
                   <div className={pg.fs10fw700label}>Revenue</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em" }}>{fmt(revenue)}</div>
-                  <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{revenueLabel}{totalPaid > 0 ? ` · ${fmt(totalPaid)} paid` : ""}</div>
+                  <div className={pg.fs20fw800tight}>{fmt(revenue)}</div>
+                  <div className={pg.fs11caaamt3}>{revenueLabel}{totalPaid > 0 ? ` · ${fmt(totalPaid)} paid` : ""}</div>
                 </div>
                 <div className={pg.grayBox}>
                   <div className={pg.fs10fw700label}>Total Costs</div>
@@ -4315,7 +4315,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
                 {tasks.length > 0 && (
                   <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>{done} of {tasks.length} complete</span>
+                    <span className={pg.fs13fw600}>{done} of {tasks.length} complete</span>
                     <div style={{ flex: 1, maxWidth: 200, height: 6, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}>
                       <div style={{ width: `${tasks.length > 0 ? (done / tasks.length) * 100 : 0}%`, height: "100%", background: done === tasks.length ? "#059669" : jobAccent, borderRadius: 3, transition: "width 0.3s" }} />
                     </div>
@@ -4474,7 +4474,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{tmpl?.name || "Form"}</h3>
               <div className={pg.flex1} />
               <button className="btn btn-ghost btn-sm" onClick={() => { printFormPdf(viewingForm, tmpl); }}>🖨️ Print PDF</button>
-              <button onClick={() => setViewingForm(null)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#999" }}>✕</button>
+              <button onClick={() => setViewingForm(null)} className={pg.plainBtn}>✕</button>
             </div>
             <div style={{ fontSize: 11, color: "#888", marginBottom: 16 }}>Completed {new Date(viewingForm.createdAt).toLocaleString()} by {viewingForm.createdBy}</div>
             {(tmpl?.fields || []).map(field => {
@@ -4549,8 +4549,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           </div>
           <div className={pg.mb20}>
             <div className={pg.textLabelMb8sq}>Line Items</div>
-            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
-              <thead><tr style={{ borderBottom: '2px solid #eee' }}>
+            <table className={pg.tableFullCollapse}>
+              <thead><tr className={pg.borderBottom2}>
                 <th className={pg.thLeft}>Description</th>
                 <th className={pg.thRight}>Qty</th>
                 <th className={pg.thLeft}>Unit</th>
@@ -4559,21 +4559,21 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               </tr></thead>
               <tbody>
                 {(editingQuote.lineItems||[]).map((li, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '8px 8px', fontWeight: 500 }}>{li.desc || '—'}</td>
+                  <tr key={i} className={pg.borderBottom1}>
+                    <td className={pg.tdPadFw500}>{li.desc || '—'}</td>
                     <td className={pg.tdRightAlt}>{li.qty}</td>
-                    <td style={{ padding: '8px 8px' }}>{li.unit}</td>
+                    <td className={pg.tdPad}>{li.unit}</td>
                     <td className={pg.tdRightAlt}>{fmt(li.rate)}</td>
-                    <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 600 }}>{fmt(li.qty * li.rate)}</td>
+                    <td className={pg.tdPadRightFw600}>{fmt(li.qty * li.rate)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div style={{ background: '#f9fafb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
+          <div className={pg.grayRoundedBox}>
             <div className={pg.flexBetweenMb6}><span className={pg.color888}>Subtotal</span><span className={pg.fw600}>{fmt(qSub)}</span></div>
             <div className={pg.flexBetweenMb6}><span className={pg.color888}>GST ({editingQuote.tax}%)</span><span className={pg.fw600}>{fmt(qGst)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span className={pg.cellAmount}>Total</span><span style={{ fontWeight: 800, color: qAccent }}>{fmt(qTotal)}</span></div>
+            <div className={pg.totalRow}><span className={pg.cellAmount}>Total</span><span style={{ fontWeight: 800, color: qAccent }}>{fmt(qTotal)}</span></div>
           </div>
           {editingQuote.notes && <ViewField label="Notes / Terms" value={editingQuote.notes} />}
         </div>
@@ -4661,8 +4661,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           </div>
           <div className={pg.mb20}>
             <div className={pg.textLabelMb8sq}>Line Items</div>
-            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
-              <thead><tr style={{ borderBottom: '2px solid #eee' }}>
+            <table className={pg.tableFullCollapse}>
+              <thead><tr className={pg.borderBottom2}>
                 <th className={pg.thLeft}>Description</th>
                 <th className={pg.thRight}>Qty</th>
                 <th className={pg.thLeft}>Unit</th>
@@ -4671,21 +4671,21 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               </tr></thead>
               <tbody>
                 {(editingInvoice.lineItems||[]).map((li, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '8px 8px', fontWeight: 500 }}>{li.desc || '—'}</td>
+                  <tr key={i} className={pg.borderBottom1}>
+                    <td className={pg.tdPadFw500}>{li.desc || '—'}</td>
                     <td className={pg.tdRightAlt}>{li.qty}</td>
-                    <td style={{ padding: '8px 8px' }}>{li.unit}</td>
+                    <td className={pg.tdPad}>{li.unit}</td>
                     <td className={pg.tdRightAlt}>{fmt(li.rate)}</td>
-                    <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 600 }}>{fmt(li.qty * li.rate)}</td>
+                    <td className={pg.tdPadRightFw600}>{fmt(li.qty * li.rate)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div style={{ background: '#f9fafb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
+          <div className={pg.grayRoundedBox}>
             <div className={pg.flexBetweenMb6}><span className={pg.color888}>Subtotal</span><span className={pg.fw600}>{fmt(iSub)}</span></div>
             <div className={pg.flexBetweenMb6}><span className={pg.color888}>GST ({editingInvoice.tax}%)</span><span className={pg.fw600}>{fmt(iGst)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span className={pg.cellAmount}>Total</span><span style={{ fontWeight: 800, color: iAccent }}>{fmt(iTotal)}</span></div>
+            <div className={pg.totalRow}><span className={pg.cellAmount}>Total</span><span style={{ fontWeight: 800, color: iAccent }}>{fmt(iTotal)}</span></div>
           </div>
           {editingInvoice.notes && <ViewField label="Notes" value={editingInvoice.notes} />}
         </div>
@@ -5343,7 +5343,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                   return (
                     <tr key={client.id} onClick={() => openEdit(client)} className={pg.pointer}>
                       <td className={pg.fw600}>{client.name}</td>
-                      <td style={{ fontSize: 12, color: "#555" }}>{client.mainContact?.name || "—"}</td>
+                      <td className={pg.fs12c555}>{client.mainContact?.name || "—"}</td>
                       <td className={pg.fs12c666}>{client.email || "—"}</td>
                       <td className={pg.fs12c666}>{client.phone || "—"}</td>
                       <td>{(client.sites || []).length}</td>
@@ -5381,7 +5381,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                       {client.address && <span className={pg.fs12c666}>📍 {client.address}</span>}
                     </div>
                     {client.mainContact?.name && <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>👤 {client.mainContact.name} — Main Contact</div>}
-                    {client.rates?.labourRate > 0 && <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>${client.rates.labourRate}/hr labour rate</div>}
+                    {client.rates?.labourRate > 0 && <div className={pg.fs11c888mt2}>${client.rates.labourRate}/hr labour rate</div>}
                     <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
                       <span className="chip">{clientJobs.length} jobs</span>
                       {active > 0 && <span className="chip" style={{ background: "#111", color: "#fff" }}>{active} active</span>}
@@ -5431,8 +5431,8 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
                           {(site.contactName || site.contactPhone || site.contactEmail) && (
                             <div style={{ display: "flex", gap: "4px 14px", flexWrap: "wrap", marginTop: 4 }}>
                               {site.contactName  && <span style={{ fontSize: 12, color: "#555", fontWeight: 600 }}>👤 {site.contactName}</span>}
-                              {site.contactPhone && <span style={{ fontSize: 12, color: "#555" }}>📞 {site.contactPhone}</span>}
-                              {site.contactEmail && <span style={{ fontSize: 12, color: "#555" }}>✉ {site.contactEmail}</span>}
+                              {site.contactPhone && <span className={pg.fs12c555}>📞 {site.contactPhone}</span>}
+                              {site.contactEmail && <span className={pg.fs12c555}>✉ {site.contactEmail}</span>}
                             </div>
                           )}
                         </div>
@@ -5520,24 +5520,24 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
               {/* Rates */}
               {(form.rates?.labourRate || form.rates?.materialMargin || form.rates?.subcontractorMargin) ? (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}>
-                  <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 3 }}>Labour Rate</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#334155" }}>${form.rates.labourRate || 0}/hr</div>
+                  <div className={pg.infoBoxSm}>
+                    <div className={pg.fs10fw700label94}>Labour Rate</div>
+                    <div className={pg.fs15fw700c334155}>${form.rates.labourRate || 0}/hr</div>
                   </div>
-                  <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 3 }}>Materials Margin</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#334155" }}>{form.rates.materialMargin || 0}%</div>
+                  <div className={pg.infoBoxSm}>
+                    <div className={pg.fs10fw700label94}>Materials Margin</div>
+                    <div className={pg.fs15fw700c334155}>{form.rates.materialMargin || 0}%</div>
                   </div>
-                  <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94a3b8", marginBottom: 3 }}>Subcontractor Margin</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#334155" }}>{form.rates.subcontractorMargin || 0}%</div>
+                  <div className={pg.infoBoxSm}>
+                    <div className={pg.fs10fw700label94}>Subcontractor Margin</div>
+                    <div className={pg.fs15fw700c334155}>{form.rates.subcontractorMargin || 0}%</div>
                   </div>
                 </div>
               ) : null}
               {/* Template Preferences */}
               <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 12, marginTop: 12 }}>
                 <div className={pg.textLabelMb8}>Template Preferences</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <div className={pg.grid2colGap8}>
                   {[{ key: "quote", label: "Quotes" }, { key: "invoice", label: "Invoices" }, { key: "work_order", label: "Work Orders" }, { key: "purchase_order", label: "Purchase Orders" }].map(dt => {
                     const opts = templates.filter(t => t.type === dt.key);
                     const currentVal = form.templatePreferences?.[dt.key] || opts.find(t => t.isDefault)?.id || "";
@@ -5580,7 +5580,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
             </div>
             <div className="form-group"><label className="form-label">Address</label><input className="form-control" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
             {/* Main Contact */}
-            <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4, marginBottom: 8 }}>
+            <div className={pg.borderTopMt4mb8}>
               <div className={pg.textLabelMb12}>Main Contact</div>
               <div className={pg.grid3col}>
                 <div className="form-group"><label className="form-label">Name</label><input className="form-control" value={form.mainContact?.name || ""} onChange={e => setForm(f => ({ ...f, mainContact: { ...f.mainContact, name: e.target.value } }))} placeholder="Full name" /></div>
@@ -5589,7 +5589,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
               </div>
             </div>
             {/* Accounts Contact */}
-            <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4, marginBottom: 8 }}>
+            <div className={pg.borderTopMt4mb8}>
               <div className={pg.textLabelMb12}>Accounts Contact</div>
               <div className={pg.grid3col}>
                 <div className="form-group"><label className="form-label">Name</label><input className="form-control" value={form.accountsContact?.name || ""} onChange={e => setForm(f => ({ ...f, accountsContact: { ...f.accountsContact, name: e.target.value } }))} placeholder="Full name" /></div>
@@ -5598,7 +5598,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
               </div>
             </div>
             {/* Rates */}
-            <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4, marginBottom: 8 }}>
+            <div className={pg.borderTopMt4mb8}>
               <div className={pg.textLabelMb12}>Rates &amp; Margins</div>
               <div className={pg.grid3col}>
                 <div className="form-group"><label className="form-label">Labour Rate ($/hr)</label><input type="number" className="form-control" value={form.rates?.labourRate || ""} onChange={e => setForm(f => ({ ...f, rates: { ...f.rates, labourRate: parseFloat(e.target.value) || 0 } }))} placeholder="0" /></div>
@@ -5884,7 +5884,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
               <div key={trade} className="kanban-col">
                 <div className="kanban-col-header">
                   <span>{trade}</span>
-                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colItems.length}</span>
+                  <span className={pg.countBadge}>{colItems.length}</span>
                 </div>
                 {colItems.map(c => {
                   const activeWOs = getActiveWOs(c);
@@ -5926,12 +5926,12 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
             showToggle={!isNew} isNew={isNew}
             onClose={() => { setShowModal(false); setShowDocForm(false); }}
             footer={
-              <div style={{ padding: "12px 20px", borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <div className={pg.drawerFooter}>
                 {mode === "edit" && <button className="btn btn-primary" style={{ background: accent }} onClick={save}><Icon name="check" size={14} />{isNew ? "Create" : "Save"}</button>}
               </div>
             }
           >
-            <div style={{ padding: 20 }}>
+            <div className={pg.pad20}>
               {mode === "view" ? (
                 <>
                   <ViewField label="Name" value={form.name} />
@@ -5946,7 +5946,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                     <div className={pg.mt20}>
                       <div className={pg.textLabelMb8}>Linked Work Orders</div>
                       {linkedWOs.map(wo => (
-                        <div key={wo.id} style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
+                        <div key={wo.id} className={pg.grayPillSm}>
                           <span className={pg.cellAmount}>{wo.ref}</span>
                           <OrderStatusBadge status={wo.status} />
                           {wo.dueDate && <span style={{ float: "right", color: "#888" }}>{wo.dueDate}</span>}
@@ -6011,9 +6011,9 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                           </div>
                           {doc && (
                             <div className={pg.fs11c666}>
-                              {doc.policyNumber && <div>Policy: <span style={{ fontWeight: 600, color: "#333" }}>{doc.policyNumber}</span></div>}
-                              {doc.licenseNumber && <div>License: <span style={{ fontWeight: 600, color: "#333" }}>{doc.licenseNumber}</span></div>}
-                              {doc.cardNumber && <div>Card: <span style={{ fontWeight: 600, color: "#333" }}>{doc.cardNumber}</span></div>}
+                              {doc.policyNumber && <div>Policy: <span className={pg.fw600c333}>{doc.policyNumber}</span></div>}
+                              {doc.licenseNumber && <div>License: <span className={pg.fw600c333}>{doc.licenseNumber}</span></div>}
+                              {doc.cardNumber && <div>Card: <span className={pg.fw600c333}>{doc.cardNumber}</span></div>}
                               {doc.insurer && <div>Insurer: {doc.insurer}</div>}
                               {doc.coverAmount && <div>Cover: {doc.coverAmount}</div>}
                               {doc.licenseClass && <div>Class: {doc.licenseClass}</div>}
@@ -6061,10 +6061,10 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 10001, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={() => setShowDocForm(false)}>
             <div style={{ background: "#fff", borderRadius: 12, width: "100%", maxWidth: 480, maxHeight: "90vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
               <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8e8e8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontWeight: 700, fontSize: 15 }}>{editDoc ? "Edit" : "Add"} {dt?.label || "Document"}</span>
+                <span className={pg.fw700fs15}>{editDoc ? "Edit" : "Add"} {dt?.label || "Document"}</span>
                 <button className="btn btn-ghost btn-xs" onClick={() => setShowDocForm(false)}><Icon name="close" size={14} /></button>
               </div>
-              <div style={{ padding: 20 }}>
+              <div className={pg.pad20}>
                 {/* AI Capture */}
                 <div style={{ marginBottom: 16, padding: 16, border: "2px dashed #d0d0d0", borderRadius: 8, textAlign: "center", background: "#fafafa", cursor: "pointer" }}
                   onClick={() => docFileRef.current?.click()}
@@ -6144,7 +6144,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
                   </>
                 )}
               </div>
-              <div style={{ padding: "12px 20px", borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <div className={pg.drawerFooter}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setShowDocForm(false)}>Cancel</button>
                 <button className="btn btn-primary btn-sm" style={{ background: accent }} onClick={saveDoc}><Icon name="check" size={14} />{editDoc ? "Update" : "Add"}</button>
               </div>
@@ -6264,12 +6264,12 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
             <div key={group} className="kanban-col">
               <div className="kanban-col-header">
                 <span>{group}</span>
-                <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{items.length}</span>
+                <span className={pg.countBadge}>{items.length}</span>
               </div>
               {items.map(s => (
                 <div key={s.id} className="kanban-card" onClick={() => openEdit(s)}>
                   <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>{s.name}</div>
-                  {s.contact && <div style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>{s.contact}</div>}
+                  {s.contact && <div className={pg.fs11c999mb4}>{s.contact}</div>}
                   <div className={pg.flexGap4}>
                     {getPOCount(s) > 0 && <span className="chip" className={pg.fs10}>{getPOCount(s)} PO{getPOCount(s) > 1 ? "s" : ""}</span>}
                     {getBillCount(s) > 0 && <span className="chip" className={pg.fs10}>{getBillCount(s)} bill{getBillCount(s) > 1 ? "s" : ""}</span>}
@@ -6295,12 +6295,12 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
             showToggle={!isNew} isNew={isNew}
             onClose={() => setShowModal(false)}
             footer={
-              <div style={{ padding: "12px 20px", borderTop: "1px solid #e8e8e8", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <div className={pg.drawerFooter}>
                 {mode === "edit" && <button className="btn btn-primary" style={{ background: accent }} onClick={save}><Icon name="check" size={14} />{isNew ? "Create" : "Save"}</button>}
               </div>
             }
           >
-            <div style={{ padding: 20 }}>
+            <div className={pg.pad20}>
               {mode === "view" ? (
                 <>
                   <ViewField label="Name" value={form.name} />
@@ -6313,7 +6313,7 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
                     <div className={pg.mt20}>
                       <div className={pg.textLabelMb8}>Purchase Orders</div>
                       {linkedPOs.map(po => (
-                        <div key={po.id} style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
+                        <div key={po.id} className={pg.grayPillSm}>
                           <span className={pg.cellAmount}>{po.ref}</span>
                           <OrderStatusBadge status={po.status} />
                           {po.poLimit && <span style={{ float: "right", color: "#888" }}>${parseFloat(po.poLimit).toLocaleString()}</span>}
@@ -6325,7 +6325,7 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
                     <div className={pg.mt20}>
                       <div className={pg.textLabelMb8}>Bills</div>
                       {linkedBills.map(b => (
-                        <div key={b.id} style={{ padding: "8px 12px", background: "#f8f8f8", borderRadius: 8, marginBottom: 6, fontSize: 12 }}>
+                        <div key={b.id} className={pg.grayPillSm}>
                           <span className={pg.cellAmount}>{b.supplier}</span>
                           {b.invoiceNo && <span style={{ color: "#999", marginLeft: 8 }}>{b.invoiceNo}</span>}
                           <span style={{ float: "right", fontWeight: 600 }}>{fmt(b.amount)}</span>
@@ -6426,7 +6426,7 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
           <span style={{ fontSize: 20 }}>{template.icon}</span>
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{template.name}</h3>
           <div className={pg.flex1} />
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#999" }}>✕</button>
+          <button onClick={onClose} className={pg.plainBtn}>✕</button>
         </div>
 
         {template.fields.map(field => (
@@ -7184,7 +7184,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
                 {client && <div className={jb.gridCardDate} style={{ marginBottom: 4 }}>{client.name}</div>}
                 <div className={jb.metaRow}>
                   <span className={db.listRowAmount} className={pg.fs14}>{fmt(total)}</span>
-                  <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
+                  <span className={pg.chipTag}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
                   {q.tax > 0 && <span className={jb.statChip}>{q.tax}% GST</span>}
                 </div>
                 <SectionProgressBar status={q.status} section="quotes" />
@@ -7285,7 +7285,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
               <div style={{ borderTop: "1px solid #f0f0f0", marginTop: 4, paddingTop: 16, marginBottom: 16 }}>
                 <div className={jb.estimateLabel}>Line Items</div>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                  <thead><tr><th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", borderBottom: "1px solid #f0f0f0" }}>Description</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Qty</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Rate</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Total</th></tr></thead>
+                  <thead><tr><th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", borderBottom: "1px solid #f0f0f0" }}>Description</th><th className={pg.thRightSm}>Qty</th><th className={pg.thRightSm}>Rate</th><th className={pg.thRightSm}>Total</th></tr></thead>
                   <tbody>
                     {(form.lineItems || []).map((l, i) => (
                       <tr key={i}><td style={{ padding: "8px" }}>{l.desc || "—"}</td><td style={{ textAlign: "right", padding: "8px" }}>{l.qty} {l.unit}</td><td style={{ textAlign: "right", padding: "8px" }}>{fmt(l.rate)}</td><td style={{ textAlign: "right", padding: "8px", fontWeight: 600 }}>{fmt(l.qty * l.rate)}</td></tr>
@@ -8720,10 +8720,10 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                         <td><span className="chip">{b.category}</span></td>
                         <td className={pg.textSub}>{b.date}</td>
                         <td className={pg.fs13}>{fmt(exGst)}</td>
-                        <td className={pg.textSub}>{b.hasGst ? fmt(gst) : <span style={{ color: "#ddd" }}>—</span>}</td>
+                        <td className={pg.textSub}>{b.hasGst ? fmt(gst) : <span className={pg.colorDdd}>—</span>}</td>
                         <td className={pg.cellAmount}>{fmt(b.amount)}</td>
                         <td className={pg.fs12}>
-                          {b.markup > 0 ? <span style={{ color: "#555" }}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span> : <span style={{ color: "#ddd" }}>—</span>}
+                          {b.markup > 0 ? <span style={{ color: "#555" }}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span> : <span className={pg.colorDdd}>—</span>}
                         </td>
                         <td><BillStatusBadge status={b.status} /> <XeroSyncBadge syncStatus={b.xeroSyncStatus} xeroId={b.xeroBillId} /></td>
                         <td>
@@ -8948,7 +8948,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                       </div>
                       {inv.status !== "paid" && inv.status !== "void" && (
                         <div className={jb.actionBtns} style={{ marginTop: 8, justifyContent: "flex-end" }} onClick={e => e.stopPropagation()}>
-                          <button className="btn btn-ghost btn-xs" style={{ color: "#2a7" }} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>
+                          <button className="btn btn-ghost btn-xs" className={pg.color2a7} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>
                         </div>
                       )}
                     </div>
@@ -8977,7 +8977,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                       <Icon name="invoices" size={15} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{inv.number}</div>
+                      <div className={pg.monoFw600}>{inv.number}</div>
                       <div className={pg.textSubSm}>{inv.createdAt || "—"}</div>
                     </div>
                   </div>
@@ -8986,19 +8986,19 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                   </div>
                 </div>
                 <div className={jb.gridCardClient}>
-                  {job?.title || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No job</span>}
+                  {job?.title || <span className={pg.italicMuted}>No job</span>}
                 </div>
                 {client && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>{client.name}</div>}
                 <div className={jb.metaRow}>
                   <span className={pg.fs14fw700c111}>{fmt(total)}</span>
-                  <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
-                  {fromQuote && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>from {fromQuote.number}</span>}
+                  <span className={pg.chipTag}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
+                  {fromQuote && <span className={pg.chipTag}>from {fromQuote.number}</span>}
                 </div>
                 <SectionProgressBar status={inv.status} section="invoices" />
                 <div className={jb.gridCardFooter}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: inv.dueDate ? "#334155" : "#ccc" }}>{inv.dueDate ? `Due ${inv.dueDate}` : "No due date"}</span>
                   <div className={pg.flexGap4} onClick={e => e.stopPropagation()}>
-                    {inv.status !== "paid" && inv.status !== "void" && <button className="btn btn-ghost btn-xs" style={{ color: "#2a7" }} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>}
+                    {inv.status !== "paid" && inv.status !== "void" && <button className="btn btn-ghost btn-xs" className={pg.color2a7} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>}
                     <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(inv.id)}><Icon name="trash" size={12} /></button>
                   </div>
                 </div>
@@ -9031,7 +9031,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                     <td style={{ fontSize: 12, color: inv.dueDate ? "#111" : "#ccc" }}>{inv.dueDate || "—"}</td>
                     <td onClick={e => e.stopPropagation()}>
                       <div className={pg.flexGap4}>
-                        {inv.status !== "paid" && inv.status !== "void" && <button className="btn btn-ghost btn-xs" style={{ color: "#2a7" }} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>}
+                        {inv.status !== "paid" && inv.status !== "void" && <button className="btn btn-ghost btn-xs" className={pg.color2a7} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>}
                         {!inv.xeroInvoiceId && inv.status !== "draft" && <button className="btn btn-ghost btn-xs" className={pg.color0369a1} onClick={() => xeroSyncInvoice("push", inv.id).then(() => refreshData?.())} title="Send to Xero"><Icon name="send" size={12} /></button>}
                         <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => del(inv.id)}><Icon name="trash" size={12} /></button>
                       </div>
@@ -9094,8 +9094,8 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
             </div>
             <div className={pg.mb20}>
               <div className={pg.textLabelMb8sq}>Line Items</div>
-              <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
-                <thead><tr style={{ borderBottom: '2px solid #eee' }}>
+              <table className={pg.tableFullCollapse}>
+                <thead><tr className={pg.borderBottom2}>
                   <th className={pg.thLeft}>Description</th>
                   <th className={pg.thRight}>Qty</th>
                   <th className={pg.thLeft}>Unit</th>
@@ -9104,21 +9104,21 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                 </tr></thead>
                 <tbody>
                   {form.lineItems.map((li, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                      <td style={{ padding: '8px 8px', fontWeight: 500 }}>{li.desc || '—'}</td>
+                    <tr key={i} className={pg.borderBottom1}>
+                      <td className={pg.tdPadFw500}>{li.desc || '—'}</td>
                       <td className={pg.tdRightAlt}>{li.qty}</td>
-                      <td style={{ padding: '8px 8px' }}>{li.unit}</td>
+                      <td className={pg.tdPad}>{li.unit}</td>
                       <td className={pg.tdRightAlt}>{fmt(li.rate)}</td>
-                      <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: 600 }}>{fmt(li.qty * li.rate)}</td>
+                      <td className={pg.tdPadRightFw600}>{fmt(li.qty * li.rate)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <div style={{ background: '#f9fafb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
+            <div className={pg.grayRoundedBox}>
               <div className={pg.flexBetweenMb6}><span className={pg.color888}>Subtotal</span><span className={pg.fw600}>{fmt(iSub)}</span></div>
               <div className={pg.flexBetweenMb6}><span className={pg.color888}>GST ({form.tax}%)</span><span className={pg.fw600}>{fmt(iTax)}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '2px solid #e5e7eb', fontSize: 15 }}><span className={pg.cellAmount}>Total</span><span style={{ fontWeight: 800, color: accent }}>{fmt(iTotal)}</span></div>
+              <div className={pg.totalRow}><span className={pg.cellAmount}>Total</span><span style={{ fontWeight: 800, color: accent }}>{fmt(iTotal)}</span></div>
             </div>
             {form.notes && <ViewField label="Notes" value={form.notes} />}
           </div>
@@ -9452,7 +9452,7 @@ const Reminders = ({ reminders, setReminders, jobs }) => {
                   {/* Actions */}
                   <div style={{ display: "flex", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                     {r.status === "pending" && <button onClick={() => dismissReminder(r.id)} title="Dismiss" style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 13, padding: 4 }}>✕</button>}
-                    <button onClick={() => deleteReminder(r.id)} title="Delete" style={{ background: "none", border: "none", cursor: "pointer", color: "#ddd", fontSize: 13, padding: 4 }}>🗑</button>
+                    <button onClick={() => deleteReminder(r.id)} title="Delete" className={pg.plainBtnSm}>🗑</button>
                   </div>
                 </div>
                 {/* Checklist items inline */}
@@ -9489,7 +9489,7 @@ const Reminders = ({ reminders, setReminders, jobs }) => {
               <textarea value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="What do you need to remember?" rows={3} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 16 }} autoFocus />
             ) : (
               <>
-                <input value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="e.g. Site prep checklist" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} autoFocus />
+                <input value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} placeholder="e.g. Site prep checklist" className={pg.formInputLg14mb12} autoFocus />
                 <label className={pg.fieldLabelAlt}>Items</label>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
                   {form.items.map(item => (
@@ -9510,18 +9510,18 @@ const Reminders = ({ reminders, setReminders, jobs }) => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
               <div>
                 <label className={pg.fieldLabelAlt}>Due Date</label>
-                <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={pg.formInput} />
               </div>
               <div>
                 <label className={pg.fieldLabelAlt}>Link to Job</label>
-                <select value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value ? Number(e.target.value) : "" }))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }}>
+                <select value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value ? Number(e.target.value) : "" }))} className={pg.formInput}>
                   <option value="">None</option>
                   {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
                 </select>
               </div>
             </div>
             <div className={pg.flexEndGap8}>
-              <button onClick={() => setShowModal(false)} style={{ padding: "8px 16px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
+              <button onClick={() => setShowModal(false)} className={pg.grayBtn}>Cancel</button>
               <button onClick={saveReminder} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>{editReminder ? "Save" : "Create"}</button>
             </div>
           </div>
@@ -9824,7 +9824,7 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
       {/* Row 1: Deliver, Priorities, Quotes */}
       <div style={cardStyle(SECTION_COLORS.schedule.accent)}>
         <div style={{ ...DS.heading, marginBottom: 16 }}>Deliver This Week</div>
-        {deliverJobs.length === 0 ? <div style={{ color: "#aaa", fontSize: 20 }}>No deliveries scheduled</div> :
+        {deliverJobs.length === 0 ? <div className={pg.caafs20}>No deliveries scheduled</div> :
           <ol style={{ margin: 0, paddingLeft: 30, fontSize: 22, lineHeight: 2.2, color: "#333" }}>
             {deliverJobs.map(j => <li key={j.id}>{j.title}</li>)}
           </ol>
@@ -9832,7 +9832,7 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
       </div>
       <div style={cardStyle(SECTION_COLORS.jobs.accent)}>
         <div style={{ ...DS.heading, marginBottom: 16 }}>Priorities</div>
-        {priorities.length === 0 ? <div style={{ color: "#aaa", fontSize: 20 }}>No high-priority jobs</div> :
+        {priorities.length === 0 ? <div className={pg.caafs20}>No high-priority jobs</div> :
           <ol style={{ margin: 0, paddingLeft: 30, fontSize: 22, lineHeight: 2.2, color: "#333" }}>
             {priorities.map(j => <li key={j.id}>{j.title}</li>)}
           </ol>
@@ -9840,7 +9840,7 @@ const DisplayOverview = ({ jobs, quotes, timeEntries, schedule, clients }) => {
       </div>
       <div style={cardStyle(SECTION_COLORS.quotes.accent)}>
         <div style={{ ...DS.heading, marginBottom: 16 }}>Quotes</div>
-        {openQuotes.length === 0 ? <div style={{ color: "#aaa", fontSize: 20 }}>No open quotes</div> :
+        {openQuotes.length === 0 ? <div className={pg.caafs20}>No open quotes</div> :
           <ol style={{ margin: 0, paddingLeft: 30, fontSize: 22, lineHeight: 2.2, color: "#333" }}>
             {openQuotes.map(q => {
               const job = jobs.find(j => j.id === q.jobId);
@@ -10068,7 +10068,7 @@ const XeroAccountMappingSection = ({ accent, xeroAccounts, setXeroAccounts, mapp
 
       {(!xeroAccounts || xeroAccounts.length === 0) ? (
         <div>
-          <div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>Pull your Chart of Accounts from Xero to configure which accounts invoices and bills sync to.</div>
+          <div className={pg.fs12c666mb12}>Pull your Chart of Accounts from Xero to configure which accounts invoices and bills sync to.</div>
           <button onClick={handleFetchAccounts} disabled={fetchingAccounts} style={{ ...btnStyle, background: accent, color: "#fff" }}>
             {fetchingAccounts ? "Fetching..." : "Fetch Accounts from Xero"}
           </button>
@@ -10234,7 +10234,7 @@ const XeroSettingsTab = ({ accent }) => {
   return (
     <div>
       <div style={{ fontSize: 16, fontWeight: 700, color: "#111", marginBottom: 4 }}>Xero Accounting Integration</div>
-      <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>Sync invoices, bills, and contacts with your Xero organisation</div>
+      <div className={pg.fs12c888mb20}>Sync invoices, bills, and contacts with your Xero organisation</div>
       {xeroError && (
         <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#dc2626", display: "flex", alignItems: "center", gap: 8 }}>
           <Icon name="notification" size={14} /> {xeroError}
@@ -10247,7 +10247,7 @@ const XeroSettingsTab = ({ accent }) => {
             <div style={{ width: 40, height: 40, borderRadius: 8, background: xeroStatus?.connected ? "#ecfdf5" : "#f8f8f8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: xeroStatus?.connected ? "#16a34a" : "#888" }}>X</div>
             <div>
               <div className={pg.fs14fw700c111}>{xeroStatus?.connected ? `Connected to ${xeroStatus.tenantName}` : "Not connected"}</div>
-              <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{xeroStatus?.connected ? `Connected ${xeroStatus.connectedAt ? new Date(xeroStatus.connectedAt).toLocaleDateString() : ""}` : "Connect to your Xero organisation to start syncing"}</div>
+              <div className={pg.fs11c888mt2}>{xeroStatus?.connected ? `Connected ${xeroStatus.connectedAt ? new Date(xeroStatus.connectedAt).toLocaleDateString() : ""}` : "Connect to your Xero organisation to start syncing"}</div>
             </div>
           </div>
           {xeroStatus?.connected
@@ -10264,7 +10264,7 @@ const XeroSettingsTab = ({ accent }) => {
             {xeroSetupStep === 3 && "Mark items that are already in Xero to skip during sync"}
             {xeroSetupStep === 4 && "Preview what will be synced before running"}
           </div>
-          {xeroSetupStep === 1 && (<div>{!xeroMatchResults ? <button onClick={runContactMatch} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Matching..." : "Run Contact Matching"}</button> : (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>Found {xeroMatchResults.xeroContactCount} contacts in Xero. {xeroMatchResults.matches?.length || 0} FieldOps contacts to review.</div>{(xeroMatchResults.matches || []).map((m, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid #f0f0f0", fontSize: 12 }}><input type="checkbox" checked={m.confirmed || false} onChange={() => { const updated = [...xeroMatchResults.matches]; updated[i] = { ...updated[i], confirmed: !updated[i].confirmed }; setXeroMatchResults({ ...xeroMatchResults, matches: updated }); }} /><div className={pg.flex1}><span className={pg.fw600}>{m.name}</span><span style={{ color: "#888", marginLeft: 8 }}>({m.entityType})</span></div><div style={{ flex: 1, color: m.xeroMatch ? "#16a34a" : "#888" }}>{m.xeroMatch ? `→ ${m.xeroMatch.name} (${m.xeroMatch.confidence})` : "No match — will create new"}</div></div>))}<div style={{ display: "flex", gap: 8, marginTop: 12 }}><button onClick={() => confirmMatches(xeroMatchResults.matches)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Confirm & Continue</button><button onClick={() => setXeroSetupStep(2)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip</button></div></div>)}</div>)}
+          {xeroSetupStep === 1 && (<div>{!xeroMatchResults ? <button onClick={runContactMatch} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Matching..." : "Run Contact Matching"}</button> : (<div><div className={pg.fs12c666mb12}>Found {xeroMatchResults.xeroContactCount} contacts in Xero. {xeroMatchResults.matches?.length || 0} FieldOps contacts to review.</div>{(xeroMatchResults.matches || []).map((m, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid #f0f0f0", fontSize: 12 }}><input type="checkbox" checked={m.confirmed || false} onChange={() => { const updated = [...xeroMatchResults.matches]; updated[i] = { ...updated[i], confirmed: !updated[i].confirmed }; setXeroMatchResults({ ...xeroMatchResults, matches: updated }); }} /><div className={pg.flex1}><span className={pg.fw600}>{m.name}</span><span style={{ color: "#888", marginLeft: 8 }}>({m.entityType})</span></div><div style={{ flex: 1, color: m.xeroMatch ? "#16a34a" : "#888" }}>{m.xeroMatch ? `→ ${m.xeroMatch.name} (${m.xeroMatch.confidence})` : "No match — will create new"}</div></div>))}<div style={{ display: "flex", gap: 8, marginTop: 12 }}><button onClick={() => confirmMatches(xeroMatchResults.matches)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Confirm & Continue</button><button onClick={() => setXeroSetupStep(2)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip</button></div></div>)}</div>)}
           {xeroSetupStep === 2 && (
             <div>
               <XeroAccountMappingSection
@@ -10282,7 +10282,7 @@ const XeroSettingsTab = ({ accent }) => {
               </div>
             </div>
           )}
-          {xeroSetupStep === 3 && (<div><div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>If any invoices or bills have already been entered in Xero manually, mark them here to prevent duplicates.</div><div className={pg.flexGap8}><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue to Preview</button><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip — None to mark</button></div></div>)}
+          {xeroSetupStep === 3 && (<div><div className={pg.fs12c666mb12}>If any invoices or bills have already been entered in Xero manually, mark them here to prevent duplicates.</div><div className={pg.flexGap8}><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: accent, color: "#fff" }}>Continue to Preview</button><button onClick={() => setXeroSetupStep(4)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Skip — None to mark</button></div></div>)}
           {xeroSetupStep === 4 && (<div>{!xeroDryRun ? <button onClick={runDryRun} disabled={xeroSyncing} style={{ ...btnStyle, background: accent, color: "#fff" }}>{xeroSyncing ? "Checking..." : "Preview Sync"}</button> : (<div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 12 }}><div style={{ background: "#f0fdf4", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#16a34a" }}>{xeroDryRun.invoices?.wouldSync || 0}</div><div className={pg.fs11c666}>Invoices to sync</div></div><div style={{ background: "#eff6ff", borderRadius: 8, padding: 12 }}><div style={{ fontSize: 24, fontWeight: 700, color: "#2563eb" }}>{xeroDryRun.bills?.wouldSync || 0}</div><div className={pg.fs11c666}>Bills to sync</div></div></div><div className={pg.flexGap8}><button onClick={() => { runBulkSync("invoices"); runBulkSync("bills"); setXeroSetupStep(0); }} style={{ ...btnStyle, background: accent, color: "#fff" }}>Start Sync</button><button onClick={() => setXeroSetupStep(0)} style={{ ...btnStyle, background: "#f0f0f0", color: "#333" }}>Close Wizard</button></div></div>)}</div>)}
         </div>
       )}
@@ -11248,7 +11248,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           onChange={e => updateVoice("greetingStyle", e.target.value)}
           placeholder={VOICE_OPTIONS.greetingStylePlaceholder}
           rows={3}
-          style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }}
+          className={pg.formTextarea}
         />
         <div className={pg.fs11c999mt6}>Describe how Iris should greet callers</div>
       </div>
@@ -11261,7 +11261,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           onChange={e => updateVoice("personality", e.target.value)}
           placeholder={VOICE_OPTIONS.personalityPlaceholder}
           rows={3}
-          style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }}
+          className={pg.formTextarea}
         />
         <div className={pg.fs11c999mt6}>Describe the tone, style, and personality of your assistant</div>
       </div>
@@ -11274,7 +11274,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           onChange={e => updateVoice("generalKnowledge", e.target.value)}
           placeholder={VOICE_OPTIONS.generalKnowledgePlaceholder}
           rows={3}
-          style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }}
+          className={pg.formTextarea}
         />
         <div className={pg.fs11c999mt6}>Any background knowledge your assistant should have — local area, industry, etc.</div>
       </div>
@@ -11503,21 +11503,21 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                 <div className={pg.grid2col}>
                   <div>
                     <label className={pg.fieldLabelAlt}>Full Name</label>
-                    <input type="text" value={inviteForm.fullName} onChange={e => setInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="e.g. Tom Baker" required style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                    <input type="text" value={inviteForm.fullName} onChange={e => setInviteForm(f => ({ ...f, fullName: e.target.value }))} placeholder="e.g. Tom Baker" required className={pg.formInput} />
                   </div>
                   <div>
                     <label className={pg.fieldLabelAlt}>Email</label>
-                    <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="tom@company.com" required style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                    <input type="email" value={inviteForm.email} onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))} placeholder="tom@company.com" required className={pg.formInput} />
                   </div>
                 </div>
                 <div className={pg.mb12}>
                   <label className={pg.fieldLabelAlt}>Phone Number</label>
-                  <input type="tel" value={inviteForm.phone} onChange={e => setInviteForm(f => ({ ...f, phone: e.target.value }))} placeholder="0412 345 678" style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  <input type="tel" value={inviteForm.phone} onChange={e => setInviteForm(f => ({ ...f, phone: e.target.value }))} placeholder="0412 345 678" className={pg.formInputSm} />
                   <div style={{ fontSize: 10, color: "#aaa", marginTop: 4 }}>Used by the voice assistant to route calls to this user's caller memory</div>
                 </div>
                 <div className={pg.mb16}>
                   <label className={pg.fieldLabelAlt}>Password (optional)</label>
-                  <input type="text" value={inviteForm.password} onChange={e => setInviteForm(f => ({ ...f, password: e.target.value }))} placeholder="Auto-generated if blank" style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  <input type="text" value={inviteForm.password} onChange={e => setInviteForm(f => ({ ...f, password: e.target.value }))} placeholder="Auto-generated if blank" className={pg.formInputSm} />
                 </div>
                 <div className={pg.flexEndGap8}>
                   <button type="button" className="btn btn-ghost btn-sm" className={pg.fs11} onClick={() => setShowInvite(false)}>Cancel</button>
@@ -11541,7 +11541,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                 <div className={pg.flexCenterGap12}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: s.active ? "#111" : "#ddd", color: s.active ? "#fff" : "#999", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, flexShrink: 0 }}>{initials}</div>
                   <div className={pg.flex1}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{s.name}{isSelf ? " (you)" : ""}</div>
+                    <div className={pg.fs14fw600c111}>{s.name}{isSelf ? " (you)" : ""}</div>
                     <div style={{ fontSize: 11, color: "#888", display: "flex", alignItems: "center", gap: 8 }}>
                       <span>{s.email}</span>
                       {editPhoneId === s.id ? (
@@ -11562,7 +11562,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                     <button onClick={() => openPermissions(s)} style={{ padding: "4px 10px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", fontWeight: 600 }}>Permissions</button>
                     {!isSelf && (
                       <>
-                        <button onClick={() => handleResetPassword(s)} style={{ padding: "4px 10px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Reset PW</button>
+                        <button onClick={() => handleResetPassword(s)} className={pg.grayBtnSm}>Reset PW</button>
                         <button onClick={() => handleToggleActive(s)} style={{ padding: "4px 10px", background: "none", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", color: s.active ? "#dc2626" : "#059669" }}>{s.active ? "Deactivate" : "Activate"}</button>
                       </>
                     )}
@@ -11578,7 +11578,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setPermEditId(null)}>
             <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 560, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", maxHeight: "85vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
               <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Permissions</div>
-              <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>{staff.find(s => s.id === permEditId)?.name} — {(() => { const c = countPerms(permData); return `${c.enabled}/${c.total} enabled`; })()}</div>
+              <div className={pg.fs12c888mb20}>{staff.find(s => s.id === permEditId)?.name} — {(() => { const c = countPerms(permData); return `${c.enabled}/${c.total} enabled`; })()}</div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
                 {PERMISSION_SECTIONS.map(sec => {
@@ -11614,7 +11614,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               </div>
 
               <div className={pg.flexEndGap8}>
-                <button onClick={() => setPermEditId(null)} style={{ padding: "8px 16px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
+                <button onClick={() => setPermEditId(null)} className={pg.grayBtn}>Cancel</button>
                 <button onClick={savePermissions} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Save Permissions</button>
               </div>
             </div>
@@ -11665,25 +11665,25 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
             <div className={pg.grid2col}>
               <div>
                 <label className={pg.fieldLabelAlt}>Company Name</label>
-                <input value={companyForm.companyName} onChange={e => updateCompanyField("companyName", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <input value={companyForm.companyName} onChange={e => updateCompanyField("companyName", e.target.value)} className={pg.formInputLg14} />
               </div>
               <div>
                 <label className={pg.fieldLabelAlt}>ABN</label>
-                <input value={companyForm.abn} onChange={e => updateCompanyField("abn", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <input value={companyForm.abn} onChange={e => updateCompanyField("abn", e.target.value)} className={pg.formInputLg14} />
               </div>
             </div>
             <div className={pg.mb12}>
               <label className={pg.fieldLabelAlt}>Address</label>
-              <input value={companyForm.address} onChange={e => updateCompanyField("address", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+              <input value={companyForm.address} onChange={e => updateCompanyField("address", e.target.value)} className={pg.formInputLg14} />
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
                 <label className={pg.fieldLabelAlt}>Phone</label>
-                <input value={companyForm.phone} onChange={e => updateCompanyField("phone", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <input value={companyForm.phone} onChange={e => updateCompanyField("phone", e.target.value)} className={pg.formInputLg14} />
               </div>
               <div>
                 <label className={pg.fieldLabelAlt}>Email</label>
-                <input value={companyForm.email} onChange={e => updateCompanyField("email", e.target.value)} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <input value={companyForm.email} onChange={e => updateCompanyField("email", e.target.value)} className={pg.formInputLg14} />
               </div>
             </div>
           </div>
@@ -11738,7 +11738,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               </div>
               <div>
                 <label className={pg.fieldLabelAlt}>Voice</label>
-                <select value={outboundSettings.voice} onChange={e => updateOutbound("voice", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }}>
+                <select value={outboundSettings.voice} onChange={e => updateOutbound("voice", e.target.value)} className={pg.formInput}>
                   {VOICE_OPTIONS.voices.map(v => <option key={v.id} value={v.id}>{v.label} — {v.desc}</option>)}
                 </select>
               </div>
@@ -11746,7 +11746,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
             <label className={pg.fieldLabelAlt}>Greeting Style</label>
             <textarea value={outboundSettings.greetingStyle} onChange={e => updateOutbound("greetingStyle", e.target.value)} rows={2} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box", marginBottom: 12 }} />
             <label className={pg.fieldLabelAlt}>Personality</label>
-            <textarea value={outboundSettings.personality} onChange={e => updateOutbound("personality", e.target.value)} rows={2} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }} />
+            <textarea value={outboundSettings.personality} onChange={e => updateOutbound("personality", e.target.value)} rows={2} className={pg.formTextarea} />
           </div>
 
           {/* Team Contacts */}
@@ -11768,9 +11768,9 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                       <div className={pg.fs13fw600c111}>{m.name}</div>
                       <div className={pg.fs11c888}>{m.phone} {m.role ? `· ${m.role}` : ""}</div>
                     </div>
-                    <button onClick={() => triggerTestCall(m)} style={{ padding: "4px 10px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Test Call</button>
+                    <button onClick={() => triggerTestCall(m)} className={pg.grayBtnSm}>Test Call</button>
                     <button onClick={() => openEditTeamMember(m)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 13, padding: 4 }}>✎</button>
-                    <button onClick={() => removeTeamMember(m.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ddd", fontSize: 13, padding: 4 }}>🗑</button>
+                    <button onClick={() => removeTeamMember(m.id)} className={pg.plainBtnSm}>🗑</button>
                   </div>
                 ))}
               </div>
@@ -11783,7 +11783,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div>
                 <label className={pg.fieldLabelAlt}>Min. Severity</label>
-                <select value={outboundSettings.callRules.minSeverity} onChange={e => updateCallRule("minSeverity", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }}>
+                <select value={outboundSettings.callRules.minSeverity} onChange={e => updateCallRule("minSeverity", e.target.value)} className={pg.formInput}>
                   <option value="high">High only</option>
                   <option value="medium">Medium and above</option>
                   <option value="low">All severities</option>
@@ -11791,15 +11791,15 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               </div>
               <div>
                 <label className={pg.fieldLabelAlt}>Max Calls / Day</label>
-                <input type="number" min={1} max={10} value={outboundSettings.callRules.maxCallsPerDay} onChange={e => updateCallRule("maxCallsPerDay", Number(e.target.value))} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <input type="number" min={1} max={10} value={outboundSettings.callRules.maxCallsPerDay} onChange={e => updateCallRule("maxCallsPerDay", Number(e.target.value))} className={pg.formInput} />
               </div>
               <div>
                 <label className={pg.fieldLabelAlt}>Call Window Start</label>
-                <input type="time" value={outboundSettings.callRules.callWindowStart} onChange={e => updateCallRule("callWindowStart", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <input type="time" value={outboundSettings.callRules.callWindowStart} onChange={e => updateCallRule("callWindowStart", e.target.value)} className={pg.formInput} />
               </div>
               <div>
                 <label className={pg.fieldLabelAlt}>Call Window End</label>
-                <input type="time" value={outboundSettings.callRules.callWindowEnd} onChange={e => updateCallRule("callWindowEnd", e.target.value)} style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                <input type="time" value={outboundSettings.callRules.callWindowEnd} onChange={e => updateCallRule("callWindowEnd", e.target.value)} className={pg.formInput} />
               </div>
             </div>
           </div>
@@ -11810,13 +11810,13 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
               <div style={{ background: "#fff", borderRadius: 12, padding: 28, width: "100%", maxWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }} onClick={e => e.stopPropagation()}>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>{editTeamMember ? "Edit Team Member" : "Add Team Member"}</div>
                 <label className={pg.fieldLabelAlt}>Name</label>
-                <input value={teamForm.name} onChange={e => setTeamForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Tom Baker" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} autoFocus />
+                <input value={teamForm.name} onChange={e => setTeamForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Tom Baker" className={pg.formInputLg14mb12} autoFocus />
                 <label className={pg.fieldLabelAlt}>Phone</label>
-                <input value={teamForm.phone} onChange={e => setTeamForm(f => ({ ...f, phone: e.target.value }))} placeholder="+61400000000" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
+                <input value={teamForm.phone} onChange={e => setTeamForm(f => ({ ...f, phone: e.target.value }))} placeholder="+61400000000" className={pg.formInputLg14mb12} />
                 <label className={pg.fieldLabelAlt}>Role</label>
                 <input value={teamForm.role} onChange={e => setTeamForm(f => ({ ...f, role: e.target.value }))} placeholder="e.g. Site Manager" style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 20 }} />
                 <div className={pg.flexEndGap8}>
-                  <button onClick={() => setShowTeamModal(false)} style={{ padding: "8px 16px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>Cancel</button>
+                  <button onClick={() => setShowTeamModal(false)} className={pg.grayBtn}>Cancel</button>
                   <button onClick={saveTeamMember} style={{ padding: "8px 16px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif" }}>{editTeamMember ? "Save" : "Add"}</button>
                 </div>
               </div>
@@ -11915,7 +11915,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                 </div>
                 <div>
                   <label className={pg.fieldLabelAlt}>Template Email <span style={{ fontWeight: 400, color: "#aaa", textTransform: "none" }}>(override per template)</span></label>
-                  <input value={tplForm.email} onChange={e => setTplForm(f => ({ ...f, email: e.target.value }))} style={{ width: "100%", maxWidth: 300, padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box" }} />
+                  <input value={tplForm.email} onChange={e => setTplForm(f => ({ ...f, email: e.target.value }))} className={pg.formInputSm} />
                 </div>
               </div>
 
@@ -11988,9 +11988,9 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                     <div>
                       {tplForm.logo && <img src={tplForm.logo} alt="Logo" style={{ height: 40, marginBottom: 8 }} />}
                       <div style={{ fontSize: 16, fontWeight: 800, color: tplForm.accentColor }}>{companyInfo.companyName}</div>
-                      {companyInfo.abn && <div style={{ fontSize: 10, color: "#888" }}>ABN: {companyInfo.abn}</div>}
-                      <div style={{ fontSize: 10, color: "#888" }}>{companyInfo.address}</div>
-                      <div style={{ fontSize: 10, color: "#888" }}>{companyInfo.phone} | {tplForm.email}</div>
+                      {companyInfo.abn && <div className={pg.fs10c888}>ABN: {companyInfo.abn}</div>}
+                      <div className={pg.fs10c888}>{companyInfo.address}</div>
+                      <div className={pg.fs10c888}>{companyInfo.phone} | {tplForm.email}</div>
                     </div>
                     <div className={pg.textRight}>
                       <div style={{ fontSize: 18, fontWeight: 800, color: tplForm.accentColor, textTransform: "uppercase" }}>{tplForm.type === "work_order" ? "Work Order" : tplForm.type === "purchase_order" ? "Purchase Order" : tplForm.type.charAt(0).toUpperCase() + tplForm.type.slice(1)}</div>
@@ -12068,7 +12068,7 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                 <label className={pg.fieldLabelAlt}>Footer Text</label>
                 <input value={tplForm.footer} onChange={e => setTplForm(f => ({ ...f, footer: e.target.value }))} placeholder="e.g. Thank you for your business." style={{ width: "100%", padding: "8px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
                 <label className={pg.fieldLabelAlt}>Terms & Conditions</label>
-                <textarea value={tplForm.terms} onChange={e => setTplForm(f => ({ ...f, terms: e.target.value }))} rows={3} style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 13, fontFamily: "'Open Sans', sans-serif", resize: "vertical", boxSizing: "border-box" }} />
+                <textarea value={tplForm.terms} onChange={e => setTplForm(f => ({ ...f, terms: e.target.value }))} rows={3} className={pg.formTextarea} />
               </div>
 
               {/* Email Template */}
@@ -12088,15 +12088,15 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                         {/* Email header */}
                         <div style={{ background: "#f8f8f8", padding: "12px 16px", borderBottom: "1px solid #e0e0e0" }}>
                           <div style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 12 }}>
-                            <span style={{ fontWeight: 700, color: "#888", minWidth: 40 }}>From:</span>
+                            <span className={pg.fw700c888w40}>From:</span>
                             <span className={pg.color333}>{companyInfo.companyName} &lt;{tplForm.email}&gt;</span>
                           </div>
                           <div style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 12 }}>
-                            <span style={{ fontWeight: 700, color: "#888", minWidth: 40 }}>To:</span>
+                            <span className={pg.fw700c888w40}>To:</span>
                             <span className={pg.color333}>James Hartwell &lt;james@hartwell.com&gt;</span>
                           </div>
                           <div style={{ display: "flex", gap: 8, fontSize: 12 }}>
-                            <span style={{ fontWeight: 700, color: "#888", minWidth: 40 }}>Subject:</span>
+                            <span className={pg.fw700c888w40}>Subject:</span>
                             <span style={{ color: "#111", fontWeight: 600 }}>{replaceVars(tplForm.emailSubject)}</span>
                           </div>
                         </div>
@@ -12161,15 +12161,15 @@ const Settings = ({ staff = [], setStaff, templates = SEED_TEMPLATES, setTemplat
                     {/* Colour swatch */}
                     <div style={{ width: 8, height: 40, borderRadius: 4, background: tpl.accentColor, flexShrink: 0 }} />
                     <div className={pg.flex1}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{tpl.name}</div>
-                      <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{tpl.companyName} {tpl.logo ? "· Logo" : ""}</div>
+                      <div className={pg.fs14fw600c111}>{tpl.name}</div>
+                      <div className={pg.fs11c888mt2}>{tpl.companyName} {tpl.logo ? "· Logo" : ""}</div>
                     </div>
                     {tpl.isDefault && <span style={{ fontSize: 10, fontWeight: 700, background: "#ecfdf5", color: "#059669", padding: "2px 8px", borderRadius: 4 }}>Default</span>}
                     {!tpl.isDefault && (
                       <button onClick={e => { e.stopPropagation(); setDefault(tpl.id); }} style={{ fontSize: 10, fontWeight: 600, background: "#f5f5f5", border: "1px solid #ddd", padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", color: "#666" }}>Set Default</button>
                     )}
                     {!tpl.isDefault && (
-                      <button onClick={e => { e.stopPropagation(); deleteTemplate(tpl.id); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#ddd", fontSize: 13, padding: 4 }}>🗑</button>
+                      <button onClick={e => { e.stopPropagation(); deleteTemplate(tpl.id); }} className={pg.plainBtnSm}>🗑</button>
                     )}
                   </div>
                 ))}
@@ -12304,7 +12304,7 @@ const FilesPage = ({ jobs = [], bills = [], contractors = [], quotes = [], invoi
 
       {/* Table */}
       <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e5e5", overflow: "hidden" }}>
-        <div style={{ overflowX: "auto" }}>
+        <div className={pg.overflowX}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e5e5" }}>
@@ -12625,7 +12625,7 @@ const SystemStatus = () => {
               <div className={pg.flexGap10}>
                 <Icon name={svc.icon} size={16} />
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{svc.name}</div>
+                  <div className={pg.fs14fw600c111}>{svc.name}</div>
                   <div className={pg.fs11c888}>{svc.description}</div>
                 </div>
               </div>
@@ -13055,7 +13055,7 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
                     {field.value ? (
                       <img src={field.value} alt="Signature" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
                     ) : (
-                      <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic" }}>Click to sign</span>
+                      <span className={pg.fs11c94a3b8italic}>Click to sign</span>
                     )}
                   </div>
                 )}
@@ -13077,7 +13077,7 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
           <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 24, width: 420, maxWidth: "90vw" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Draw Signature</h3>
-              <button onClick={() => setSigModal(null)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#999" }}>✕</button>
+              <button onClick={() => setSigModal(null)} className={pg.plainBtn}>✕</button>
             </div>
             <canvas ref={sigCanvasRef} width={380} height={150} style={{ border: "2px solid #e2e8f0", borderRadius: 8, width: "100%", height: 150, touchAction: "none" }} />
             <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
@@ -13116,7 +13116,7 @@ const ChangePasswordModal = ({ onClose }) => {
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)" }} onClick={onClose}>
       <div style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", width: "100%", maxWidth: 380, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }} onClick={e => e.stopPropagation()}>
         <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Change Password</div>
-        <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>Enter a new password for your account</div>
+        <div className={pg.fs12c888mb20}>Enter a new password for your account</div>
         {success ? (
           <>
             <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 6, padding: "10px 14px", fontSize: 12, color: "#059669", marginBottom: 16 }}>Password updated successfully.</div>
@@ -13127,7 +13127,7 @@ const ChangePasswordModal = ({ onClose }) => {
             {error && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, padding: "10px 14px", fontSize: 12, color: "#dc2626", marginBottom: 8 }}>{error}</div>}
             <label className={pg.fieldLabelAlt}>New Password</label>
             <input type="password" value={pw} onChange={e => setPw(e.target.value)} placeholder="••••••••" required autoFocus
-              style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 12 }} />
+              className={pg.formInputLg14mb12} />
             <label className={pg.fieldLabelAlt}>Confirm Password</label>
             <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="••••••••" required
               style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 6, fontSize: 14, fontFamily: "'Open Sans', sans-serif", boxSizing: "border-box", marginBottom: 16 }} />

@@ -11,6 +11,7 @@ import sh from './styles/app-shell.module.css';
 import db from './styles/dashboard.module.css';
 import jb from './styles/jobs.module.css';
 import sc from './styles/schedule.module.css';
+import bl from './styles/bills.module.css';
 // Heavy libraries loaded dynamically where used (fabric, pdfjs-dist, pdf-lib, signature_pad)
 
 // ── Google Font ──────────────────────────────────────────────────────────────
@@ -8126,7 +8127,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
     >
       {mode === "view" ? (
         <div style={{ padding: "20px 24px" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Supplier Details</div>
+          <div className={bl.sectionDivider}>Supplier Details</div>
           <div className="grid-2">
             <ViewField label="Supplier" value={form.supplier} />
             <ViewField label="Invoice / Receipt #" value={form.invoiceNo} />
@@ -8137,36 +8138,36 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           </div>
           <ViewField label="Description" value={form.description} />
 
-          <div style={{ borderTop: "1px solid #f0f0f0", marginTop: 4, paddingTop: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Amount & Tax</div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: SECTION_COLORS.bills.accent, marginBottom: 8 }}>{fmt(parseFloat(form.amount) || 0)}</div>
+          <div className={bl.sectionBorder}>
+            <div className={bl.sectionDivider}>Amount & Tax</div>
+            <div className={bl.bigAmount} style={{ color: SECTION_COLORS.bills.accent }}>{fmt(parseFloat(form.amount) || 0)}</div>
             {parseFloat(form.amount) > 0 && (
-              <div style={{ background: SECTION_COLORS.bills.light, borderRadius: 8, padding: "12px 16px", display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 16, fontSize: 13 }}>
-                <div><span style={{ color: "#999" }}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
+              <div className={bl.gstBreakdown} style={{ background: SECTION_COLORS.bills.light }}>
+                <div><span className={bl.gstLabel}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
                 <div><span style={{ color: "#999" }}>GST </span><strong>{fmt(gst)}</strong></div>
                 <div style={{ marginLeft: "auto" }}><span style={{ color: "#999" }}>Total </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
               </div>
             )}
           </div>
 
-          <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Job Allocation</div>
+          <div className={bl.sectionBorderOnly}>
+            <div className={bl.sectionDivider}>Job Allocation</div>
             <ViewField label="Linked Job" value={linkedJob?.title || "Unallocated"} />
             {parseFloat(form.markup) > 0 && <ViewField label="Markup" value={`${form.markup}% → ${fmt(withMarkup)} ex-GST`} />}
           </div>
 
           {form.notes && (
-            <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16 }}>
+            <div className={bl.sectionBorderOnly}>
               <ViewField label="Internal Notes" value={form.notes} />
             </div>
           )}
         </div>
       ) : (
-      <div style={{ padding: "20px 24px" }}>
+      <div className={jb.drawerBody}>
 
           {/* AI Image Upload — only for new bills */}
           {isNew && (
-            <div style={{ marginBottom: 20 }}>
+            <div className={bl.uploadSection}>
               {!imagePreview ? (
                 <div
                   className={`bill-upload-zone${dragging ? " dragging" : ""}`}
@@ -8184,8 +8185,8 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
                     onChange={e => handleFile(e.target.files?.[0])}
                   />
                   <Icon name="camera" size={28} />
-                  <div style={{ fontWeight: 700, fontSize: 14, marginTop: 8 }}>Upload receipt or invoice</div>
-                  <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>Take a photo or drag & drop an image — AI will extract the details</div>
+                  <div className={bl.uploadPromptTitle}>Upload receipt or invoice</div>
+                  <div className={bl.uploadPromptSub}>Take a photo or drag & drop an image — AI will extract the details</div>
                 </div>
               ) : (
                 <div className="bill-preview-wrap">
@@ -8198,12 +8199,12 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
                       </div>
                     )}
                     {extracted && !extracting && (
-                      <div style={{ color: "#1e7e34", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                      <div className={bl.extractSuccess}>
                         <Icon name="check" size={14} /> Data extracted — review below
                       </div>
                     )}
                     {extractError && !extracting && (
-                      <div style={{ color: "#c0392b", fontSize: 13 }}>{extractError}</div>
+                      <div className={bl.extractError}>{extractError}</div>
                     )}
                     <button className="btn btn-secondary btn-sm" style={{ marginTop: 8 }} onClick={() => { setImagePreview(null); setExtracted(false); setExtractError(null); setLineItems([]); }}>
                       Remove image
@@ -8216,8 +8217,8 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
 
           {/* Extracted Line Items */}
           {lineItems.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 8 }}>Extracted Line Items</div>
+            <div className={bl.lineItemsSection}>
+              <div className={bl.sectionDivider}>Extracted Line Items</div>
               <table className="line-items-table">
                 <thead>
                   <tr>
@@ -8242,7 +8243,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           )}
 
           {/* Supplier & Reference */}
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Supplier Details</div>
+          <div className={bl.sectionDivider}>Supplier Details</div>
           <div className="grid-2" style={{ marginBottom: 0 }}>
             <div className="form-group">
               <label className="form-label">Supplier Name *</label>
@@ -8271,20 +8272,20 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           </div>
 
           {/* Amount & GST */}
-          <div style={{ borderTop: "1px solid #f0f0f0", marginTop: 4, paddingTop: 16, marginBottom: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Amount & Tax</div>
+          <div className={bl.sectionBorder}>
+            <div className={bl.sectionDivider}>Amount & Tax</div>
             <div className="grid-2" style={{ marginBottom: 0 }}>
               <div className="form-group">
                 <label className="form-label">Total Amount (as on receipt)</label>
-                <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 13 }}>$</span>
-                  <input type="number" className="form-control" style={{ paddingLeft: 24 }} value={form.amount} onChange={e => setForm(f=>({...f, amount: e.target.value}))} placeholder="0.00" min="0" step="0.01" />
+                <div className={bl.inputWrap}>
+                  <span className={bl.inputPrefix}>$</span>
+                  <input type="number" className={`form-control ${bl.inputPrefixed}`} value={form.amount} onChange={e => setForm(f=>({...f, amount: e.target.value}))} placeholder="0.00" min="0" step="0.01" />
                 </div>
               </div>
               <div className="form-group">
                 <label className="form-label">GST</label>
-                <div style={{ display: "flex", alignItems: "center", gap: 16, height: 40 }}>
-                  <label className="checkbox-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                <div className={bl.gstCheckRow}>
+                  <label className={`checkbox-label ${bl.gstCheckLabel}`}>
                     <input type="checkbox" checked={form.hasGst} onChange={e => setForm(f=>({...f, hasGst: e.target.checked}))} />
                     Includes GST (10%)
                   </label>
@@ -8293,8 +8294,8 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
             </div>
             {/* GST breakdown */}
             {parseFloat(form.amount) > 0 && (
-              <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "12px 16px", display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 16, fontSize: 13 }}>
-                <div><span style={{ color: "#999" }}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
+              <div className={bl.gstBreakdown} style={{ background: "#f8f8f8" }}>
+                <div><span className={bl.gstLabel}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
                 <div><span style={{ color: "#999" }}>GST </span><strong>{fmt(gst)}</strong></div>
                 <div style={{ marginLeft: "auto" }}><span style={{ color: "#999" }}>Total (inc.) </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
               </div>
@@ -8302,8 +8303,8 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           </div>
 
           {/* Link to job & markup */}
-          <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginBottom: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Job Allocation & Markup</div>
+          <div className={bl.sectionBorderOnly}>
+            <div className={bl.sectionDivider}>Job Allocation & Markup</div>
             <div className="grid-2" style={{ marginBottom: 0 }}>
               <div className="form-group">
                 <label className="form-label">Link to Job</label>
@@ -8314,12 +8315,12 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
               </div>
               <div className="form-group">
                 <label className="form-label">Markup % (on-charge to client)</label>
-                <div style={{ position: "relative" }}>
-                  <input type="number" className="form-control" style={{ paddingRight: 32 }} value={form.markup} onChange={e => setForm(f=>({...f, markup: e.target.value}))} placeholder="0" min="0" max="200" />
-                  <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 13 }}>%</span>
+                <div className={bl.inputWrap}>
+                  <input type="number" className={`form-control ${bl.inputSuffixed}`} value={form.markup} onChange={e => setForm(f=>({...f, markup: e.target.value}))} placeholder="0" min="0" max="200" />
+                  <span className={bl.inputSuffix}>%</span>
                 </div>
                 {parseFloat(form.markup) > 0 && parseFloat(form.amount) > 0 && (
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                  <div className={bl.markupHint}>
                     On-charge: <strong style={{ color: "#111" }}>{fmt(withMarkup)}</strong> (ex-GST + {form.markup}%)
                   </div>
                 )}
@@ -8328,7 +8329,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           </div>
 
           {/* Notes */}
-          <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16 }}>
+          <div className={bl.sectionBorderOnly}>
             <div className={`form-group ${jb.formGroupNoMb}`}>
               <label className="form-label">Internal Notes</label>
               <textarea className="form-control" value={form.notes} onChange={e => setForm(f=>({...f, notes: e.target.value}))} placeholder="Any notes for approver, discrepancies, receipt condition…" style={{ minHeight: 60 }} />
@@ -8367,11 +8368,11 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
       onClose={onClose}
       zIndex={1060}
     >
-      <div style={{ padding: "20px 24px" }}>
-        <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "12px 14px", marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: 13 }}>{bill.supplier}</div>
-          <div style={{ fontSize: 12, color: "#888" }}>{bill.invoiceNo && `${bill.invoiceNo} · `}{bill.description}</div>
-          <div style={{ fontSize: 15, fontWeight: 800, marginTop: 6 }}>{fmt(bill.amount)} <span style={{ fontSize: 11, fontWeight: 400, color: "#aaa" }}>inc. GST</span></div>
+      <div className={jb.drawerBody}>
+        <div className={bl.postSummaryBox}>
+          <div className={bl.postSupplier}>{bill.supplier}</div>
+          <div className={bl.postDetail}>{bill.invoiceNo && `${bill.invoiceNo} · `}{bill.description}</div>
+          <div className={bl.postAmount}>{fmt(bill.amount)} <span className={bl.postAmountSuffix}>inc. GST</span></div>
         </div>
 
         <div className="form-group">
@@ -8389,26 +8390,26 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
         </div>
         <div className="form-group">
           <label className="form-label">Markup %</label>
-          <div style={{ position: "relative" }}>
-            <input type="number" className="form-control" style={{ paddingRight: 32 }} value={markup}
+          <div className={bl.inputWrap}>
+            <input type="number" className={`form-control ${bl.inputSuffixed}`} value={markup}
               onChange={e => setMarkup(e.target.value)} min="0" max="200" placeholder="0" />
-            <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 13 }}>%</span>
+            <span className={bl.inputSuffix}>%</span>
           </div>
         </div>
 
         {/* Cost summary */}
-        <div style={{ background: "#111", color: "#fff", borderRadius: 8, padding: "14px 16px", marginTop: 4 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#666", marginBottom: 10 }}>Cost Summary</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#888" }}>Ex-GST cost</span><span>{fmt(exGst)}</span>
+        <div className={bl.costSummaryBox}>
+          <div className={bl.costSummaryTitle}>Cost Summary</div>
+          <div className={bl.costRows}>
+            <div className={bl.costRow}>
+              <span className={bl.costRowLabel}>Ex-GST cost</span><span>{fmt(exGst)}</span>
             </div>
             {parseFloat(markup) > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#888" }}>Markup ({markup}%)</span><span>+ {fmt(exGst * (parseFloat(markup)||0) / 100)}</span>
+              <div className={bl.costRow}>
+                <span className={bl.costRowLabel}>Markup ({markup}%)</span><span>+ {fmt(exGst * (parseFloat(markup)||0) / 100)}</span>
               </div>
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #2a2a2a", paddingTop: 6, marginTop: 2, fontWeight: 800, fontSize: 15 }}>
+            <div className={bl.costRowTotal}>
               <span>On-charge to client</span><span>{fmt(withMarkup)}</span>
             </div>
           </div>
@@ -8533,14 +8534,14 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
   return (
     <div>
       {/* ── Summary strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: 12, marginBottom: 24 }}>
+      <div className={jb.summaryGrid}>
         {[
           { label: "Inbox",    count: inbox.length,    total: inbox.reduce((s,b)=>s+b.amount,0),    color: "#888" },
           { label: "Linked",   count: linked.length,   total: linked.reduce((s,b)=>s+b.amount,0),   color: "#2c5fa8" },
           { label: "Approved", count: approved.length, total: approved.reduce((s,b)=>s+b.amount,0), color: "#1e7e34" },
           { label: "Posted",   count: posted.length,   total: posted.reduce((s,b)=>s+b.amount,0),   color: "#111" },
         ].map(s => (
-          <div key={s.label} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${s.color}`, cursor: "pointer" }}
+          <div key={s.label} className={`stat-card ${jb.summaryCard}`} style={{ borderTop: `3px solid ${s.color}` }}
             onClick={() => { setFilterStatus(s.label.toLowerCase()); setTab("list"); }}>
             <div className="stat-label">{s.label}</div>
             <div className="stat-value" style={{ fontSize: 22, color: s.color }}>{s.count}</div>
@@ -8587,32 +8588,32 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
             return (
               <div key={b.id} className="order-card" onClick={() => openEdit(b)}>
                 <div className={jb.gridCardTop}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.bills.light, color: SECTION_COLORS.bills.accent }}>
+                  <div className={jb.gridCardIcon}>
+                    <div className={jb.gridCardIconBox} style={{ background: SECTION_COLORS.bills.light, color: SECTION_COLORS.bills.accent }}>
                       <Icon name="bills" size={15} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{b.supplier}</div>
-                      {b.invoiceNo && <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "monospace" }}>{b.invoiceNo}</div>}
+                      <div className={jb.gridCardTitle}>{b.supplier}</div>
+                      {b.invoiceNo && <div className={bl.billInvNo}>{b.invoiceNo}</div>}
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: sc.bg, color: sc.text }}>{BILL_STATUS_LABELS[b.status]}</span>
+                  <div className={jb.gridCardStatusRow}>
+                    <span className={bl.billStatusPill} style={{ background: sc.bg, color: sc.text }}>{BILL_STATUS_LABELS[b.status]}</span>
                   </div>
                 </div>
                 <div className={jb.gridCardClient}>
-                  {b.description || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No description</span>}
+                  {b.description || <span className={jb.noClient}>No description</span>}
                 </div>
-                {job && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}><Icon name="jobs" size={10} /> {job.title}</div>}
+                {job && <div className={bl.billJobLink}><Icon name="jobs" size={10} /> {job.title}</div>}
                 <div className={jb.metaRow}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{fmt(b.amount)}</span>
                   <span className="chip" style={{ fontSize: 10 }}>{b.category}</span>
-                  {b.hasGst && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>incl. GST</span>}
+                  {b.hasGst && <span className={jb.statChip}>incl. GST</span>}
                 </div>
                 <SectionProgressBar status={b.status} section="bills" />
                 <div className={jb.gridCardFooter}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b" }}>{b.date}</span>
-                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                  <span className={bl.billDateLabel}>{b.date}</span>
+                  <div className={jb.actionBtns} onClick={e => e.stopPropagation()}>
                     {b.status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
                     {canApprove && b.status === "linked" && <button className="btn btn-secondary btn-xs" style={{ color: "#1e7e34" }} onClick={() => setStatus(b.id, "approved")}>✓</button>}
                     {canApprove && b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} onClick={() => setPostBill(b)}>Post →</button>}
@@ -8635,25 +8636,25 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
               <div key={status} className="kanban-col">
                 <div className="kanban-col-header">
                   <span>{BILL_STATUS_LABELS[status]}</span>
-                  <span style={{ background: sc.bg, color: sc.text, borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{stageBills.length}</span>
+                  <span className={jb.kanbanCount} style={{ background: sc.bg, color: sc.text }}>{stageBills.length}</span>
                 </div>
-                <div style={{ fontSize: 11, color: "#888", marginBottom: 8, fontWeight: 600 }}>{fmt(stageBills.reduce((s,b)=>s+b.amount,0))}</div>
+                <div className={bl.kanbanStageTotal}>{fmt(stageBills.reduce((s,b)=>s+b.amount,0))}</div>
                 {stageBills.map(b => {
                   const job = jobs.find(j => j.id === b.jobId);
                   return (
                     <div key={b.id} className="kanban-card" onClick={() => openEdit(b)}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 2 }}>{b.supplier}</div>
-                          {b.invoiceNo && <span style={{ color: "#aaa", fontFamily: "monospace", fontSize: 10 }}>{b.invoiceNo}</span>}
+                      <div className={bl.kanbanCardTop}>
+                        <div className={bl.kanbanCardMain}>
+                          <div className={bl.kanbanCardSupplier}>{b.supplier}</div>
+                          {b.invoiceNo && <span className={bl.kanbanCardInvNo}>{b.invoiceNo}</span>}
                         </div>
-                        <div style={{ fontWeight: 800, color: "#111", fontSize: 13, flexShrink: 0 }}>{fmt(b.amount)}</div>
+                        <div className={bl.kanbanCardAmount}>{fmt(b.amount)}</div>
                       </div>
-                      {b.description && <div style={{ color: "#777", marginTop: 3, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.description}</div>}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, marginTop: 8 }}>
-                        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                          <span className="chip" style={{ fontSize: 10 }}>{b.category}</span>
-                          {job ? <span style={{ fontSize: 10, color: "#888" }}>{job.title}</span> : <span style={{ fontSize: 10, color: "#ccc" }}>Unlinked</span>}
+                      {b.description && <div className={bl.kanbanCardDesc}>{b.description}</div>}
+                      <div className={bl.kanbanCardFooter}>
+                        <div className={bl.kanbanCardMeta}>
+                          <span className={`chip ${jb.kanbanChip}`}>{b.category}</span>
+                          {job ? <span className={bl.kanbanCardJob}>{job.title}</span> : <span className={bl.kanbanCardUnlinked}>Unlinked</span>}
                         </div>
                         <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
                           {status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
@@ -8677,7 +8678,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
 
           {/* Totals bar */}
           {filtered.length > 0 && (
-            <div style={{ display: "flex", gap: 20, marginBottom: 12, fontSize: 13, padding: "10px 16px", background: "#fafafa", borderRadius: 8, border: "1px solid #f0f0f0", flexWrap: "wrap" }}>
+            <div className={bl.totalsBar}>
               <span style={{ color: "#888" }}>Showing <strong style={{ color: "#111" }}>{filtered.length}</strong> bills</span>
               <span style={{ color: "#888" }}>Total <strong style={{ color: "#111" }}>{fmt(filtered.reduce((s,b)=>s+b.amount,0))}</strong></span>
               <span style={{ color: "#888" }}>Ex-GST <strong style={{ color: "#111" }}>{fmt(filtered.reduce((s,b)=>s+(b.hasGst?b.amount/1.1:b.amount),0))}</strong></span>
@@ -8712,12 +8713,12 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                           <input type="checkbox" checked={selectedIds.includes(b.id)} onChange={() => toggleSelect(b.id)} />
                         </td>
                         <td>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{b.supplier}</div>
-                          {b.notes && <div style={{ fontSize: 10, color: "#aaa", marginTop: 1, fontStyle: "italic" }}>{b.notes.slice(0,40)}{b.notes.length>40?"…":""}</div>}
+                          <div className={bl.supplierCell}>{b.supplier}</div>
+                          {b.notes && <div className={bl.notesCellInline}>{b.notes.slice(0,40)}{b.notes.length>40?"…":""}</div>}
                         </td>
-                        <td><span style={{ fontFamily: "monospace", fontSize: 12, color: "#555" }}>{b.invoiceNo||"—"}</span></td>
+                        <td><span className={bl.invoiceNoCell}>{b.invoiceNo||"—"}</span></td>
                         <td>
-                          {job ? <div style={{ fontSize: 12 }}>{job.title}</div> : <span style={{ color: "#ccc", fontSize: 12 }}>Unlinked</span>}
+                          {job ? <div className={bl.jobCell}>{job.title}</div> : <span className={bl.unlinkedCell}>Unlinked</span>}
                         </td>
                         <td><span className="chip">{b.category}</span></td>
                         <td style={{ fontSize: 12, color: "#999" }}>{b.date}</td>
@@ -8729,7 +8730,7 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                         </td>
                         <td><BillStatusBadge status={b.status} /> <XeroSyncBadge syncStatus={b.xeroSyncStatus} xeroId={b.xeroBillId} /></td>
                         <td>
-                          <div style={{ display: "flex", gap: 4, flexWrap: "nowrap" }}>
+                          <div className={bl.actionRow}>
                             {b.status === "inbox"    && <button className="btn btn-ghost btn-xs" title="Link" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}><Icon name="arrow_right" size={11} /></button>}
                             {canApprove && b.status === "linked"   && <button className="btn btn-ghost btn-xs" style={{ color: "#1e7e34" }} title="Approve" onClick={() => setStatus(b.id, "approved")}><Icon name="check" size={11} /></button>}
                             {canApprove && b.status === "approved" && <button className="btn btn-primary btn-xs" style={{ background: SECTION_COLORS.bills.accent }} title="Post to Job" onClick={() => setPostBill(b)}>Post →</button>}

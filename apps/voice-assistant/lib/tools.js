@@ -373,19 +373,66 @@ export async function handleToolCall(name, args) {
 
     // ── Orders (WO/PO) ───────────────────────────────────────────────────
     case "list_orders": {
-      // Orders aren't in Supabase yet — they're in frontend state
-      // This is a placeholder until orders are persisted to the database
-      return { message: "Orders are currently managed in the app. This will be connected once orders are persisted to the database.", orders: [] };
+      let woQuery = supabase.from("work_orders").select("*").order("created_at", { ascending: false });
+      if (args.status) woQuery = woQuery.eq("status", args.status);
+      if (args.job_id) woQuery = woQuery.eq("job_id", args.job_id);
+      const { data: woData, error: woError } = await woQuery;
+      if (woError) throw new Error(woError.message);
+
+      let poQuery = supabase.from("purchase_orders").select("*").order("created_at", { ascending: false });
+      if (args.status) poQuery = poQuery.eq("status", args.status);
+      if (args.job_id) poQuery = poQuery.eq("job_id", args.job_id);
+      const { data: poData, error: poError } = await poQuery;
+      if (poError) throw new Error(poError.message);
+
+      return {
+        work_orders: woData || [],
+        purchase_orders: poData || [],
+        total_count: (woData || []).length + (poData || []).length,
+      };
     }
 
     // ── Contractors ───────────────────────────────────────────────────────
     case "list_contractors": {
-      // Contractors are in frontend state — placeholder
-      return { message: "Contractor data will be connected once persisted to the database.", contractors: [] };
+      let ctQuery = supabase.from("contractors").select("*").eq("is_active", true).order("name");
+      if (args.trade) ctQuery = ctQuery.ilike("trade", `%${args.trade}%`);
+      const { data: ctData, error: ctError } = await ctQuery;
+      if (ctError) throw new Error(ctError.message);
+      return { contractors: ctData, count: (ctData || []).length };
     }
 
     case "get_contractor_compliance": {
-      return { message: "Compliance data will be connected once persisted to the database." };
+      let compQuery = supabase.from("contractors").select("*");
+      if (args.contractor_name) compQuery = compQuery.ilike("name", `%${args.contractor_name}%`);
+      const { data: compContractors, error: compError } = await compQuery;
+      if (compError) throw new Error(compError.message);
+
+      const contractorIds = (compContractors || []).map(c => c.id);
+      let compDocs = [];
+      if (contractorIds.length) {
+        const { data: docData, error: docErr } = await supabase
+          .from("contractor_documents").select("*").in("contractor_id", contractorIds);
+        if (!docErr) compDocs = docData || [];
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+      const compResults = (compContractors || []).map(contractor => {
+        const documents = compDocs.filter(d => d.contractor_id === contractor.id);
+        const expiredDocs = documents.filter(d => d.expiry_date && d.expiry_date < today);
+        const expiringDocs = documents.filter(d => {
+          if (!d.expiry_date) return false;
+          const daysUntil = Math.ceil((new Date(d.expiry_date) - new Date()) / (1000 * 60 * 60 * 24));
+          return daysUntil > 0 && daysUntil <= 30;
+        });
+        return {
+          id: contractor.id, name: contractor.name, trade: contractor.trade,
+          total_documents: documents.length, expired_documents: expiredDocs.length,
+          expiring_soon: expiringDocs.length, is_compliant: expiredDocs.length === 0,
+          expired_details: expiredDocs.map(d => d.title || d.doc_type),
+          expiring_details: expiringDocs.map(d => ({ name: d.title || d.doc_type, expiry: d.expiry_date })),
+        };
+      });
+      return { contractors: compResults, count: compResults.length };
     }
 
     // ── Staff ─────────────────────────────────────────────────────────────

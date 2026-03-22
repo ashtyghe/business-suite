@@ -1,0 +1,347 @@
+.loadingState {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+}
+
+.infoBanner {
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.infoBannerIcon {
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.infoBannerText {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.infoBannerStrong {
+  color: #333;
+}
+
+.searchRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.searchWrap {
+  flex: 1;
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+}
+
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Open Sans', sans-serif;
+  box-sizing: border-box;
+}
+
+.searchInput {
+  composes: input;
+  padding-left: 32px;
+}
+
+.addCallerBtn {
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.addForm {
+  composes: card;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.addFormTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 12px;
+}
+
+.addFormGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.addFormActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btnFontSm {
+  font-size: 12px;
+}
+
+.btnFontXs {
+  font-size: 11px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.emptyIcon {
+  color: #ddd;
+  margin-bottom: 12px;
+}
+
+.emptyTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.emptyBody {
+  font-size: 12px;
+}
+
+.callerHeader {
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.1s;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.callerInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.callerNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.callerName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.callerPhone {
+  font-size: 12px;
+  color: #999;
+}
+
+.callerMeta {
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+  display: flex;
+  gap: 12px;
+}
+
+.notePreview {
+  font-size: 12px;
+  color: #888;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chevron {
+  color: #ccc;
+  flex-shrink: 0;
+}
+
+.expandedPanel {
+  border-top: 1px solid #f0f0f0;
+  padding: 12px 16px;
+}
+
+.actionBar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.actionBtn {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.deleteCallerBtn {
+  font-size: 11px;
+  color: #dc2626;
+}
+
+.noteForm {
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.noteTextarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Open Sans', sans-serif;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.noteFormFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.charCount {
+  font-size: 11px;
+  color: #bbb;
+}
+
+.noteFormBtns {
+  display: flex;
+  gap: 6px;
+}
+
+.emptyNotes {
+  text-align: center;
+  padding: 16px 0;
+  font-size: 12px;
+  color: #bbb;
+}
+
+.noteRow {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  align-items: flex-start;
+}
+
+.noteDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.noteContent {
+  flex: 1;
+}
+
+.noteText {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.noteDate {
+  font-size: 11px;
+  color: #bbb;
+  margin-top: 2px;
+}
+
+.noteDeleteBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #ccc;
+  font-size: 11px;
+}
+
+.maxNotesWarning {
+  font-size: 11px;
+  color: #f59e0b;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.summaryStats {
+  text-align: center;
+  padding: 16px 0;
+  font-size: 11px;
+  color: #ccc;
+}
+
+.inputFlex {
+  composes: input;
+  flex: 1;
+  max-width: 250px;
+}

@@ -1,0 +1,624 @@
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filterSelect {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #334155;
+  background: #fff;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.dropdownWrap {
+  position: relative;
+}
+
+.formMenuBtn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+}
+
+.dropdownMenu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 20;
+  min-width: 180px;
+  overflow: hidden;
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdownItem:hover {
+  background: #f8fafc;
+}
+
+.planBtn {
+  background: #059669;
+  color: #fff;
+  border: none;
+}
+
+.pdfBtn {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+}
+
+.addNoteBtn {
+  color: #fff;
+  border: none;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+/* ── Note form (new + edit) ── */
+.noteFormCard {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.noteTextarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.categoryPills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+/* category pill kept as inline style for dynamic color */
+
+.attachmentsSection {
+  margin-top: 12px;
+}
+
+.attachmentList {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.attachmentChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+}
+
+.attachmentThumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.attachmentName {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #334155;
+}
+
+.attachmentSize {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.markupBtn {
+  padding: 2px;
+  background: none;
+  border: none;
+  color: #0891b2;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 11px;
+}
+
+.removeBtn {
+  padding: 2px;
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.uploadLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+
+.accentBtn {
+  color: #fff;
+  border: none;
+}
+
+/* ── Empty state ── */
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: #94a3b8;
+}
+
+.emptyIcon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.emptyTitle {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.emptyHint {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* ── Notes list ── */
+.notesList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Edit note card ── */
+.editNoteCard {
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+/* ── PDF note card ── */
+.pdfNoteCard {
+  padding: 14px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #7c3aed;
+}
+
+.pdfNoteRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pdfThumbnail {
+  width: 48px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.pdfNoteContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.pdfNoteHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.pdfBadge {
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: #7c3aed18;
+  color: #7c3aed;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pdfFileName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noteMeta {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.pdfEditBtn {
+  font-size: 11px;
+}
+
+.downloadLink {
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: none;
+  color: #3b82f6;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.deleteBtn {
+  padding: 4px;
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* ── Form note card ── */
+.formNoteCard {
+  padding: 14px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.formNoteHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.formIcon {
+  font-size: 16px;
+}
+
+.formName {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.formBadge {
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.noteMetaAuthor {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.formActionBtn {
+  font-size: 11px;
+}
+
+.formNoteText {
+  font-size: 12px;
+  color: #666;
+}
+
+/* ── Regular note card ── */
+.noteCard {
+  padding: 14px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.noteCard:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.noteCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.categoryBadge {
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.noteText {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.noteAttachments {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.imgWrap {
+  position: relative;
+  display: inline-block;
+}
+
+.thumbImg {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+}
+
+.thumbMarkupBtn {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  border: none;
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.fileChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+}
+
+.fileChipName {
+  color: #334155;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Lightbox ── */
+.lightboxOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.lightboxImg {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.lightboxMarkupBtn {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 24px;
+  border-radius: 8px;
+  background: #0891b2;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.lightboxCloseBtn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Form Viewer Modal ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalContent {
+  background: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow: auto;
+  padding: 24px;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.modalIcon {
+  font-size: 20px;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.modalCloseBtn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+}
+
+.modalMeta {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 16px;
+}
+
+.fieldGroup {
+  margin-bottom: 14px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.checklistCol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checklistItem {
+  font-size: 13px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.checkYes {
+  color: #059669;
+  font-weight: 700;
+}
+
+.checkNo {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.checkLabelActive {
+  color: #333;
+}
+
+.checkLabelInactive {
+  color: #999;
+}
+
+.signatureImg {
+  max-width: 300px;
+  height: 80px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.noSignature {
+  font-size: 13px;
+  color: #999;
+}
+
+.fieldValue {
+  font-size: 13px;
+  color: #333;
+  white-space: pre-wrap;
+}

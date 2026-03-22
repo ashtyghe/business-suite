@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { SectionDrawer, StatusBadge, BillStatusBadge, BILL_CATEGORIES, BILL_STATUSES, BILL_STATUS_LABELS } from "./shared";
 import { Icon } from "./Icon";
 import { ViewField, SECTION_COLORS } from "../fixtures/seedData.jsx";
 import { fmt } from "../utils/helpers";
 import { extractBillFromImage } from "../lib/supabase";
+import s from './BillModal.module.css';
 
 const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
   const blank = {
@@ -118,8 +119,8 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
       zIndex={1060}
     >
       {mode === "view" ? (
-        <div style={{ padding: "20px 24px" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Supplier Details</div>
+        <div className={s.drawerBody}>
+          <div className={s.sectionHeading}>Supplier Details</div>
           <div className="grid-2">
             <ViewField label="Supplier" value={form.supplier} />
             <ViewField label="Invoice / Receipt #" value={form.invoiceNo} />
@@ -130,36 +131,36 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           </div>
           <ViewField label="Description" value={form.description} />
 
-          <div style={{ borderTop: "1px solid #f0f0f0", marginTop: 4, paddingTop: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Amount & Tax</div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: SECTION_COLORS.bills.accent, marginBottom: 8 }}>{fmt(parseFloat(form.amount) || 0)}</div>
+          <div className={s.sectionDivider}>
+            <div className={s.sectionHeading}>Amount & Tax</div>
+            <div className={s.amountDisplay} style={{ color: SECTION_COLORS.bills.accent }}>{fmt(parseFloat(form.amount) || 0)}</div>
             {parseFloat(form.amount) > 0 && (
-              <div style={{ background: SECTION_COLORS.bills.light, borderRadius: 8, padding: "12px 16px", display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 16, fontSize: 13 }}>
-                <div><span style={{ color: "#999" }}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
-                <div><span style={{ color: "#999" }}>GST </span><strong>{fmt(gst)}</strong></div>
-                <div style={{ marginLeft: "auto" }}><span style={{ color: "#999" }}>Total </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
+              <div className={s.gstBreakdown} style={{ background: SECTION_COLORS.bills.light }}>
+                <div><span className={s.gstLabel}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
+                <div><span className={s.gstLabel}>GST </span><strong>{fmt(gst)}</strong></div>
+                <div className={s.gstTotal}><span className={s.gstLabel}>Total </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
               </div>
             )}
           </div>
 
-          <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Job Allocation</div>
+          <div className={s.sectionDividerOnly}>
+            <div className={s.sectionHeading}>Job Allocation</div>
             <ViewField label="Linked Job" value={linkedJob?.title || "Unallocated"} />
             {parseFloat(form.markup) > 0 && <ViewField label="Markup" value={`${form.markup}% → ${fmt(withMarkup)} ex-GST`} />}
           </div>
 
           {form.notes && (
-            <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16 }}>
+            <div className={s.sectionDividerOnly}>
               <ViewField label="Internal Notes" value={form.notes} />
             </div>
           )}
         </div>
       ) : (
-      <div style={{ padding: "20px 24px" }}>
+      <div className={s.drawerBody}>
 
           {/* AI Image Upload — only for new bills */}
           {isNew && (
-            <div style={{ marginBottom: 20 }}>
+            <div className={s.uploadSection}>
               {!imagePreview ? (
                 <div
                   className={`bill-upload-zone${dragging ? " dragging" : ""}`}
@@ -173,12 +174,12 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
                     type="file"
                     accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
                     capture="environment"
-                    style={{ display: "none" }}
+                    className={s.fileInput}
                     onChange={e => handleFile(e.target.files?.[0])}
                   />
                   <Icon name="camera" size={28} />
-                  <div style={{ fontWeight: 700, fontSize: 14, marginTop: 8 }}>Upload receipt or invoice</div>
-                  <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>Take a photo or drag & drop an image — AI will extract the details</div>
+                  <div className={s.uploadTitle}>Upload receipt or invoice</div>
+                  <div className={s.uploadSubtitle}>Take a photo or drag & drop an image — AI will extract the details</div>
                 </div>
               ) : (
                 <div className="bill-preview-wrap">
@@ -191,14 +192,14 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
                       </div>
                     )}
                     {extracted && !extracting && (
-                      <div style={{ color: "#1e7e34", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                      <div className={s.extractedSuccess}>
                         <Icon name="check" size={14} /> Data extracted — review below
                       </div>
                     )}
                     {extractError && !extracting && (
-                      <div style={{ color: "#c0392b", fontSize: 13 }}>{extractError}</div>
+                      <div className={s.extractedError}>{extractError}</div>
                     )}
-                    <button className="btn btn-secondary btn-sm" style={{ marginTop: 8 }} onClick={() => { setImagePreview(null); setExtracted(false); setExtractError(null); setLineItems([]); }}>
+                    <button className={`btn btn-secondary btn-sm ${s.removeImageBtn}`} onClick={() => { setImagePreview(null); setExtracted(false); setExtractError(null); setLineItems([]); }}>
                       Remove image
                     </button>
                   </div>
@@ -209,24 +210,24 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
 
           {/* Extracted Line Items */}
           {lineItems.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 8 }}>Extracted Line Items</div>
+            <div className={s.extractedLineItems}>
+              <div className={s.lineItemsHeading}>Extracted Line Items</div>
               <table className="line-items-table">
                 <thead>
                   <tr>
-                    <th style={{ width: "50%" }}>Item</th>
-                    <th style={{ textAlign: "right" }}>Qty</th>
-                    <th style={{ textAlign: "right" }}>Unit Price</th>
-                    <th style={{ textAlign: "right" }}>Total</th>
+                    <th className={s.thHalfWidth}>Item</th>
+                    <th className={s.thRight}>Qty</th>
+                    <th className={s.thRight}>Unit Price</th>
+                    <th className={s.thRight}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {lineItems.map((item, i) => (
                     <tr key={i}>
                       <td>{item.description}</td>
-                      <td style={{ textAlign: "right" }}>{item.qty ?? "—"}</td>
-                      <td style={{ textAlign: "right" }}>{item.unitPrice != null ? fmt(item.unitPrice) : "—"}</td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>{item.total != null ? fmt(item.total) : "—"}</td>
+                      <td className={s.tdRight}>{item.qty ?? "—"}</td>
+                      <td className={s.tdRight}>{item.unitPrice != null ? fmt(item.unitPrice) : "—"}</td>
+                      <td className={s.tdRightBold}>{item.total != null ? fmt(item.total) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -235,8 +236,8 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           )}
 
           {/* Supplier & Reference */}
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Supplier Details</div>
-          <div className="grid-2" style={{ marginBottom: 0 }}>
+          <div className={s.sectionHeading}>Supplier Details</div>
+          <div className={`grid-2 ${s.noMarginBottom}`}>
             <div className="form-group">
               <label className="form-label">Supplier Name *</label>
               <input className="form-control" value={form.supplier} onChange={e => setForm(f=>({...f, supplier: e.target.value}))} placeholder="e.g. Bunnings, ElecPro…" />
@@ -246,7 +247,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
               <input className="form-control" value={form.invoiceNo} onChange={e => setForm(f=>({...f, invoiceNo: e.target.value}))} placeholder="e.g. INV-1234" />
             </div>
           </div>
-          <div className="grid-2" style={{ marginBottom: 0 }}>
+          <div className={`grid-2 ${s.noMarginBottom}`}>
             <div className="form-group">
               <label className="form-label">Bill Date</label>
               <input type="date" className="form-control" value={form.date} onChange={e => setForm(f=>({...f, date: e.target.value}))} />
@@ -264,20 +265,20 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           </div>
 
           {/* Amount & GST */}
-          <div style={{ borderTop: "1px solid #f0f0f0", marginTop: 4, paddingTop: 16, marginBottom: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Amount & Tax</div>
-            <div className="grid-2" style={{ marginBottom: 0 }}>
+          <div className={`${s.sectionDivider} ${s.noMarginBottom}`}>
+            <div className={s.sectionHeading}>Amount & Tax</div>
+            <div className={`grid-2 ${s.noMarginBottom}`}>
               <div className="form-group">
                 <label className="form-label">Total Amount (as on receipt)</label>
-                <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 13 }}>$</span>
-                  <input type="number" className="form-control" style={{ paddingLeft: 24 }} value={form.amount} onChange={e => setForm(f=>({...f, amount: e.target.value}))} placeholder="0.00" min="0" step="0.01" />
+                <div className={s.inputRelative}>
+                  <span className={s.currencySymbol}>$</span>
+                  <input type="number" className={`form-control ${s.currencyInput}`} value={form.amount} onChange={e => setForm(f=>({...f, amount: e.target.value}))} placeholder="0.00" min="0" step="0.01" />
                 </div>
               </div>
               <div className="form-group">
                 <label className="form-label">GST</label>
-                <div style={{ display: "flex", alignItems: "center", gap: 16, height: 40 }}>
-                  <label className="checkbox-label" style={{ fontWeight: 600, fontSize: 13 }}>
+                <div className={s.gstCheckRow}>
+                  <label className={`checkbox-label ${s.gstCheckLabel}`}>
                     <input type="checkbox" checked={form.hasGst} onChange={e => setForm(f=>({...f, hasGst: e.target.checked}))} />
                     Includes GST (10%)
                   </label>
@@ -286,18 +287,18 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
             </div>
             {/* GST breakdown */}
             {parseFloat(form.amount) > 0 && (
-              <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "12px 16px", display: "flex", gap: 24, flexWrap: "wrap", marginBottom: 16, fontSize: 13 }}>
-                <div><span style={{ color: "#999" }}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
-                <div><span style={{ color: "#999" }}>GST </span><strong>{fmt(gst)}</strong></div>
-                <div style={{ marginLeft: "auto" }}><span style={{ color: "#999" }}>Total (inc.) </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
+              <div className={s.gstBreakdown} style={{ background: "#f8f8f8" }}>
+                <div><span className={s.gstLabel}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
+                <div><span className={s.gstLabel}>GST </span><strong>{fmt(gst)}</strong></div>
+                <div className={s.gstTotal}><span className={s.gstLabel}>Total (inc.) </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
               </div>
             )}
           </div>
 
           {/* Link to job & markup */}
-          <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginBottom: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#aaa", marginBottom: 10 }}>Job Allocation & Markup</div>
-            <div className="grid-2" style={{ marginBottom: 0 }}>
+          <div className={`${s.sectionDividerOnly} ${s.noMarginBottom}`}>
+            <div className={s.sectionHeading}>Job Allocation & Markup</div>
+            <div className={`grid-2 ${s.noMarginBottom}`}>
               <div className="form-group">
                 <label className="form-label">Link to Job</label>
                 <select className="form-control" value={form.jobId || ""} onChange={e => setForm(f=>({...f, jobId: e.target.value || null}))}>
@@ -307,13 +308,13 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
               </div>
               <div className="form-group">
                 <label className="form-label">Markup % (on-charge to client)</label>
-                <div style={{ position: "relative" }}>
-                  <input type="number" className="form-control" style={{ paddingRight: 32 }} value={form.markup} onChange={e => setForm(f=>({...f, markup: e.target.value}))} placeholder="0" min="0" max="200" />
-                  <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 13 }}>%</span>
+                <div className={s.inputRelative}>
+                  <input type="number" className={`form-control ${s.percentInput}`} value={form.markup} onChange={e => setForm(f=>({...f, markup: e.target.value}))} placeholder="0" min="0" max="200" />
+                  <span className={s.percentSymbol}>%</span>
                 </div>
                 {parseFloat(form.markup) > 0 && parseFloat(form.amount) > 0 && (
-                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
-                    On-charge: <strong style={{ color: "#111" }}>{fmt(withMarkup)}</strong> (ex-GST + {form.markup}%)
+                  <div className={s.markupHint}>
+                    On-charge: <strong className={s.markupHintValue}>{fmt(withMarkup)}</strong> (ex-GST + {form.markup}%)
                   </div>
                 )}
               </div>
@@ -321,10 +322,10 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           </div>
 
           {/* Notes */}
-          <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16 }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
+          <div className={s.sectionDividerOnly}>
+            <div className={`form-group ${s.noMarginBottom}`}>
               <label className="form-label">Internal Notes</label>
-              <textarea className="form-control" value={form.notes} onChange={e => setForm(f=>({...f, notes: e.target.value}))} placeholder="Any notes for approver, discrepancies, receipt condition…" style={{ minHeight: 60 }} />
+              <textarea className={`form-control ${s.textareaMinHeight}`} value={form.notes} onChange={e => setForm(f=>({...f, notes: e.target.value}))} placeholder="Any notes for approver, discrepancies, receipt condition…" />
             </div>
           </div>
 

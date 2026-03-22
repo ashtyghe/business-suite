@@ -1,0 +1,349 @@
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.statValue {
+  font-size: 22px;
+}
+
+.searchBarFlex {
+  flex: 1;
+  min-width: 120px;
+}
+
+.filterSelect {
+  width: auto;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 4px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.viewBtnActive {
+  color: #fff;
+}
+
+.kanbanGrid {
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
+}
+
+.kanbanBadge {
+  background: #e0e0e0;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.kanbanCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.kanbanCardNumber {
+  font-weight: 700;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.kanbanCardTitle {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.kanbanCardClient {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 6px;
+}
+
+.kanbanCardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kanbanCardTotal {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.kanbanCardDate {
+  font-size: 10px;
+  color: #bbb;
+}
+
+.emptyGridCol {
+  grid-column: 1 / -1;
+}
+
+.gridCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.gridCardLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gridCardIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gridCardNumber {
+  font-weight: 600;
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.gridCardDate {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.gridCardBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gridCardTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gridCardNoJob {
+  font-style: italic;
+  color: #94a3b8;
+}
+
+.gridCardClient {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.gridCardTotals {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.gridCardTotalValue {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+}
+
+.gridCardPill {
+  font-size: 11px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.gridCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.gridCardFooterLabel {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.actionBtns {
+  display: flex;
+  gap: 4px;
+}
+
+.deleteBtn {
+  color: #c00;
+}
+
+.tableNumber {
+  font-weight: 700;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.tableJobTitle {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.tableLinkedInv {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+.tableClient {
+  font-size: 13px;
+  color: #666;
+}
+
+.tableTotal {
+  font-weight: 700;
+}
+
+.tableDate {
+  font-size: 12px;
+  color: #999;
+}
+
+.cursorPointer {
+  cursor: pointer;
+}
+
+.viewPanel {
+  padding: 20px 24px;
+}
+
+.emailAlert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.emailAlertSuccess {
+  composes: emailAlert;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.emailAlertError {
+  composes: emailAlert;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.lineItemsSection {
+  border-top: 1px solid #f0f0f0;
+  margin-top: 4px;
+  padding-top: 16px;
+  margin-bottom: 16px;
+}
+
+.lineItemsSectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.lineItemsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.lineItemsThLeft {
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #999;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.lineItemsThRight {
+  text-align: right;
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #999;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.lineItemTd {
+  padding: 8px;
+}
+
+.lineItemTdRight {
+  text-align: right;
+  padding: 8px;
+}
+
+.lineItemTdTotal {
+  text-align: right;
+  padding: 8px;
+  font-weight: 600;
+}
+
+.totalsBoxWrap {
+  margin-left: auto;
+  max-width: 260px;
+}
+
+.notesWrap {
+  margin-top: 16px;
+}
+
+.editPanel {
+  padding: 20px 24px;
+}
+
+.editGrid {
+  margin-bottom: 16px;
+}
+
+.footerActions {
+  display: flex;
+  gap: 6px;
+}
+
+.footerBtnSend {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+}
+
+.footerBtnAccent {
+  color: #fff;
+  border: none;
+}

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import s from './PlanDrawingEditor.module.css';
 
 // ── Plan Drawing Editor (fabric.js) ───────────────────────────────────────────
 const PLAN_GRID_SIZE = 20;
@@ -298,59 +299,57 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
     { id: "select", icon: "☝️", label: "Select" },
   ];
 
-  const btnStyle = (active) => ({ padding: "5px 9px", borderRadius: 6, border: active ? "2px solid #fff" : "2px solid transparent", background: active ? "rgba(255,255,255,0.15)" : "transparent", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 });
-  const toggleStyle = (on) => ({ padding: "4px 8px", borderRadius: 5, border: "none", background: on ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.06)", color: on ? "#fff" : "#888", cursor: "pointer", fontSize: 11, fontWeight: 600 });
-
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.92)", display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div className={s.overlay}>
       {/* Top Toolbar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 12px", background: "#1e1e1e", borderRadius: "0 0 12px 12px", flexWrap: "wrap", justifyContent: "center", maxWidth: "100%", position: "relative", zIndex: 10 }}>
+      <div className={s.topToolbar}>
         {tools.map(t => (
-          <button key={t.id} onClick={() => { if (t.action) t.action(); else setTool(t.id); }} style={btnStyle(tool === t.id)}>
-            <span style={{ fontSize: 14 }}>{t.icon}</span> {t.label}
+          <button key={t.id} onClick={() => { if (t.action) t.action(); else setTool(t.id); }} className={`${s.toolBtn} ${tool === t.id ? s.toolBtnActive : ''}`}>
+            <span className={s.toolIcon}>{t.icon}</span> {t.label}
           </button>
         ))}
-        <div style={{ width: 1, height: 22, background: "#555", margin: "0 3px" }} />
-        <button onClick={deleteSelected} style={{ ...btnStyle(false), color: "#f87171" }}>🗑</button>
-        <button onClick={clearAll} style={{ ...btnStyle(false), color: "#fbbf24" }}>✕ Clear</button>
-        <div style={{ width: 1, height: 22, background: "#555", margin: "0 3px" }} />
+        <div className={s.divider} />
+        <button onClick={deleteSelected} className={s.deleteBtn}>🗑</button>
+        <button onClick={clearAll} className={s.clearBtn}>✕ Clear</button>
+        <div className={s.divider} />
         {/* Line width */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <span style={{ color: "#aaa", fontSize: 10, fontWeight: 600 }}>Width</span>
+        <div className={s.widthGroup}>
+          <span className={s.widthLabel}>Width</span>
           {PLAN_LINE_WIDTHS.map(w => (
             <button key={w} onClick={() => setLineWidth(w)}
-              style={{ width: 22, height: 22, borderRadius: 4, border: lineWidth === w ? "2px solid #fff" : "1px solid #555", background: lineWidth === w ? "rgba(255,255,255,0.15)" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: Math.min(w * 2, 14), height: Math.min(w, 8), background: "#fff", borderRadius: 1 }} />
+              className={`${s.widthBtn} ${lineWidth === w ? s.widthBtnActive : ''}`}>
+              <div className={s.widthIndicator} style={{ width: Math.min(w * 2, 14), height: Math.min(w, 8) }} />
             </button>
           ))}
         </div>
-        <div style={{ width: 1, height: 22, background: "#555", margin: "0 3px" }} />
+        <div className={s.divider} />
         {/* Colors */}
-        <div style={{ display: "flex", gap: 3 }}>
+        <div className={s.colorGroup}>
           {PLAN_COLORS.map(c => (
             <button key={c} onClick={() => setColor(c)}
-              style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: color === c ? "3px solid #fff" : `1px solid ${c === "#111111" ? "#666" : "transparent"}`, cursor: "pointer" }} />
+              className={`${s.colorBtn} ${color === c ? s.colorBtnActive : ''}`}
+              style={{ background: c, borderColor: color !== c && c === "#111111" ? "#666" : undefined }} />
           ))}
         </div>
       </div>
 
       {/* Snap/Options Bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: "#161616", width: "100%", justifyContent: "center", flexWrap: "wrap", position: "relative", zIndex: 10 }}>
-        <button onClick={() => setSnapGrid(v => !v)} style={toggleStyle(snapGrid)}>⊞ Snap Grid</button>
-        <button onClick={() => setSnapEndpoints(v => !v)} style={toggleStyle(snapEndpoints)}>⊙ Snap Endpoints</button>
-        <button onClick={() => setShowLengths(v => !v)} style={toggleStyle(showLengths)}>📏 Show Lengths</button>
-        <button onClick={() => setConstrainAngle(v => !v)} style={toggleStyle(constrainAngle)}>📐 Constrain Angle</button>
+      <div className={s.optionsBar}>
+        <button onClick={() => setSnapGrid(v => !v)} className={`${s.toggleBtn} ${snapGrid ? s.toggleBtnOn : ''}`}>⊞ Snap Grid</button>
+        <button onClick={() => setSnapEndpoints(v => !v)} className={`${s.toggleBtn} ${snapEndpoints ? s.toggleBtnOn : ''}`}>⊙ Snap Endpoints</button>
+        <button onClick={() => setShowLengths(v => !v)} className={`${s.toggleBtn} ${showLengths ? s.toggleBtnOn : ''}`}>📏 Show Lengths</button>
+        <button onClick={() => setConstrainAngle(v => !v)} className={`${s.toggleBtn} ${constrainAngle ? s.toggleBtnOn : ''}`}>📐 Constrain Angle</button>
         {constrainAngle && (
-          <select value={angleStep} onChange={e => setAngleStep(Number(e.target.value))} style={{ padding: "3px 6px", borderRadius: 4, background: "#333", color: "#fff", border: "1px solid #555", fontSize: 11 }}>
+          <select value={angleStep} onChange={e => setAngleStep(Number(e.target.value))} className={s.selectInput}>
             <option value={15}>15°</option>
             <option value={30}>30°</option>
             <option value={45}>45°</option>
             <option value={90}>90°</option>
           </select>
         )}
-        <div style={{ width: 1, height: 18, background: "#444" }} />
-        <span style={{ color: "#888", fontSize: 11 }}>Scale:</span>
-        <select value={scale} onChange={e => setScale(Number(e.target.value))} style={{ padding: "3px 6px", borderRadius: 4, background: "#333", color: "#fff", border: "1px solid #555", fontSize: 11 }}>
+        <div className={s.optionsDivider} />
+        <span className={s.scaleLabel}>Scale:</span>
+        <select value={scale} onChange={e => setScale(Number(e.target.value))} className={s.selectInput}>
           <option value={100}>100mm = 10px</option>
           <option value={250}>100mm = 25px</option>
           <option value={500}>100mm = 50px</option>
@@ -358,8 +357,8 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
         </select>
         {cursorInfo && (
           <>
-            <div style={{ width: 1, height: 18, background: "#444" }} />
-            <span style={{ color: "#0891b2", fontSize: 12, fontWeight: 700, fontFamily: "monospace" }}>
+            <div className={s.optionsDivider} />
+            <span className={s.cursorInfo}>
               {cursorInfo.length}mm &nbsp; {cursorInfo.angle}°
             </span>
           </>
@@ -367,16 +366,16 @@ const PlanDrawingEditor = ({ onSave, onClose, existingSrc }) => {
       </div>
 
       {/* Canvas */}
-      <div ref={containerRef} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", width: "100%", padding: "10px 20px", overflow: "auto" }}>
-        <div style={{ borderRadius: 8, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.5)", border: "1px solid #333" }}>
+      <div ref={containerRef} className={s.canvasArea}>
+        <div className={s.canvasWrapper}>
           <canvas ref={canvasRef} />
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div style={{ display: "flex", gap: 10, padding: "10px 20px", background: "#1e1e1e", borderRadius: "12px 12px 0 0", width: "100%", justifyContent: "center", position: "relative", zIndex: 10 }}>
-        <button onClick={onClose} style={{ padding: "8px 24px", borderRadius: 8, border: "1px solid #555", background: "transparent", color: "#ccc", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>Cancel</button>
-        <button onClick={handleSave} style={{ padding: "8px 24px", borderRadius: 8, border: "none", background: "#0891b2", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>💾 Save Plan</button>
+      <div className={s.bottomBar}>
+        <button onClick={onClose} className={s.cancelBtn}>Cancel</button>
+        <button onClick={handleSave} className={s.saveBtn}>💾 Save Plan</button>
       </div>
     </div>
   );

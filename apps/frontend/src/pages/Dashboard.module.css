@@ -1,0 +1,741 @@
+/* ── AI Business Insight Panel ── */
+.aiPanel {
+  background: linear-gradient(135deg, #111 0%, #1e293b 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  color: #fff;
+  overflow: hidden;
+}
+
+.aiHeader {
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.aiHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aiSparkle {
+  font-size: 16px;
+}
+
+.aiTitle {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.aiInsightCount {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+
+.aiHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aiRefreshBtn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.aiRefreshBtn:disabled {
+  opacity: 0.5;
+}
+
+.aiExpandBody {
+  padding: 0 24px 20px;
+}
+
+.aiLoadingText {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.aiErrorText {
+  font-size: 12px;
+  color: #f87171;
+  margin-bottom: 12px;
+}
+
+.aiCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.aiCard {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.aiCardHeading {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.aiCardDetail {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+.aiInsightFallback {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  margin-bottom: 16px;
+}
+
+.aiChatSection {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 16px;
+}
+
+.aiChatScroll {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  padding-right: 4px;
+}
+
+.aiChatRow {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.aiChatRowUser {
+  justify-content: flex-end;
+}
+
+.aiChatRowAssistant {
+  justify-content: flex-start;
+}
+
+.aiChatBubble {
+  max-width: 85%;
+  padding: 10px 14px;
+}
+
+.aiChatBubbleUser {
+  background: rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 12px 12px 4px 12px;
+}
+
+.aiChatBubbleAssistant {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px 12px 12px 4px;
+}
+
+.aiChatLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.aiChatTextUser {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+}
+
+.aiChatTextAssistant {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+}
+
+.aiThinking {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.aiSuggestedWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.aiSuggestBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: #94a3b8;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  transition: all 0.15s;
+}
+
+.aiSuggestBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+
+.aiInputRow {
+  display: flex;
+  gap: 8px;
+}
+
+.aiInput {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #fff;
+  font-family: 'Open Sans', sans-serif;
+  outline: none;
+}
+
+.aiSendBtn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.aiSendBtnActive {
+  background: #6366f1;
+  cursor: pointer;
+}
+
+.aiSendBtnDisabled {
+  background: rgba(255, 255, 255, 0.08);
+  cursor: default;
+}
+
+/* ── Financial Hero Strip ── */
+.financialGrid {
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 24px;
+}
+
+/* ── Stat card header row ── */
+.statHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+/* ── Progress bar row ── */
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 4px;
+  background: #f1f5f9;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.progressLabel {
+  font-size: 11px;
+  color: #999;
+  font-weight: 600;
+}
+
+/* ── Bill status pills ── */
+.billPillRow {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.billPill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  color: #fff;
+}
+
+/* ── Operations KPI grid ── */
+.opsGrid {
+  grid-template-columns: repeat(5, 1fr);
+  margin-bottom: 24px;
+}
+
+.overdueText {
+  font-size: 11px;
+  color: #dc2626;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.accentText {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* ── Schedule ── */
+.scheduleCard {
+  margin-bottom: 20px;
+}
+
+.scheduleCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.todayBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #fff;
+}
+
+.weekTaskCount {
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+}
+
+.schedulePadding {
+  padding: 12px 16px;
+}
+
+.dayHeaderLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.emptyDay {
+  font-size: 11px;
+  color: #ccc;
+  text-align: center;
+}
+
+.emptyDayFull {
+  padding: 12px 0;
+}
+
+.emptyDayCompact {
+  padding: 6px 0;
+}
+
+.scheduleEntryTitle {
+  font-weight: 700;
+  font-size: 11px;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+.scheduleEntryTime {
+  font-size: 10px;
+  color: #aaa;
+}
+
+.scheduleEntryAvatars {
+  margin-top: 4px;
+}
+
+/* ── Action Items Banner ── */
+.actionBanner {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.actionItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.actionLabel {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── Detail Panels Grid ── */
+.detailGrid {
+  display: grid;
+  gap: 20px;
+}
+
+/* ── Jobs by Status panel ── */
+.statusRow {
+  margin-bottom: 12px;
+}
+
+.statusRowHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.statusRowLabel {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.statusCount {
+  color: #999;
+}
+
+.summaryBar {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: #f8fafb;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summaryBarTop {
+  margin-top: 4px;
+}
+
+.summaryLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+
+.summaryValue {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* ── Pipeline / list rows ── */
+.listRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.listRowLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.listRowTitle {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.listRowSub {
+  font-size: 12px;
+  color: #999;
+}
+
+.listRowRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.listRowAmount {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.sectionBetween {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sectionBetweenTop {
+  margin-top: 16px;
+}
+
+.btnNudgeUp {
+  margin-top: -4px;
+}
+
+.emptyText {
+  font-size: 12px;
+  color: #999;
+  padding: 8px 0;
+}
+
+/* ── Bills pipeline bar ── */
+.billPipeline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.billPipelineStep {
+  flex: 1;
+  text-align: center;
+  padding: 6px 4px;
+  border-radius: 6px;
+}
+
+.billPipelineCount {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.billPipelineLabel {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pipelineArrow {
+  color: #ccc;
+  font-size: 12px;
+}
+
+/* ── Orders panel ── */
+.orderRef {
+  font-weight: 600;
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.orderRightCol {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.overdueLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.dueSoonLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #d97706;
+}
+
+.orderStatusPill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.sectionSpacer {
+  margin-top: 14px;
+}
+
+/* ── Team & Time panel ── */
+.workerRow {
+  margin-bottom: 12px;
+}
+
+.workerRowHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.workerName {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.workerAvatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.workerHours {
+  color: #999;
+}
+
+.workerRatio {
+  font-weight: 700;
+}
+
+.thinProgressTrack {
+  height: 4px;
+  background: #f1f5f9;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.thinProgressFill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.timeEntryRight {
+  text-align: right;
+}
+
+.timeEntryHours {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.billableTag {
+  font-size: 10px;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.nonBillTag {
+  font-size: 10px;
+  color: #999;
+  font-weight: 600;
+}
+
+/* ── Job Profitability panel ── */
+.profitRow {
+  margin-bottom: 14px;
+}
+
+.profitRowHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.profitJobTitle {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profitMargin {
+  font-weight: 700;
+}
+
+.profitBarRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profitTrack {
+  flex: 1;
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.profitFill {
+  position: absolute;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.profitAmount {
+  font-size: 11px;
+  color: #999;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* ── Chevron transition ── */
+.chevron {
+  transition: transform 0.2s;
+}
+
+.chevronExpanded {
+  transform: rotate(180deg);
+}
+
+/* ── Day header font size variants ── */
+.dayHeaderDateFull {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dayHeaderDateCompact {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAppStore } from "../../lib/store";
 import { addLog } from "../../utils/helpers";
 import { SECTION_COLORS } from "../../fixtures/seedData.jsx";
+import s from './JobGantt.module.css';
 
 const JobGantt = ({ job }) => {
   const { setJobs } = useAppStore();
@@ -18,8 +19,8 @@ const JobGantt = ({ job }) => {
     return (
       <div>
         <div className="empty-state"><div className="empty-state-icon">📊</div><div className="empty-state-text">No project phases yet</div></div>
-        <div style={{ textAlign: "center", marginTop: 12 }}>
-          <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
+        <div className={s.addPhaseCenter}>
+          <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff" }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
         </div>
       </div>
     );
@@ -64,27 +65,27 @@ const JobGantt = ({ job }) => {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, fontSize: 12, color: "#888" }}>{phases.length} phase{phases.length !== 1 ? "s" : ""} · {minDate} → {maxDate}</div>
+      <div className={s.header}>
+        <div className={s.phaseSummary}>{phases.length} phase{phases.length !== 1 ? "s" : ""} · {minDate} → {maxDate}</div>
         <button className="btn btn-ghost btn-sm" onClick={printGanttPdf}>🖨️ Export PDF</button>
-        <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
+        <button className={`btn btn-sm ${s.accentBtn}`} style={{ background: jobAccent, color: "#fff" }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
       </div>
 
       {showPhaseForm && (
-        <div style={{ padding: 16, background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 16 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-            <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Phase Name</label><input className="form-control" value={phaseForm.name} onChange={e => setPhaseForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Demolition" /></div>
-            <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Color</label><input type="color" value={phaseForm.color} onChange={e => setPhaseForm(f => ({ ...f, color: e.target.value }))} style={{ width: "100%", height: 36, border: "1px solid #e2e8f0", borderRadius: 6, cursor: "pointer" }} /></div>
-            <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Start Date</label><input type="date" className="form-control" value={phaseForm.startDate} onChange={e => setPhaseForm(f => ({ ...f, startDate: e.target.value }))} /></div>
-            <div><label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>End Date</label><input type="date" className="form-control" value={phaseForm.endDate} onChange={e => setPhaseForm(f => ({ ...f, endDate: e.target.value }))} /></div>
+        <div className={s.phaseFormCard}>
+          <div className={s.phaseFormGrid}>
+            <div><label className={s.fieldLabel}>Phase Name</label><input className="form-control" value={phaseForm.name} onChange={e => setPhaseForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Demolition" /></div>
+            <div><label className={s.fieldLabel}>Color</label><input type="color" value={phaseForm.color} onChange={e => setPhaseForm(f => ({ ...f, color: e.target.value }))} className={s.colorInput} /></div>
+            <div><label className={s.fieldLabel}>Start Date</label><input type="date" className="form-control" value={phaseForm.startDate} onChange={e => setPhaseForm(f => ({ ...f, startDate: e.target.value }))} /></div>
+            <div><label className={s.fieldLabel}>End Date</label><input type="date" className="form-control" value={phaseForm.endDate} onChange={e => setPhaseForm(f => ({ ...f, endDate: e.target.value }))} /></div>
           </div>
-          <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: "#888" }}>Progress: {phaseForm.progress}%</label>
-            <input type="range" min="0" max="100" step="5" value={phaseForm.progress} onChange={e => setPhaseForm(f => ({ ...f, progress: parseInt(e.target.value) }))} style={{ width: "100%" }} />
+          <div className={s.progressWrap}>
+            <label className={s.fieldLabel}>Progress: {phaseForm.progress}%</label>
+            <input type="range" min="0" max="100" step="5" value={phaseForm.progress} onChange={e => setPhaseForm(f => ({ ...f, progress: parseInt(e.target.value) }))} className={s.rangeInput} />
           </div>
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <div className={s.formActions}>
             <button className="btn btn-ghost btn-sm" onClick={() => { setShowPhaseForm(false); setEditPhase(null); }}>Cancel</button>
-            <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={savePhase} disabled={!phaseForm.name.trim()}>
+            <button className={`btn btn-sm ${s.accentBtn}`} style={{ background: jobAccent, color: "#fff" }} onClick={savePhase} disabled={!phaseForm.name.trim()}>
               {editPhase ? "Update Phase" : "Add Phase"}
             </button>
           </div>
@@ -92,12 +93,12 @@ const JobGantt = ({ job }) => {
       )}
 
       {/* Gantt Chart */}
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, overflow: "hidden" }}>
-        <div style={{ display: "flex", borderBottom: "1px solid #e8e8e8" }}>
-          <div style={{ width: 160, minWidth: 160, padding: "8px 12px", fontWeight: 700, fontSize: 11, color: "#888", borderRight: "1px solid #e8e8e8" }}>Phase</div>
-          <div style={{ flex: 1, position: "relative", padding: "8px 0", fontSize: 10, color: "#aaa" }}>
-            <span style={{ position: "absolute", left: 4 }}>{minDate}</span>
-            <span style={{ position: "absolute", right: 4 }}>{maxDate}</span>
+      <div className={s.chartWrap}>
+        <div className={s.chartHeader}>
+          <div className={s.chartPhaseCol}>Phase</div>
+          <div className={s.chartTimelineCol}>
+            <span className={s.dateLabelLeft}>{minDate}</span>
+            <span className={s.dateLabelRight}>{maxDate}</span>
           </div>
         </div>
         {phases.map(p => {
@@ -106,19 +107,19 @@ const JobGantt = ({ job }) => {
           const leftPct = ((pStartMs - startMs) / rangeMs) * 100;
           const widthPct = Math.max(2, ((pEndMs - pStartMs) / rangeMs) * 100);
           return (
-            <div key={p.id} style={{ display: "flex", borderBottom: "1px solid #f0f0f0", minHeight: 40, alignItems: "center" }}>
-              <div style={{ width: 160, minWidth: 160, padding: "6px 12px", borderRight: "1px solid #e8e8e8", display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 600, flex: 1 }}>{p.name}</span>
-                <button className="btn btn-ghost" style={{ padding: 2, fontSize: 10 }} onClick={() => { setEditPhase(p); setPhaseForm({ name: p.name, startDate: p.startDate, endDate: p.endDate, color: p.color, progress: p.progress }); setShowPhaseForm(true); }}>✏️</button>
-                <button className="btn btn-ghost" style={{ padding: 2, fontSize: 10, color: "#c00" }} onClick={() => handleDeletePhase(p.id)}>🗑</button>
+            <div key={p.id} className={s.phaseRow}>
+              <div className={s.phaseNameCol}>
+                <div className={s.phaseDot} style={{ background: p.color }} />
+                <span className={s.phaseName}>{p.name}</span>
+                <button className={`btn btn-ghost ${s.phaseActionBtn}`} onClick={() => { setEditPhase(p); setPhaseForm({ name: p.name, startDate: p.startDate, endDate: p.endDate, color: p.color, progress: p.progress }); setShowPhaseForm(true); }}>✏️</button>
+                <button className={`btn btn-ghost ${s.phaseActionBtnDanger}`} onClick={() => handleDeletePhase(p.id)}>🗑</button>
               </div>
-              <div style={{ flex: 1, position: "relative", height: 24, margin: "0 8px" }}>
-                {todayPct > 0 && todayPct < 100 && <div style={{ position: "absolute", left: `${todayPct}%`, top: -2, bottom: -2, width: 2, background: "#ef4444", zIndex: 2, borderRadius: 1 }} />}
-                <div style={{ position: "absolute", left: `${leftPct}%`, width: `${widthPct}%`, height: "100%", background: p.color + "25", borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ width: `${p.progress}%`, height: "100%", background: p.color, borderRadius: 4, transition: "width 0.3s" }} />
+              <div className={s.timelineCell}>
+                {todayPct > 0 && todayPct < 100 && <div className={s.todayMarker} style={{ left: `${todayPct}%` }} />}
+                <div className={s.barBg} style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: p.color + "25" }}>
+                  <div className={s.barFill} style={{ width: `${p.progress}%`, background: p.color }} />
                 </div>
-                <div style={{ position: "absolute", left: `${leftPct + widthPct + 1}%`, top: 3, fontSize: 10, color: "#888", whiteSpace: "nowrap" }}>{p.progress}%</div>
+                <div className={s.barLabel} style={{ left: `${leftPct + widthPct + 1}%` }}>{p.progress}%</div>
               </div>
             </div>
           );

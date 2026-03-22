@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import s from './PdfFormFiller.module.css';
 
 const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) => {
   const containerRef = useRef(null);
@@ -310,87 +311,89 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
     { id: "delete", label: "Delete", icon: "🗑" },
   ];
 
+  const cursorForTool = tool === "text" || tool === "checkbox" || tool === "signature" ? "crosshair" : tool === "delete" ? "not-allowed" : "default";
+
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "#1e293b", display: "flex", flexDirection: "column" }}>
+    <div className={s.overlay}>
       {/* Toolbar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", background: "#0f172a", borderBottom: "1px solid #334155", flexShrink: 0 }}>
-        <button onClick={onClose} style={{ background: "none", border: "none", color: "#94a3b8", fontSize: 18, cursor: "pointer", padding: "4px 8px" }}>✕</button>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", marginRight: 12 }}>{fileName || "PDF Form Filler"}</div>
-        <div style={{ display: "flex", gap: 2, background: "#1e293b", borderRadius: 8, padding: 2 }}>
+      <div className={s.toolbar}>
+        <button onClick={onClose} className={s.closeBtn}>✕</button>
+        <div className={s.title}>{fileName || "PDF Form Filler"}</div>
+        <div className={s.toolGroup}>
           {tools.map(t => (
-            <button key={t.id} onClick={() => setTool(t.id)} style={{ padding: "6px 12px", borderRadius: 6, border: "none", background: tool === t.id ? "#3b82f6" : "transparent", color: tool === t.id ? "#fff" : "#94a3b8", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-              <span style={{ fontSize: 14 }}>{t.icon}</span> {t.label}
+            <button key={t.id} onClick={() => setTool(t.id)} className={tool === t.id ? s.toolBtnActive : s.toolBtn}>
+              <span className={s.toolBtnIcon}>{t.icon}</span> {t.label}
             </button>
           ))}
         </div>
         {fields.some(f => f.acroField) && (
-          <div style={{ fontSize: 11, color: "#34d399", background: "rgba(52,211,153,0.1)", padding: "4px 10px", borderRadius: 6, fontWeight: 600 }}>
+          <div className={s.detectedBadge}>
             {fields.filter(f => f.acroField).length} form fields detected
           </div>
         )}
-        <div style={{ flex: 1 }} />
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <button onClick={() => setScale(s => Math.max(0.3, s - 0.15))} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #475569", background: "#1e293b", color: "#e2e8f0", fontSize: 16, cursor: "pointer", fontWeight: 700 }}>−</button>
-          <span style={{ color: "#94a3b8", fontSize: 12, minWidth: 42, textAlign: "center" }}>{Math.round(scale * 100)}%</span>
-          <button onClick={() => setScale(s => Math.min(3, s + 0.15))} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #475569", background: "#1e293b", color: "#e2e8f0", fontSize: 16, cursor: "pointer", fontWeight: 700 }}>+</button>
+        <div className={s.spacer} />
+        <div className={s.zoomControls}>
+          <button onClick={() => setScale(sc => Math.max(0.3, sc - 0.15))} className={s.zoomBtn}>−</button>
+          <span className={s.zoomLabel}>{Math.round(scale * 100)}%</span>
+          <button onClick={() => setScale(sc => Math.min(3, sc + 0.15))} className={s.zoomBtn}>+</button>
         </div>
-        <button onClick={handleSave} disabled={saving} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#059669", color: "#fff", fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.6 : 1, marginLeft: 12 }}>
+        <button onClick={handleSave} disabled={saving} className={saving ? s.saveBtnDisabled : s.saveBtn}>
           {saving ? "Saving…" : "Save & Download"}
         </button>
       </div>
 
       {/* PDF Pages */}
-      <div ref={containerRef} style={{ flex: 1, overflow: "auto", padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+      <div ref={containerRef} className={s.pagesContainer}>
         {pages.length === 0 && (
-          <div style={{ color: "#94a3b8", fontSize: 14, marginTop: 80 }}>Loading PDF…</div>
+          <div className={s.loadingText}>Loading PDF…</div>
         )}
         {pages.map((pg, idx) => (
-          <div key={idx} style={{ position: "relative", boxShadow: "0 4px 24px rgba(0,0,0,0.3)", borderRadius: 4, overflow: "hidden", cursor: tool === "text" ? "crosshair" : tool === "checkbox" ? "crosshair" : tool === "signature" ? "crosshair" : tool === "delete" ? "not-allowed" : "default" }}
+          <div key={idx} className={s.pageWrapper} style={{ cursor: cursorForTool }}
             onClick={(e) => handlePageClick(e, idx)}>
-            <canvas ref={el => canvasRefs.current[idx] = el} style={{ display: "block" }} />
+            <canvas ref={el => canvasRefs.current[idx] = el} className={s.pageCanvas} />
             {/* Overlay fields */}
             {fields.filter(f => f.page === idx).map(field => (
               <div key={field.id}
                 onMouseDown={(e) => handleFieldMouseDown(e, field)}
+                className={`${s.fieldOverlay} ${field.type === "text" ? s.fieldOverlayTextBg : field.type === "checkbox" ? s.fieldOverlayCheckboxBg : ""} ${selectedField === field.id ? s.fieldOverlaySelected : s.fieldOverlayUnselected}`}
                 style={{
-                  position: "absolute", left: field.x, top: field.y, width: field.width, height: field.height,
-                  border: selectedField === field.id ? "2px solid #3b82f6" : "1px dashed rgba(59,130,246,0.5)",
-                  borderRadius: 3, cursor: tool === "delete" ? "not-allowed" : tool === "select" ? "move" : "default",
-                  background: field.type === "text" ? "rgba(255,255,255,0.85)" : field.type === "checkbox" ? "rgba(255,255,255,0.7)" : "transparent",
-                  display: "flex", alignItems: "center", justifyContent: field.type === "checkbox" ? "center" : "flex-start",
-                  boxSizing: "border-box",
+                  left: field.x, top: field.y, width: field.width, height: field.height,
+                  cursor: tool === "delete" ? "not-allowed" : tool === "select" ? "move" : "default",
+                  justifyContent: field.type === "checkbox" ? "center" : "flex-start",
                 }}>
                 {field.type === "text" && (
                   <>
                     {field.acroField && field.label && !field.value && (
-                      <div style={{ position: "absolute", top: -14, left: 0, fontSize: 8, color: "#3b82f6", fontWeight: 600, whiteSpace: "nowrap", pointerEvents: "none" }}>{field.label}</div>
+                      <div className={s.fieldLabel}>{field.label}</div>
                     )}
                     <input type="text" value={field.value} placeholder={field.label || "Type here…"}
                       onChange={(e) => setFields(prev => prev.map(f => f.id === field.id ? { ...f, value: e.target.value } : f))}
                       onClick={(e) => e.stopPropagation()}
-                      style={{ width: "100%", height: "100%", border: "none", background: "transparent", padding: "2px 4px", fontSize: Math.min(14, field.height * 0.6), fontFamily: "inherit", outline: "none", color: "#000", boxSizing: "border-box" }} />
+                      className={s.textInput}
+                      style={{ fontSize: Math.min(14, field.height * 0.6) }} />
                   </>
                 )}
                 {field.type === "checkbox" && (
                   <div onClick={(e) => { e.stopPropagation(); setFields(prev => prev.map(f => f.id === field.id ? { ...f, value: !f.value } : f)); }}
-                    style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: Math.min(16, field.height * 0.8), fontWeight: 700, color: field.value ? "#059669" : "#ccc", userSelect: "none" }}>
+                    className={`${s.checkboxField} ${field.value ? s.checkboxChecked : s.checkboxUnchecked}`}
+                    style={{ fontSize: Math.min(16, field.height * 0.8) }}>
                     {field.value ? "✓" : "☐"}
                   </div>
                 )}
                 {field.type === "signature" && (
                   <div onClick={(e) => { e.stopPropagation(); setSigModal(field.id); }}
-                    style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden" }}>
+                    className={s.signatureField}>
                     {field.value ? (
-                      <img src={field.value} alt="Signature" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                      <img src={field.value} alt="Signature" className={s.signatureImg} />
                     ) : (
-                      <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic" }}>Click to sign</span>
+                      <span className={s.signaturePlaceholder}>Click to sign</span>
                     )}
                   </div>
                 )}
                 {/* Resize handle */}
                 {selectedField === field.id && tool === "select" && (
                   <div onMouseDown={(e) => { e.stopPropagation(); setResizing({ id: field.id }); }}
-                    style={{ position: "absolute", right: -4, bottom: -4, width: 10, height: 10, background: "#3b82f6", borderRadius: 2, cursor: "nwse-resize", border: "1px solid #fff" }} />
+                    className={s.resizeHandle} />
                 )}
               </div>
             ))}
@@ -400,17 +403,17 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
 
       {/* Signature Modal */}
       {sigModal && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 10001, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
+        <div className={s.sigModalOverlay}
           onClick={() => setSigModal(null)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 24, width: 420, maxWidth: "90vw" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Draw Signature</h3>
-              <button onClick={() => setSigModal(null)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#999" }}>✕</button>
+          <div onClick={e => e.stopPropagation()} className={s.sigModalContent}>
+            <div className={s.sigModalHeader}>
+              <h3 className={s.sigModalTitle}>Draw Signature</h3>
+              <button onClick={() => setSigModal(null)} className={s.sigModalCloseBtn}>✕</button>
             </div>
-            <canvas ref={sigCanvasRef} width={380} height={150} style={{ border: "2px solid #e2e8f0", borderRadius: 8, width: "100%", height: 150, touchAction: "none" }} />
-            <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
-              <button onClick={() => sigPadRef.current?.clear()} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Clear</button>
-              <button onClick={saveSignature} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#3b82f6", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Apply Signature</button>
+            <canvas ref={sigCanvasRef} width={380} height={150} className={s.sigCanvas} />
+            <div className={s.sigModalActions}>
+              <button onClick={() => sigPadRef.current?.clear()} className={s.sigClearBtn}>Clear</button>
+              <button onClick={saveSignature} className={s.sigApplyBtn}>Apply Signature</button>
             </div>
           </div>
         </div>

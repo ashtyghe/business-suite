@@ -3,6 +3,7 @@ import { useAppStore } from "../../lib/store";
 import { Icon } from "../../components/Icon";
 import { SectionLabel } from "../../components/shared";
 import { fmt, calcQuoteTotal, addLog } from "../../utils/helpers";
+import s from './JobPnL.module.css';
 
 const defaultEstimate = { labour: 0, materials: 0, subcontractors: 0, other: 0 };
 
@@ -35,8 +36,8 @@ const JobPnL = ({ job, client }) => {
 
   const labourByWorker = {};
   jobTime.forEach(t => {
-    const s = (staff || []).find(x => x.name === t.worker);
-    const rate = s?.costRate || 55;
+    const st = (staff || []).find(x => x.name === t.worker);
+    const rate = st?.costRate || 55;
     if (!labourByWorker[t.worker]) labourByWorker[t.worker] = { hours: 0, cost: 0, rate };
     labourByWorker[t.worker].hours += t.hours;
     labourByWorker[t.worker].cost += t.hours * rate;
@@ -68,11 +69,11 @@ const JobPnL = ({ job, client }) => {
     const overBudget = actual > estimated && estimated > 0;
     return (
       <tr key={label}>
-        <td style={{ fontWeight: 600, fontSize: 13 }}>{label}</td>
-        <td style={{ textAlign: "right", fontSize: 13 }}>{fmt(estimated)}</td>
-        <td style={{ textAlign: "right", fontSize: 13 }}>{fmt(actual)}</td>
-        <td style={{ textAlign: "right", fontSize: 13, color: overBudget ? "#dc2626" : "#059669", fontWeight: 600 }}>{variance >= 0 ? "+" : ""}{fmt(variance)}</td>
-        <td style={{ textAlign: "right", fontSize: 13, color: overBudget ? "#dc2626" : "#059669" }}>{pct}%</td>
+        <td className={s.cellBold}>{label}</td>
+        <td className={s.cellRight}>{fmt(estimated)}</td>
+        <td className={s.cellRight}>{fmt(actual)}</td>
+        <td className={s.cellRightBold} style={{ color: overBudget ? "#dc2626" : "#059669" }}>{variance >= 0 ? "+" : ""}{fmt(variance)}</td>
+        <td className={s.cellRight} style={{ color: overBudget ? "#dc2626" : "#059669" }}>{pct}%</td>
       </tr>
     );
   };
@@ -85,57 +86,57 @@ const JobPnL = ({ job, client }) => {
   return (
     <div>
       {/* Hero stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20 }}>
-        <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", marginBottom: 6 }}>Total Estimate</div>
-          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em" }}>{totalEstimate > 0 ? fmt(totalEstimate) : "—"}</div>
-          <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{acceptedQuotesTotal > 0 ? `Incl. ${fmt(acceptedQuotesTotal)} quoted` : totalEstimate > 0 ? "Budget set" : "No estimate set"}</div>
+      <div className={s.heroGrid}>
+        <div className={s.statCard}>
+          <div className={s.statLabel}>Total Estimate</div>
+          <div className={s.statValue}>{totalEstimate > 0 ? fmt(totalEstimate) : "—"}</div>
+          <div className={s.statSub}>{acceptedQuotesTotal > 0 ? `Incl. ${fmt(acceptedQuotesTotal)} quoted` : totalEstimate > 0 ? "Budget set" : "No estimate set"}</div>
         </div>
-        <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", marginBottom: 6 }}>Revenue</div>
-          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em" }}>{fmt(revenue)}</div>
-          <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{revenueLabel}{totalPaid > 0 ? ` · ${fmt(totalPaid)} paid` : ""}</div>
+        <div className={s.statCard}>
+          <div className={s.statLabel}>Revenue</div>
+          <div className={s.statValue}>{fmt(revenue)}</div>
+          <div className={s.statSub}>{revenueLabel}{totalPaid > 0 ? ` · ${fmt(totalPaid)} paid` : ""}</div>
         </div>
-        <div style={{ background: "#f8f8f8", borderRadius: 8, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", marginBottom: 6 }}>Total Costs</div>
-          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: totalEstimate > 0 && totalActual > totalEstimate ? "#dc2626" : "#111" }}>{fmt(totalActual)}</div>
-          {totalEstimate > 0 && <div style={{ marginTop: 6 }}>
-            <div style={{ height: 4, background: "#e5e7eb", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ width: `${costPct}%`, height: "100%", background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#059669", borderRadius: 2 }} />
+        <div className={s.statCard}>
+          <div className={s.statLabel}>Total Costs</div>
+          <div className={s.statValue} style={{ color: totalEstimate > 0 && totalActual > totalEstimate ? "#dc2626" : "#111" }}>{fmt(totalActual)}</div>
+          {totalEstimate > 0 && <div className={s.costBarTrack}>
+            <div className={s.costBarBg}>
+              <div className={s.costBarFill} style={{ width: `${costPct}%`, background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#059669" }} />
             </div>
-            <div style={{ fontSize: 10, color: "#999", marginTop: 2 }}>{costPct}% of estimate</div>
+            <div className={s.costBarLabel}>{costPct}% of estimate</div>
           </div>}
         </div>
-        <div style={{ background: profit >= 0 ? "#ecfdf5" : "#fef2f2", borderRadius: 8, padding: "14px 16px", borderLeft: `3px solid ${profit >= 0 ? "#059669" : "#dc2626"}` }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: profit >= 0 ? "#059669" : "#dc2626", marginBottom: 6 }}>Profit / Margin</div>
-          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: profit >= 0 ? "#059669" : "#dc2626" }}>{fmt(profit)}</div>
-          <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{marginPct}% margin</div>
+        <div className={s.profitCard} style={{ background: profit >= 0 ? "#ecfdf5" : "#fef2f2", borderLeft: `3px solid ${profit >= 0 ? "#059669" : "#dc2626"}` }}>
+          <div className={s.statLabel} style={{ color: profit >= 0 ? "#059669" : "#dc2626" }}>Profit / Margin</div>
+          <div className={s.statValue} style={{ color: profit >= 0 ? "#059669" : "#dc2626" }}>{fmt(profit)}</div>
+          <div className={s.statSub}>{marginPct}% margin</div>
         </div>
       </div>
 
       {/* Estimate Breakdown */}
       <SectionLabel>Estimate Breakdown</SectionLabel>
       {!editingEstimate ? (
-        <div style={{ marginBottom: 20 }}>
+        <div className={s.sectionBlock}>
           <table className="data-table" style={{ marginBottom: 8 }}>
             <tbody>
               {[["Labour", est.labour], ["Materials", est.materials], ["Subcontractors", est.subcontractors], ["Other", est.other]].map(([label, val]) => (
-                <tr key={label}><td style={{ fontWeight: 600, fontSize: 13 }}>{label}</td><td style={{ textAlign: "right", fontSize: 13 }}>{fmt(val || 0)}</td></tr>
+                <tr key={label}><td className={s.cellBold}>{label}</td><td className={s.cellRight}>{fmt(val || 0)}</td></tr>
               ))}
-              <tr style={{ borderTop: "2px solid #e2e8f0" }}><td style={{ fontWeight: 700, fontSize: 13 }}>Total</td><td style={{ textAlign: "right", fontWeight: 700, fontSize: 13 }}>{fmt(breakdownTotal)}</td></tr>
+              <tr className={s.totalRow}><td className={s.totalCell}>Total</td><td className={s.totalCellRight}>{fmt(breakdownTotal)}</td></tr>
             </tbody>
           </table>
           <button onClick={() => setEditingEstimate(true)} className="btn btn-secondary btn-sm"><Icon name="edit" size={12} /> Edit Estimate</button>
         </div>
       ) : (
-        <div style={{ marginBottom: 20, padding: 16, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+        <div className={s.estimateForm}>
           {["labour", "materials", "subcontractors", "other"].map(key => (
-            <div key={key} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-              <label style={{ width: 120, fontSize: 13, fontWeight: 600, textTransform: "capitalize" }}>{key}</label>
+            <div key={key} className={s.estimateRow}>
+              <label className={s.estimateLabel}>{key}</label>
               <input type="number" className="form-control" style={{ width: 140 }} value={estimateForm[key] || ""} onChange={e => setEstimateForm(f => ({ ...f, [key]: parseFloat(e.target.value) || 0 }))} />
             </div>
           ))}
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <div className={s.estimateActions}>
             <button onClick={saveEstimate} className="btn btn-primary btn-sm">Save Estimate</button>
             <button onClick={() => { setEditingEstimate(false); setEstimateForm({ ...defaultEstimate, ...(job.estimate || {}) }); }} className="btn btn-secondary btn-sm">Cancel</button>
           </div>
@@ -147,11 +148,11 @@ const JobPnL = ({ job, client }) => {
       <table className="data-table" style={{ marginBottom: 24 }}>
         <thead>
           <tr>
-            <th style={{ fontWeight: 700, fontSize: 12 }}>Category</th>
-            <th style={{ textAlign: "right", fontWeight: 700, fontSize: 12 }}>Estimated</th>
-            <th style={{ textAlign: "right", fontWeight: 700, fontSize: 12 }}>Actual</th>
-            <th style={{ textAlign: "right", fontWeight: 700, fontSize: 12 }}>Variance</th>
-            <th style={{ textAlign: "right", fontWeight: 700, fontSize: 12 }}>%</th>
+            <th className={s.thCell}>Category</th>
+            <th className={s.thCellRight}>Estimated</th>
+            <th className={s.thCellRight}>Actual</th>
+            <th className={s.thCellRight}>Variance</th>
+            <th className={s.thCellRight}>%</th>
           </tr>
         </thead>
         <tbody>
@@ -159,35 +160,35 @@ const JobPnL = ({ job, client }) => {
           {varRow("Materials", est.materials || 0, actualMaterials)}
           {varRow("Subcontractors", est.subcontractors || 0, actualSubs)}
           {varRow("Other", est.other || 0, actualOther)}
-          <tr style={{ borderTop: "2px solid #e2e8f0", fontWeight: 700 }}>
-            <td style={{ fontWeight: 700, fontSize: 13 }}>Total</td>
-            <td style={{ textAlign: "right", fontSize: 13, fontWeight: 700 }}>{fmt(breakdownTotal)}</td>
-            <td style={{ textAlign: "right", fontSize: 13, fontWeight: 700 }}>{fmt(totalActual)}</td>
-            <td style={{ textAlign: "right", fontSize: 13, fontWeight: 700, color: breakdownTotal - totalActual >= 0 ? "#059669" : "#dc2626" }}>{breakdownTotal - totalActual >= 0 ? "+" : ""}{fmt(breakdownTotal - totalActual)}</td>
-            <td style={{ textAlign: "right", fontSize: 13, color: breakdownTotal > 0 && totalActual > breakdownTotal ? "#dc2626" : "#059669" }}>{breakdownTotal > 0 ? Math.round((totalActual / breakdownTotal) * 100) : 0}%</td>
+          <tr className={s.totalRow} style={{ fontWeight: 700 }}>
+            <td className={s.totalCell}>Total</td>
+            <td className={s.totalCellRight}>{fmt(breakdownTotal)}</td>
+            <td className={s.totalCellRight}>{fmt(totalActual)}</td>
+            <td className={s.totalCellRight} style={{ color: breakdownTotal - totalActual >= 0 ? "#059669" : "#dc2626" }}>{breakdownTotal - totalActual >= 0 ? "+" : ""}{fmt(breakdownTotal - totalActual)}</td>
+            <td className={s.cellRight} style={{ color: breakdownTotal > 0 && totalActual > breakdownTotal ? "#dc2626" : "#059669" }}>{breakdownTotal > 0 ? Math.round((totalActual / breakdownTotal) * 100) : 0}%</td>
           </tr>
         </tbody>
       </table>
 
       {/* Cost Breakdown */}
       <SectionLabel>Cost Breakdown</SectionLabel>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+      <div className={s.costGrid}>
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#555" }}>Labour (from time entries)</div>
+          <div className={s.costHeading}>Labour (from time entries)</div>
           {Object.entries(labourByWorker).map(([name, w]) => (
-            <div key={name} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0", borderBottom: "1px solid #f0f0f0" }}>
+            <div key={name} className={s.costRow}>
               <span>{name} ({w.hours}h × {fmt(w.rate)}/h)</span>
-              <span style={{ fontWeight: 600 }}>{fmt(w.cost)}</span>
+              <span className={s.costRowValue}>{fmt(w.cost)}</span>
             </div>
           ))}
-          {Object.keys(labourByWorker).length === 0 && <div style={{ color: "#bbb", fontSize: 12 }}>No time logged</div>}
+          {Object.keys(labourByWorker).length === 0 && <div className={s.emptyText}>No time logged</div>}
         </div>
         <div>
-          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#555" }}>Bills by Category</div>
+          <div className={s.costHeading}>Bills by Category</div>
           {[["Materials", actualMaterials], ["Subcontractor", actualSubs], ["Other", actualOther]].map(([cat, total]) => (
-            <div key={cat} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0", borderBottom: "1px solid #f0f0f0" }}>
+            <div key={cat} className={s.costRow}>
               <span>{cat}</span>
-              <span style={{ fontWeight: 600 }}>{fmt(total)}</span>
+              <span className={s.costRowValue}>{fmt(total)}</span>
             </div>
           ))}
         </div>
@@ -197,23 +198,23 @@ const JobPnL = ({ job, client }) => {
       {clientLabourRate > 0 && (
         <>
           <SectionLabel>Revenue at Client Rates</SectionLabel>
-          <div style={{ padding: 16, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0", marginBottom: 20 }}>
-            <div style={{ fontSize: 11, color: "#888", marginBottom: 10 }}>
+          <div className={s.clientRatesBox}>
+            <div className={s.clientRatesInfo}>
               Rates: {fmt(clientLabourRate)}/hr labour · {clientMatMargin}% material margin · {clientSubMargin}% subcontractor margin
             </div>
             <table className="data-table">
               <tbody>
-                <tr><td style={{ fontSize: 13 }}>Labour ({totalLabourHours}h × {fmt(clientLabourRate)})</td><td style={{ textAlign: "right", fontSize: 13 }}>{fmt(clientLabourRevenue)}</td></tr>
-                <tr><td style={{ fontSize: 13 }}>Materials {clientMatMargin > 0 ? `(+${clientMatMargin}%)` : ""}</td><td style={{ textAlign: "right", fontSize: 13 }}>{fmt(clientMaterialRevenue)}</td></tr>
-                <tr><td style={{ fontSize: 13 }}>Subcontractors {clientSubMargin > 0 ? `(+${clientSubMargin}%)` : ""}</td><td style={{ textAlign: "right", fontSize: 13 }}>{fmt(clientSubRevenue)}</td></tr>
-                <tr><td style={{ fontSize: 13 }}>Other</td><td style={{ textAlign: "right", fontSize: 13 }}>{fmt(actualOther)}</td></tr>
-                <tr style={{ borderTop: "2px solid #e2e8f0" }}>
-                  <td style={{ fontWeight: 700, fontSize: 13 }}>Total Revenue</td>
-                  <td style={{ textAlign: "right", fontWeight: 700, fontSize: 13 }}>{fmt(clientTotalRevenue)}</td>
+                <tr><td className={s.cellMd}>Labour ({totalLabourHours}h × {fmt(clientLabourRate)})</td><td className={s.cellMdRight}>{fmt(clientLabourRevenue)}</td></tr>
+                <tr><td className={s.cellMd}>Materials {clientMatMargin > 0 ? `(+${clientMatMargin}%)` : ""}</td><td className={s.cellMdRight}>{fmt(clientMaterialRevenue)}</td></tr>
+                <tr><td className={s.cellMd}>Subcontractors {clientSubMargin > 0 ? `(+${clientSubMargin}%)` : ""}</td><td className={s.cellMdRight}>{fmt(clientSubRevenue)}</td></tr>
+                <tr><td className={s.cellMd}>Other</td><td className={s.cellMdRight}>{fmt(actualOther)}</td></tr>
+                <tr className={s.totalRow}>
+                  <td className={s.totalCell}>Total Revenue</td>
+                  <td className={s.totalCellRight}>{fmt(clientTotalRevenue)}</td>
                 </tr>
                 <tr>
-                  <td style={{ fontWeight: 700, fontSize: 13, color: clientProfit >= 0 ? "#059669" : "#dc2626" }}>Profit</td>
-                  <td style={{ textAlign: "right", fontWeight: 700, fontSize: 13, color: clientProfit >= 0 ? "#059669" : "#dc2626" }}>{fmt(clientProfit)} ({clientMarginPct}%)</td>
+                  <td className={s.totalCell} style={{ color: clientProfit >= 0 ? "#059669" : "#dc2626" }}>Profit</td>
+                  <td className={s.totalCellRight} style={{ color: clientProfit >= 0 ? "#059669" : "#dc2626" }}>{fmt(clientProfit)} ({clientMarginPct}%)</td>
                 </tr>
               </tbody>
             </table>

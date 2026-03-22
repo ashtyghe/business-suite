@@ -9,6 +9,7 @@ import { Icon } from '../components/Icon';
 import {
   StatusBadge, SectionDrawer, LineItemsEditor, SectionProgressBar,
 } from '../components/shared';
+import s from './Quotes.module.css';
 
 const QUOTE_STATUSES = ["all", "draft", "sent", "accepted", "declined"];
 
@@ -96,17 +97,17 @@ const Quotes = () => {
   return (
     <div>
       {/* ── Summary strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: 12, marginBottom: 24 }}>
+      <div className={s.summaryGrid}>
         {Object.entries(quoteStatusLabels).map(([key, label]) => {
           const statusQuotes = quotes.filter(q => q.status === key);
           const count = statusQuotes.length;
           const total = statusQuotes.reduce((s, q) => s + calcQuoteTotal(q), 0);
           const color = quoteStatusColors[key];
           return (
-            <div key={key} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
+            <div key={key} className={`stat-card ${s.statCard}`} style={{ borderTop: `3px solid ${color}` }}
               onClick={() => { setFilterStatus(key); setView("list"); }}>
               <div className="stat-label">{label}</div>
-              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
+              <div className={`stat-value ${s.statValue}`} style={{ color }}>{count}</div>
               <div className="stat-sub">{fmt(total)}</div>
             </div>
           );
@@ -114,13 +115,13 @@ const Quotes = () => {
       </div>
 
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+        <div className={`search-bar ${s.searchBarFlex}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search quotes, jobs, clients..." />
         </div>
-        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className={`form-control ${s.filterSelect}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           {QUOTE_STATUSES.map(s => <option key={s} value={s}>{s === "all" ? "All Statuses" : s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
         </select>
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+        <div className={s.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.quotes.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.quotes.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: SECTION_COLORS.quotes.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
@@ -129,7 +130,7 @@ const Quotes = () => {
       </div>
 
       {view === "kanban" && (
-        <div className="kanban" style={{ gridTemplateColumns: "repeat(4, minmax(200px,1fr))" }}>
+        <div className={`kanban ${s.kanbanGrid}`}>
           {["draft", "sent", "accepted", "declined"].map(col => {
             const colQuotes = filtered.filter(q => q.status === col);
             const labels = { draft: "Draft", sent: "Sent", accepted: "Accepted", declined: "Declined" };
@@ -137,7 +138,7 @@ const Quotes = () => {
               <div key={col} className="kanban-col">
                 <div className="kanban-col-header">
                   <span>{labels[col]}</span>
-                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colQuotes.length}</span>
+                  <span className={s.kanbanBadge}>{colQuotes.length}</span>
                 </div>
                 {colQuotes.map(q => {
                   const job = jobs.find(j => j.id === q.jobId);
@@ -145,14 +146,14 @@ const Quotes = () => {
                   const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
                   return (
                     <div key={q.id} className="kanban-card" onClick={() => openEdit(q)}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                        <span style={{ fontWeight: 700, fontSize: 12, fontFamily: "monospace" }}>{q.number}</span>
+                      <div className={s.kanbanCardHeader}>
+                        <span className={s.kanbanCardNumber}>{q.number}</span>
                       </div>
-                      <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 4 }}>{job?.title || "\u2014"}</div>
-                      <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{client?.name || "\u2014"}</div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontWeight: 700, fontSize: 13 }}>{fmt(sub * (1 + q.tax / 100))}</span>
-                        <span style={{ fontSize: 10, color: "#bbb" }}>{q.createdAt}</span>
+                      <div className={s.kanbanCardTitle}>{job?.title || "\u2014"}</div>
+                      <div className={s.kanbanCardClient}>{client?.name || "\u2014"}</div>
+                      <div className={s.kanbanCardFooter}>
+                        <span className={s.kanbanCardTotal}>{fmt(sub * (1 + q.tax / 100))}</span>
+                        <span className={s.kanbanCardDate}>{q.createdAt}</span>
                       </div>
                     </div>
                   );
@@ -165,7 +166,7 @@ const Quotes = () => {
 
       {view === "grid" && (
         <div className="order-cards-grid">
-          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">{"\ud83d\udccb"}</div><div className="empty-state-text">No quotes found</div></div>}
+          {filtered.length === 0 && <div className={`empty-state ${s.emptyGridCol}`}><div className="empty-state-icon">{"\ud83d\udccb"}</div><div className="empty-state-text">No quotes found</div></div>}
           {filtered.map(q => {
             const job = jobs.find(j => j.id === q.jobId);
             const client = clients.find(c => c.id === job?.clientId);
@@ -173,35 +174,35 @@ const Quotes = () => {
             const lineCount = q.lineItems.length;
             return (
               <div key={q.id} className="order-card" onClick={() => openEdit(q)}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.quotes.light, color: SECTION_COLORS.quotes.accent }}>
+                <div className={s.gridCardHeader}>
+                  <div className={s.gridCardLeft}>
+                    <div className={s.gridCardIcon} style={{ background: SECTION_COLORS.quotes.light, color: SECTION_COLORS.quotes.accent }}>
                       <Icon name="quotes" size={15} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{q.number}</div>
-                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{q.createdAt}</div>
+                      <div className={s.gridCardNumber}>{q.number}</div>
+                      <div className={s.gridCardDate}>{q.createdAt}</div>
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className={s.gridCardBadge}>
                     <StatusBadge status={q.status} />
                   </div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {job?.title || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No job</span>}
+                <div className={s.gridCardTitle}>
+                  {job?.title || <span className={s.gridCardNoJob}>No job</span>}
                 </div>
-                {client && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>{client.name}</div>}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{fmt(total)}</span>
-                  <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
-                  {q.tax > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{q.tax}% GST</span>}
+                {client && <div className={s.gridCardClient}>{client.name}</div>}
+                <div className={s.gridCardTotals}>
+                  <span className={s.gridCardTotalValue}>{fmt(total)}</span>
+                  <span className={s.gridCardPill}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
+                  {q.tax > 0 && <span className={s.gridCardPill}>{q.tax}% GST</span>}
                 </div>
                 <SectionProgressBar status={q.status} section="quotes" />
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>{lineCount} line item{lineCount !== 1 ? "s" : ""}</span>
-                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                <div className={s.gridCardFooter}>
+                  <span className={s.gridCardFooterLabel}>{lineCount} line item{lineCount !== 1 ? "s" : ""}</span>
+                  <div className={s.actionBtns} onClick={e => e.stopPropagation()}>
                     <button className="btn btn-ghost btn-xs" onClick={() => duplicate(q)} title="Duplicate"><Icon name="copy" size={12} /></button>
-                    <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(q.id)}><Icon name="trash" size={12} /></button>
+                    <button className={`btn btn-ghost btn-xs ${s.deleteBtn}`} onClick={() => del(q.id)}><Icon name="trash" size={12} /></button>
                   </div>
                 </div>
               </div>
@@ -222,22 +223,22 @@ const Quotes = () => {
                 const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
                 const linkedInv = invoices.filter(i => i.fromQuoteId === q.id);
                 return (
-                  <tr key={q.id} style={{ cursor: "pointer" }} onClick={() => openEdit(q)}>
-                    <td><span style={{ fontWeight: 700, fontFamily: "monospace", fontSize: 13 }}>{q.number}</span></td>
+                  <tr key={q.id} className={s.cursorPointer} onClick={() => openEdit(q)}>
+                    <td><span className={s.tableNumber}>{q.number}</span></td>
                     <td>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{job?.title}</div>
-                      {linkedInv.length > 0 && <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>{"\u2192"} {linkedInv.map(i=>i.number).join(", ")}</div>}
+                      <div className={s.tableJobTitle}>{job?.title}</div>
+                      {linkedInv.length > 0 && <div className={s.tableLinkedInv}>{"\u2192"} {linkedInv.map(i=>i.number).join(", ")}</div>}
                     </td>
-                    <td style={{ fontSize: 13, color: "#666" }}>{client?.name}</td>
+                    <td className={s.tableClient}>{client?.name}</td>
                     <td><StatusBadge status={q.status} /></td>
                     <td>{fmt(sub)}</td>
                     <td>{fmt(sub * q.tax / 100)}</td>
-                    <td style={{ fontWeight: 700 }}>{fmt(sub * (1 + q.tax / 100))}</td>
-                    <td style={{ fontSize: 12, color: "#999" }}>{q.createdAt}</td>
+                    <td className={s.tableTotal}>{fmt(sub * (1 + q.tax / 100))}</td>
+                    <td className={s.tableDate}>{q.createdAt}</td>
                     <td onClick={e => e.stopPropagation()}>
-                      <div style={{ display: "flex", gap: 4 }}>
+                      <div className={s.actionBtns}>
                         <button className="btn btn-ghost btn-xs" onClick={() => duplicate(q)} title="Duplicate"><Icon name="copy" size={12} /></button>
-                        <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(q.id)}><Icon name="trash" size={12} /></button>
+                        <button className={`btn btn-ghost btn-xs ${s.deleteBtn}`} onClick={() => del(q.id)}><Icon name="trash" size={12} /></button>
                       </div>
                     </td>
                   </tr>
@@ -267,51 +268,51 @@ const Quotes = () => {
           isNew={isNewQ}
           footer={quoteMode === "view" ? <>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
-            <div style={{ display: "flex", gap: 6 }}>
-              <button className="btn btn-sm" style={{ background: "#2563eb", color: "#fff", border: "none" }} disabled={emailSending} onClick={() => handleSendQuoteEmail(form)}>
+            <div className={s.footerActions}>
+              <button className={`btn btn-sm ${s.footerBtnSend}`} disabled={emailSending} onClick={() => handleSendQuoteEmail(form)}>
                 <Icon name="send" size={13} /> {emailSending ? "Sending..." : "Send to Client"}
               </button>
-              <button className="btn btn-sm" style={{ background: SECTION_COLORS.quotes.accent, color: "#fff", border: "none" }} onClick={() => setQuoteMode("edit")}>
+              <button className={`btn btn-sm ${s.footerBtnAccent}`} style={{ background: SECTION_COLORS.quotes.accent }} onClick={() => setQuoteMode("edit")}>
                 <Icon name="edit" size={13} /> Edit
               </button>
             </div>
           </> : <>
             <button className="btn btn-ghost btn-sm" onClick={() => editQuote ? setQuoteMode("view") : setShowModal(false)}>{editQuote ? "Cancel" : "Cancel"}</button>
-            <button className="btn btn-sm" style={{ background: SECTION_COLORS.quotes.accent, color: "#fff", border: "none" }} onClick={() => { save(); if (editQuote) setQuoteMode("view"); }}>
+            <button className={`btn btn-sm ${s.footerBtnAccent}`} style={{ background: SECTION_COLORS.quotes.accent }} onClick={() => { save(); if (editQuote) setQuoteMode("view"); }}>
               <Icon name="check" size={13} /> {isNewQ ? "Create Quote" : "Save Changes"}
             </button>
           </>}
           onClose={() => setShowModal(false)}
         >
           {quoteMode === "view" ? (
-            <div style={{ padding: "20px 24px" }}>
-              {emailStatus && <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 16, fontSize: 13, fontWeight: 600, background: emailStatus.type === "success" ? "#ecfdf5" : "#fef2f2", color: emailStatus.type === "success" ? "#059669" : "#dc2626", border: `1px solid ${emailStatus.type === "success" ? "#a7f3d0" : "#fecaca"}` }}>{emailStatus.msg}</div>}
+            <div className={s.viewPanel}>
+              {emailStatus && <div className={emailStatus.type === "success" ? s.emailAlertSuccess : s.emailAlertError}>{emailStatus.msg}</div>}
               <div className="grid-2">
                 <ViewField label="Job" value={qJob?.title} />
                 <ViewField label="Client" value={qClient?.name} />
               </div>
               <ViewField label="Status" value={form.status?.charAt(0).toUpperCase() + form.status?.slice(1)} />
-              <div style={{ borderTop: "1px solid #f0f0f0", marginTop: 4, paddingTop: 16, marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>Line Items</div>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                  <thead><tr><th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", borderBottom: "1px solid #f0f0f0" }}>Description</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Qty</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Rate</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Total</th></tr></thead>
+              <div className={s.lineItemsSection}>
+                <div className={s.lineItemsSectionLabel}>Line Items</div>
+                <table className={s.lineItemsTable}>
+                  <thead><tr><th className={s.lineItemsThLeft}>Description</th><th className={s.lineItemsThRight}>Qty</th><th className={s.lineItemsThRight}>Rate</th><th className={s.lineItemsThRight}>Total</th></tr></thead>
                   <tbody>
                     {(form.lineItems || []).map((l, i) => (
-                      <tr key={i}><td style={{ padding: "8px" }}>{l.desc || "\u2014"}</td><td style={{ textAlign: "right", padding: "8px" }}>{l.qty} {l.unit}</td><td style={{ textAlign: "right", padding: "8px" }}>{fmt(l.rate)}</td><td style={{ textAlign: "right", padding: "8px", fontWeight: 600 }}>{fmt(l.qty * l.rate)}</td></tr>
+                      <tr key={i}><td className={s.lineItemTd}>{l.desc || "\u2014"}</td><td className={s.lineItemTdRight}>{l.qty} {l.unit}</td><td className={s.lineItemTdRight}>{fmt(l.rate)}</td><td className={s.lineItemTdTotal}>{fmt(l.qty * l.rate)}</td></tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="totals-box" style={{ marginLeft: "auto", maxWidth: 260 }}>
+              <div className={`totals-box ${s.totalsBoxWrap}`}>
                 <div className="totals-row"><span>Subtotal</span><span>{fmt(qSub)}</span></div>
                 <div className="totals-row"><span>GST ({form.tax}%)</span><span>{fmt(qTax)}</span></div>
                 <div className="totals-row total"><span>Total</span><span>{fmt(qTotal)}</span></div>
               </div>
-              {form.notes && <div style={{ marginTop: 16 }}><ViewField label="Notes / Terms" value={form.notes} /></div>}
+              {form.notes && <div className={s.notesWrap}><ViewField label="Notes / Terms" value={form.notes} /></div>}
             </div>
           ) : (
-          <div style={{ padding: "20px 24px" }}>
-            <div className="grid-2" style={{ marginBottom: 16 }}>
+          <div className={s.editPanel}>
+            <div className={`grid-2 ${s.editGrid}`}>
               <div className="form-group">
                 <label className="form-label">Job</label>
                 <select className="form-control" value={form.jobId} onChange={e => setForm(f => ({ ...f, jobId: e.target.value }))}>

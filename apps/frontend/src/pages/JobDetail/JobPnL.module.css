@@ -1,0 +1,224 @@
+/* Hero stat cards */
+.heroGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.statCard {
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 6px;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.statSub {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 3px;
+}
+
+/* Progress bar for cost tracking */
+.costBarTrack {
+  margin-top: 6px;
+}
+
+.costBarBg {
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.costBarFill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.costBarLabel {
+  font-size: 10px;
+  color: #999;
+  margin-top: 2px;
+}
+
+/* Profit card (dynamic colors via style) */
+.profitCard {
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+/* Table styles */
+.cellBold {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.cellRight {
+  text-align: right;
+  font-size: 13px;
+}
+
+.cellRightBold {
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cellRightBoldAccent {
+  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.totalRow {
+  border-top: 2px solid #e2e8f0;
+}
+
+.totalCell {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.totalCellRight {
+  text-align: right;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* Table header */
+.thCell {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.thCellRight {
+  text-align: right;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* Estimate section */
+.sectionBlock {
+  margin-bottom: 20px;
+}
+
+.tableSpaceBelow {
+  margin-bottom: 8px;
+}
+
+.tableSpaceLarge {
+  margin-bottom: 24px;
+}
+
+/* Estimate edit form */
+.estimateForm {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.estimateRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.estimateLabel {
+  width: 120px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.estimateInput {
+  width: 140px;
+}
+
+.estimateActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Cost breakdown */
+.costGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.costHeading {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #555;
+}
+
+.costRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.costRowValue {
+  font-weight: 600;
+}
+
+.emptyText {
+  color: #bbb;
+  font-size: 12px;
+}
+
+/* Client rates section */
+.clientRatesBox {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.clientRatesInfo {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+.cellMd {
+  font-size: 13px;
+}
+
+.cellMdRight {
+  text-align: right;
+  font-size: 13px;
+}
+
+/* Variance colors (dynamic) */
+.positive {
+  color: #059669;
+}
+
+.negative {
+  color: #dc2626;
+}

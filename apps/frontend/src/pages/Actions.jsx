@@ -7,6 +7,7 @@ import {
   daysUntil, hexToRgba,
   COMPLIANCE_DOC_TYPES, getComplianceStatus,
 } from '../utils/helpers';
+import s from './Actions.module.css';
 
 const Actions = ({ onNav }) => {
   const { jobs, quotes, invoices, bills, workOrders, purchaseOrders, contractors, reminders } = useAppStore();
@@ -110,57 +111,57 @@ const Actions = ({ onNav }) => {
   return (
     <div>
       {/* Summary */}
-      <div style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 10, padding: "20px 24px", marginBottom: 20, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontSize: 28, fontWeight: 800, color: totalCount > 0 ? accent : "#059669" }}>{totalCount}</span>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#666" }}>{totalCount === 1 ? "item needs attention" : "items need attention"}</span>
+      <div className={s.summaryBar}>
+        <div className={s.summaryCount}>
+          <span className={s.countNumber} style={{ color: totalCount > 0 ? accent : "#059669" }}>{totalCount}</span>
+          <span className={s.countLabel}>{totalCount === 1 ? "item needs attention" : "items need attention"}</span>
         </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginLeft: "auto", alignItems: "center" }}>
+        <div className={s.badgeRow}>
           {categories.map(c => (
-            <span key={c.id} style={{ fontSize: 11, fontWeight: 600, background: hexToRgba(c.color, 0.1), color: c.color, padding: "3px 10px", borderRadius: 12 }}>{c.items.length} {c.label}</span>
+            <span key={c.id} className={s.categoryBadge} style={{ background: hexToRgba(c.color, 0.1), color: c.color }}>{c.items.length} {c.label}</span>
           ))}
           {outboundTeam.length > 0 && highSeverityItems.length > 0 && (
-            <div style={{ position: "relative", display: "inline-block" }}>
-              <select onChange={e => { const m = outboundTeam.find(t => t.id === Number(e.target.value)); if (m) triggerOutboundCall(m, highSeverityItems); e.target.value = ""; }} style={{ padding: "4px 10px", background: accent, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Open Sans', sans-serif", appearance: "none", paddingRight: 24 }} defaultValue="">
+            <div className={s.callSelectWrapper}>
+              <select onChange={e => { const m = outboundTeam.find(t => t.id === Number(e.target.value)); if (m) triggerOutboundCall(m, highSeverityItems); e.target.value = ""; }} className={s.callSelect} style={{ background: accent }} defaultValue="">
                 <option value="" disabled>Call Team...</option>
                 {outboundTeam.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
-              <svg style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="#fff" strokeWidth="2.5"><polyline points="5 8 10 13 15 8"/></svg>
+              <svg className={s.callSelectArrow} width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="#fff" strokeWidth="2.5"><polyline points="5 8 10 13 15 8"/></svg>
             </div>
           )}
         </div>
       </div>
       {callStatus && (
-        <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#1d4ed8" }}>{callStatus}</div>
+        <div className={s.callStatus}>{callStatus}</div>
       )}
 
       {totalCount === 0 ? (
-        <div style={{ textAlign: "center", padding: 60, color: "#aaa", fontSize: 14 }}>All clear — nothing needs attention right now.</div>
+        <div className={s.emptyState}>All clear — nothing needs attention right now.</div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className={s.categoriesList}>
           {categories.map(cat => (
             <div key={cat.id}>
               {/* Category header */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <div style={{ width: 4, height: 18, borderRadius: 2, background: cat.color }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>{cat.label}</span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: cat.color, borderRadius: 10, padding: "1px 8px", minWidth: 18, textAlign: "center" }}>{cat.items.length}</span>
+              <div className={s.categoryHeader}>
+                <div className={s.categoryStripe} style={{ background: cat.color }} />
+                <span className={s.categoryLabel}>{cat.label}</span>
+                <span className={s.categoryCount} style={{ background: cat.color }}>{cat.items.length}</span>
               </div>
               {/* Items */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div className={s.itemsList}>
                 {cat.items.map(item => (
-                  <div key={item.id} onClick={() => onNav(cat.nav)} style={{ background: "#fff", border: "1px solid #e8e8e8", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "box-shadow 0.15s" }} onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"} onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+                  <div key={item.id} onClick={() => onNav(cat.nav)} className={s.itemCard}>
                     {/* Severity dot */}
-                    <div style={{ width: 8, height: 8, borderRadius: 4, background: item.severity === "high" ? "#dc2626" : item.severity === "medium" ? "#f59e0b" : "#94a3b8", flexShrink: 0 }} />
+                    <div className={`${s.severityDot} ${item.severity === "high" ? s.severityHigh : item.severity === "medium" ? s.severityMedium : s.severityLow}`} />
                     {/* Content */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</div>
-                      {item.sub && <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{item.sub}</div>}
+                    <div className={s.itemContent}>
+                      <div className={s.itemTitle}>{item.title}</div>
+                      {item.sub && <div className={s.itemSub}>{item.sub}</div>}
                     </div>
                     {/* Detail */}
-                    <div style={{ fontSize: 11, fontWeight: 600, color: item.severity === "high" ? "#dc2626" : "#888", flexShrink: 0, textAlign: "right" }}>{item.detail}</div>
+                    <div className={`${s.itemDetail} ${item.severity === "high" ? s.itemDetailHigh : s.itemDetailDefault}`}>{item.detail}</div>
                     {/* Arrow */}
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#ccc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="7 4 13 10 7 16"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#ccc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={s.itemArrow}><polyline points="7 4 13 10 7 16"/></svg>
                   </div>
                 ))}
               </div>

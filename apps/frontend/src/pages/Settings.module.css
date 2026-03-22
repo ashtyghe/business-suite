@@ -1,0 +1,1808 @@
+/* ── Shared styles ─────────────────────────────────────────────────────── */
+
+.card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.cardMuted {
+  composes: card;
+  background: #f8f8f8;
+}
+
+.cardSuccess {
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.labelInline {
+  composes: label;
+}
+
+.sectionHeading {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 12px;
+}
+
+.sectionHeadingLg {
+  composes: sectionHeading;
+  margin-bottom: 16px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.btnSm {
+  composes: btn;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.btnSmBg {
+  composes: btnSm;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.btnAccent {
+  composes: btn;
+  color: #fff;
+}
+
+.btnSecondary {
+  composes: btn;
+  background: #f0f0f0;
+  color: #333;
+}
+
+.btnLight {
+  composes: btn;
+  background: #f8f8f8;
+  color: #666;
+}
+
+.btnCancel {
+  composes: btn;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  font-size: 13px;
+}
+
+.btnPrimary {
+  composes: btn;
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.btnGhost {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.btnDisconnect {
+  composes: btn;
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.inputBase {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Open Sans', sans-serif;
+  box-sizing: border-box;
+}
+
+.inputLg {
+  composes: inputBase;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.inputNarrow {
+  composes: inputBase;
+  max-width: 300px;
+}
+
+.inputNarrowLg {
+  composes: inputBase;
+  max-width: 300px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.inputMono {
+  width: 90px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: monospace;
+  box-sizing: border-box;
+}
+
+.inputColor {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.inputSmInline {
+  width: 130px;
+  padding: 2px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.selectBase {
+  composes: inputBase;
+  width: 100%;
+  background: #fff;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Open Sans', sans-serif;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.textareaMb {
+  composes: textarea;
+  margin-bottom: 12px;
+}
+
+/* ── Alert / Banner styles ────────────────────────────────────────────── */
+
+.alertError {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.alertErrorFlex {
+  composes: alertError;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alertErrorSmall {
+  composes: alertError;
+  margin-bottom: 12px;
+}
+
+.alertErrorSmallFlex {
+  composes: alertErrorSmall;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alertSuccess {
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #166534;
+}
+
+.alertSuccessFlex {
+  composes: alertSuccess;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alertSuccessSmall {
+  composes: alertSuccess;
+  margin-bottom: 12px;
+}
+
+.alertInfo {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #1d4ed8;
+}
+
+.alertDismiss {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #dc2626;
+  font-size: 14px;
+}
+
+/* ── Page heading ─────────────────────────────────────────────────────── */
+
+.pageHeading {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+}
+
+.pageSubheading {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.pageSubheadingMuted {
+  font-size: 11px;
+  color: #b0b0b0;
+  margin-top: 4px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+}
+
+.sectionTitleMb {
+  composes: sectionTitle;
+  margin-bottom: 4px;
+}
+
+.sectionSubtitle {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 16px;
+}
+
+.sectionSubtitleSm {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 20px;
+}
+
+/* ── Layout helpers ───────────────────────────────────────────────────── */
+
+.flexBetween {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flexBetweenMb {
+  composes: flexBetween;
+  margin-bottom: 20px;
+}
+
+.flexBetweenMbSm {
+  composes: flexBetween;
+  margin-bottom: 16px;
+}
+
+.flexBetweenMb6 {
+  composes: flexBetween;
+  margin-bottom: 6px;
+}
+
+.flexBetweenMb12 {
+  composes: flexBetween;
+  margin-bottom: 12px;
+}
+
+.flexGap8 {
+  display: flex;
+  gap: 8px;
+}
+
+.flexGap6 {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.flexGap12 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flexCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flexEnd {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.flexEndMt {
+  composes: flexEnd;
+  margin-top: 12px;
+}
+
+.flexWrap {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.grid2Mb {
+  composes: grid2;
+  margin-bottom: 12px;
+}
+
+.grid2Gap16 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.gridGap8 {
+  display: grid;
+  gap: 8px;
+}
+
+.gridGap12 {
+  display: grid;
+  gap: 12px;
+}
+
+.gridGap16 {
+  display: grid;
+  gap: 16px;
+}
+
+.gridAutoFill {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.gridAutoFillGap12 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  font-size: 12px;
+}
+
+.mb12 {
+  margin-bottom: 12px;
+}
+
+.mb16 {
+  margin-bottom: 16px;
+}
+
+.mb20 {
+  margin-bottom: 20px;
+}
+
+/* ── Tab navigation ───────────────────────────────────────────────────── */
+
+.tabBar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e8e8e8;
+  padding-bottom: 0;
+}
+
+.tabBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tabBtnActive {
+  composes: tabBtn;
+  color: #111;
+}
+
+.docTypeBar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.docTypeBtn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-right: 1px solid #ddd;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  background: #f5f5f5;
+  color: #666;
+}
+
+.docTypeBtnActive {
+  composes: docTypeBtn;
+  color: #fff;
+}
+
+/* ── Xero ─────────────────────────────────────────────────────────────── */
+
+.xeroLoading {
+  padding: 40px;
+  text-align: center;
+  color: #888;
+}
+
+.xeroIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.xeroIconConnected {
+  composes: xeroIcon;
+  background: #ecfdf5;
+  color: #16a34a;
+}
+
+.xeroIconDisconnected {
+  composes: xeroIcon;
+  background: #f8f8f8;
+  color: #888;
+}
+
+.xeroStatusTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+}
+
+.xeroStatusSub {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.contactRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+}
+
+.contactName {
+  font-weight: 600;
+}
+
+.contactType {
+  color: #888;
+  margin-left: 8px;
+}
+
+.contactMatch {
+  flex: 1;
+  color: #16a34a;
+}
+
+.contactNoMatch {
+  flex: 1;
+  color: #888;
+}
+
+.setupWizardTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 4px;
+}
+
+.setupWizardDesc {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 16px;
+}
+
+.setupHelp {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+/* Sync buttons */
+.btnSyncInvoices {
+  composes: btn;
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.btnSyncBills {
+  composes: btn;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.btnSyncPoll {
+  composes: btn;
+  background: #faf5ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+}
+
+.dryRunCard {
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.dryRunInvoices {
+  composes: dryRunCard;
+  background: #f0fdf4;
+}
+
+.dryRunBills {
+  composes: dryRunCard;
+  background: #eff6ff;
+}
+
+.dryRunNumber {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.dryRunNumberGreen {
+  composes: dryRunNumber;
+  color: #16a34a;
+}
+
+.dryRunNumberBlue {
+  composes: dryRunNumber;
+  color: #2563eb;
+}
+
+.dryRunLabel {
+  font-size: 11px;
+  color: #666;
+}
+
+.syncResult {
+  margin-top: 12px;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+}
+
+.syncResultSuccess {
+  composes: syncResult;
+  background: #f0fdf4;
+}
+
+.syncResultWarn {
+  composes: syncResult;
+  background: #fffbeb;
+}
+
+.syncResultBold {
+  font-weight: 600;
+}
+
+.syncLogRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 12px;
+}
+
+.syncLogDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.syncLogDotSuccess {
+  composes: syncLogDot;
+  background: #16a34a;
+}
+
+.syncLogDotError {
+  composes: syncLogDot;
+  background: #dc2626;
+}
+
+.syncLogDotWarn {
+  composes: syncLogDot;
+  background: #f59e0b;
+}
+
+.syncLogEntity {
+  flex: 1;
+}
+
+.syncLogEntityType {
+  font-weight: 600;
+}
+
+.syncLogDirection {
+  color: #888;
+  margin-left: 4px;
+}
+
+.syncLogStatus {
+  font-size: 11px;
+}
+
+.syncLogStatusError {
+  composes: syncLogStatus;
+  color: #dc2626;
+}
+
+.syncLogStatusNormal {
+  composes: syncLogStatus;
+  color: #888;
+}
+
+.syncLogTime {
+  color: #aaa;
+  font-size: 10px;
+}
+
+/* Mapping dots */
+.mappingDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.mappingDotGreen {
+  composes: mappingDot;
+  background: #16a34a;
+}
+
+.mappingDotBlue {
+  composes: mappingDot;
+  background: #2563eb;
+}
+
+.mappingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.mappingLabel {
+  font-weight: 600;
+  min-width: 140px;
+}
+
+.mappingValue {
+  color: #333;
+}
+
+.accountsInfo {
+  font-size: 12px;
+  color: #666;
+}
+
+.accountsSectionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 10px;
+}
+
+.refreshBtn {
+  composes: btn;
+  background: #f8f8f8;
+  color: #666;
+  font-size: 11px;
+  padding: 6px 12px;
+}
+
+/* ── Voice Option Card ────────────────────────────────────────────────── */
+
+.voiceCard {
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 2px solid #e8e8e8;
+  background: #fff;
+}
+
+.voiceCardFlex {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voiceRadio {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.voiceLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.voiceLabelSelected {
+  composes: voiceLabel;
+  color: #111;
+}
+
+.voiceDesc {
+  font-size: 11px;
+  color: #888;
+  margin-top: 1px;
+}
+
+/* ── Toggle switch ────────────────────────────────────────────────────── */
+
+.toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.toggleKnob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 3px;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggleSm {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.toggleKnobSm {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 3px;
+  transition: left 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* ── Slider / Range ───────────────────────────────────────────────────── */
+
+.rangeInput {
+  width: 100%;
+  max-width: 400px;
+}
+
+.rangeLabels {
+  display: flex;
+  justify-content: space-between;
+  max-width: 400px;
+  font-size: 10px;
+  color: #bbb;
+}
+
+.rangeValue {
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* ── Config summary ───────────────────────────────────────────────────── */
+
+.configLabel {
+  color: #888;
+}
+
+.configValue {
+  font-weight: 600;
+}
+
+/* ── Advanced setting row ─────────────────────────────────────────────── */
+
+.settingTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111;
+}
+
+.settingDesc {
+  font-size: 11px;
+  color: #888;
+}
+
+/* ── Hint text ────────────────────────────────────────────────────────── */
+
+.hint {
+  font-size: 11px;
+  color: #999;
+  margin-top: 6px;
+}
+
+.hintSm {
+  font-size: 10px;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+/* ── User Management ──────────────────────────────────────────────────── */
+
+.userCard {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+
+.userAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.userAvatarActive {
+  composes: userAvatar;
+  background: #111;
+  color: #fff;
+}
+
+.userAvatarInactive {
+  composes: userAvatar;
+  background: #ddd;
+  color: #999;
+}
+
+.userName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.userMeta {
+  font-size: 11px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.phoneEditInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.phoneSaveBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #059669;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.phoneCancelBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  font-size: 11px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.phoneClickable {
+  cursor: pointer;
+  border-bottom: 1px dashed #ccc;
+}
+
+.permBadge {
+  font-size: 10px;
+  font-weight: 600;
+  background: #f5f5f5;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.permBtnSm {
+  padding: 4px 10px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 600;
+}
+
+.userActionBtn {
+  padding: 4px 10px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.userToggleBtn {
+  padding: 4px 10px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.inviteSuccessTitle {
+  font-weight: 700;
+  color: #166534;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.inviteGrid {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.tempPasswordBox {
+  background: #fff;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 8px;
+}
+
+.tempPasswordLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #888;
+  margin-bottom: 4px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tempPasswordValue {
+  font-family: monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: 0.05em;
+}
+
+.tempPasswordHint {
+  font-size: 10px;
+  color: #888;
+  margin-top: 4px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 24px;
+  color: #999;
+  font-size: 13px;
+}
+
+.emptyStateLg {
+  text-align: center;
+  padding: 40px;
+  color: #aaa;
+  font-size: 13px;
+}
+
+.emptyStateMd {
+  text-align: center;
+  padding: 20px;
+  color: #aaa;
+  font-size: 13px;
+}
+
+/* ── Permissions modal ────────────────────────────────────────────────── */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modalContent {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+
+.modalContentPermissions {
+  composes: modalContent;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modalContentSm {
+  composes: modalContent;
+  max-width: 380px;
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.modalTitleSm {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.modalSubtitle {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 20px;
+}
+
+.permSectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.permSection {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.permSectionActive {
+  composes: permSection;
+  background: #fff;
+}
+
+.permSectionInactive {
+  composes: permSection;
+  background: #fafafa;
+}
+
+.permSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.permSectionHeaderActive {
+  composes: permSectionHeader;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.permCheckbox {
+  width: 15px;
+  height: 15px;
+  accent-color: #059669;
+  cursor: pointer;
+  pointer-events: none;
+}
+
+.permSectionLabel {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.permSectionLabelActive {
+  composes: permSectionLabel;
+  color: #111;
+}
+
+.permSectionLabelInactive {
+  composes: permSectionLabel;
+  color: #999;
+}
+
+.permCount {
+  font-size: 10px;
+  color: #aaa;
+}
+
+.permActions {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px 10px 40px;
+  flex-wrap: wrap;
+}
+
+.permActionBtn {
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  font-family: 'Open Sans', sans-serif;
+  transition: all 0.15s;
+}
+
+.permActionBtnOn {
+  composes: permActionBtn;
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #bbf7d0;
+}
+
+.permActionBtnOff {
+  composes: permActionBtn;
+  background: #fff;
+  color: #999;
+  border-color: #e8e8e8;
+}
+
+/* ── Outbound calls ───────────────────────────────────────────────────── */
+
+.outboundEnableCard {
+  composes: card;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.teamRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+}
+
+.teamMemberName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111;
+}
+
+.teamMemberInfo {
+  font-size: 11px;
+  color: #888;
+}
+
+.teamAddBtn {
+  padding: 4px 12px;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.teamActionBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 13px;
+  padding: 4px;
+}
+
+.teamDeleteBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ddd;
+  font-size: 13px;
+  padding: 4px;
+}
+
+.testCallBtn {
+  composes: userActionBtn;
+}
+
+/* ── Template editor ──────────────────────────────────────────────────── */
+
+.tplBackBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  font-size: 16px;
+  padding: 4px;
+}
+
+.tplHeaderActions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.tplCompanyDetailBox {
+  padding: 8px 12px;
+  background: #f8f8f8;
+  border-radius: 6px;
+}
+
+.tplCompanyDetailLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.tplCompanyDetailValue {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+
+.tplLabelOverride {
+  font-weight: 400;
+  color: #aaa;
+  text-transform: none;
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.logoPreview {
+  height: 32px;
+  border-radius: 4px;
+}
+
+.fileInput {
+  font-size: 12px;
+}
+
+.showGstLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Column toggle button */
+.colToggleBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  font-family: 'Open Sans', sans-serif;
+  transition: all 0.15s;
+}
+
+.colToggleBtnRequired {
+  composes: colToggleBtn;
+  opacity: 0.7;
+  cursor: default;
+}
+
+.colToggleBtnOn {
+  composes: colToggleBtn;
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #bbf7d0;
+}
+
+.colToggleBtnOff {
+  composes: colToggleBtn;
+  background: #fff;
+  color: #999;
+  border-color: #e8e8e8;
+}
+
+/* ── Template preview ─────────────────────────────────────────────────── */
+
+.previewContainer {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 24px;
+  background: #fff;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+}
+
+.previewLogo {
+  height: 40px;
+  margin-bottom: 8px;
+}
+
+.previewCompanyName {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.previewSmallMuted {
+  font-size: 10px;
+  color: #888;
+}
+
+.previewRight {
+  text-align: right;
+}
+
+.previewDocType {
+  font-size: 18px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.previewDocMeta {
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.previewDocMetaSm {
+  font-size: 11px;
+  color: #666;
+}
+
+.previewBillTo {
+  margin-bottom: 16px;
+}
+
+.previewBillToLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.previewBillToName {
+  font-weight: 600;
+}
+
+.previewBillToAddr {
+  color: #666;
+}
+
+.previewTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+  font-size: 11px;
+  table-layout: fixed;
+}
+
+.previewTh {
+  padding: 6px 8px;
+  text-align: left;
+  color: #fff;
+}
+
+.previewThRight {
+  composes: previewTh;
+  text-align: right;
+}
+
+.previewThCenter {
+  composes: previewTh;
+  text-align: center;
+}
+
+.previewTd {
+  padding: 6px 8px;
+}
+
+.previewTdRight {
+  composes: previewTd;
+  text-align: right;
+}
+
+.previewTdCenter {
+  composes: previewTd;
+  text-align: center;
+}
+
+.previewTr {
+  border-bottom: 1px solid #eee;
+}
+
+.previewTotals {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.previewTotalsBox {
+  width: 180px;
+}
+
+.previewTotalRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 11px;
+}
+
+.previewTotalFinal {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  font-weight: 800;
+  border-top: 2px solid #111;
+  margin-top: 4px;
+}
+
+.previewTerms {
+  margin-top: 16px;
+  padding: 10px 12px;
+  background: #f8f8f8;
+  border-radius: 4px;
+  font-size: 10px;
+  color: #666;
+}
+
+.previewFooter {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 10px;
+  color: #999;
+}
+
+.downloadPdfBtn {
+  padding: 4px 12px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.downloadIcon {
+  font-size: 13px;
+}
+
+/* ── Email preview ────────────────────────────────────────────────────── */
+
+.emailPreviewWrap {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.emailHeader {
+  background: #f8f8f8;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.emailHeaderRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.emailHeaderRowLast {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.emailHeaderLabel {
+  font-weight: 700;
+  color: #888;
+  min-width: 40px;
+}
+
+.emailHeaderValue {
+  color: #333;
+}
+
+.emailSubjectValue {
+  color: #111;
+  font-weight: 600;
+}
+
+.emailBody {
+  padding: 16px 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap;
+  font-family: Arial, sans-serif;
+}
+
+.emailAttachment {
+  padding: 10px 16px;
+  border-top: 1px solid #e0e0e0;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emailAttachIcon {
+  font-size: 14px;
+}
+
+.emailAttachName {
+  font-size: 11px;
+  color: #666;
+}
+
+/* ── Template variables ───────────────────────────────────────────────── */
+
+.varsBox {
+  background: #f8f8f8;
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.varsBoxLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.varsWrap {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.varTag {
+  font-size: 11px;
+  font-family: monospace;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #555;
+  cursor: help;
+}
+
+/* ── Template list ────────────────────────────────────────────────────── */
+
+.tplListItem {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.tplListItem:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.tplSwatch {
+  width: 8px;
+  height: 40px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.tplName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.tplMeta {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.tplDefaultBadge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #ecfdf5;
+  color: #059669;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.tplSetDefaultBtn {
+  font-size: 10px;
+  font-weight: 600;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  color: #666;
+}
+
+.tplDeleteBtn {
+  composes: teamDeleteBtn;
+}
+
+.newTemplateBtn {
+  padding: 6px 14px;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+}
+
+/* ── Company info footer ──────────────────────────────────────────────── */
+
+.companyFooter {
+  background: #f8f8f8;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-size: 12px;
+  color: #888;
+}
+
+/* ── Misc ─────────────────────────────────────────────────────────────── */
+
+.fromCompanyHint {
+  font-size: 10px;
+  color: #aaa;
+}
+
+.flex1 {
+  flex: 1;
+}
+
+.flexShrink0 {
+  flex-shrink: 0;
+}
+
+.inputModalMb {
+  composes: inputLg;
+  margin-bottom: 12px;
+}
+
+.inputModalMbLast {
+  composes: inputLg;
+  margin-bottom: 20px;
+}
+
+.fontSize11 {
+  font-size: 11px;
+}

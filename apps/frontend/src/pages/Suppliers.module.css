@@ -1,0 +1,183 @@
+.searchBar {
+  flex: 1;
+  min-width: 120px;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 4px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.viewBtnActive {
+  color: #fff;
+}
+
+.rowClickable {
+  cursor: pointer;
+}
+
+.nameCell {
+  font-weight: 700;
+}
+
+.mutedText {
+  color: #666;
+}
+
+.abnCell {
+  font-family: monospace;
+  font-size: 12px;
+  color: #888;
+}
+
+.countActive {
+  font-weight: 600;
+}
+
+.countInactive {
+  font-weight: 600;
+  color: #ccc;
+}
+
+.deleteBtn {
+  color: #c00;
+}
+
+.gridLayout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.gridSpan {
+  grid-column: 1 / -1;
+}
+
+.gridCard {
+  cursor: pointer;
+  padding: 18px;
+}
+
+.gridCardName {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.gridCardContact {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.gridCardSecondary {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 2px;
+}
+
+.gridCardAbn {
+  font-size: 11px;
+  color: #bbb;
+  font-family: monospace;
+  margin-bottom: 8px;
+}
+
+.gridCardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chipGroup {
+  display: flex;
+  gap: 6px;
+}
+
+.chipSmall {
+  font-size: 10px;
+}
+
+.kanbanThreeCol {
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+}
+
+.kanbanCount {
+  background: #e0e0e0;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.kanbanCardName {
+  font-weight: 700;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.kanbanCardContact {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.kanbanChipGroup {
+  display: flex;
+  gap: 4px;
+}
+
+.drawerFooter {
+  padding: 12px 20px;
+  border-top: 1px solid #e8e8e8;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.drawerBody {
+  padding: 20px;
+}
+
+.linkedSection {
+  margin-top: 20px;
+}
+
+.linkedSectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.linkedItem {
+  padding: 8px 12px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.linkedItemRef {
+  font-weight: 700;
+}
+
+.linkedItemAmount {
+  float: right;
+  color: #888;
+}
+
+.linkedItemInvoice {
+  color: #999;
+  margin-left: 8px;
+}
+
+.linkedItemTotal {
+  float: right;
+  font-weight: 600;
+}

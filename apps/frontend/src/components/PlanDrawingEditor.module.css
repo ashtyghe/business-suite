@@ -1,0 +1,221 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.topToolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: #1e1e1e;
+  border-radius: 0 0 12px 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+  position: relative;
+  z-index: 10;
+}
+
+.toolBtn {
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolBtnActive {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.toolIcon {
+  font-size: 14px;
+}
+
+.divider {
+  width: 1px;
+  height: 22px;
+  background: #555;
+  margin: 0 3px;
+}
+
+.deleteBtn {
+  composes: toolBtn;
+  color: #f87171;
+}
+
+.clearBtn {
+  composes: toolBtn;
+  color: #fbbf24;
+}
+
+.widthGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.widthLabel {
+  color: #aaa;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.widthBtn {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.widthBtnActive {
+  border: 2px solid #fff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.widthIndicator {
+  background: #fff;
+  border-radius: 1px;
+}
+
+.colorGroup {
+  display: flex;
+  gap: 3px;
+}
+
+.colorBtn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.colorBtnActive {
+  border: 3px solid #fff;
+}
+
+.optionsBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #161616;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 10;
+}
+
+.toggleBtn {
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: #888;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.toggleBtnOn {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.selectInput {
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+  font-size: 11px;
+}
+
+.optionsDivider {
+  width: 1px;
+  height: 18px;
+  background: #444;
+}
+
+.scaleLabel {
+  color: #888;
+  font-size: 11px;
+}
+
+.cursorInfo {
+  color: #0891b2;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.canvasArea {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 20px;
+  overflow: auto;
+}
+
+.canvasWrapper {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  border: 1px solid #333;
+}
+
+.bottomBar {
+  display: flex;
+  gap: 10px;
+  padding: 10px 20px;
+  background: #1e1e1e;
+  border-radius: 12px 12px 0 0;
+  width: 100%;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}
+
+.cancelBtn {
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: 1px solid #555;
+  background: transparent;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.saveBtn {
+  padding: 8px 24px;
+  border-radius: 8px;
+  border: none;
+  background: #0891b2;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}

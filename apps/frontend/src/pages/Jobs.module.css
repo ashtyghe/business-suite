@@ -1,0 +1,375 @@
+/* Jobs page – CSS Module */
+
+/* ── Summary strip ─────────────────────────────────────────────────────────── */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.statValue {
+  font-size: 22px;
+}
+
+/* ── Toolbar ───────────────────────────────────────────────────────────────── */
+.searchBar {
+  flex: 1;
+  min-width: 120px;
+}
+
+.filterSelect {
+  width: auto;
+}
+
+.viewToggle {
+  display: flex;
+  gap: 4px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.viewBtnActive {
+  color: #fff;
+}
+
+/* ── Shared card layout ────────────────────────────────────────────────────── */
+.emptyStateFull {
+  grid-column: 1 / -1;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardTitle {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.cardSubtitle {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.statusWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cardClient {
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noClientText {
+  font-style: italic;
+  color: #94a3b8;
+}
+
+.siteRow {
+  font-size: 11px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.tagsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.priorityBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f5f5f5;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.statChip {
+  font-size: 11px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.avatarWrap {
+  margin-bottom: 4px;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.dueDate {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.actionRow {
+  display: flex;
+  gap: 4px;
+}
+
+.deleteBtn {
+  color: #c00;
+}
+
+/* ── List / table view ─────────────────────────────────────────────────────── */
+.rowPointer {
+  cursor: pointer;
+}
+
+.listTitle {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.listDesc {
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.listClient {
+  font-size: 13px;
+}
+
+.listSite {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.priorityCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.priorityText {
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.linksRow {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── Kanban view ───────────────────────────────────────────────────────────── */
+.kanbanCount {
+  background: #e0e0e0;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.kanbanTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.kanbanTitle {
+  font-weight: 700;
+  font-size: 12px;
+  flex: 1;
+}
+
+.kanbanClient {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 6px;
+}
+
+.kanbanDue {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.kanbanChips {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.kanbanChipSmall {
+  font-size: 10px;
+}
+
+.kanbanFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kanbanTag {
+  font-size: 10px;
+  padding: 1px 6px;
+}
+
+/* ── Drawer: View mode ─────────────────────────────────────────────────────── */
+.drawerBody {
+  padding: 20px 24px;
+}
+
+.drawerBtn {
+  color: #fff;
+  border: none;
+}
+
+.assignedSection {
+  margin-bottom: 14px;
+}
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.chipRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.estimateSection {
+  margin-top: 8px;
+}
+
+.estimateSectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.estimateCard {
+  background: #f8f8f8;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.estimateGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.estimateItemLabel {
+  font-size: 10px;
+  color: #999;
+  font-weight: 600;
+}
+
+.estimateItemValue {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.estimateFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 10px;
+}
+
+.estimateTotal {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.acceptedQuotes {
+  font-size: 11px;
+  color: #059669;
+  font-weight: 600;
+}
+
+/* ── Drawer: Edit mode ─────────────────────────────────────────────────────── */
+.estimateEditSection {
+  margin-bottom: 16px;
+}
+
+.estimateEditCard {
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 14px;
+}
+
+.estimateEditGrid {
+  margin-bottom: 8px;
+}
+
+.formGroupNoMargin {
+  margin-bottom: 0;
+}
+
+.formLabelSmall {
+  font-size: 11px;
+}
+
+.estimateEditTotal {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 13px;
+  font-weight: 800;
+}

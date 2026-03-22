@@ -177,7 +177,7 @@ const NotesTab = ({
           📄 Fill PDF
         </button>
         <input ref={pdfInputRef} type="file" accept=".pdf" className={s.hiddenInput} onChange={handlePdfFileSelect} />
-        <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={() => setShowNoteForm(true)}>
+        <button className={`btn btn-sm ${s.accentBtn}`} style={{ '--accent': jobAccent }} onClick={() => setShowNoteForm(true)}>
           + Add Note
         </button>
       </div>
@@ -196,7 +196,7 @@ const NotesTab = ({
           </div>
           <div className={s.formActions}>
             <button className="btn btn-ghost btn-sm" onClick={() => { setShowNoteForm(false); setNoteForm({ text: "", category: "general", attachments: [] }); }}>Cancel</button>
-            <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={addNote} disabled={!noteForm.text.trim() && noteForm.attachments.length === 0}>Save Note</button>
+            <button className={`btn btn-sm ${s.accentBtn}`} style={{ '--accent': jobAccent }} onClick={addNote} disabled={!noteForm.text.trim() && noteForm.attachments.length === 0}>Save Note</button>
           </div>
         </div>
       )}
@@ -232,7 +232,7 @@ const NotesTab = ({
                     </div>
                     <div className={s.formActions}>
                       <button className="btn btn-ghost btn-sm" onClick={cancelEditNote}>Cancel</button>
-                      <button className="btn btn-sm" style={{ background: jobAccent, color: "#fff", border: "none" }} onClick={saveEditNote} disabled={!editNoteForm.text.trim() && editNoteForm.attachments.length === 0}>Save</button>
+                      <button className={`btn btn-sm ${s.accentBtn}`} style={{ '--accent': jobAccent }} onClick={saveEditNote} disabled={!editNoteForm.text.trim() && editNoteForm.attachments.length === 0}>Save</button>
                     </div>
                   </div>
                 );

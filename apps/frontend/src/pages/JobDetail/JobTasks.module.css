@@ -1,0 +1,145 @@
+/* JobTasks CSS Module */
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.progressRow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progressLabel {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.progressTrack {
+  flex: 1;
+  max-width: 200px;
+  height: 6px;
+  background: #e8e8e8;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.accentBtn {
+  color: #fff;
+  border: none;
+}
+
+/* ── Task form ── */
+.taskForm {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.taskFormInput {
+  margin-bottom: 10px;
+}
+
+.taskFormGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.fieldLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+}
+
+.taskFormActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── Task list ── */
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.taskRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+}
+
+.taskRowDone {
+  background: #f9fafb;
+}
+
+.taskRowActive {
+  background: #fff;
+}
+
+.taskCheckbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.taskContent {
+  flex: 1;
+}
+
+.taskText {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.taskTextDone {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.taskTextActive {
+  text-decoration: none;
+  color: #333;
+}
+
+.taskMeta {
+  display: flex;
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 11px;
+  color: #888;
+}
+
+.overdue {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.deleteBtn {
+  padding: 4px;
+  color: #ccc;
+  font-size: 12px;
+}

@@ -11,6 +11,7 @@ import {
 } from '../components/shared';
 import { OrderCard } from '../components/OrderCard';
 import { OrderDrawer } from '../components/OrderDrawer';
+import s from './Orders.module.css';
 
 const OrdersPage = () => {
   const { workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs, companyInfo } = useAppStore();
@@ -44,23 +45,22 @@ const OrdersPage = () => {
     setModal(m => m ? { ...m, order } : null);
   };
   const handleDelete = (type, id) => { if (!window.confirm("Delete this order?")) return; (type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.filter(o => o.id !== id)); };
-  const accentColor = "#2563eb";
   const orderStatusColors = { Draft: "#888", Approved: "#7c3aed", Sent: "#2563eb", Viewed: "#0891b2", Accepted: "#16a34a", Completed: "#111", Billed: "#059669", Cancelled: "#dc2626" };
   const summaryStatuses = ORDER_STATUSES.filter(s => s !== "Cancelled");
   return (
     <div>
       {/* ── Summary strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px,1fr))", gap: 12, marginBottom: 24 }}>
+      <div className={s.summaryGrid}>
         {summaryStatuses.map(status => {
           const count = allOrders.filter(o => o.status === status).length;
           const woCount = allOrders.filter(o => o.status === status && o._type === "wo").length;
           const poCount = allOrders.filter(o => o.status === status && o._type === "po").length;
           const color = orderStatusColors[status];
           return (
-            <div key={status} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
+            <div key={status} className={`stat-card ${s.summaryCard}`} style={{ borderTop: `3px solid ${color}` }}
               onClick={() => { setFilterStatus(status); setView("list"); }}>
               <div className="stat-label">{status}</div>
-              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
+              <div className={`stat-value ${s.summaryValue}`} style={{ color }}>{count}</div>
               <div className="stat-sub">{woCount} WO · {poCount} PO</div>
             </div>
           );
@@ -68,27 +68,27 @@ const OrdersPage = () => {
       </div>
 
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120, maxWidth: 320 }}>
+        <div className={`search-bar ${s.searchBar}`}>
           <Icon name="search" size={14} />
           <input placeholder="Search orders, jobs, contractors..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="form-control" style={{ width: "auto", minWidth: 120 }} value={filterType} onChange={e => setFilterType(e.target.value)}>
+        <select className={`form-control ${s.filterSelect}`} value={filterType} onChange={e => setFilterType(e.target.value)}>
           <option value="all">All Types</option>
           <option value="wo">Work Orders</option>
           <option value="po">Purchase Orders</option>
         </select>
-        <select className="form-control" style={{ width: "auto", minWidth: 140 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className={`form-control ${s.filterSelectWide}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="All">All Statuses</option>
           {ORDER_STATUSES.map(s => <option key={s}>{s}</option>)}
         </select>
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
-          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accentColor, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
-          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accentColor, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
-          <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: accentColor, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
+        <div className={s.viewToggle}>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: "#2563eb", color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: "#2563eb", color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: "#2563eb", color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
         </div>
         <div className="section-action-btns">
-          <button className="btn btn-primary" style={{ background: "#2563eb" }} onClick={() => openNew("wo")}><OrderIcon name="plus" size={14} /> New WO</button>
-          <button className="btn btn-primary" style={{ background: "#059669" }} onClick={() => openNew("po")}><OrderIcon name="plus" size={14} /> New PO</button>
+          <button className={`btn btn-primary ${s.newWoBtn}`} onClick={() => openNew("wo")}><OrderIcon name="plus" size={14} /> New WO</button>
+          <button className={`btn btn-primary ${s.newPoBtn}`} onClick={() => openNew("po")}><OrderIcon name="plus" size={14} /> New PO</button>
         </div>
       </div>
       {filtered.length === 0 ? (
@@ -105,20 +105,20 @@ const OrdersPage = () => {
               <div key={col} className="kanban-col">
                 <div className="kanban-col-header">
                   <span>{col}</span>
-                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colOrders.length}</span>
+                  <span className={s.kanbanBadge}>{colOrders.length}</span>
                 </div>
                 {colOrders.map(o => {
                   const jd = orderJobDisplay(jobs.find(j => j.id === o.jobId));
                   const partyName = o._type === "wo" ? o.contractorName : o.supplierName;
                   return (
                     <div key={o._type + o.id} className="kanban-card" onClick={() => openOrder(o._type, o, "view")}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: o._type === "wo" ? "#dbeafe" : "#d1fae5", color: o._type === "wo" ? "#2563eb" : "#059669" }}>{o._type === "wo" ? "WO" : "PO"}</span>
-                        <span style={{ fontWeight: 700, fontSize: 12, flex: 1 }}>{o.ref}</span>
+                      <div className={s.kanbanCardHeader}>
+                        <span className={`${s.typeBadge} ${o._type === "wo" ? s.typeBadgeWo : s.typeBadgePo}`}>{o._type === "wo" ? "WO" : "PO"}</span>
+                        <span className={s.kanbanRef}>{o.ref}</span>
                       </div>
-                      {partyName && <div style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>{partyName}</div>}
-                      {jd && <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>{jd.ref} · {jd.name}</div>}
-                      {o.dueDate && <div style={{ fontSize: 11, marginBottom: 4 }}><DueDateChip dateStr={o.dueDate} isTerminal={ORDER_TERMINAL.includes(o.status)} /></div>}
+                      {partyName && <div className={s.kanbanParty}>{partyName}</div>}
+                      {jd && <div className={s.kanbanJob}>{jd.ref} · {jd.name}</div>}
+                      {o.dueDate && <div className={s.kanbanDue}><DueDateChip dateStr={o.dueDate} isTerminal={ORDER_TERMINAL.includes(o.status)} /></div>}
                     </div>
                   );
                 })}
@@ -129,7 +129,7 @@ const OrdersPage = () => {
       ) : view === "grid" ? (
         <div className="order-cards-grid">{filtered.map(o => <OrderCard key={o._type + o.id} type={o._type} order={o} jobs={jobs} onOpen={o => openOrder(o._type || (workOrders.find(w => w.id === o.id) ? "wo" : "po"), o, "view")} onDelete={canDeleteOrder ? (id) => handleDelete(o._type, id) : null} />)}</div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        <div className={s.tableWrap}>
           <table className="data-table">
             <thead><tr>
               <th>TYPE</th>
@@ -145,15 +145,15 @@ const OrdersPage = () => {
               const jd = orderJobDisplay(jobs.find(j => j.id === o.jobId));
               const partyName = o._type === "wo" ? o.contractorName : o.supplierName;
               return (
-                <tr key={o._type + o.id} style={{ cursor: "pointer" }} onClick={() => openOrder(o._type, o, "view")}>
-                  <td><span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: o._type === "wo" ? "#dbeafe" : "#d1fae5", color: o._type === "wo" ? "#2563eb" : "#059669" }}>{o._type === "wo" ? "WO" : "PO"}</span></td>
-                  <td style={{ fontWeight: 600 }}>{o.ref}</td>
-                  <td>{partyName || <span style={{ color: "#94a3b8", fontStyle: "italic" }}>—</span>}</td>
+                <tr key={o._type + o.id} className={s.clickableRow} onClick={() => openOrder(o._type, o, "view")}>
+                  <td><span className={`${s.typeBadge} ${o._type === "wo" ? s.typeBadgeWo : s.typeBadgePo}`}>{o._type === "wo" ? "WO" : "PO"}</span></td>
+                  <td className={s.refCell}>{o.ref}</td>
+                  <td>{partyName || <span className={s.emptyParty}>—</span>}</td>
                   <td>{jd ? jd.ref + " · " + jd.name : "—"}</td>
                   <td><OrderStatusBadge status={o.status} /></td>
                   <td>{orderFmtDate(o.issueDate)}</td>
                   <td><DueDateChip dateStr={o.dueDate} isTerminal={ORDER_TERMINAL.includes(o.status)} /></td>
-                  {canDeleteOrder && <td><button onClick={e => { e.stopPropagation(); handleDelete(o._type, o.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }} title="Delete"><Icon name="delete" size={14} /></button></td>}
+                  {canDeleteOrder && <td><button onClick={e => { e.stopPropagation(); handleDelete(o._type, o.id); }} className={s.deleteBtn} title="Delete"><Icon name="delete" size={14} /></button></td>}
                 </tr>
               );
             })}</tbody>

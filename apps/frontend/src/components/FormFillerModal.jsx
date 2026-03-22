@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import s from './FormFillerModal.module.css';
 
 const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
   const canvasRef = useRef(null);
@@ -67,18 +68,18 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, width: "90%", maxWidth: 560, maxHeight: "85vh", overflow: "auto", padding: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-          <span style={{ fontSize: 20 }}>{template.icon}</span>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{template.name}</h3>
-          <div style={{ flex: 1 }} />
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#999" }}>✕</button>
+    <div className={s.overlay} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className={s.panel}>
+        <div className={s.header}>
+          <span className={s.headerIcon}>{template.icon}</span>
+          <h3 className={s.headerTitle}>{template.name}</h3>
+          <div className={s.headerSpacer} />
+          <button onClick={onClose} className={s.closeBtn}>✕</button>
         </div>
 
         {template.fields.map(field => (
-          <div key={field.key} style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4, display: "block" }}>{field.label}</label>
+          <div key={field.key} className={s.fieldGroup}>
+            <label className={s.fieldLabel}>{field.label}</label>
             {field.type === "text" && (
               <input className="form-control" value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} />
             )}
@@ -89,13 +90,13 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
               <input type="time" className="form-control" value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} />
             )}
             {field.type === "textarea" && (
-              <textarea className="form-control" rows={3} value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} style={{ resize: "vertical", fontFamily: "inherit" }} />
+              <textarea className={`form-control ${s.textarea}`} rows={3} value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} />
             )}
             {field.type === "checklist" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
+              <div className={s.checklistWrap}>
                 {(field.options || []).map((opt, i) => (
-                  <label key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", padding: "4px 0" }}>
-                    <input type="checkbox" checked={(formData[field.key] || []).includes(opt)} onChange={() => toggleChecklist(field.key, opt)} style={{ width: 16, height: 16, accentColor: "#2563eb" }} />
+                  <label key={i} className={s.checklistLabel}>
+                    <input type="checkbox" checked={(formData[field.key] || []).includes(opt)} onChange={() => toggleChecklist(field.key, opt)} className={s.checkbox} />
                     {opt}
                   </label>
                 ))}
@@ -105,20 +106,20 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
               <div>
                 {formData[field.key] && sigField !== field.key ? (
                   <div>
-                    <img src={formData[field.key]} alt="Signature" style={{ maxWidth: 300, height: 80, border: "1px solid #e2e8f0", borderRadius: 6, marginBottom: 4 }} />
+                    <img src={formData[field.key]} alt="Signature" className={s.signaturePreview} />
                     <button className="btn btn-ghost btn-xs" onClick={() => { setSigField(field.key); setFormData(d => ({ ...d, [field.key]: "" })); }}>Re-sign</button>
                   </div>
                 ) : (
                   <div>
                     <canvas ref={sigField === field.key ? canvasRef : undefined} width={400} height={120}
-                      style={{ border: "2px solid #e2e8f0", borderRadius: 8, cursor: "crosshair", touchAction: "none", display: "block", background: "#fafafa" }}
+                      className={s.signatureCanvas}
                       onMouseDown={e => { setSigField(field.key); startDraw(e); }}
                       onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
                       onTouchStart={e => { setSigField(field.key); startDraw(e); }}
                       onTouchMove={draw} onTouchEnd={endDraw}
                       onClick={() => setSigField(field.key)}
                     />
-                    <button className="btn btn-ghost btn-xs" style={{ marginTop: 4 }} onClick={clearSig}>Clear</button>
+                    <button className={`btn btn-ghost btn-xs ${s.clearBtn}`} onClick={clearSig}>Clear</button>
                   </div>
                 )}
               </div>
@@ -126,10 +127,10 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
           </div>
         ))}
 
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 20, paddingTop: 16, borderTop: "1px solid #e2e8f0" }}>
+        <div className={s.footer}>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-          <button className="btn btn-sm" style={{ background: "#2563eb", color: "#fff", border: "none" }} onClick={() => onSave(formData, false)}>Save to Notes</button>
-          <button className="btn btn-sm" style={{ background: "#059669", color: "#fff", border: "none" }} onClick={() => onSave(formData, true)}>Save & Print PDF</button>
+          <button className={`btn btn-sm ${s.saveNotesBtn}`} onClick={() => onSave(formData, false)}>Save to Notes</button>
+          <button className={`btn btn-sm ${s.savePdfBtn}`} onClick={() => onSave(formData, true)}>Save & Print PDF</button>
         </div>
       </div>
     </div>

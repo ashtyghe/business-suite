@@ -1,0 +1,242 @@
+.xeroSyncBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.xeroSyncDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.closeBtn {
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.orderIconSvg {
+  flex-shrink: 0;
+}
+
+.dueDateBase {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.dueDateTerminal {
+  composes: dueDateBase;
+  color: #94a3b8;
+}
+
+.dueDateOverdue {
+  composes: dueDateBase;
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.dueDateToday {
+  composes: dueDateBase;
+  color: #ea580c;
+  background: #fff7ed;
+}
+
+.dueDateSoon {
+  composes: dueDateBase;
+  color: #d97706;
+  background: #fffbeb;
+}
+
+.dueDateNormal {
+  composes: dueDateBase;
+  color: #64748b;
+}
+
+.fileIconBadge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.sectionLabel {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 10px;
+  margin-top: 4px;
+}
+
+.drawerHeader {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.drawerHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.drawerHeaderIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.drawerHeaderTitleWrap {
+  min-width: 0;
+}
+
+.drawerTypeLabel {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.drawerTitle {
+  font-size: 15px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawerHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.drawerToggleWrap {
+  display: flex;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.drawerToggleBtn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.drawerToggleBtnActive {
+  composes: drawerToggleBtn;
+  background: #fff;
+  color: #1e293b;
+}
+
+.drawerToggleBtnInactive {
+  composes: drawerToggleBtn;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.drawerCloseBtn {
+  padding: 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  display: flex;
+}
+
+.drawerBody {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.drawerFooter {
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.lineItemSelect {
+  width: 100%;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 4px;
+  padding: 5px 7px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+}
+
+.lineItemTotal {
+  font-weight: 600;
+}
+
+.lineItemDeleteBtn {
+  color: #c00;
+  padding: 4px;
+}
+
+.totalsWrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.activityEmpty {
+  color: #bbb;
+  font-size: 13px;
+  padding: 20px 0;
+  text-align: center;
+}
+
+.activityText {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.activityAction {
+  font-weight: 600;
+}
+
+.activityMeta {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+.activityUser {
+  font-weight: 600;
+  color: #777;
+}

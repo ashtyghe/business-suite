@@ -1,6 +1,7 @@
 import { useState, useMemo, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { Icon } from '../components/Icon';
+import s from './Files.module.css';
 
 const FilesPage = () => {
   const { jobs, bills, contractors, quotes, invoices, workOrders, purchaseOrders } = useAppStore();
@@ -99,58 +100,56 @@ const FilesPage = () => {
     return "#888";
   };
 
-  const selectStyle = { padding: "7px 10px", borderRadius: 6, border: "1px solid #e0e0e0", fontSize: 13, background: "#fff", color: "#333", fontFamily: "'Open Sans', sans-serif", minWidth: 120 };
-
   return (
-    <div style={{ padding: 0 }}>
+    <div className={s.page}>
       {/* Toolbar */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 18 }}>
-        <div style={{ position: "relative", flex: "1 1 220px", minWidth: 180 }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search files..." style={{ ...selectStyle, width: "100%", paddingLeft: 32 }} />
+      <div className={s.toolbar}>
+        <div className={s.searchWrap}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={s.searchIcon}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search files..." className={s.searchInput} />
         </div>
-        <select value={filterSource} onChange={e => setFilterSource(e.target.value)} style={selectStyle}>
+        <select value={filterSource} onChange={e => setFilterSource(e.target.value)} className={s.selectInput}>
           <option value="all">All Sources</option>
-          {sources.map(s => <option key={s} value={s}>{s}</option>)}
+          {sources.map(src => <option key={src} value={src}>{src}</option>)}
         </select>
-        <select value={filterType} onChange={e => setFilterType(e.target.value)} style={selectStyle}>
+        <select value={filterType} onChange={e => setFilterType(e.target.value)} className={s.selectInput}>
           <option value="all">All Types</option>
           {types.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <div style={{ fontSize: 12, color: "#888" }}>{filtered.length} file{filtered.length !== 1 ? "s" : ""}</div>
+        <div className={s.fileCount}>{filtered.length} file{filtered.length !== 1 ? "s" : ""}</div>
       </div>
 
       {/* Table */}
-      <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e5e5", overflow: "hidden" }}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <div className={s.tableWrap}>
+        <div className={s.scrollWrap}>
+          <table className={s.table}>
             <thead>
-              <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e5e5" }}>
-                <th onClick={() => toggleSort("name")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Name{sortIcon("name")}</th>
-                <th onClick={() => toggleSort("type")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Type{sortIcon("type")}</th>
-                <th onClick={() => toggleSort("source")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Source{sortIcon("source")}</th>
-                <th onClick={() => toggleSort("date")} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}>Date{sortIcon("date")}</th>
-                <th style={{ textAlign: "left", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", whiteSpace: "nowrap" }}>Linked To</th>
-                <th style={{ textAlign: "center", padding: "10px 14px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "#555", whiteSpace: "nowrap" }}>Status</th>
+              <tr className={s.headerRow}>
+                <th onClick={() => toggleSort("name")} className={s.th}>Name{sortIcon("name")}</th>
+                <th onClick={() => toggleSort("type")} className={s.th}>Type{sortIcon("type")}</th>
+                <th onClick={() => toggleSort("source")} className={s.th}>Source{sortIcon("source")}</th>
+                <th onClick={() => toggleSort("date")} className={s.th}>Date{sortIcon("date")}</th>
+                <th className={s.thStatic}>Linked To</th>
+                <th className={s.thCenter}>Status</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} style={{ textAlign: "center", padding: 40, color: "#aaa" }}>No files found</td></tr>
+                <tr><td colSpan={6} className={s.emptyCell}>No files found</td></tr>
               ) : filtered.map(f => (
-                <tr key={f.id} style={{ borderBottom: "1px solid #f0f0f0" }}
+                <tr key={f.id} className={s.row}
                   onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
                   onMouseLeave={e => e.currentTarget.style.background = ""}>
-                  <td style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+                  <td className={s.nameCell}>
                     <Icon name={f.icon} size={14} />
-                    <span style={{ fontWeight: 500 }}>{f.name}</span>
+                    <span className={s.nameText}>{f.name}</span>
                   </td>
-                  <td style={{ padding: "10px 14px", color: "#666" }}>{f.type}</td>
-                  <td style={{ padding: "10px 14px", color: "#666" }}>{f.source}</td>
-                  <td style={{ padding: "10px 14px", color: "#666", whiteSpace: "nowrap" }}>{f.date || "—"}</td>
-                  <td style={{ padding: "10px 14px", color: "#888", fontSize: 12 }}>{f.linkedTo || "—"}</td>
-                  <td style={{ padding: "10px 14px", textAlign: "center" }}>
-                    {f.status ? <span style={{ display: "inline-block", padding: "2px 10px", borderRadius: 99, fontSize: 11, fontWeight: 600, background: statusColor(f.status) + "18", color: statusColor(f.status), textTransform: "capitalize" }}>{f.status}</span> : "—"}
+                  <td className={s.cell}>{f.type}</td>
+                  <td className={s.cell}>{f.source}</td>
+                  <td className={s.dateCell}>{f.date || "—"}</td>
+                  <td className={s.linkedCell}>{f.linkedTo || "—"}</td>
+                  <td className={s.statusCell}>
+                    {f.status ? <span className={s.statusBadge} style={{ background: statusColor(f.status) + "18", color: statusColor(f.status) }}>{f.status}</span> : "—"}
                   </td>
                 </tr>
               ))}

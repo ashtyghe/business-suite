@@ -1,0 +1,256 @@
+/* DisplaySchedule CSS Module */
+
+.root {
+  background: #fafafa;
+  color: #111;
+  font-family: 'Open Sans', sans-serif;
+  height: 100vh;
+  padding: 28px 36px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Week container ── */
+.weekContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.weekHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.weekLabelLarge {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111;
+}
+
+.weekLabelSmall {
+  font-size: 25px;
+  font-weight: 700;
+  color: #111;
+}
+
+.weekGrid {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+
+.weekendCol {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* ── Day column ── */
+.dayCol {
+  flex: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dayColCompact {
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Day header ── */
+.dayHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.dayHeaderLarge {
+  padding: 10px 16px;
+}
+
+.dayHeaderDefault {
+  padding: 8px 12px;
+}
+
+.dayHeaderCompact {
+  padding: 6px 10px;
+}
+
+.dayHeaderInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.dayHeaderInfoCompact {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Day name label */
+.dayNameLarge {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.dayNameDefault {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Day number */
+.dayNumberLarge {
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dayNumberDefault {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dayNumberCompact {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* ── Weather ── */
+.weatherInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.weatherInfoLarge {
+  font-size: 13px;
+}
+
+.weatherInfoDefault {
+  font-size: 11px;
+}
+
+.weatherInfoCompact {
+  font-size: 9px;
+  gap: 0;
+}
+
+.weatherTemp {
+  font-weight: 600;
+}
+
+/* Month fallback label */
+.monthLabelLarge {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.monthLabelDefault {
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.monthLabelCompact {
+  font-size: 10px;
+  font-weight: 400;
+}
+
+/* ── Day entries area ── */
+.dayEntries {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.dayEntriesLarge {
+  padding: 12px 14px;
+  gap: 8px;
+}
+
+.dayEntriesDefault {
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+.dayEntriesCompact {
+  padding: 4px 8px;
+  gap: 4px;
+}
+
+/* ── Empty day ── */
+.emptyDayLarge {
+  font-size: 16px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.emptyDayDefault {
+  font-size: 13px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.emptyDayCompact {
+  font-size: 11px;
+  text-align: center;
+  padding: 4px 0;
+}
+
+/* ── Schedule entry card ── */
+.entryCard {
+  border-radius: 8px;
+}
+
+.entryCardCompact {
+  border-radius: 6px;
+}
+
+.entryTitleLarge {
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.entryTitleDefault {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.entryTitleCompact {
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.entryTimeLarge {
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.entryTimeDefault {
+  font-size: 11px;
+  margin-top: 2px;
+}

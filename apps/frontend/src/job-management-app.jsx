@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, Fragment, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { fetchAll, createCustomer, updateCustomer, deleteCustomer, createSite, updateSite, deleteSite, createJob, updateJob, deleteJob, createQuote, updateQuote, deleteQuote, createInvoice, updateInvoice, deleteInvoice, createTimeEntry, updateTimeEntry, deleteTimeEntry, createBill, updateBill, deleteBill, createScheduleEntry, updateScheduleEntry, deleteScheduleEntry, uploadFile, createAttachment, deleteAttachment, createWorkOrder, updateWorkOrder, deleteWorkOrder, createPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder, createContractor, updateContractor, deleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc, createPhase, updatePhase, deletePhase, createTask, updateTask, deleteTask, createNote, updateNote, deleteNote, createAuditEntry } from './lib/db';
+import { useAppStore } from './lib/store';
 import { supabase, extractBillFromImage, extractDocumentFromImage, sendEmail, inviteUser, updateStaffRecord, xeroOAuth, xeroSyncInvoice, xeroSyncBill, xeroSyncContact, xeroPollUpdates, xeroFetchAccounts, xeroGetMappings, xeroSaveMappings } from './lib/supabase';
 import { useAuth } from './lib/AuthContext';
 import { changePassword, adminResetUserPassword } from './lib/auth';
@@ -13779,75 +13780,73 @@ export default function App() {
   const [hoverNav, setHoverNav] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const [clients, setClients] = useState([]);
-  const [jobs, setJobs] = useState([]);
-  const [quotes, setQuotes] = useState([]);
-  const [schedule, setSchedule] = useState([]);
-  const [futureSchedule, setFutureSchedule] = useState([]);
-  const [timeEntries, setTimeEntries] = useState([]);
-  const [bills, setBills] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [staff, setStaff] = useState([]);
-  const [contractors, setContractors] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
-  const [reminders, setReminders] = useState(SEED_REMINDERS);
-  const [callLog] = useState(SEED_CALL_LOG);
-  const [templates, setTemplates] = useState(() => {
-    try { const saved = localStorage.getItem("fieldops_templates"); return saved ? JSON.parse(saved) : SEED_TEMPLATES; } catch { return SEED_TEMPLATES; }
-  });
-  const [companyInfo, setCompanyInfo] = useState(() => {
-    try { const saved = localStorage.getItem("fieldops_company_info"); return saved ? JSON.parse(saved) : { ...DEFAULT_COMPANY }; } catch { return { ...DEFAULT_COMPANY }; }
-  });
-  const [workOrders, setWorkOrders] = useState(SEED_WO);
-  const [purchaseOrders, setPurchaseOrders] = useState(SEED_PO);
-  const [loading, setLoading] = useState(true);
-  const [dbError, setDbError] = useState(null);
 
+  // ── Business data from Zustand store ────────────────────────────────────
+  const clients = useAppStore(s => s.clients);
+  const setClients = useAppStore(s => s.setClients);
+  const jobs = useAppStore(s => s.jobs);
+  const setJobs = useAppStore(s => s.setJobs);
+  const quotes = useAppStore(s => s.quotes);
+  const setQuotes = useAppStore(s => s.setQuotes);
+  const schedule = useAppStore(s => s.schedule);
+  const setSchedule = useAppStore(s => s.setSchedule);
+  const futureSchedule = useAppStore(s => s.futureSchedule);
+  const setFutureSchedule = useAppStore(s => s.setFutureSchedule);
+  const timeEntries = useAppStore(s => s.timeEntries);
+  const setTimeEntries = useAppStore(s => s.setTimeEntries);
+  const bills = useAppStore(s => s.bills);
+  const setBills = useAppStore(s => s.setBills);
+  const invoices = useAppStore(s => s.invoices);
+  const setInvoices = useAppStore(s => s.setInvoices);
+  const staff = useAppStore(s => s.staff);
+  const setStaff = useAppStore(s => s.setStaff);
+  const contractors = useAppStore(s => s.contractors);
+  const setContractors = useAppStore(s => s.setContractors);
+  const suppliers = useAppStore(s => s.suppliers);
+  const setSuppliers = useAppStore(s => s.setSuppliers);
+  const reminders = useAppStore(s => s.reminders);
+  const setReminders = useAppStore(s => s.setReminders);
+  const callLog = useAppStore(s => s.callLog);
+  const templates = useAppStore(s => s.templates);
+  const setTemplates = useAppStore(s => s.setTemplates);
+  const companyInfo = useAppStore(s => s.companyInfo);
+  const setCompanyInfo = useAppStore(s => s.setCompanyInfo);
+  const workOrders = useAppStore(s => s.workOrders);
+  const setWorkOrders = useAppStore(s => s.setWorkOrders);
+  const purchaseOrders = useAppStore(s => s.purchaseOrders);
+  const setPurchaseOrders = useAppStore(s => s.setPurchaseOrders);
+  const loading = useAppStore(s => s.loading);
+  const dbError = useAppStore(s => s.dbError);
+  const storeInit = useAppStore(s => s.init);
+
+  // ── Initialise store on mount ───────────────────────────────────────────
   useEffect(() => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseKey) {
-      // No Supabase config — use seed data for local preview
-      setClients(SEED_CLIENTS);
-      setJobs(SEED_JOBS);
-      setQuotes(SEED_QUOTES);
-      setInvoices(SEED_INVOICES);
-      setTimeEntries(SEED_TIME);
-      setBills(SEED_BILLS);
-      setSchedule(SEED_SCHEDULE);
-      setFutureSchedule(SEED_FUTURE_SCHEDULE);
-      setContractors(SEED_CONTRACTORS);
-      setSuppliers(SEED_SUPPLIERS);
-      setStaff(TEAM_DATA.map((t, i) => ({ id: i + 1, name: t.name, costRate: t.costRate, chargeRate: t.chargeRate })));
-      setLoading(false);
-      return;
-    }
-    fetchAll()
-      .then(data => {
-        setClients(data.clients);
-        // Attach phases, tasks, notes from Supabase to jobs
-        setJobs(data.jobs.map(job => ({
-          ...job,
-          phases: (data.phases || []).filter(p => p.jobId === job.id),
-          tasks: (data.tasks || []).filter(t => t.jobId === job.id),
-          notes: (data.notes || []).filter(n => n.jobId === job.id),
-        })));
-        setQuotes(data.quotes);
-        setInvoices(data.invoices);
-        setTimeEntries(data.timeEntries);
-        setBills(data.bills);
-        setSchedule(data.schedule);
-        setStaff(data.staff);
-        if (data.workOrders) setWorkOrders(data.workOrders);
-        if (data.purchaseOrders) setPurchaseOrders(data.purchaseOrders);
-        if (data.contractors) setContractors(data.contractors);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Failed to load data:', err);
-        setDbError(err.message);
-        setLoading(false);
-      });
+    const initTemplates = (() => {
+      try { const saved = localStorage.getItem("fieldops_templates"); return saved ? JSON.parse(saved) : SEED_TEMPLATES; } catch { return SEED_TEMPLATES; }
+    })();
+    const initCompanyInfo = (() => {
+      try { const saved = localStorage.getItem("fieldops_company_info"); return saved ? JSON.parse(saved) : { ...DEFAULT_COMPANY }; } catch { return { ...DEFAULT_COMPANY }; }
+    })();
+
+    storeInit({
+      clients: SEED_CLIENTS,
+      jobs: SEED_JOBS,
+      quotes: SEED_QUOTES,
+      invoices: SEED_INVOICES,
+      timeEntries: SEED_TIME,
+      bills: SEED_BILLS,
+      schedule: SEED_SCHEDULE,
+      futureSchedule: SEED_FUTURE_SCHEDULE,
+      contractors: SEED_CONTRACTORS,
+      suppliers: SEED_SUPPLIERS,
+      staff: TEAM_DATA.map((t, i) => ({ id: i + 1, name: t.name, costRate: t.costRate, chargeRate: t.chargeRate })),
+      reminders: SEED_REMINDERS,
+      callLog: SEED_CALL_LOG,
+      templates: initTemplates,
+      companyInfo: initCompanyInfo,
+      workOrders: SEED_WO,
+      purchaseOrders: SEED_PO,
+    });
   }, []);
 
   const pendingBillsCount = bills.filter(b => b.status === "inbox" || b.status === "linked" || b.status === "approved").length;

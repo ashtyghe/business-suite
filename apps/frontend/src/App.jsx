@@ -1,6 +1,7 @@
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import JobManagementApp from './job-management-app'
 import LoginPage from './LoginPage'
+import s from './App.module.css'
 
 function AppShell() {
   const { user, staff, loading, isLocalDev } = useAuth();
@@ -15,9 +16,9 @@ function AppShell() {
   // Still checking session
   if (loading) {
     return (
-      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, background: '#fafafa', fontFamily: "'Open Sans', sans-serif" }}>
-        <div style={{ width: 32, height: 32, border: '3px solid #e8e8e8', borderTopColor: '#111', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <div style={{ color: '#888', fontSize: 14 }}>Loading…</div>
+      <div className={s.loadingScreen}>
+        <div className={s.spinner} />
+        <div className={s.loadingText}>Loading…</div>
       </div>
     );
   }

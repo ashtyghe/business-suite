@@ -1,0 +1,76 @@
+/* ── Bill Modal view mode ── */
+.sectionDivider { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #aaa; margin-bottom: 10px; }
+.sectionBorder { border-top: 1px solid #f0f0f0; margin-top: 4px; padding-top: 16px; }
+.sectionBorderOnly { border-top: 1px solid #f0f0f0; padding-top: 16px; }
+.bigAmount { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+.gstBreakdown { border-radius: 8px; padding: 12px 16px; display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; font-size: 13px; }
+.gstLabel { color: #999; }
+.gstAutoRight { margin-left: auto; }
+.extractSuccess { color: #1e7e34; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.extractError { color: #c0392b; font-size: 13px; }
+.uploadPromptTitle { font-weight: 700; font-size: 14px; margin-top: 8px; }
+.uploadPromptSub { font-size: 12px; color: #999; margin-top: 4px; }
+.uploadSection { margin-bottom: 20px; }
+.lineItemsSection { margin-bottom: 16px; }
+
+/* ── Dollar / percent input ── */
+.inputWrap { position: relative; }
+.inputPrefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 13px; }
+.inputSuffix { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 13px; }
+.inputPrefixed { padding-left: 24px; }
+.inputSuffixed { padding-right: 32px; }
+.gstCheckRow { display: flex; align-items: center; gap: 16px; height: 40px; }
+.gstCheckLabel { font-weight: 600; font-size: 13px; }
+.markupHint { font-size: 11px; color: #888; margin-top: 4px; }
+
+/* ── Post to Job modal ── */
+.postSummaryBox { background: #f8f8f8; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }
+.postSupplier { font-weight: 700; font-size: 13px; }
+.postDetail { font-size: 12px; color: #888; }
+.postAmount { font-size: 15px; font-weight: 800; margin-top: 6px; }
+.postAmountSuffix { font-size: 11px; font-weight: 400; color: #aaa; }
+.costSummaryBox { background: #111; color: #fff; border-radius: 8px; padding: 14px 16px; margin-top: 4px; }
+.costSummaryTitle { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #666; margin-bottom: 10px; }
+.costRows { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.costRow { display: flex; justify-content: space-between; }
+.costRowLabel { color: #888; }
+.costRowTotal { display: flex; justify-content: space-between; border-top: 1px solid #2a2a2a; padding-top: 6px; margin-top: 2px; font-weight: 800; font-size: 15px; }
+
+/* ── Bills kanban ── */
+.kanbanCardTop { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.kanbanCardMain { flex: 1; min-width: 0; }
+.kanbanCardSupplier { font-weight: 700; font-size: 12px; margin-bottom: 2px; }
+.kanbanCardInvNo { color: #aaa; font-family: monospace; font-size: 10px; }
+.kanbanCardAmount { font-weight: 800; color: #111; font-size: 13px; flex-shrink: 0; }
+.kanbanCardDesc { color: #777; margin-top: 3px; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kanbanCardFooter { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 8px; }
+.kanbanCardMeta { display: flex; gap: 4px; align-items: center; }
+.kanbanCardJob { font-size: 10px; color: #888; }
+.kanbanCardUnlinked { font-size: 10px; color: #ccc; }
+.kanbanStageTotal { font-size: 11px; color: #888; margin-bottom: 8px; font-weight: 600; }
+
+/* ── Bills list totals bar ── */
+.totalsBar { display: flex; gap: 20px; margin-bottom: 12px; font-size: 13px; padding: 10px 16px; background: #fafafa; border-radius: 8px; border: 1px solid #f0f0f0; flex-wrap: wrap; }
+.totalsBarLabel { color: #888; }
+.totalsBarValue { color: #111; }
+.totalsBarSelected { margin-left: auto; color: #2c5fa8; font-weight: 600; }
+
+/* ── Bills table cells ── */
+.supplierCell { font-weight: 600; font-size: 13px; }
+.notesCellInline { font-size: 10px; color: #aaa; margin-top: 1px; font-style: italic; }
+.invoiceNoCell { font-family: monospace; font-size: 12px; color: #555; }
+.jobCell { font-size: 12px; }
+.unlinkedCell { color: #ccc; font-size: 12px; }
+.dateCell { font-size: 12px; color: #999; }
+.amountCell { font-size: 13px; }
+.totalCell { font-weight: 700; }
+.markupCell { font-size: 12px; }
+.markupValue { color: #555; }
+.markupNone { color: #ddd; }
+.actionRow { display: flex; gap: 4px; flex-wrap: nowrap; }
+
+/* ── Grid card bill-specific ── */
+.billInvNo { font-size: 11px; color: #94a3b8; font-family: monospace; }
+.billStatusPill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.billJobLink { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.billDateLabel { font-size: 11px; font-weight: 600; color: #64748b; }

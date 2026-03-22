@@ -8,6 +8,7 @@ import { buildQuotePdfHtml, buildInvoicePdfHtml, buildOrderPdfHtml, htmlToPdfBas
 import NotesTab from './NotesTab';
 import './styles/global.css';
 import sh from './styles/app-shell.module.css';
+import db from './styles/dashboard.module.css';
 // Heavy libraries loaded dynamically where used (fabric, pdfjs-dist, pdf-lib, signature_pad)
 
 // ── Google Font ──────────────────────────────────────────────────────────────
@@ -1881,16 +1882,16 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
         ];
 
         return (
-          <div style={{ background: "linear-gradient(135deg, #111 0%, #1e293b 100%)", borderRadius: 12, marginBottom: 20, color: "#fff", overflow: "hidden" }}>
+          <div className={db.aiPanel}>
             {/* Header */}
-            <div onClick={() => setAiExpanded(e => !e)} style={{ padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 16 }}>&#10024;</span>
-                <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.03em" }}>AI Business Insight</span>
-                {insightCards.length > 0 && !aiExpanded && <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 4 }}>{insightCards.length} insights</span>}
+            <div onClick={() => setAiExpanded(e => !e)} className={db.aiHeader}>
+              <div className={db.aiHeaderLeft}>
+                <span className={db.aiSparkle}>&#10024;</span>
+                <span className={db.aiTitle}>AI Business Insight</span>
+                {insightCards.length > 0 && !aiExpanded && <span className={db.aiInsightCount}>{insightCards.length} insights</span>}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <button onClick={e => { e.stopPropagation(); generateInsight(); }} disabled={aiLoading} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, padding: "4px 12px", fontSize: 11, fontWeight: 600, color: "#fff", cursor: "pointer", opacity: aiLoading ? 0.5 : 1, fontFamily: "'Open Sans', sans-serif" }}>
+              <div className={db.aiHeaderRight}>
+                <button onClick={e => { e.stopPropagation(); generateInsight(); }} disabled={aiLoading} className={db.aiRefreshBtn}>
                   {aiLoading ? "Analysing..." : "Refresh"}
                 </button>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" style={{ transition: "transform 0.2s", transform: aiExpanded ? "rotate(180deg)" : "rotate(0deg)" }}><polyline points="5 8 10 13 15 8"/></svg>
@@ -1898,30 +1899,30 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
             </div>
             {/* Expandable content */}
             {aiExpanded && (
-              <div style={{ padding: "0 24px 20px" }}>
-                {aiLoading && !aiInsight && <div style={{ fontSize: 13, color: "#94a3b8" }}>Analysing your business data...</div>}
-                {aiError && <div style={{ fontSize: 12, color: "#f87171", marginBottom: 12 }}>Failed to generate insight: {aiError}</div>}
+              <div className={db.aiBody}>
+                {aiLoading && !aiInsight && <div className={db.aiLoadingText}>Analysing your business data...</div>}
+                {aiError && <div className={db.aiErrorText}>Failed to generate insight: {aiError}</div>}
                 {/* Insight cards */}
                 {insightCards.length > 0 && !aiLoading && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginBottom: 16 }}>
+                  <div className={db.aiCardsGrid}>
                     {insightCards.map((card, i) => (
-                      <div key={i} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "14px 16px" }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{card.heading}</div>
-                        {card.detail && <div style={{ fontSize: 12, lineHeight: 1.5, color: "#94a3b8" }}>{card.detail}</div>}
+                      <div key={i} className={db.aiCard}>
+                        <div className={db.aiCardHeading}>{card.heading}</div>
+                        {card.detail && <div className={db.aiCardDetail}>{card.detail}</div>}
                       </div>
                     ))}
                   </div>
                 )}
                 {!aiLoading && !aiError && aiInsight && insightCards.length === 0 && (
-                  <div style={{ fontSize: 13, lineHeight: 1.6, color: "#e2e8f0", whiteSpace: "pre-wrap", marginBottom: 16 }}>{aiInsight}</div>
+                  <div className={db.aiFallbackText}>{aiInsight}</div>
                 )}
 
                 {/* Chat section */}
                 {aiInsight && (
-                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 16 }}>
+                  <div className={db.aiChatSection}>
                     {/* Chat messages (skip the first assistant message which is shown as insight cards above) */}
                     {aiChatMessages.length > 1 && (
-                      <div style={{ maxHeight: 320, overflowY: "auto", marginBottom: 12, paddingRight: 4 }}>
+                      <div className={db.aiChatScroll}>
                         {aiChatMessages.slice(1).map((msg, i) => (
                           <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
                             <div style={{
@@ -1939,7 +1940,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                         {aiChatLoading && (
                           <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
                             <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px 12px 12px 4px", padding: "10px 14px" }}>
-                              <div style={{ fontSize: 13, color: "#94a3b8" }}>Thinking...</div>
+                              <div className={db.aiThinking}>Thinking...</div>
                             </div>
                           </div>
                         )}
@@ -1949,7 +1950,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
 
                     {/* Suggested questions (only show when no chat history yet) */}
                     {aiChatMessages.length <= 1 && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                      <div className={db.aiSuggestions}>
                         {suggestedQuestions.map((q, i) => (
                           <button key={i} onClick={() => { setAiChatInput(q); }} style={{
                             background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20,
@@ -1964,7 +1965,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                     )}
 
                     {/* Chat input */}
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div className={db.aiChatInputRow}>
                       <input
                         type="text"
                         value={aiChatInput}
@@ -2116,10 +2117,10 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                   const job = jobs.find(j => j.id === entry.jobId);
                   return (
                     <div key={entry.id} className="schedule-card" style={{ borderLeft: `3px solid ${isPast ? "#ddd" : schAccent}` }}>
-                      <div style={{ fontWeight: 700, fontSize: 11, marginBottom: 2, lineHeight: 1.3 }}>{entry.title}</div>
-                      {entry.startTime && <div style={{ fontSize: 10, color: "#aaa" }}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}
+                      <div className={db.schedCardTitle}>{entry.title}</div>
+                      {entry.startTime && <div className={db.schedCardTime}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}
                       {(entry.assignedTo || []).length > 0 && (
-                        <div style={{ marginTop: 4 }}><AvatarGroup names={entry.assignedTo} max={2} /></div>
+                        <div className={db.schedCardAvatars}><AvatarGroup names={entry.assignedTo} max={2} /></div>
                       )}
                     </div>
                   );
@@ -2130,7 +2131,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
         };
 
         return (
-          <div className="card" style={{ marginBottom: 20 }}>
+          <div className={`card ${db.cardMb}`}>
             <div className="card-header">
               <span className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Icon name="schedule" size={16} /> This Week
@@ -2139,7 +2140,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               </span>
               <button className="btn btn-ghost btn-sm" onClick={() => onNav("schedule")}>View all <Icon name="arrow_right" size={12} /></button>
             </div>
-            <div style={{ padding: "12px 16px" }}>
+            <div className={db.cardPadding}>
               <div className="schedule-week-grid">
                 {weekdays.map((dateStr, i) => (
                   <DashDayCol key={dateStr} dateStr={dateStr} dayName={dayNames[i]} />
@@ -2157,7 +2158,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
 
       {/* ── Action Items Banner (if any) ── */}
       {actionItems.length > 0 && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+        <div className={db.actionBanner}>
           {actionItems.map((item, i) => (
             <div key={i} onClick={() => onNav(item.section)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 8, background: "#fff", border: `1px solid ${item.color}30`, cursor: "pointer", transition: "all 0.15s" }}
               onMouseEnter={e => { e.currentTarget.style.background = item.color + "10"; }}
@@ -2171,7 +2172,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
       )}
 
       {/* ── ROW 4: Detail Panels (2-col grid) ── */}
-      <div className="dashboard-grid" style={{ display: "grid", gap: 20 }}>
+      <div className={`dashboard-grid ${db.dashGrid}`}>
 
         {/* Panel 1: Jobs by Status */}
         <div className="card">
@@ -2199,8 +2200,8 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               );
             })}
             {/* Job completion rate */}
-            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Completion Rate</span>
+            <div className={db.summaryBox}>
+              <span className={db.summaryLabel}>Completion Rate</span>
               <span style={{ fontSize: 14, fontWeight: 800, color: jobs.length > 0 ? "#16a34a" : "#999" }}>{jobs.length > 0 ? Math.round((completedJobs / jobs.length) * 100) : 0}%</span>
             </div>
           </div>
@@ -2242,7 +2243,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               <SectionLabel>Invoices</SectionLabel>
               <button className="btn btn-ghost btn-sm" onClick={() => onNav("invoices")} style={{ marginTop: -4 }}>View all <Icon name="arrow_right" size={12} /></button>
             </div>
-            {invoices.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No invoices yet</div>}
+            {invoices.length === 0 && <div className={db.listRowEmpty}>No invoices yet</div>}
             {invoices.map(inv => {
               const job = jobs.find(j => j.id === inv.jobId);
               const overdue = inv.dueDate && daysUntil(inv.dueDate) < 0 && inv.status !== "paid";
@@ -2270,7 +2271,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
           </div>
           <div className="card-body">
             {/* Bill workflow pipeline */}
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 14 }}>
+            <div className={db.pipelineRow}>
               {["inbox", "linked", "approved", "posted"].map((st, i) => {
                 const count = bills.filter(b => b.status === st).length;
                 return (
@@ -2300,8 +2301,8 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               );
             })}
             {/* Margin indicator */}
-            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Gross Margin</span>
+            <div className={db.summaryBox}>
+              <span className={db.summaryLabel}>Gross Margin</span>
               <span style={{ fontSize: 14, fontWeight: 800, color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
             </div>
           </div>
@@ -2315,7 +2316,7 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
           </div>
           <div className="card-body">
             <SectionLabel>Work Orders</SectionLabel>
-            {workOrders.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No work orders</div>}
+            {workOrders.length === 0 && <div className={db.listRowEmpty}>No work orders</div>}
             {workOrders.map(wo => {
               const overdue = wo.dueDate && daysUntil(wo.dueDate) < 0 && !["Cancelled", "Billed", "Completed"].includes(wo.status);
               const dueSoon = wo.dueDate && daysUntil(wo.dueDate) >= 0 && daysUntil(wo.dueDate) <= 3 && !["Cancelled", "Billed", "Completed"].includes(wo.status);
@@ -2326,15 +2327,15 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                     <div style={{ fontSize: 12, color: "#999" }}>{wo.contractorName}{wo.trade ? ` · ${wo.trade}` : ""}{wo.dueDate ? ` · Due ${wo.dueDate}` : ""}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    {overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#dc2626" }}>OVERDUE</span>}
-                    {dueSoon && !overdue && <span style={{ fontSize: 10, fontWeight: 700, color: "#d97706" }}>DUE SOON</span>}
+                    {overdue && <span className={db.overdueLabel}>OVERDUE</span>}
+                    {dueSoon && !overdue && <span className={db.dueSoonLabel}>DUE SOON</span>}
                     <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, background: (ORDER_STATUS_COLORS[wo.status] || {}).bg || "#f0f0f0", color: (ORDER_STATUS_COLORS[wo.status] || {}).text || "#666" }}>{wo.status}</span>
                   </div>
                 </div>
               );
             })}
-            <div style={{ marginTop: 14 }}><SectionLabel>Purchase Orders</SectionLabel></div>
-            {purchaseOrders.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No purchase orders</div>}
+            <div className={db.sectionMt}><SectionLabel>Purchase Orders</SectionLabel></div>
+            {purchaseOrders.length === 0 && <div className={db.listRowEmpty}>No purchase orders</div>}
             {purchaseOrders.map(po => {
               const overdue = po.dueDate && daysUntil(po.dueDate) < 0 && !["Cancelled", "Billed", "Completed"].includes(po.status);
               const dueSoon = po.dueDate && daysUntil(po.dueDate) >= 0 && daysUntil(po.dueDate) <= 3 && !["Cancelled", "Billed", "Completed"].includes(po.status);
@@ -2353,8 +2354,8 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               );
             })}
             {/* Order value summary */}
-            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Total Committed</span>
+            <div className={db.summaryBox}>
+              <span className={db.summaryLabel}>Total Committed</span>
               <span style={{ fontSize: 14, fontWeight: 800, color: "#333" }}>{fmt(workOrders.reduce((s, wo) => s + (parseFloat(wo.poLimit) || 0), 0) + purchaseOrders.reduce((s, po) => s + ((po.lines || []).reduce((ls, l) => ls + (l.qty || 0) * (l.rate || 0), 0)), 0))}</span>
             </div>
           </div>
@@ -2385,8 +2386,8 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                 </div>
               );
             })}
-            {workerHours.length === 0 && <div style={{ fontSize: 12, color: "#999", padding: "8px 0" }}>No time entries</div>}
-            <div style={{ marginTop: 14 }}><SectionLabel>Recent Entries</SectionLabel></div>
+            {workerHours.length === 0 && <div className={db.listRowEmpty}>No time entries</div>}
+            <div className={db.sectionMt}><SectionLabel>Recent Entries</SectionLabel></div>
             {recentTime.map(t => {
               const job = jobs.find(j => j.id === t.jobId);
               return (
@@ -2397,15 +2398,15 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontWeight: 700, fontSize: 13 }}>{t.hours}h</div>
-                    {t.billable && <span style={{ fontSize: 10, color: "#16a34a", fontWeight: 600 }}>BILLABLE</span>}
-                    {!t.billable && <span style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>NON-BILL</span>}
+                    {t.billable && <span className={db.billableTag}>BILLABLE</span>}
+                    {!t.billable && <span className={db.nonBillTag}>NON-BILL</span>}
                   </div>
                 </div>
               );
             })}
             {/* Overall billable rate */}
-            <div style={{ marginTop: 8, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Billable Rate</span>
+            <div className={db.summaryBox}>
+              <span className={db.summaryLabel}>Billable Rate</span>
               <span style={{ fontSize: 14, fontWeight: 800, color: billableRatio >= 80 ? "#16a34a" : billableRatio >= 50 ? "#d97706" : "#dc2626" }}>{billableRatio}%</span>
             </div>
           </div>
@@ -2446,8 +2447,8 @@ const Dashboard = ({ jobs, clients, quotes, invoices, bills, timeEntries, schedu
               );
             })}
             {/* Total margin */}
-            <div style={{ marginTop: 4, padding: "10px 12px", background: "#f8fafb", borderRadius: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#555" }}>Overall Margin</span>
+            <div className={db.summaryBox}>
+              <span className={db.summaryLabel}>Overall Margin</span>
               <span style={{ fontSize: 14, fontWeight: 800, color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
             </div>
           </div>

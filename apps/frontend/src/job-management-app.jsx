@@ -13,7 +13,6 @@ import { buildQuotePdfHtml, buildInvoicePdfHtml, buildOrderPdfHtml, htmlToPdfBas
 // Features:
 // TODO: Build digital asset management (DAM) for centralized templates, contracts, compliance docs, marketing assets
 // TODO: Add drag-and-drop reordering for job phases and tasks
-// TODO: Implement recurring jobs / maintenance schedules
 // TODO: Add bulk actions (multi-select jobs, invoices, bills for batch status updates)
 // TODO: Add notifications system (in-app + push) for overdue invoices, expiring contractor docs, job updates
 // TODO: Build a client portal so clients can view quotes, approve work orders, and pay invoices online

@@ -44,8 +44,8 @@ The goal is to replace or integrate these tools with a custom suite of apps that
 - **Hosting plan:** GitHub Pages (static) + Supabase Edge Function (API proxy)
 
 ### 3. Job Management App — "FieldOps"
-- **File:** `job-management-app.jsx` (React, single-file component)
-- **Stack:** React, Tailwind CSS
+- **File:** `job-management-app.jsx` (React, app shell + routing) with 21 extracted page modules in `pages/`
+- **Stack:** React, CSS Modules, Zustand (state management)
 - **Features:**
   - Jobs with status pipeline (Lead → Quoted → Scheduled → In Progress → Complete → Invoiced)
   - Multi-site support per client (site name, address, contact person, contact phone)
@@ -89,7 +89,7 @@ The goal is to replace or integrate these tools with a custom suite of apps that
 ## Architecture & Infrastructure
 
 ### Tech Stack
-- **Frontend:** React (JSX), Tailwind CSS
+- **Frontend:** React (JSX), CSS Modules, Zustand
 - **Backend/Database:** Supabase (PostgreSQL, Auth, Storage, Edge Functions)
 - **AI:** Anthropic Claude API (claude-sonnet-4-20250514) — used in Bill Capture for vision extraction
 - **Hosting:** GitHub Pages (static frontend) + Supabase Edge Functions (API calls)
@@ -103,7 +103,7 @@ The goal is to replace or integrate these tools with a custom suite of apps that
 
 ### Key Decisions Made
 - Supabase chosen over Netlify for backend (more generous free tier, no credit limits)
-- Single-file React components for portability during development
+- Modular React architecture: app shell in monolith, pages extracted to `pages/`, shared components in `components/`
 - GST (Australian tax) is used throughout — 10% rate
 - Currency: AUD ($)
 - Bills have markup support (cost + markup % = on-charge amount to client)
@@ -120,12 +120,27 @@ business-suite/
 ├── apps/
 │   ├── frontend/               ← React 18 + Vite frontend
 │   │   ├── src/
-│   │   │   ├── job-management-app.jsx  ← Main app (~12,700 lines)
+│   │   │   ├── job-management-app.jsx  ← App shell + routing (~5,000 lines)
 │   │   │   ├── App.jsx                 ← Auth wrapper + routing
 │   │   │   ├── LoginPage.jsx           ← Login form
+│   │   │   ├── pages/                  ← 21 lazy-loaded route pages
+│   │   │   │   ├── Dashboard.jsx, Jobs.jsx, Clients.jsx, ...
+│   │   │   │   └── (each page is a self-contained module)
+│   │   │   ├── components/             ← Shared UI components
+│   │   │   │   ├── Icon.jsx, shared.jsx, OrderDrawer.jsx, ...
+│   │   │   │   └── JobDetail/          ← Job detail sub-components
+│   │   │   ├── fixtures/
+│   │   │   │   └── seedData.jsx        ← Seed/demo data constants
+│   │   │   ├── utils/
+│   │   │   │   └── helpers.js          ← Shared utility functions
+│   │   │   ├── styles/                 ← CSS modules + global styles
+│   │   │   │   ├── global.css
+│   │   │   │   ├── app-shell.module.css, dashboard.module.css, ...
+│   │   │   │   └── (one module per section)
 │   │   │   └── lib/
 │   │   │       ├── supabase.js         ← Supabase client + edge function wrappers
 │   │   │       ├── db.js              ← CRUD operations + normalizers
+│   │   │       ├── store.js           ← Zustand global state store
 │   │   │       ├── auth.js            ← Auth helper functions
 │   │   │       └── AuthContext.jsx    ← React auth context provider
 │   │   └── vite.config.js
@@ -152,7 +167,8 @@ business-suite/
 ## Notes for Claude Code
 
 - When editing existing apps, prefer targeted string replacements over full rewrites to preserve working code
-- The job management app uses Python scripts for patching due to its size — check if this pattern is still needed
+- Pages are lazy-loaded via React.lazy() + Suspense for route-based code splitting
+- State is managed via Zustand store (useAppStore) — pages import from lib/store, not via props
 - All monetary values use AUD with GST at 10%
 - The Anthropic model to use is always `claude-sonnet-4-20250514`
 - Supabase project details (URL, anon key) will be in environment variables — never hardcode them

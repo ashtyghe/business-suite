@@ -61,8 +61,14 @@ business-suite/
 ├── apps/
 │   ├── frontend/           # React 18 + Vite frontend
 │   │   ├── src/
-│   │   │   ├── job-management-app.jsx   # Main app (single file, ~5500 lines)
+│   │   │   ├── job-management-app.jsx   # App shell + routing (~5,000 lines)
+│   │   │   ├── pages/                   # 21 lazy-loaded route pages
+│   │   │   ├── components/              # Shared UI components
+│   │   │   ├── fixtures/seedData.jsx    # Seed/demo data
+│   │   │   ├── utils/helpers.js         # Shared utilities
+│   │   │   ├── styles/                  # CSS modules + global.css
 │   │   │   ├── lib/
+│   │   │   │   ├── store.js             # Zustand state store
 │   │   │   │   ├── supabase.js          # Supabase client
 │   │   │   │   └── db.js               # CRUD operations
 │   │   │   └── main.jsx
@@ -88,10 +94,11 @@ Get these from the [Xero Developer Portal](https://developer.xero.com/app/manage
 
 ## Key Architecture Notes
 
-- **Single-file app**: All UI is in `job-management-app.jsx` — components, styles, and logic (~12,700 lines)
-- **Styling**: Custom CSS via `injectStyles()` function + inline styles (no Tailwind)
-- **CSS variables**: `--section-accent` cascades accent colors per section
-- **SECTION_COLORS**: Constants mapping section IDs to `{accent, light}` hex pairs
+- **Modular architecture**: App shell in `job-management-app.jsx` (~5,000 lines), 21 pages extracted to `pages/`, shared components in `components/`
+- **Styling**: CSS Modules (one per section) + `global.css`
+- **State**: Zustand store (`lib/store.js`) — pages use `useAppStore()` hook, no prop drilling
+- **Code splitting**: React.lazy() + Suspense for all route pages (~85% initial bundle reduction)
+- **SECTION_COLORS**: Constants in `fixtures/seedData.jsx` mapping section IDs to `{accent, light}` hex pairs
 - **SectionDrawer**: Reusable drawer component with View/Edit toggle
 - **Backend**: Supabase (hosted) for database + auth + edge functions
 - **Auth**: Supabase Auth with email/password, admin/staff roles

@@ -3,7 +3,7 @@ import { useAppStore } from '../lib/store';
 import { supabase } from '../lib/supabase';
 import { fmt, calcQuoteTotal, daysUntil, getContractorComplianceCount } from '../utils/helpers';
 import { Icon } from '../components/Icon';
-import { SectionLabel } from '../components/shared';
+import { SectionLabel, StatusBadge } from '../components/shared';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
 
 const Dashboard = ({ onNav }) => {

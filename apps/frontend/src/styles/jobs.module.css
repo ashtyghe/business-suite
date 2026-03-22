@@ -1,0 +1,74 @@
+/* ── Jobs summary strip ── */
+.summaryGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.summaryCard { padding: 14px 16px; cursor: pointer; }
+
+/* ── Jobs toolbar ── */
+.searchFlex { flex: 1; min-width: 120px; }
+.filterAuto { width: auto; }
+.viewToggle { display: flex; gap: 4px; background: #f0f0f0; border-radius: 6px; padding: 3px; }
+.deleteBtn { color: #c00; }
+
+/* ── Grid card layout ── */
+.gridCardTop { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.gridCardIcon { display: flex; align-items: center; gap: 8px; }
+.gridCardIconBox { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.gridCardTitle { font-weight: 600; font-size: 13px; }
+.gridCardDate { font-size: 11px; color: #94a3b8; }
+.gridCardStatusRow { display: flex; align-items: center; gap: 6px; }
+.gridCardClient { font-size: 13px; font-weight: 500; color: #334155; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.noClient { font-style: italic; color: #94a3b8; }
+.siteLabel { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.metaRow { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.priorityPill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; background: #f5f5f5; padding: 2px 8px; border-radius: 12px; }
+.statChip { font-size: 11px; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 12px; }
+.avatarMb { margin-bottom: 4px; }
+.gridCardFooter { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+.dueLabel { font-size: 11px; font-weight: 600; }
+.dueLabelSet { composes: dueLabel; color: #334155; }
+.dueLabelNone { composes: dueLabel; color: #ccc; }
+.actionBtns { display: flex; gap: 4px; }
+
+/* ── Table styles ── */
+.rowTitle { font-weight: 600; font-size: 13px; }
+.rowDesc { font-size: 11px; color: #999; margin-top: 2px; }
+.rowClient { font-size: 13px; }
+.rowSite { font-size: 11px; color: #aaa; }
+.priorityRow { display: flex; align-items: center; gap: 6px; }
+.priorityText { font-size: 12px; text-transform: capitalize; }
+.chipRow { display: flex; gap: 6px; }
+
+/* ── Kanban ── */
+.kanbanCount { background: #e0e0e0; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 700; }
+.kanbanCardHeader { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.kanbanCardTitle { font-weight: 700; font-size: 12px; flex: 1; }
+.kanbanClient { font-size: 11px; color: #999; margin-bottom: 6px; }
+.kanbanDue { font-size: 11px; color: #666; margin-bottom: 6px; }
+.kanbanChips { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+.kanbanChip { font-size: 10px; }
+.kanbanFooter { display: flex; justify-content: space-between; align-items: center; }
+.kanbanTag { font-size: 10px; padding: 1px 6px; }
+
+/* ── Empty states ── */
+.emptyFullSpan { grid-column: 1 / -1; }
+
+/* ── Job drawer view/edit ── */
+.drawerBody { padding: 20px 24px; }
+.assignedLabel { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 6px; }
+.assignedChips { display: flex; gap: 6px; flex-wrap: wrap; }
+.assignedWrap { margin-bottom: 14px; }
+.estimateLabel { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+.estimateWrap { margin-top: 8px; }
+.estimateBox { background: #f8f8f8; border-radius: 10px; padding: 14px; }
+.estimateGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+.estimateItemLabel { font-size: 10px; color: #999; font-weight: 600; }
+.estimateItemValue { font-size: 14px; font-weight: 700; }
+.estimateFooter { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+.estimateTotal { font-size: 13px; font-weight: 800; }
+.estimateAccepted { font-size: 11px; color: #059669; font-weight: 600; }
+
+/* ── Edit form estimate ── */
+.editEstimateWrap { margin-bottom: 16px; }
+.editEstimateBox { background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; padding: 14px; }
+.editEstimateTotal { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 13px; font-weight: 800; }
+.formGroupNoMb { margin-bottom: 0; }
+.formLabelSm { font-size: 11px; }

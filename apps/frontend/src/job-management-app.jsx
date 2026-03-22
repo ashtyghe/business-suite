@@ -9,6 +9,7 @@ import NotesTab from './NotesTab';
 import './styles/global.css';
 import sh from './styles/app-shell.module.css';
 import db from './styles/dashboard.module.css';
+import jb from './styles/jobs.module.css';
 // Heavy libraries loaded dynamically where used (fabric, pdfjs-dist, pdf-lib, signature_pad)
 
 // ── Google Font ──────────────────────────────────────────────────────────────
@@ -1372,7 +1373,7 @@ const OrderCard = ({ type, order, onOpen, onDelete, jobs }) => {
   const hasPoLimit = order.poLimit && parseFloat(order.poLimit) > 0;
   return (
     <div className="order-card" onClick={() => onOpen(order)}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+      <div className={jb.gridCardTop}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: isWO ? "#dbeafe" : "#d1fae5", color: isWO ? "#2563eb" : "#059669" }}>
             <OrderIcon name={isWO ? "briefcase" : "shopping"} size={15} />
@@ -1384,16 +1385,16 @@ const OrderCard = ({ type, order, onOpen, onDelete, jobs }) => {
           {onDelete && <button onClick={e => { e.stopPropagation(); onDelete(order.id); }} style={{ padding: 4, background: "none", border: "none", color: "#cbd5e1", cursor: "pointer" }} title="Delete"><OrderIcon name="trash" size={13} /></button>}
         </div>
       </div>
-      <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <div className={jb.gridCardClient}>
         {partyName || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>{"No " + (isWO ? "contractor" : "supplier")}</span>}
       </div>
       {jd && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}><OrderIcon name="link" size={10} /> {jd.ref + " · " + jd.name}</div>}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+      <div className={jb.metaRow}>
         {hasPoLimit && <span style={{ fontSize: 11, fontWeight: 600, color: "#b45309", background: "#fffbeb", padding: "2px 8px", borderRadius: 12, border: "1px solid #fcd34d" }}>${parseFloat(order.poLimit).toLocaleString("en-AU")} limit</span>}
         {attachCount > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12, display: "flex", alignItems: "center", gap: 4 }}><OrderIcon name="paperclip" size={10} /> {attachCount}</span>}
       </div>
       <OrderProgressBar status={order.status} />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+      <div className={jb.gridCardFooter}>
         <DueDateChip dateStr={order.dueDate} isTerminal={isTerminal} />
         <span style={{ fontSize: 11, color: "#cbd5e1", display: "flex", alignItems: "center", gap: 4 }}><OrderIcon name="eye" size={11} /> Open</span>
       </div>
@@ -1601,7 +1602,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
           const poCount = allOrders.filter(o => o.status === status && o._type === "po").length;
           const color = orderStatusColors[status];
           return (
-            <div key={status} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
+            <div key={status} className={`stat-card ${jb.summaryCard}`} style={{ borderTop: `3px solid ${color}` }}
               onClick={() => { setFilterStatus(status); setView("list"); }}>
               <div className="stat-label">{status}</div>
               <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
@@ -1625,7 +1626,7 @@ const OrdersPage = ({ workOrders, setWorkOrders, purchaseOrders, setPurchaseOrde
           <option value="All">All Statuses</option>
           {ORDER_STATUSES.map(s => <option key={s}>{s}</option>)}
         </select>
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+        <div className={jb.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accentColor, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accentColor, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: accentColor, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
@@ -3422,28 +3423,28 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Estimate</div>
             <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 14 }}>
               <div className="grid-2" style={{ marginBottom: 8 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" style={{ fontSize: 11 }}>Labour ($)</label>
+                <div className={`form-group ${jb.formGroupNoMb}`}>
+                  <label className={`form-label ${jb.formLabelSm}`}>Labour ($)</label>
                   <input type="number" className="form-control" min="0" step="100" value={detailForm.estimate?.labour || ""} onChange={e => setDetailForm(f => ({ ...f, estimate: { ...f.estimate, labour: Number(e.target.value) || 0 } }))} placeholder="0" />
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" style={{ fontSize: 11 }}>Materials ($)</label>
+                <div className={`form-group ${jb.formGroupNoMb}`}>
+                  <label className={`form-label ${jb.formLabelSm}`}>Materials ($)</label>
                   <input type="number" className="form-control" min="0" step="100" value={detailForm.estimate?.materials || ""} onChange={e => setDetailForm(f => ({ ...f, estimate: { ...f.estimate, materials: Number(e.target.value) || 0 } }))} placeholder="0" />
                 </div>
               </div>
               <div className="grid-2">
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" style={{ fontSize: 11 }}>Subcontractors ($)</label>
+                <div className={`form-group ${jb.formGroupNoMb}`}>
+                  <label className={`form-label ${jb.formLabelSm}`}>Subcontractors ($)</label>
                   <input type="number" className="form-control" min="0" step="100" value={detailForm.estimate?.subcontractors || ""} onChange={e => setDetailForm(f => ({ ...f, estimate: { ...f.estimate, subcontractors: Number(e.target.value) || 0 } }))} placeholder="0" />
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" style={{ fontSize: 11 }}>Other ($)</label>
+                <div className={`form-group ${jb.formGroupNoMb}`}>
+                  <label className={`form-label ${jb.formLabelSm}`}>Other ($)</label>
                   <input type="number" className="form-control" min="0" step="100" value={detailForm.estimate?.other || ""} onChange={e => setDetailForm(f => ({ ...f, estimate: { ...f.estimate, other: Number(e.target.value) || 0 } }))} placeholder="0" />
                 </div>
               </div>
               {(() => {
                 const t = (detailForm.estimate?.labour || 0) + (detailForm.estimate?.materials || 0) + (detailForm.estimate?.subcontractors || 0) + (detailForm.estimate?.other || 0);
-                return <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #e2e8f0", fontSize: 13, fontWeight: 800 }}>Total: {fmt(t)}</div>;
+                return <div className={jb.editEstimateTotal}>Total: {fmt(t)}</div>;
               })()}
             </div>
           </div>
@@ -3658,17 +3659,17 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               {showTimeForm && (
                 <div style={{ background: "#f8f8f8", borderRadius: 10, padding: 16, marginBottom: 16, border: "1px solid #e8e8e8" }}>
                   <div className="grid-3" style={{ marginBottom: 10 }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className={`form-group ${jb.formGroupNoMb}`}>
                       <label className="form-label">Worker</label>
                       <select className="form-control" value={timeForm.worker} onChange={e => setTimeForm(f => ({ ...f, worker: e.target.value }))}>
                         {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => <option key={t}>{t}</option>)}
                       </select>
                     </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className={`form-group ${jb.formGroupNoMb}`}>
                       <label className="form-label">Date</label>
                       <input type="date" className="form-control" value={timeForm.date} onChange={e => setTimeForm(f => ({ ...f, date: e.target.value }))} />
                     </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className={`form-group ${jb.formGroupNoMb}`}>
                       <label className="form-label">Hours</label>
                       <div style={{ background: "#fff", border: "1.5px solid #e0e0e0", borderRadius: 6, padding: "9px 12px", fontSize: 14, fontWeight: 700, color: quickHours > 0 ? "#111" : "#ccc", textAlign: "center" }}>
                         {quickHours > 0 ? `${quickHours.toFixed(1)}h` : "—"}
@@ -3676,12 +3677,12 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     </div>
                   </div>
                   <div className="grid-2" style={{ marginBottom: 10 }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className={`form-group ${jb.formGroupNoMb}`}>
                       <label className="form-label">Start Time</label>
                       <input type="time" className="form-control" value={timeForm.startTime}
                         onChange={e => setTimeForm(f => ({ ...f, startTime: e.target.value, endTime: f.endTime || addMinsToTime(e.target.value, 60) }))} />
                     </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className={`form-group ${jb.formGroupNoMb}`}>
                       <label className="form-label">End Time</label>
                       <input type="time" className="form-control" value={timeForm.endTime}
                         onChange={e => setTimeForm(f => ({ ...f, endTime: e.target.value }))} />
@@ -3973,7 +3974,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                   <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 16 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                       {[{ key: "labour", label: "Labour" }, { key: "materials", label: "Materials" }, { key: "subcontractors", label: "Subcontractors" }, { key: "other", label: "Other" }].map(f => (
-                        <div key={f.key} className="form-group" style={{ marginBottom: 0 }}>
+                        <div key={f.key} className={`form-group ${jb.formGroupNoMb}`}>
                           <label className="form-label">{f.label}</label>
                           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                             <span style={{ fontSize: 13, color: "#999" }}>$</span>
@@ -4823,12 +4824,12 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
   return (
     <div>
       {/* ── Summary strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12, marginBottom: 24 }}>
+      <div className={jb.summaryGrid}>
         {Object.entries(jobStatusLabels).map(([key, label]) => {
           const count = jobs.filter(j => j.status === key).length;
           const color = jobStatusColors[key];
           return (
-            <div key={key} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
+            <div key={key} className={`stat-card ${jb.summaryCard}`} style={{ borderTop: `3px solid ${color}` }}
               onClick={() => { setFilterStatus(key); setView("list"); }}>
               <div className="stat-label">{label}</div>
               <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
@@ -4839,13 +4840,13 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
       </div>
 
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+        <div className={`search-bar ${jb.searchFlex}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search jobs, clients..." />
         </div>
-        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className={`form-control ${jb.filterAuto}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           {STATUSES.map(s => <option key={s} value={s}>{s === "all" ? "All Statuses" : s.replace("_", " ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
         </select>
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+        <div className={jb.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
@@ -4857,7 +4858,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
 
       {view === "grid" ? (
         <div className="order-cards-grid">
-          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">🔧</div><div className="empty-state-text">No jobs found</div></div>}
+          {filtered.length === 0 && <div className={`empty-state ${jb.emptyFullSpan}`}><div className="empty-state-icon">🔧</div><div className="empty-state-text">No jobs found</div></div>}
           {filtered.map(job => {
             const client = clients.find(c => c.id === job.clientId);
             const site = client?.sites?.find(s => s.id === job.siteId);
@@ -4865,39 +4866,39 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
             const priorityColors = { high: "#111", medium: "#777", low: "#ccc" };
             return (
               <div key={job.id} className="order-card" onClick={() => openDetail(job)}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.jobs.light, color: SECTION_COLORS.jobs.accent }}>
+                <div className={jb.gridCardTop}>
+                  <div className={jb.gridCardIcon}>
+                    <div className={jb.gridCardIconBox} style={{ background: SECTION_COLORS.jobs.light, color: SECTION_COLORS.jobs.accent }}>
                       <Icon name="jobs" size={15} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{job.title}</div>
-                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{job.startDate || "No start date"}</div>
+                      <div className={jb.gridCardTitle}>{job.title}</div>
+                      <div className={jb.gridCardDate}>{job.startDate || "No start date"}</div>
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className={jb.gridCardStatusRow}>
                     <StatusBadge status={job.status} />
                   </div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {client?.name || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No client</span>}
+                <div className={jb.gridCardClient}>
+                  {client?.name || <span className={jb.noClient}>No client</span>}
                 </div>
-                {site && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>📍 {site.name}</div>}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: priorityColors[job.priority], background: "#f5f5f5", padding: "2px 8px", borderRadius: 12 }}>
+                {site && <div className={jb.siteLabel}>📍 {site.name}</div>}
+                <div className={jb.metaRow}>
+                  <span className={jb.priorityPill} style={{ color: priorityColors[job.priority] }}>
                     <span className={`priority-dot priority-${job.priority}`} /> {job.priority}
                   </span>
-                  {stats.quotes > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{stats.quotes} quote{stats.quotes !== 1 ? "s" : ""}</span>}
-                  {stats.invoices > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{stats.invoices} inv</span>}
-                  {stats.hours > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{stats.hours}h</span>}
+                  {stats.quotes > 0 && <span className={jb.statChip}>{stats.quotes} quote{stats.quotes !== 1 ? "s" : ""}</span>}
+                  {stats.invoices > 0 && <span className={jb.statChip}>{stats.invoices} inv</span>}
+                  {stats.hours > 0 && <span className={jb.statChip}>{stats.hours}h</span>}
                 </div>
-                {(job.assignedTo || []).length > 0 && <div style={{ marginBottom: 4 }}><AvatarGroup names={job.assignedTo} max={4} /></div>}
+                {(job.assignedTo || []).length > 0 && <div className={jb.avatarMb}><AvatarGroup names={job.assignedTo} max={4} /></div>}
                 <SectionProgressBar status={job.status} section="jobs" />
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: job.dueDate ? "#334155" : "#ccc" }}>{job.dueDate ? `Due ${job.dueDate}` : "No due date"}</span>
-                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                <div className={jb.gridCardFooter}>
+                  <span className={job.dueDate ? jb.dueLabelSet : jb.dueLabelNone}>{job.dueDate ? `Due ${job.dueDate}` : "No due date"}</span>
+                  <div className={jb.actionBtns} onClick={e => e.stopPropagation()}>
                     {canEditJob(job) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>}
-                    {canDeleteJob && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>}
+                    {canDeleteJob && <button className={`btn btn-ghost btn-xs ${jb.deleteBtn}`} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>}
                   </div>
                 </div>
               </div>
@@ -4917,33 +4918,33 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                   return (
                     <tr key={job.id} style={{ cursor: "pointer" }} onClick={() => openDetail(job)}>
                       <td>
-                        <div style={{ fontWeight: 600, fontSize: 13 }}>{job.title}</div>
-                        <div style={{ fontSize: 11, color: "#999", marginTop: 2 }}>{job.description?.slice(0, 55)}{job.description?.length > 55 ? "…" : ""}</div>
+                        <div className={jb.rowTitle}>{job.title}</div>
+                        <div className={jb.rowDesc}>{job.description?.slice(0, 55)}{job.description?.length > 55 ? "…" : ""}</div>
                       </td>
                       <td>
-                        <div style={{ fontSize: 13 }}>{client?.name}</div>
+                        <div className={jb.rowClient}>{client?.name}</div>
                         {(() => { const s = client?.sites?.find(x => x.id === job.siteId); return s ? <div style={{ fontSize: 11, color: "#aaa" }}>📍 {s.name}</div> : null; })()}
                       </td>
                       <td><StatusBadge status={job.status} /></td>
                       <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div className={jb.priorityRow}>
                           <span className={`priority-dot priority-${job.priority}`} />
-                          <span style={{ fontSize: 12, textTransform: "capitalize" }}>{job.priority}</span>
+                          <span className={jb.priorityText}>{job.priority}</span>
                         </div>
                       </td>
                       <td><span style={{ fontSize: 12, color: job.dueDate ? "#111" : "#ccc" }}>{job.dueDate || "—"}</span></td>
                       <td onClick={e => e.stopPropagation()}><AvatarGroup names={job.assignedTo} max={3} /></td>
                       <td onClick={e => e.stopPropagation()}>
-                        <div style={{ display: "flex", gap: 6 }}>
+                        <div className={jb.chipRow}>
                           {stats.quotes > 0 && <span className="chip"><Icon name="quotes" size={10} />{stats.quotes}</span>}
                           {stats.invoices > 0 && <span className="chip"><Icon name="invoices" size={10} />{stats.invoices}</span>}
                           {stats.hours > 0 && <span className="chip"><Icon name="time" size={10} />{stats.hours}h</span>}
                         </div>
                       </td>
                       <td onClick={e => e.stopPropagation()}>
-                        <div style={{ display: "flex", gap: 4 }}>
+                        <div className={jb.actionBtns}>
                           {canEditJob(job) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>}
-                          {canDeleteJob && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>}
+                          {canDeleteJob && <button className={`btn btn-ghost btn-xs ${jb.deleteBtn}`} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>}
                         </div>
                       </td>
                     </tr>
@@ -4962,26 +4963,26 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
               <div key={col} className="kanban-col">
                 <div className="kanban-col-header">
                   <span>{labels[col]}</span>
-                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colJobs.length}</span>
+                  <span className={jb.kanbanCount}>{colJobs.length}</span>
                 </div>
                 {colJobs.map(job => {
                   const client = clients.find(c => c.id === job.clientId);
                   const stats = jobStats(job.id);
                   return (
                     <div key={job.id} className="kanban-card" onClick={() => openDetail(job)}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                      <div className={jb.kanbanCardHeader}>
                         <span className={`priority-dot priority-${job.priority}`} />
-                        <span style={{ fontWeight: 700, fontSize: 12, flex: 1 }}>{job.title}</span>
+                        <span className={jb.kanbanCardTitle}>{job.title}</span>
                       </div>
-                      <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{client?.name}</div>
-                      {job.dueDate && <div style={{ fontSize: 11, color: "#666", marginBottom: 6 }}>Due: {job.dueDate}</div>}
-                      <div style={{ display: "flex", gap: 4, marginBottom: 8, flexWrap: "wrap" }}>
-                        {stats.quotes > 0 && <span className="chip" style={{ fontSize: 10 }}><Icon name="quotes" size={9} />{stats.quotes} quote{stats.quotes>1?"s":""}</span>}
-                        {stats.invoices > 0 && <span className="chip" style={{ fontSize: 10 }}><Icon name="invoices" size={9} />{stats.invoices} inv</span>}
-                        {stats.hours > 0 && <span className="chip" style={{ fontSize: 10 }}><Icon name="time" size={9} />{stats.hours}h</span>}
+                      <div className={jb.kanbanClient}>{client?.name}</div>
+                      {job.dueDate && <div className={jb.kanbanDue}>Due: {job.dueDate}</div>}
+                      <div className={jb.kanbanChips}>
+                        {stats.quotes > 0 && <span className={`chip ${jb.kanbanChip}`}><Icon name="quotes" size={9} />{stats.quotes} quote{stats.quotes>1?"s":""}</span>}
+                        {stats.invoices > 0 && <span className={`chip ${jb.kanbanChip}`}><Icon name="invoices" size={9} />{stats.invoices} inv</span>}
+                        {stats.hours > 0 && <span className={`chip ${jb.kanbanChip}`}><Icon name="time" size={9} />{stats.hours}h</span>}
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div>{job.tags.slice(0,2).map((t, i) => <span key={i} className="tag" style={{ fontSize: 10, padding: "1px 6px" }}>{t}</span>)}</div>
+                      <div className={jb.kanbanFooter}>
+                        <div>{job.tags.slice(0,2).map((t, i) => <span key={i} className={`tag ${jb.kanbanTag}`}>{t}</span>)}</div>
                         <AvatarGroup names={job.assignedTo} max={2} />
                       </div>
                     </div>
@@ -5041,7 +5042,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
           onClose={() => setShowModal(false)}
         >
           {jobMode === "view" ? (
-            <div style={{ padding: "20px 24px" }}>
+            <div className={jb.drawerBody}>
               <ViewField label="Job Title" value={form.title} />
               <div className="grid-2">
                 <ViewField label="Client" value={jobClient?.name} />
@@ -5057,9 +5058,9 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                 <ViewField label="Due Date" value={form.dueDate || "—"} />
               </div>
               {(form.assignedTo || []).length > 0 && (
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 6 }}>Assigned Team</div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <div className={jb.assignedWrap}>
+                  <div className={jb.assignedLabel}>Assigned Team</div>
+                  <div className={jb.assignedChips}>
                     {form.assignedTo.map(t => <span key={t} className="chip">{t}</span>)}
                   </div>
                 </div>
@@ -5070,18 +5071,18 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                 const totalEst = (est.labour || 0) + (est.materials || 0) + (est.subcontractors || 0) + (est.other || 0);
                 const acceptedTotal = quotes.filter(q => q.jobId === (editJob?.id) && q.status === "accepted").reduce((s, q) => s + calcQuoteTotal(q), 0);
                 return (
-                  <div style={{ marginTop: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Estimate</div>
-                    <div style={{ background: "#f8f8f8", borderRadius: 10, padding: 14 }}>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 10 }}>
-                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Labour</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.labour || 0)}</div></div>
-                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Materials</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.materials || 0)}</div></div>
-                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Subcontractors</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.subcontractors || 0)}</div></div>
-                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Other</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.other || 0)}</div></div>
+                  <div className={jb.estimateWrap}>
+                    <div className={jb.estimateLabel}>Estimate</div>
+                    <div className={jb.estimateBox}>
+                      <div className={jb.estimateGrid}>
+                        <div><div className={jb.estimateItemLabel}>Labour</div><div className={jb.estimateItemValue}>{fmt(est.labour || 0)}</div></div>
+                        <div><div className={jb.estimateItemLabel}>Materials</div><div className={jb.estimateItemValue}>{fmt(est.materials || 0)}</div></div>
+                        <div><div className={jb.estimateItemLabel}>Subcontractors</div><div className={jb.estimateItemValue}>{fmt(est.subcontractors || 0)}</div></div>
+                        <div><div className={jb.estimateItemLabel}>Other</div><div className={jb.estimateItemValue}>{fmt(est.other || 0)}</div></div>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e5e7eb", paddingTop: 10 }}>
-                        <div style={{ fontSize: 13, fontWeight: 800 }}>Total Estimate: {fmt(totalEst)}</div>
-                        {acceptedTotal > 0 && <div style={{ fontSize: 11, color: "#059669", fontWeight: 600 }}>Accepted Quotes: {fmt(acceptedTotal)}</div>}
+                      <div className={jb.estimateFooter}>
+                        <div className={jb.estimateTotal}>Total Estimate: {fmt(totalEst)}</div>
+                        {acceptedTotal > 0 && <div className={jb.estimateAccepted}>Accepted Quotes: {fmt(acceptedTotal)}</div>}
                       </div>
                     </div>
                   </div>
@@ -5089,7 +5090,7 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
               })()}
             </div>
           ) : (
-          <div style={{ padding: "20px 24px" }}>
+          <div className={jb.drawerBody}>
             <div className="form-group">
               <label className="form-label">Job Title *</label>
               <input className="form-control" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
@@ -5150,32 +5151,32 @@ const Jobs = ({ jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices
                 ))}
               </div>
             </div>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Estimate *</div>
-              <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 14 }}>
+            <div className={jb.editEstimateWrap}>
+              <div className={jb.estimateLabel}>Estimate *</div>
+              <div className={jb.editEstimateBox}>
                 <div className="grid-2" style={{ marginBottom: 8 }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: 11 }}>Labour ($)</label>
+                  <div className={`form-group ${jb.formGroupNoMb}`}>
+                    <label className={`form-label ${jb.formLabelSm}`}>Labour ($)</label>
                     <input type="number" className="form-control" min="0" step="100" value={form.estimate?.labour || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, labour: Number(e.target.value) || 0 } }))} placeholder="0" />
                   </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: 11 }}>Materials ($)</label>
+                  <div className={`form-group ${jb.formGroupNoMb}`}>
+                    <label className={`form-label ${jb.formLabelSm}`}>Materials ($)</label>
                     <input type="number" className="form-control" min="0" step="100" value={form.estimate?.materials || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, materials: Number(e.target.value) || 0 } }))} placeholder="0" />
                   </div>
                 </div>
                 <div className="grid-2">
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: 11 }}>Subcontractors ($)</label>
+                  <div className={`form-group ${jb.formGroupNoMb}`}>
+                    <label className={`form-label ${jb.formLabelSm}`}>Subcontractors ($)</label>
                     <input type="number" className="form-control" min="0" step="100" value={form.estimate?.subcontractors || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, subcontractors: Number(e.target.value) || 0 } }))} placeholder="0" />
                   </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: 11 }}>Other ($)</label>
+                  <div className={`form-group ${jb.formGroupNoMb}`}>
+                    <label className={`form-label ${jb.formLabelSm}`}>Other ($)</label>
                     <input type="number" className="form-control" min="0" step="100" value={form.estimate?.other || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, other: Number(e.target.value) || 0 } }))} placeholder="0" />
                   </div>
                 </div>
                 {(() => {
                   const t = (form.estimate?.labour || 0) + (form.estimate?.materials || 0) + (form.estimate?.subcontractors || 0) + (form.estimate?.other || 0);
-                  return <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #e2e8f0", fontSize: 13, fontWeight: 800 }}>Total: {fmt(t)}</div>;
+                  return <div className={jb.editEstimateTotal}>Total: {fmt(t)}</div>;
                 })()}
               </div>
             </div>
@@ -5310,15 +5311,15 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
   return (
     <div>
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+        <div className={`search-bar ${jb.searchFlex}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." />
         </div>
-        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className={`form-control ${jb.filterAuto}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="all">All Clients</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+        <div className={jb.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.clients.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.clients.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
         </div>
@@ -5567,7 +5568,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
               )}
             </div>
           ) : (
-          <div style={{ padding: "20px 24px" }}>
+          <div className={jb.drawerBody}>
             <div className="form-group"><label className="form-label">Company / Client Name *</label><input className="form-control" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
             <div className="grid-2">
               <div className="form-group"><label className="form-label">Email</label><input type="email" className="form-control" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
@@ -5625,7 +5626,7 @@ const Clients = ({ clients, setClients, jobs, templates = [] }) => {
           onClose={() => setShowSiteModal(false)}
           zIndex={1060}
         >
-          <div style={{ padding: "20px 24px" }}>
+          <div className={jb.drawerBody}>
             <div className="form-group"><label className="form-label">Site Name *</label><input className="form-control" value={siteForm.name} onChange={e => setSiteForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Head Office, Warehouse, Site A" /></div>
             <div className="form-group"><label className="form-label">Address</label><input className="form-control" value={siteForm.address} onChange={e => setSiteForm(f => ({ ...f, address: e.target.value }))} placeholder="Physical address" /></div>
             <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16, marginTop: 4, marginBottom: 16 }}>
@@ -5788,19 +5789,19 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
   return (
     <div>
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+        <div className={`search-bar ${jb.searchFlex}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search contractors..." />
         </div>
-        <select className="form-control" style={{ width: "auto" }} value={filterTrade} onChange={e => setFilterTrade(e.target.value)}>
+        <select className={`form-control ${jb.filterAuto}`} value={filterTrade} onChange={e => setFilterTrade(e.target.value)}>
           <option value="all">All Trades</option>
           {CONTRACTOR_TRADES.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <select className="form-control" style={{ width: "auto" }} value={filterCompliance} onChange={e => setFilterCompliance(e.target.value)}>
+        <select className={`form-control ${jb.filterAuto}`} value={filterCompliance} onChange={e => setFilterCompliance(e.target.value)}>
           <option value="all">All Compliance</option>
           <option value="compliant">Compliant</option>
           <option value="issues">Has Issues</option>
         </select>
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+        <div className={jb.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
@@ -5840,7 +5841,7 @@ const Contractors = ({ contractors, setContractors, workOrders, bills }) => {
 
       {view === "grid" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">🏗️</div><div className="empty-state-text">No contractors found</div></div>}
+          {filtered.length === 0 && <div className={`empty-state ${jb.emptyFullSpan}`}><div className="empty-state-icon">🏗️</div><div className="empty-state-text">No contractors found</div></div>}
           {filtered.map(c => {
             const activeWOs = getActiveWOs(c);
             const billCount = getContractorBills(c).length;
@@ -6195,10 +6196,10 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
   return (
     <div>
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+        <div className={`search-bar ${jb.searchFlex}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search suppliers..." />
         </div>
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+        <div className={jb.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
@@ -6233,7 +6234,7 @@ const Suppliers = ({ suppliers, setSuppliers, purchaseOrders, bills }) => {
 
       {view === "grid" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">📦</div><div className="empty-state-text">No suppliers found</div></div>}
+          {filtered.length === 0 && <div className={`empty-state ${jb.emptyFullSpan}`}><div className="empty-state-icon">📦</div><div className="empty-state-text">No suppliers found</div></div>}
           {filtered.map(s => (
             <div key={s.id} className="card" onClick={() => openEdit(s)} style={{ cursor: "pointer", padding: 18 }}>
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{s.name}</div>
@@ -6737,12 +6738,12 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
   return (
     <div>
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+        <div className={`search-bar ${jb.searchFlex}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search jobs, team..." />
         </div>
-        <input type="date" className="form-control" style={{ width: "auto" }} value={filterDate} onChange={e => setFilterDate(e.target.value)} />
+        <input type="date" className={`form-control ${jb.filterAuto}`} value={filterDate} onChange={e => setFilterDate(e.target.value)} />
         {filterDate && <button className="btn btn-ghost btn-sm" onClick={() => setFilterDate("")} style={{ fontSize: 12 }}>Clear</button>}
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+        <div className={jb.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grouped" ? "" : "btn-ghost"}`} style={view === "grouped" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("grouped")}><Icon name="kanban" size={12} /></button>
         </div>
@@ -6957,7 +6958,7 @@ const Schedule = ({ schedule, setSchedule, futureSchedule, setFutureSchedule, jo
               {futureForm.notes && <ViewField label="Notes" value={futureForm.notes} />}
             </div>
           ) : (
-          <div style={{ padding: "20px 24px" }}>
+          <div className={jb.drawerBody}>
             <div className="form-group">
               <label className="form-label">Job *</label>
               <select className="form-control" value={futureForm.jobId} onChange={e => setFutureForm(f => ({ ...f, jobId: e.target.value }))}>
@@ -7090,7 +7091,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
           const total = statusQuotes.reduce((s, q) => s + calcQuoteTotal(q), 0);
           const color = quoteStatusColors[key];
           return (
-            <div key={key} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
+            <div key={key} className={`stat-card ${jb.summaryCard}`} style={{ borderTop: `3px solid ${color}` }}
               onClick={() => { setFilterStatus(key); setView("list"); }}>
               <div className="stat-label">{label}</div>
               <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
@@ -7101,13 +7102,13 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
       </div>
 
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+        <div className={`search-bar ${jb.searchFlex}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search quotes, jobs, clients..." />
         </div>
-        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className={`form-control ${jb.filterAuto}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           {QUOTE_STATUSES.map(s => <option key={s} value={s}>{s === "all" ? "All Statuses" : s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
         </select>
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+        <div className={jb.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.quotes.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.quotes.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: SECTION_COLORS.quotes.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
@@ -7152,7 +7153,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
 
       {view === "grid" && (
         <div className="order-cards-grid">
-          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">📋</div><div className="empty-state-text">No quotes found</div></div>}
+          {filtered.length === 0 && <div className={`empty-state ${jb.emptyFullSpan}`}><div className="empty-state-icon">📋</div><div className="empty-state-text">No quotes found</div></div>}
           {filtered.map(q => {
             const job = jobs.find(j => j.id === q.jobId);
             const client = clients.find(c => c.id === job?.clientId);
@@ -7160,7 +7161,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
             const lineCount = q.lineItems.length;
             return (
               <div key={q.id} className="order-card" onClick={() => openEdit(q)}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                <div className={jb.gridCardTop}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.quotes.light, color: SECTION_COLORS.quotes.accent }}>
                       <Icon name="quotes" size={15} />
@@ -7174,17 +7175,17 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
                     <StatusBadge status={q.status} />
                   </div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div className={jb.gridCardClient}>
                   {job?.title || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No job</span>}
                 </div>
                 {client && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>{client.name}</div>}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                <div className={jb.metaRow}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{fmt(total)}</span>
                   <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
                   {q.tax > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{q.tax}% GST</span>}
                 </div>
                 <SectionProgressBar status={q.status} section="quotes" />
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+                <div className={jb.gridCardFooter}>
                   <span style={{ fontSize: 11, color: "#94a3b8" }}>{lineCount} line item{lineCount !== 1 ? "s" : ""}</span>
                   <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
                     <button className="btn btn-ghost btn-xs" onClick={() => duplicate(q)} title="Duplicate"><Icon name="copy" size={12} /></button>
@@ -7761,7 +7762,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
   return (
     <div>
       {/* ── Summary strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12, marginBottom: 24 }}>
+      <div className={jb.summaryGrid}>
         {[
           { label: "Today", val: todayHrs, o: DAY_THR.orange, g: DAY_THR.green },
           { label: "This Week", val: weekHrs, o: DAY_THR.orange * 5, g: DAY_THR.green * 5 },
@@ -7779,10 +7780,10 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
       </div>
       {/* Controls row */}
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+        <div className={`search-bar ${jb.searchFlex}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search entries, jobs..." />
         </div>
-        <select className="form-control" style={{ width: "auto" }} value={selectedWorker} onChange={e => setSelectedWorker(e.target.value)}>
+        <select className={`form-control ${jb.filterAuto}`} value={selectedWorker} onChange={e => setSelectedWorker(e.target.value)}>
           <option value="all">All Team</option>
           {staffNames.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
@@ -7833,7 +7834,7 @@ const TimeTracking = ({ timeEntries, setTimeEntries, jobs, setJobs, clients, sta
                       {entry.startTime && <div style={{ fontSize: 11, color: "#aaa", marginTop: 3 }}>{entry.startTime}–{entry.endTime}</div>}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                      <div className={jb.metaRow}>
                         <div className="avatar" style={{ width: 22, height: 22, fontSize: 9, margin: 0, flexShrink: 0 }}>
                           {entry.worker.split(" ").map(w=>w[0]).join("")}
                         </div>
@@ -8328,7 +8329,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
 
           {/* Notes */}
           <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 16 }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className={`form-group ${jb.formGroupNoMb}`}>
               <label className="form-label">Internal Notes</label>
               <textarea className="form-control" value={form.notes} onChange={e => setForm(f=>({...f, notes: e.target.value}))} placeholder="Any notes for approver, discrepancies, receipt condition…" style={{ minHeight: 60 }} />
             </div>
@@ -8550,18 +8551,18 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
 
       {/* ── Toolbar */}
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+        <div className={`search-bar ${jb.searchFlex}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search supplier, invoice, description…" />
         </div>
-        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className={`form-control ${jb.filterAuto}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="all">All Statuses</option>
           {BILL_STATUSES.map(s => <option key={s} value={s}>{BILL_STATUS_LABELS[s]}</option>)}
         </select>
-        <select className="form-control" style={{ width: "auto" }} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
+        <select className={`form-control ${jb.filterAuto}`} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
           <option value="all">All Categories</option>
           {BILL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+        <div className={jb.viewToggle}>
           <button className={`btn btn-xs ${tab === "list" ? "" : "btn-ghost"}`} style={tab === "list" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${tab === "grid" ? "" : "btn-ghost"}`} style={tab === "grid" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("grid")}><Icon name="grid_view" size={12} /></button>
           <button className={`btn btn-xs ${tab === "kanban" ? "" : "btn-ghost"}`} style={tab === "kanban" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("kanban")}><Icon name="kanban" size={12} /></button>
@@ -8579,13 +8580,13 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
       {/* ══ GRID VIEW ══ */}
       {tab === "grid" && (
         <div className="order-cards-grid">
-          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">🧾</div><div className="empty-state-text">No bills found</div></div>}
+          {filtered.length === 0 && <div className={`empty-state ${jb.emptyFullSpan}`}><div className="empty-state-icon">🧾</div><div className="empty-state-text">No bills found</div></div>}
           {filtered.map(b => {
             const job = jobs.find(j => j.id === b.jobId);
             const sc = BILL_STATUS_COLORS[b.status];
             return (
               <div key={b.id} className="order-card" onClick={() => openEdit(b)}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                <div className={jb.gridCardTop}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.bills.light, color: SECTION_COLORS.bills.accent }}>
                       <Icon name="bills" size={15} />
@@ -8599,17 +8600,17 @@ const Bills = ({ bills, setBills, jobs, setJobs, clients }) => {
                     <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: sc.bg, color: sc.text }}>{BILL_STATUS_LABELS[b.status]}</span>
                   </div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div className={jb.gridCardClient}>
                   {b.description || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No description</span>}
                 </div>
                 {job && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}><Icon name="jobs" size={10} /> {job.title}</div>}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                <div className={jb.metaRow}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{fmt(b.amount)}</span>
                   <span className="chip" style={{ fontSize: 10 }}>{b.category}</span>
                   {b.hasGst && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>incl. GST</span>}
                 </div>
                 <SectionProgressBar status={b.status} section="bills" />
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+                <div className={jb.gridCardFooter}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b" }}>{b.date}</span>
                   <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
                     {b.status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
@@ -8881,14 +8882,14 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
   return (
     <div>
       {/* ── Summary strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12, marginBottom: 24 }}>
+      <div className={jb.summaryGrid}>
         {Object.entries(invStatusLabels).map(([key, label]) => {
           const statusInvs = invoices.filter(i => i.status === key);
           const count = statusInvs.length;
           const total = statusInvs.reduce((s, inv) => s + calcQuoteTotal(inv), 0);
           const color = invStatusColors[key];
           return (
-            <div key={key} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
+            <div key={key} className={`stat-card ${jb.summaryCard}`} style={{ borderTop: `3px solid ${color}` }}
               onClick={() => { setFilterStatus(key); setView("list"); }}>
               <div className="stat-label">{label}</div>
               <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
@@ -8898,19 +8899,19 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
         })}
       </div>
       <div className="section-toolbar">
-        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+        <div className={`search-bar ${jb.searchFlex}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search invoices, jobs, clients..." />
         </div>
-        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+        <select className={`form-control ${jb.filterAuto}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           {INV_STATUSES.map(s => <option key={s} value={s}>{s === "all" ? "All Statuses" : s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
         </select>
         {quotes.filter(q => q.status === "accepted").length > 0 && (
-          <select className="form-control" style={{ width: "auto" }} onChange={e => { const q = quotes.find(q => String(q.id) === e.target.value); if (q) fromQuote(q); e.target.value = ""; }}>
+          <select className={`form-control ${jb.filterAuto}`} onChange={e => { const q = quotes.find(q => String(q.id) === e.target.value); if (q) fromQuote(q); e.target.value = ""; }}>
             <option value="">From Quote…</option>
             {quotes.filter(q => q.status === "accepted").map(q => <option key={q.id} value={q.id}>{q.number}</option>)}
           </select>
         )}
-        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+        <div className={jb.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.invoices.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.invoices.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: SECTION_COLORS.invoices.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
@@ -8963,7 +8964,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
 
       {view === "grid" && (
         <div className="order-cards-grid">
-          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">💳</div><div className="empty-state-text">No invoices found</div></div>}
+          {filtered.length === 0 && <div className={`empty-state ${jb.emptyFullSpan}`}><div className="empty-state-icon">💳</div><div className="empty-state-text">No invoices found</div></div>}
           {filtered.map(inv => {
             const job = jobs.find(j => j.id === inv.jobId);
             const client = clients.find(c => c.id === job?.clientId);
@@ -8972,7 +8973,7 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
             const fromQuote = inv.fromQuoteId ? quotes.find(q => q.id === inv.fromQuoteId) : null;
             return (
               <div key={inv.id} className="order-card" onClick={() => openEdit(inv)}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                <div className={jb.gridCardTop}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.invoices.light, color: SECTION_COLORS.invoices.accent }}>
                       <Icon name="invoices" size={15} />
@@ -8986,17 +8987,17 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
                     <StatusBadge status={inv.status} />
                   </div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div className={jb.gridCardClient}>
                   {job?.title || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No job</span>}
                 </div>
                 {client && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>{client.name}</div>}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                <div className={jb.metaRow}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{fmt(total)}</span>
                   <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
                   {fromQuote && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>from {fromQuote.number}</span>}
                 </div>
                 <SectionProgressBar status={inv.status} section="invoices" />
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+                <div className={jb.gridCardFooter}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: inv.dueDate ? "#334155" : "#ccc" }}>{inv.dueDate ? `Due ${inv.dueDate}` : "No due date"}</span>
                   <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
                     {inv.status !== "paid" && inv.status !== "void" && <button className="btn btn-ghost btn-xs" style={{ color: "#2a7" }} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>}
@@ -9565,7 +9566,7 @@ const ActivityPage = ({ jobs, clients, quotes, invoices, bills, timeEntries, sch
             </button>
           ))}
         </div>
-        <select className="form-control" style={{ width: "auto" }} value={filterJob} onChange={e => setFilterJob(e.target.value)}>
+        <select className={`form-control ${jb.filterAuto}`} value={filterJob} onChange={e => setFilterJob(e.target.value)}>
           <option value="all">All Jobs</option>
           {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
         </select>

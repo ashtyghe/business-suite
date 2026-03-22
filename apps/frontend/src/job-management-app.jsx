@@ -11,7 +11,6 @@ import { buildQuotePdfHtml, buildInvoicePdfHtml, buildOrderPdfHtml, htmlToPdfBas
 // Planned features & improvements for FieldOps:
 //
 // Features:
-// TODO: Add scheduling & KPI dashboard for office digital screens (team schedules, assignments, live KPIs)
 // TODO: Build digital asset management (DAM) for centralized templates, contracts, compliance docs, marketing assets
 // TODO: Add drag-and-drop reordering for job phases and tasks
 // TODO: Implement recurring jobs / maintenance schedules

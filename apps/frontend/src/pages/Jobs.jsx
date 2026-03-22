@@ -1,0 +1,452 @@
+import { useState, memo } from "react";
+import { useAppStore } from '../lib/store';
+import { useAuth } from '../lib/AuthContext';
+import { createJob, updateJob, deleteJob } from '../lib/db';
+import { fmt, calcQuoteTotal, mkLog, addLog } from '../utils/helpers';
+import { SECTION_COLORS, ViewField, TEAM } from '../fixtures/seedData.jsx';
+import { Icon } from '../components/Icon';
+import { StatusBadge, AvatarGroup, SectionProgressBar, SectionDrawer } from '../components/shared';
+import JobDetail from './JobDetail';
+
+const Jobs = () => {
+  const { jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders } = useAppStore();
+  const auth = useAuth();
+  const canDeleteJob = auth.isAdmin || auth.isLocalDev;
+  const canEditJob = (j) => auth.isAdmin || auth.isLocalDev || (j.assignedTo || []).includes(auth.currentUserName);
+  const [view, setView] = useState("list");
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [showModal, setShowModal] = useState(false);
+  const [editJob, setEditJob] = useState(null);
+  const [jobMode, setJobMode] = useState("edit");
+  const [detailJob, setDetailJob] = useState(null);
+  const [form, setForm] = useState({ title: "", clientId: "", status: "draft", priority: "medium", description: "", startDate: "", dueDate: "", assignedTo: [], tags: "", estimate: { labour: 0, materials: 0, subcontractors: 0, other: 0 } });
+
+  const filtered = jobs.filter(j => {
+    const q = search.toLowerCase();
+    const client = clients.find(c => c.id === j.clientId);
+    const sites = client?.sites || [];
+    const matchSearch = !search ||
+      j.title.toLowerCase().includes(q) ||
+      (client?.name || "").toLowerCase().includes(q) ||
+      (j.description || "").toLowerCase().includes(q) ||
+      (j.status || "").toLowerCase().includes(q) ||
+      (j.priority || "").toLowerCase().includes(q) ||
+      (j.tags || []).some(t => t.toLowerCase().includes(q)) ||
+      (j.assignedTo || []).some(n => n.toLowerCase().includes(q)) ||
+      (client?.address || "").toLowerCase().includes(q) ||
+      sites.some(s => (s.name || "").toLowerCase().includes(q) || (s.address || "").toLowerCase().includes(q));
+    return (filterStatus === "all" || j.status === filterStatus) && matchSearch;
+  });
+
+  const openNew = () => { setEditJob(null); setJobMode("edit"); setForm({ title: "", clientId: clients[0]?.id || "", siteId: null, status: "draft", priority: "medium", description: "", startDate: "", dueDate: "", assignedTo: [], tags: "", estimate: { labour: 0, materials: 0, subcontractors: 0, other: 0 } }); setShowModal(true); };
+  const openEdit = (j) => { setEditJob(j); setJobMode("view"); setForm({ ...j, siteId: j.siteId || null, tags: j.tags.join(", "), estimate: j.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } }); setShowModal(true); };
+  const openDetail = (j) => setDetailJob(j);
+  const save = async () => {
+    const data = { ...form, clientId: form.clientId, tags: form.tags.split(",").map(t => t.trim()).filter(Boolean), estimate: form.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } };
+    try {
+      if (editJob) {
+        const changes = [];
+        if (editJob.title !== data.title) changes.push(`Title changed to "${data.title}"`);
+        if (editJob.status !== data.status) changes.push(`Status → ${data.status.replace("_"," ")}`);
+        if (editJob.priority !== data.priority) changes.push(`Priority → ${data.priority}`);
+        if (String(editJob.clientId) !== String(data.clientId)) changes.push(`Client changed`);
+        if ((editJob.siteId||null) !== (data.siteId||null)) changes.push(`Site changed`);
+        const msg = changes.length ? changes.join(" · ") : "Job updated";
+        const saved = await updateJob(editJob.id, data);
+        setJobs(js => js.map(j => j.id === editJob.id ? { ...saved, activityLog: addLog(j.activityLog, msg) } : j));
+      } else {
+        const saved = await createJob(data);
+        setJobs(js => [...js, { ...saved, activityLog: [mkLog("Job created")] }]);
+      }
+    } catch (err) {
+      console.error('Failed to save job:', err);
+    }
+    setShowModal(false);
+  };
+  const del = async (id) => {
+    try {
+      await deleteJob(id);
+      setJobs(js => js.filter(j => j.id !== id));
+      if (detailJob?.id === id) setDetailJob(null);
+    } catch (err) {
+      console.error('Failed to delete job:', err);
+    }
+  };
+
+  const STATUSES = ["all","draft","scheduled","quoted","in_progress","completed","cancelled"];
+  const kanbanCols = ["draft","scheduled","quoted","in_progress","completed"];
+
+  // Relationship counts per job
+  const jobStats = (jobId) => ({
+    quotes: quotes.filter(q => q.jobId === jobId).length,
+    invoices: invoices.filter(i => i.jobId === jobId).length,
+    hours: timeEntries.filter(t => t.jobId === jobId).reduce((s,t) => s + t.hours, 0),
+  });
+
+  const jobStatusColors = { draft: "#888", scheduled: "#0891b2", quoted: "#7c3aed", in_progress: "#d97706", completed: "#16a34a", cancelled: "#dc2626" };
+  const jobStatusLabels = { draft: "Draft", scheduled: "Scheduled", quoted: "Quoted", in_progress: "In Progress", completed: "Completed" };
+
+  return (
+    <div>
+      {/* ── Summary strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 12, marginBottom: 24 }}>
+        {Object.entries(jobStatusLabels).map(([key, label]) => {
+          const count = jobs.filter(j => j.status === key).length;
+          const color = jobStatusColors[key];
+          return (
+            <div key={key} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
+              onClick={() => { setFilterStatus(key); setView("list"); }}>
+              <div className="stat-label">{label}</div>
+              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
+              <div className="stat-sub">{count === 1 ? "job" : "jobs"}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="section-toolbar">
+        <div className="search-bar" style={{ flex: 1, minWidth: 120 }}>
+          <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search jobs, clients..." />
+        </div>
+        <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          {STATUSES.map(s => <option key={s} value={s}>{s === "all" ? "All Statuses" : s.replace("_", " ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
+        </select>
+        <div style={{ display: "flex", gap: 4, background: "#f0f0f0", borderRadius: 6, padding: 3 }}>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: SECTION_COLORS.jobs.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
+        </div>
+        <div className="section-action-btns">
+          {(auth.isAdmin || auth.isLocalDev) && <button className="btn btn-primary" style={{ background: SECTION_COLORS.jobs.accent }} onClick={openNew}><Icon name="plus" size={14} />New Job</button>}
+        </div>
+      </div>
+
+      {view === "grid" ? (
+        <div className="order-cards-grid">
+          {filtered.length === 0 && <div className="empty-state" style={{ gridColumn: "1/-1" }}><div className="empty-state-icon">🔧</div><div className="empty-state-text">No jobs found</div></div>}
+          {filtered.map(job => {
+            const client = clients.find(c => c.id === job.clientId);
+            const site = client?.sites?.find(s => s.id === job.siteId);
+            const stats = jobStats(job.id);
+            const priorityColors = { high: "#111", medium: "#777", low: "#ccc" };
+            return (
+              <div key={job.id} className="order-card" onClick={() => openDetail(job)}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.jobs.light, color: SECTION_COLORS.jobs.accent }}>
+                      <Icon name="jobs" size={15} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{job.title}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{job.startDate || "No start date"}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <StatusBadge status={job.status} />
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "#334155", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {client?.name || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No client</span>}
+                </div>
+                {site && <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>📍 {site.name}</div>}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: priorityColors[job.priority], background: "#f5f5f5", padding: "2px 8px", borderRadius: 12 }}>
+                    <span className={`priority-dot priority-${job.priority}`} /> {job.priority}
+                  </span>
+                  {stats.quotes > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{stats.quotes} quote{stats.quotes !== 1 ? "s" : ""}</span>}
+                  {stats.invoices > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{stats.invoices} inv</span>}
+                  {stats.hours > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{stats.hours}h</span>}
+                </div>
+                {(job.assignedTo || []).length > 0 && <div style={{ marginBottom: 4 }}><AvatarGroup names={job.assignedTo} max={4} /></div>}
+                <SectionProgressBar status={job.status} section="jobs" />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9" }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: job.dueDate ? "#334155" : "#ccc" }}>{job.dueDate ? `Due ${job.dueDate}` : "No due date"}</span>
+                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                    {canEditJob(job) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>}
+                    {canDeleteJob && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : view === "list" ? (
+        <div className="card">
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Job</th><th>Client</th><th>Status</th><th>Priority</th><th>Due Date</th><th>Assigned</th><th>Links</th><th></th></tr></thead>
+              <tbody>
+                {filtered.length === 0 && <tr><td colSpan={8}><div className="empty-state"><div className="empty-state-icon">🔧</div><div className="empty-state-text">No jobs found</div></div></td></tr>}
+                {filtered.map(job => {
+                  const client = clients.find(c => c.id === job.clientId);
+                  const stats = jobStats(job.id);
+                  return (
+                    <tr key={job.id} style={{ cursor: "pointer" }} onClick={() => openDetail(job)}>
+                      <td>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{job.title}</div>
+                        <div style={{ fontSize: 11, color: "#999", marginTop: 2 }}>{job.description?.slice(0, 55)}{job.description?.length > 55 ? "…" : ""}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: 13 }}>{client?.name}</div>
+                        {(() => { const s = client?.sites?.find(x => x.id === job.siteId); return s ? <div style={{ fontSize: 11, color: "#aaa" }}>📍 {s.name}</div> : null; })()}
+                      </td>
+                      <td><StatusBadge status={job.status} /></td>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span className={`priority-dot priority-${job.priority}`} />
+                          <span style={{ fontSize: 12, textTransform: "capitalize" }}>{job.priority}</span>
+                        </div>
+                      </td>
+                      <td><span style={{ fontSize: 12, color: job.dueDate ? "#111" : "#ccc" }}>{job.dueDate || "—"}</span></td>
+                      <td onClick={e => e.stopPropagation()}><AvatarGroup names={job.assignedTo} max={3} /></td>
+                      <td onClick={e => e.stopPropagation()}>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          {stats.quotes > 0 && <span className="chip"><Icon name="quotes" size={10} />{stats.quotes}</span>}
+                          {stats.invoices > 0 && <span className="chip"><Icon name="invoices" size={10} />{stats.invoices}</span>}
+                          {stats.hours > 0 && <span className="chip"><Icon name="time" size={10} />{stats.hours}h</span>}
+                        </div>
+                      </td>
+                      <td onClick={e => e.stopPropagation()}>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          {canEditJob(job) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>}
+                          {canDeleteJob && <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="kanban">
+          {kanbanCols.map(col => {
+            const colJobs = filtered.filter(j => j.status === col);
+            const labels = { draft: "Draft", scheduled: "Scheduled", quoted: "Quoted", in_progress: "In Progress", completed: "Completed" };
+            return (
+              <div key={col} className="kanban-col">
+                <div className="kanban-col-header">
+                  <span>{labels[col]}</span>
+                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colJobs.length}</span>
+                </div>
+                {colJobs.map(job => {
+                  const client = clients.find(c => c.id === job.clientId);
+                  const stats = jobStats(job.id);
+                  return (
+                    <div key={job.id} className="kanban-card" onClick={() => openDetail(job)}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                        <span className={`priority-dot priority-${job.priority}`} />
+                        <span style={{ fontWeight: 700, fontSize: 12, flex: 1 }}>{job.title}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{client?.name}</div>
+                      {job.dueDate && <div style={{ fontSize: 11, color: "#666", marginBottom: 6 }}>Due: {job.dueDate}</div>}
+                      <div style={{ display: "flex", gap: 4, marginBottom: 8, flexWrap: "wrap" }}>
+                        {stats.quotes > 0 && <span className="chip" style={{ fontSize: 10 }}><Icon name="quotes" size={9} />{stats.quotes} quote{stats.quotes>1?"s":""}</span>}
+                        {stats.invoices > 0 && <span className="chip" style={{ fontSize: 10 }}><Icon name="invoices" size={9} />{stats.invoices} inv</span>}
+                        {stats.hours > 0 && <span className="chip" style={{ fontSize: 10 }}><Icon name="time" size={9} />{stats.hours}h</span>}
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>{job.tags.slice(0,2).map((t, i) => <span key={i} className="tag" style={{ fontSize: 10, padding: "1px 6px" }}>{t}</span>)}</div>
+                        <AvatarGroup names={job.assignedTo} max={2} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Job detail drawer */}
+      {detailJob && (
+        <JobDetail
+          job={jobs.find(j => j.id === detailJob.id) || detailJob}
+          onClose={() => setDetailJob(null)}
+          onEdit={() => { openEdit(jobs.find(j => j.id === detailJob.id) || detailJob); setDetailJob(null); }}
+        />
+      )}
+
+      {/* Edit / New Job drawer */}
+      {showModal && (() => {
+        const isNewJob = !editJob;
+        const jobClient = clients.find(c => String(c.id) === String(form.clientId));
+        const jobSite = jobClient?.sites?.find(s => String(s.id) === String(form.siteId));
+        return (
+        <SectionDrawer
+          accent={SECTION_COLORS.jobs.accent}
+          icon={<Icon name="jobs" size={16} />}
+          typeLabel="Job"
+          title={editJob ? editJob.title : "New Job"}
+          statusBadge={editJob ? <StatusBadge status={form.status} /> : null}
+          mode={jobMode} setMode={setJobMode}
+          showToggle={!isNewJob}
+          isNew={isNewJob}
+          footer={jobMode === "view" ? <>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.jobs.accent, color: "#fff", border: "none" }} onClick={() => setJobMode("edit")}>
+              <Icon name="edit" size={13} /> Edit
+            </button>
+          </> : <>
+            <button className="btn btn-ghost btn-sm" onClick={() => editJob ? setJobMode("view") : setShowModal(false)}>{editJob ? "Cancel" : "Cancel"}</button>
+            <button className="btn btn-sm" style={{ background: SECTION_COLORS.jobs.accent, color: "#fff", border: "none" }} onClick={() => { save(); if (editJob) setJobMode("view"); }} disabled={!form.title || (isNewJob && ((form.estimate?.labour || 0) + (form.estimate?.materials || 0) + (form.estimate?.subcontractors || 0) + (form.estimate?.other || 0)) === 0)}>
+              <Icon name="check" size={13} /> {isNewJob ? "Create Job" : "Save Changes"}
+            </button>
+          </>}
+          onClose={() => setShowModal(false)}
+        >
+          {jobMode === "view" ? (
+            <div style={{ padding: "20px 24px" }}>
+              <ViewField label="Job Title" value={form.title} />
+              <div className="grid-2">
+                <ViewField label="Client" value={jobClient?.name} />
+                <ViewField label="Site" value={jobSite?.name || "No specific site"} />
+              </div>
+              <div className="grid-3">
+                <ViewField label="Status" value={form.status?.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())} />
+                <ViewField label="Priority" value={form.priority?.charAt(0).toUpperCase() + form.priority?.slice(1)} />
+                <ViewField label="Tags" value={form.tags || "—"} />
+              </div>
+              <div className="grid-2">
+                <ViewField label="Start Date" value={form.startDate || "—"} />
+                <ViewField label="Due Date" value={form.dueDate || "—"} />
+              </div>
+              {(form.assignedTo || []).length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 6 }}>Assigned Team</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {form.assignedTo.map(t => <span key={t} className="chip">{t}</span>)}
+                  </div>
+                </div>
+              )}
+              {form.description && <ViewField label="Description" value={form.description} />}
+              {(() => {
+                const est = form.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 };
+                const totalEst = (est.labour || 0) + (est.materials || 0) + (est.subcontractors || 0) + (est.other || 0);
+                const acceptedTotal = quotes.filter(q => q.jobId === (editJob?.id) && q.status === "accepted").reduce((s, q) => s + calcQuoteTotal(q), 0);
+                return (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Estimate</div>
+                    <div style={{ background: "#f8f8f8", borderRadius: 10, padding: 14 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 10 }}>
+                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Labour</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.labour || 0)}</div></div>
+                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Materials</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.materials || 0)}</div></div>
+                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Subcontractors</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.subcontractors || 0)}</div></div>
+                        <div><div style={{ fontSize: 10, color: "#999", fontWeight: 600 }}>Other</div><div style={{ fontSize: 14, fontWeight: 700 }}>{fmt(est.other || 0)}</div></div>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e5e7eb", paddingTop: 10 }}>
+                        <div style={{ fontSize: 13, fontWeight: 800 }}>Total Estimate: {fmt(totalEst)}</div>
+                        {acceptedTotal > 0 && <div style={{ fontSize: 11, color: "#059669", fontWeight: 600 }}>Accepted Quotes: {fmt(acceptedTotal)}</div>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          ) : (
+          <div style={{ padding: "20px 24px" }}>
+            <div className="form-group">
+              <label className="form-label">Job Title *</label>
+              <input className="form-control" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
+            </div>
+            <div className="grid-3">
+              <div className="form-group">
+                <label className="form-label">Client *</label>
+                <select className="form-control" value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value, siteId: "" }))}>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Site</label>
+                <select className="form-control" value={form.siteId || ""} onChange={e => setForm(f => ({ ...f, siteId: e.target.value || null }))}>
+                  <option value="">— No specific site —</option>
+                  {(clients.find(c => String(c.id) === String(form.clientId))?.sites || []).map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Status</label>
+                <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+                  {["draft","scheduled","quoted","in_progress","completed","cancelled"].map(s => <option key={s} value={s}>{s.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Priority</label>
+                <select className="form-control" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
+                  {["high","medium","low"].map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Tags (comma separated)</label>
+                <input className="form-control" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
+              </div>
+            </div>
+            <div className="grid-2">
+              <div className="form-group">
+                <label className="form-label">Start Date</label>
+                <input type="date" className="form-control" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Due Date</label>
+                <input type="date" className="form-control" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Assigned Team Members</label>
+              <div className="multi-select">
+                {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => (
+                  <span key={t} className={`multi-option ${form.assignedTo.includes(t) ? "selected" : ""}`}
+                    onClick={() => setForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Estimate *</div>
+              <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: 14 }}>
+                <div className="grid-2" style={{ marginBottom: 8 }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: 11 }}>Labour ($)</label>
+                    <input type="number" className="form-control" min="0" step="100" value={form.estimate?.labour || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, labour: Number(e.target.value) || 0 } }))} placeholder="0" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: 11 }}>Materials ($)</label>
+                    <input type="number" className="form-control" min="0" step="100" value={form.estimate?.materials || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, materials: Number(e.target.value) || 0 } }))} placeholder="0" />
+                  </div>
+                </div>
+                <div className="grid-2">
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: 11 }}>Subcontractors ($)</label>
+                    <input type="number" className="form-control" min="0" step="100" value={form.estimate?.subcontractors || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, subcontractors: Number(e.target.value) || 0 } }))} placeholder="0" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: 11 }}>Other ($)</label>
+                    <input type="number" className="form-control" min="0" step="100" value={form.estimate?.other || ""} onChange={e => setForm(f => ({ ...f, estimate: { ...f.estimate, other: Number(e.target.value) || 0 } }))} placeholder="0" />
+                  </div>
+                </div>
+                {(() => {
+                  const t = (form.estimate?.labour || 0) + (form.estimate?.materials || 0) + (form.estimate?.subcontractors || 0) + (form.estimate?.other || 0);
+                  return <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #e2e8f0", fontSize: 13, fontWeight: 800 }}>Total: {fmt(t)}</div>;
+                })()}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Description</label>
+              <textarea className="form-control" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
+            </div>
+          </div>
+          )}
+        </SectionDrawer>
+        );
+      })()}
+    </div>
+  );
+};
+
+export default memo(Jobs);

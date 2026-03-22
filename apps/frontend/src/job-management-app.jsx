@@ -7084,7 +7084,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
   return (
     <div>
       {/* ── Summary strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: 12, marginBottom: 24 }}>
+      <div className={jb.summaryGrid}>
         {Object.entries(quoteStatusLabels).map(([key, label]) => {
           const statusQuotes = quotes.filter(q => q.status === key);
           const count = statusQuotes.length;
@@ -7125,7 +7125,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
               <div key={col} className="kanban-col">
                 <div className="kanban-col-header">
                   <span>{labels[col]}</span>
-                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colQuotes.length}</span>
+                  <span className={jb.kanbanCount}>{colQuotes.length}</span>
                 </div>
                 {colQuotes.map(q => {
                   const job = jobs.find(j => j.id === q.jobId);
@@ -7133,14 +7133,14 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
                   const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
                   return (
                     <div key={q.id} className="kanban-card" onClick={() => openEdit(q)}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                        <span style={{ fontWeight: 700, fontSize: 12, fontFamily: "monospace" }}>{q.number}</span>
+                      <div className={jb.kanbanCardHeader}>
+                        <span className={jb.listRowTitleMono}>{q.number}</span>
                       </div>
-                      <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 4 }}>{job?.title || "—"}</div>
-                      <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{client?.name || "—"}</div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontWeight: 700, fontSize: 13 }}>{fmt(sub * (1 + q.tax / 100))}</span>
-                        <span style={{ fontSize: 10, color: "#bbb" }}>{q.createdAt}</span>
+                      <div className={jb.gridCardTitle}>{job?.title || "—"}</div>
+                      <div className={jb.kanbanClient}>{client?.name || "—"}</div>
+                      <div className={jb.kanbanFooter}>
+                        <span className={db.listRowAmount}>{fmt(sub * (1 + q.tax / 100))}</span>
+                        <span className={jb.gridCardDate}>{q.createdAt}</span>
                       </div>
                     </div>
                   );
@@ -7162,34 +7162,34 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
             return (
               <div key={q.id} className="order-card" onClick={() => openEdit(q)}>
                 <div className={jb.gridCardTop}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: SECTION_COLORS.quotes.light, color: SECTION_COLORS.quotes.accent }}>
+                  <div className={jb.gridCardIcon}>
+                    <div className={jb.gridCardIconBox} style={{ background: SECTION_COLORS.quotes.light, color: SECTION_COLORS.quotes.accent }}>
                       <Icon name="quotes" size={15} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13, fontFamily: "monospace" }}>{q.number}</div>
-                      <div style={{ fontSize: 11, color: "#94a3b8" }}>{q.createdAt}</div>
+                      <div className={jb.listRowTitleMono}>{q.number}</div>
+                      <div className={jb.gridCardDate}>{q.createdAt}</div>
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div className={jb.gridCardStatusRow}>
                     <StatusBadge status={q.status} />
                   </div>
                 </div>
                 <div className={jb.gridCardClient}>
-                  {job?.title || <span style={{ fontStyle: "italic", color: "#94a3b8" }}>No job</span>}
+                  {job?.title || <span className={jb.noClient}>No job</span>}
                 </div>
-                {client && <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>{client.name}</div>}
+                {client && <div className={jb.gridCardDate} style={{ marginBottom: 4 }}>{client.name}</div>}
                 <div className={jb.metaRow}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>{fmt(total)}</span>
+                  <span className={db.listRowAmount} style={{ fontSize: 14 }}>{fmt(total)}</span>
                   <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{lineCount} item{lineCount !== 1 ? "s" : ""}</span>
-                  {q.tax > 0 && <span style={{ fontSize: 11, color: "#64748b", background: "#f1f5f9", padding: "2px 8px", borderRadius: 12 }}>{q.tax}% GST</span>}
+                  {q.tax > 0 && <span className={jb.statChip}>{q.tax}% GST</span>}
                 </div>
                 <SectionProgressBar status={q.status} section="quotes" />
                 <div className={jb.gridCardFooter}>
-                  <span style={{ fontSize: 11, color: "#94a3b8" }}>{lineCount} line item{lineCount !== 1 ? "s" : ""}</span>
-                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                  <span className={jb.gridCardDate}>{lineCount} line item{lineCount !== 1 ? "s" : ""}</span>
+                  <div className={jb.actionBtns} onClick={e => e.stopPropagation()}>
                     <button className="btn btn-ghost btn-xs" onClick={() => duplicate(q)} title="Duplicate"><Icon name="copy" size={12} /></button>
-                    <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(q.id)}><Icon name="trash" size={12} /></button>
+                    <button className={`btn btn-ghost btn-xs ${jb.deleteBtn}`} onClick={() => del(q.id)}><Icon name="trash" size={12} /></button>
                   </div>
                 </div>
               </div>
@@ -7211,21 +7211,21 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
                 const linkedInv = invoices.filter(i => i.fromQuoteId === q.id);
                 return (
                   <tr key={q.id} style={{ cursor: "pointer" }} onClick={() => openEdit(q)}>
-                    <td><span style={{ fontWeight: 700, fontFamily: "monospace", fontSize: 13 }}>{q.number}</span></td>
+                    <td><span className={jb.listRowTitleMono}>{q.number}</span></td>
                     <td>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{job?.title}</div>
-                      {linkedInv.length > 0 && <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>→ {linkedInv.map(i=>i.number).join(", ")}</div>}
+                      <div className={jb.rowTitle}>{job?.title}</div>
+                      {linkedInv.length > 0 && <div className={jb.rowDesc}>→ {linkedInv.map(i=>i.number).join(", ")}</div>}
                     </td>
-                    <td style={{ fontSize: 13, color: "#666" }}>{client?.name}</td>
+                    <td className={jb.rowClient} style={{ color: "#666" }}>{client?.name}</td>
                     <td><StatusBadge status={q.status} /></td>
                     <td>{fmt(sub)}</td>
                     <td>{fmt(sub * q.tax / 100)}</td>
-                    <td style={{ fontWeight: 700 }}>{fmt(sub * (1 + q.tax / 100))}</td>
-                    <td style={{ fontSize: 12, color: "#999" }}>{q.createdAt}</td>
+                    <td className={db.listRowAmount}>{fmt(sub * (1 + q.tax / 100))}</td>
+                    <td className={jb.gridCardDate}>{q.createdAt}</td>
                     <td onClick={e => e.stopPropagation()}>
-                      <div style={{ display: "flex", gap: 4 }}>
+                      <div className={jb.actionBtns}>
                         <button className="btn btn-ghost btn-xs" onClick={() => duplicate(q)} title="Duplicate"><Icon name="copy" size={12} /></button>
-                        <button className="btn btn-ghost btn-xs" style={{ color: "#c00" }} onClick={() => del(q.id)}><Icon name="trash" size={12} /></button>
+                        <button className={`btn btn-ghost btn-xs ${jb.deleteBtn}`} onClick={() => del(q.id)}><Icon name="trash" size={12} /></button>
                       </div>
                     </td>
                   </tr>
@@ -7255,7 +7255,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
           isNew={isNewQ}
           footer={quoteMode === "view" ? <>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
-            <div style={{ display: "flex", gap: 6 }}>
+            <div className={jb.actionBtns} style={{ gap: 6 }}>
               <button className="btn btn-sm" style={{ background: "#2563eb", color: "#fff", border: "none" }} disabled={emailSending} onClick={() => handleSendQuoteEmail(form)}>
                 <Icon name="send" size={13} /> {emailSending ? "Sending..." : "Send to Client"}
               </button>
@@ -7272,7 +7272,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
           onClose={() => setShowModal(false)}
         >
           {quoteMode === "view" ? (
-            <div style={{ padding: "20px 24px" }}>
+            <div className={jb.drawerBody}>
               {emailStatus && <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 16, fontSize: 13, fontWeight: 600, background: emailStatus.type === "success" ? "#ecfdf5" : "#fef2f2", color: emailStatus.type === "success" ? "#059669" : "#dc2626", border: `1px solid ${emailStatus.type === "success" ? "#a7f3d0" : "#fecaca"}` }}>{emailStatus.msg}</div>}
               <div className="grid-2">
                 <ViewField label="Job" value={qJob?.title} />
@@ -7280,7 +7280,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
               </div>
               <ViewField label="Status" value={form.status?.charAt(0).toUpperCase() + form.status?.slice(1)} />
               <div style={{ borderTop: "1px solid #f0f0f0", marginTop: 4, paddingTop: 16, marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888', marginBottom: 8 }}>Line Items</div>
+                <div className={jb.estimateLabel}>Line Items</div>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead><tr><th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", borderBottom: "1px solid #f0f0f0" }}>Description</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Qty</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Rate</th><th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 700, color: "#999", borderBottom: "1px solid #f0f0f0" }}>Total</th></tr></thead>
                   <tbody>
@@ -7298,7 +7298,7 @@ const Quotes = ({ quotes, setQuotes, jobs, clients, invoices }) => {
               {form.notes && <div style={{ marginTop: 16 }}><ViewField label="Notes / Terms" value={form.notes} /></div>}
             </div>
           ) : (
-          <div style={{ padding: "20px 24px" }}>
+          <div className={jb.drawerBody}>
             <div className="grid-2" style={{ marginBottom: 16 }}>
               <div className="form-group">
                 <label className="form-label">Job</label>
@@ -8929,27 +8929,27 @@ const Invoices = ({ invoices, setInvoices, jobs, clients, quotes }) => {
               <div key={col} className="kanban-col">
                 <div className="kanban-col-header">
                   <span>{labels[col]}</span>
-                  <span style={{ background: "#e0e0e0", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{colInvoices.length}</span>
+                  <span className={jb.kanbanCount}>{colInvoices.length}</span>
                 </div>
-                {colTotal > 0 && <div style={{ fontSize: 11, color: "#888", marginBottom: 8, fontWeight: 600 }}>{fmt(colTotal)}</div>}
+                {colTotal > 0 && <div className={jb.kanbanClient} style={{ fontWeight: 600, color: "#888" }}>{fmt(colTotal)}</div>}
                 {colInvoices.map(inv => {
                   const job = jobs.find(j => j.id === inv.jobId);
                   const client = clients.find(c => c.id === job?.clientId);
                   const total = calcQuoteTotal(inv);
                   return (
                     <div key={inv.id} className="kanban-card" onClick={() => openEdit(inv)}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                        <span style={{ fontWeight: 700, fontSize: 12, fontFamily: "monospace" }}>{inv.number}</span>
+                      <div className={jb.kanbanCardHeader} style={{ justifyContent: "space-between" }}>
+                        <span className={jb.listRowTitleMono}>{inv.number}</span>
                         <StatusBadge status={inv.status} />
                       </div>
-                      <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 4 }}>{job?.title || "—"}</div>
-                      <div style={{ fontSize: 11, color: "#999", marginBottom: 6 }}>{client?.name || "—"}</div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontWeight: 700, fontSize: 13 }}>{fmt(total)}</span>
-                        <span style={{ fontSize: 10, color: inv.dueDate ? "#111" : "#ccc" }}>{inv.dueDate || "No due"}</span>
+                      <div className={jb.gridCardTitle}>{job?.title || "—"}</div>
+                      <div className={jb.kanbanClient}>{client?.name || "—"}</div>
+                      <div className={jb.kanbanFooter}>
+                        <span className={db.listRowAmount}>{fmt(total)}</span>
+                        <span className={jb.gridCardDate} style={{ color: inv.dueDate ? "#111" : "#ccc" }}>{inv.dueDate || "No due"}</span>
                       </div>
                       {inv.status !== "paid" && inv.status !== "void" && (
-                        <div style={{ display: "flex", gap: 4, marginTop: 8, justifyContent: "flex-end" }} onClick={e => e.stopPropagation()}>
+                        <div className={jb.actionBtns} style={{ marginTop: 8, justifyContent: "flex-end" }} onClick={e => e.stopPropagation()}>
                           <button className="btn btn-ghost btn-xs" style={{ color: "#2a7" }} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>
                         </div>
                       )}

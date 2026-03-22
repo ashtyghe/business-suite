@@ -6,6 +6,7 @@ import { CloseBtn, BILL_CATEGORIES } from "../components/shared";
 import { SECTION_COLORS, DEFAULT_COLUMNS, SEED_TEMPLATES } from "../fixtures/seedData.jsx";
 import { supabase, inviteUser, updateStaffRecord, xeroOAuth, xeroSyncInvoice, xeroSyncBill, xeroSyncContact, xeroPollUpdates, xeroFetchAccounts, xeroGetMappings, xeroSaveMappings } from "../lib/supabase";
 import { adminResetUserPassword } from "../lib/auth";
+import { saveCompanyInfo as dbSaveCompanyInfo, saveTemplates as dbSaveTemplates, saveUserPermissions as dbSaveUserPermissions } from "../lib/db";
 import { hexToRgba } from "../utils/helpers";
 import s from './Settings.module.css';
 
@@ -465,9 +466,9 @@ const Settings = () => {
   const [companyDirty, setCompanyDirty] = useState(false);
   const [companySaved, setCompanySaved] = useState(false);
   const updateCompanyField = (key, value) => { setCompanyForm(f => ({ ...f, [key]: value })); setCompanyDirty(true); setCompanySaved(false); };
-  const saveCompanyInfo = () => {
+  const saveCompanyInfo = async () => {
     setCompanyInfo(companyForm);
-    localStorage.setItem("fieldops_company_info", JSON.stringify(companyForm));
+    try { await dbSaveCompanyInfo(companyForm); } catch {}
     setCompanyDirty(false); setCompanySaved(true);
     setTimeout(() => setCompanySaved(false), 2500);
   };
@@ -534,8 +535,6 @@ const Settings = () => {
         console.warn("Could not save inbound voice defaults to DB:", err.message);
       }
     }
-    // Keep localStorage as fallback
-    localStorage.setItem("fieldops_voice_settings", JSON.stringify(voiceSettings));
     // Push settings to voice server so they apply on next call
     const voiceServerUrl = import.meta.env.VITE_VOICE_SERVER_URL;
     if (voiceServerUrl) {
@@ -627,8 +626,6 @@ const Settings = () => {
         console.warn("Could not save outbound voice defaults to DB:", err.message);
       }
     }
-    // Keep localStorage as fallback
-    localStorage.setItem("fieldops_outbound_settings", JSON.stringify(outboundSettings));
     const voiceServerUrl = import.meta.env.VITE_VOICE_SERVER_URL;
     if (voiceServerUrl) {
       try { await fetch(`${voiceServerUrl}/outbound-settings`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(outboundSettings) }); } catch (err) { console.warn("Could not sync outbound settings:", err.message); }
@@ -846,11 +843,13 @@ const Settings = () => {
     const [editPhoneVal, setEditPhoneVal] = useState("");
 
     // Get permissions for a user — returns { sectionId: [actions], ... }
+    const allPerms = useAppStore.getState().userPermissions;
     const getUserPerms = (userId) => {
-      try { const all = JSON.parse(localStorage.getItem("fieldops_user_permissions") || "{}"); return all[userId] || { ...DEFAULT_PERMISSIONS }; } catch { return { ...DEFAULT_PERMISSIONS }; }
+      return allPerms[userId] || { ...DEFAULT_PERMISSIONS };
     };
-    const saveUserPerms = (userId, perms) => {
-      try { const all = JSON.parse(localStorage.getItem("fieldops_user_permissions") || "{}"); all[userId] = perms; localStorage.setItem("fieldops_user_permissions", JSON.stringify(all)); } catch {}
+    const saveUserPerms = async (userId, perms) => {
+      useAppStore.getState().setUserPermissions(prev => ({ ...prev, [userId]: perms }));
+      try { await dbSaveUserPermissions(userId, perms); } catch {}
     };
 
     const handleInvite = async (e) => {
@@ -1304,24 +1303,24 @@ const Settings = () => {
           setEditTemplate("new");
         };
         const openEditTemplate = (tpl) => { setTplForm({ ...tpl }); setEditTemplate(tpl.id); };
-        const saveTemplate = () => {
+        const saveTemplate = async () => {
           if (!tplForm.name.trim()) return;
           const updated = editTemplate === "new"
             ? [...templates, { ...tplForm, id: Date.now() }]
             : templates.map(t => t.id === editTemplate ? { ...tplForm } : t);
           setTemplates(updated);
-          localStorage.setItem("fieldops_templates", JSON.stringify(updated));
+          try { await dbSaveTemplates(updated); } catch {}
           setEditTemplate(null);
         };
-        const deleteTemplate = (id) => {
+        const deleteTemplate = async (id) => {
           const updated = templates.filter(t => t.id !== id);
           setTemplates(updated);
-          localStorage.setItem("fieldops_templates", JSON.stringify(updated));
+          try { await dbSaveTemplates(updated); } catch {}
         };
-        const setDefault = (id) => {
+        const setDefault = async (id) => {
           const updated = templates.map(t => t.type === docType ? { ...t, isDefault: t.id === id } : t);
           setTemplates(updated);
-          localStorage.setItem("fieldops_templates", JSON.stringify(updated));
+          try { await dbSaveTemplates(updated); } catch {}
         };
 
         if (editTemplate !== null && tplForm) {

@@ -4625,12 +4625,8 @@ export default function App() {
 
   // ── Initialise store on mount ───────────────────────────────────────────
   useEffect(() => {
-    const initTemplates = (() => {
-      try { const saved = localStorage.getItem("fieldops_templates"); return saved ? JSON.parse(saved) : SEED_TEMPLATES; } catch { return SEED_TEMPLATES; }
-    })();
-    const initCompanyInfo = (() => {
-      try { const saved = localStorage.getItem("fieldops_company_info"); return saved ? JSON.parse(saved) : { ...DEFAULT_COMPANY }; } catch { return { ...DEFAULT_COMPANY }; }
-    })();
+    const initTemplates = SEED_TEMPLATES;
+    const initCompanyInfo = { ...DEFAULT_COMPANY };
 
     storeInit({
       clients: SEED_CLIENTS,

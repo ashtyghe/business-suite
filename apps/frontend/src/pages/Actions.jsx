@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore } from '../lib/store';
 import {
   SEED_CLIENTS, SECTION_COLORS, ORDER_TERMINAL,
@@ -7,6 +7,7 @@ import {
   daysUntil, hexToRgba,
   COMPLIANCE_DOC_TYPES, getComplianceStatus,
 } from '../utils/helpers';
+import { fetchOutboundDefaults } from '../lib/db';
 import s from './Actions.module.css';
 
 const Actions = ({ onNav }) => {
@@ -103,10 +104,16 @@ const Actions = ({ onNav }) => {
     setTimeout(() => setCallStatus(null), 5000);
   };
 
-  // Load outbound team from localStorage
-  const outboundTeam = (() => {
-    try { const s = localStorage.getItem("fieldops_outbound_settings"); return s ? JSON.parse(s).team?.filter(m => m.callEnabled) || [] : []; } catch { return []; }
-  })();
+  // Load outbound team from Supabase
+  const [outboundTeam, setOutboundTeam] = useState([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const settings = await fetchOutboundDefaults();
+        if (settings?.team) setOutboundTeam(settings.team.filter(m => m.callEnabled));
+      } catch { /* ignore */ }
+    })();
+  }, []);
 
   return (
     <div>

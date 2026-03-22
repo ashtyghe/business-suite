@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchAll } from './db';
+import { fetchAll, fetchCompanyInfo, fetchTemplates, fetchAllUserPermissions, saveCompanyInfo as dbSaveCompanyInfo, saveTemplates as dbSaveTemplates } from './db';
 
 // ── App Store ────────────────────────────────────────────────────────────────
 // Holds all business data state previously managed via useState in App.
@@ -24,6 +24,7 @@ export const useAppStore = create((set) => ({
   companyInfo: {},
   workOrders: [],
   purchaseOrders: [],
+  userPermissions: {},
 
   // ── Loading / error ──────────────────────────────────────────────────────
   loading: true,
@@ -44,16 +45,15 @@ export const useAppStore = create((set) => ({
   setReminders: (v) => set({ reminders: typeof v === 'function' ? v(useAppStore.getState().reminders) : v }),
   setTemplates: (v) => {
     const next = typeof v === 'function' ? v(useAppStore.getState().templates) : v;
-    try { localStorage.setItem('fieldops_templates', JSON.stringify(next)); } catch { /* ignore */ }
     set({ templates: next });
   },
   setCompanyInfo: (v) => {
     const next = typeof v === 'function' ? v(useAppStore.getState().companyInfo) : v;
-    try { localStorage.setItem('fieldops_company_info', JSON.stringify(next)); } catch { /* ignore */ }
     set({ companyInfo: next });
   },
   setWorkOrders: (v) => set({ workOrders: typeof v === 'function' ? v(useAppStore.getState().workOrders) : v }),
   setPurchaseOrders: (v) => set({ purchaseOrders: typeof v === 'function' ? v(useAppStore.getState().purchaseOrders) : v }),
+  setUserPermissions: (v) => set({ userPermissions: typeof v === 'function' ? v(useAppStore.getState().userPermissions) : v }),
 
   // ── Initialise: load from Supabase or seed data ──────────────────────────
   // Called once from App's useEffect. Receives seed data constants from the
@@ -89,7 +89,37 @@ export const useAppStore = create((set) => ({
     }
 
     try {
-      const data = await fetchAll();
+      // Fetch all business data + settings in parallel
+      const [data, companyInfoData, templatesData, userPermsData] = await Promise.all([
+        fetchAll(),
+        fetchCompanyInfo(),
+        fetchTemplates(),
+        fetchAllUserPermissions(),
+      ]);
+
+      // One-time migration: if Supabase is empty but localStorage has data, push it up
+      let resolvedCompanyInfo = companyInfoData;
+      if (!resolvedCompanyInfo) {
+        try {
+          const local = localStorage.getItem('fieldops_company_info');
+          if (local) {
+            resolvedCompanyInfo = JSON.parse(local);
+            dbSaveCompanyInfo(resolvedCompanyInfo).catch(() => {});
+          }
+        } catch { /* ignore */ }
+      }
+
+      let resolvedTemplates = templatesData;
+      if (!resolvedTemplates) {
+        try {
+          const local = localStorage.getItem('fieldops_templates');
+          if (local) {
+            resolvedTemplates = JSON.parse(local);
+            dbSaveTemplates(resolvedTemplates).catch(() => {});
+          }
+        } catch { /* ignore */ }
+      }
+
       set({
         clients: data.clients,
         jobs: data.jobs.map(job => ({
@@ -107,6 +137,9 @@ export const useAppStore = create((set) => ({
         ...(data.workOrders ? { workOrders: data.workOrders } : {}),
         ...(data.purchaseOrders ? { purchaseOrders: data.purchaseOrders } : {}),
         ...(data.contractors ? { contractors: data.contractors } : {}),
+        templates: resolvedTemplates || seedData.templates,
+        companyInfo: resolvedCompanyInfo || seedData.companyInfo,
+        userPermissions: userPermsData || {},
         loading: false,
         dbError: null,
       });

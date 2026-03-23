@@ -3,6 +3,7 @@ import { useAppStore } from '../lib/store';
 import { supabase } from '../lib/supabase';
 import { updateScheduleEntry } from '../lib/db';
 import { fmt, calcQuoteTotal, daysUntil, getContractorComplianceCount } from '../utils/helpers';
+import { getTodayStr } from '../utils/timezone';
 import { Icon } from '../components/Icon';
 import { SectionLabel, StatusBadge, AvatarGroup } from '../components/shared';
 import { SECTION_COLORS, ORDER_STATUS_COLORS } from '../fixtures/seedData.jsx';
@@ -33,7 +34,7 @@ const Dashboard = ({ onNav }) => {
   const pipelineQuotes = quotes.filter(q => ["draft", "sent"].includes(q.status));
   const pipelineTotal = pipelineQuotes.reduce((s, q) => s + calcQuoteTotal(q), 0);
   const quoteDrafts = quotes.filter(q => q.status === "draft").length;
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getTodayStr();
   const dashDragRef = useRef(null);
   const dashHandleDrop = async (dateStr, e) => {
     e.preventDefault();

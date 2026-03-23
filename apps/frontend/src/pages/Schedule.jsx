@@ -4,6 +4,7 @@ import { useAppStore } from '../lib/store';
 import { SECTION_COLORS, ViewField, TEAM } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import { AvatarGroup, SectionDrawer } from '../components/shared';
+import { getTodayStr, getTimezone } from '../utils/timezone';
 import s from './Schedule.module.css';
 
 const Schedule = () => {
@@ -11,7 +12,7 @@ const Schedule = () => {
   const [showModal, setShowModal] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
   const [schedMode, setSchedMode] = useState("edit");
-  const [form, setForm] = useState({ jobId: "", date: new Date().toISOString().slice(0,10), assignedTo: [], notes: "" });
+  const [form, setForm] = useState({ jobId: "", date: getTodayStr(), assignedTo: [], notes: "" });
   const [filterDate, setFilterDate] = useState("");
   const [search, setSearch] = useState("");
   const [view, setView] = useState("grouped");
@@ -22,12 +23,12 @@ const Schedule = () => {
   const [futureForm, setFutureForm] = useState({ jobId: "", weekStart: "", title: "", assignedTo: [], notes: "" });
   const dragFutureRef = useRef(null);
 
-  // Weather data for Coffs Harbour NSW (-30.2963, 153.1157)
   const [weather, setWeather] = useState({});
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=-30.2963&longitude=153.1157&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=Australia%2FSydney&forecast_days=14");
+        const tz = encodeURIComponent(getTimezone());
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=-30.2963&longitude=153.1157&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=${tz}&forecast_days=14`);
         const data = await res.json();
         if (data.daily) {
           const w = {};
@@ -46,7 +47,7 @@ const Schedule = () => {
     fetchWeather();
   }, []);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayStr();
   const sorted = [...schedule].sort((a, b) => a.date > b.date ? 1 : -1);
   const displayed = sorted.filter(e => {
     const matchDate = !filterDate || e.date === filterDate;

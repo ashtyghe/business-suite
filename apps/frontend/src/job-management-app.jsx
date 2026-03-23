@@ -88,6 +88,7 @@ import {
 } from './utils/helpers';
 import { Icon } from './components/Icon';
 import { StatusBadge } from './components/shared';
+import { getFormattedDateTime } from './utils/timezone';
 // CallerMemory is lazy-loaded above
 // Shared components used by extracted pages — they import directly
 // Component imports used by extracted pages — they import directly
@@ -4632,6 +4633,11 @@ export default function App() {
   const [showQuickNote, setShowQuickNote] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [topbarTime, setTopbarTime] = useState(getFormattedDateTime());
+  useEffect(() => {
+    const id = setInterval(() => setTopbarTime(getFormattedDateTime()), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   // ── Store: only what App itself needs (badge counts + loading state) ────
   const { jobs, bills, invoices, quotes, workOrders, purchaseOrders, contractors, reminders, loading, dbError, init: storeInit } = useAppStore();
@@ -4922,7 +4928,7 @@ export default function App() {
           <div className="jm-topbar-actions">
             <button className={`btn btn-ghost btn-sm ${sh.topbarNotifBtn}`}><Icon name="notification" size={16} /></button>
             <div className={`topbar-actions-hide ${sh.topbarDivider}`} />
-            <span className={`topbar-actions-hide jm-topbar-date ${sh.topbarDate}`}>Mon, 9 Mar 2026</span>
+            <span className={`topbar-actions-hide jm-topbar-date ${sh.topbarDate}`}>{topbarTime}</span>
           </div>
         </div>
 

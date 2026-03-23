@@ -185,7 +185,7 @@ export const SEED_INVOICES = [
   { id: 1, jobId: 4, number: "INV-0001", status: "paid", lineItems: [{ desc: "HVAC Quarterly Maintenance", qty: 1, unit: "lot", rate: 950 }, { desc: "Replacement Filters x6", qty: 6, unit: "ea", rate: 95 }], tax: 10, dueDate: "2026-02-17", notes: "Thank you for your business.", createdAt: "2026-01-20" },
 ];
 
-export const DEFAULT_COMPANY = { companyName: "FieldOps Pty Ltd", abn: "12 345 678 901", address: "22 King St, Sydney NSW 2000", phone: "02 9000 1234", email: "admin@fieldops.com" };
+export const DEFAULT_COMPANY = { companyName: "FieldOps Pty Ltd", abn: "12 345 678 901", address: "22 King St, Sydney NSW 2000", phone: "02 9000 1234", email: "admin@fieldops.com", timezone: "Australia/Sydney" };
 export const DEFAULT_COLUMNS = { description: true, qty: true, unit: true, unitPrice: true, lineTotal: true, gst: true };
 export const SEED_TEMPLATES = [
   { id: 1, name: "Default", type: "quote", isDefault: true, ...DEFAULT_COMPANY, logo: null, accentColor: "#111111", footer: "Thank you for your business.", terms: "This quote is valid for 30 days from the date of issue.", showGst: true, columns: { ...DEFAULT_COLUMNS }, emailSubject: "Quote {{number}} from {{companyName}}", emailBody: "Hi {{clientName}},\n\nPlease find attached quote {{number}} for {{jobTitle}}.\n\nTotal: {{total}} (inc. GST)\n\nIf you have any questions, please don't hesitate to get in touch.\n\nKind regards,\n{{companyName}}" },

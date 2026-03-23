@@ -8,6 +8,7 @@ import { supabase, inviteUser, updateStaffRecord, xeroOAuth, xeroSyncInvoice, xe
 import { adminResetUserPassword } from "../lib/auth";
 import { saveCompanyInfo as dbSaveCompanyInfo, saveTemplates as dbSaveTemplates, saveUserPermissions as dbSaveUserPermissions } from "../lib/db";
 import { hexToRgba } from "../utils/helpers";
+import { TIMEZONE_OPTIONS } from "../utils/timezone";
 import s from './Settings.module.css';
 
 // ── Settings Page ───────────────────────────────────────────────────────────
@@ -1165,6 +1166,12 @@ const Settings = () => {
                 <label className={s.label}>Email</label>
                 <input value={companyForm.email} onChange={e => updateCompanyField("email", e.target.value)} className={s.inputLg} />
               </div>
+            </div>
+            <div className={s.mb12}>
+              <label className={s.label}>Timezone</label>
+              <select value={companyForm.timezone || "Australia/Sydney"} onChange={e => updateCompanyField("timezone", e.target.value)} className={s.inputLg}>
+                {TIMEZONE_OPTIONS.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
+              </select>
             </div>
           </div>
           <div className={s.companyFooter}>

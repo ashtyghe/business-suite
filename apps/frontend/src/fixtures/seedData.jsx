@@ -314,6 +314,7 @@ export const SECTION_COLORS = {
   calllog: { accent: "#0891b2", light: "#ecfeff" },
   assistant: { accent: "#6366f1", light: "#eef2ff" },
   memory: { accent: "#8b5cf6", light: "#f5f3ff" },
+  account: { accent: "#6b7280", light: "#f9fafb" },
 };
 
 export const ViewField = ({ label, value }) => (

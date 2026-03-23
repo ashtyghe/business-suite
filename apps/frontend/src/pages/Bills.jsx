@@ -1,8 +1,9 @@
-import { useState, memo } from "react";
+import { useState, useCallback, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { useAuth } from '../lib/AuthContext';
 import { createBill, updateBill, deleteBill } from '../lib/db';
 import { xeroSyncBill } from '../lib/supabase';
+import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import { fmt, addLog } from '../utils/helpers';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
@@ -108,8 +109,6 @@ const Bills = () => {
   const [editBill, setEditBill] = useState(null);
   const [postBill, setPostBill] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
-  const [filterCategory, setFilterCategory] = useState("all");
-  const [filterJob, setFilterJob] = useState("all");
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -136,9 +135,7 @@ const Bills = () => {
       (b.lineItems || []).some(i => (i.description || "").toLowerCase().includes(q)) ||
       String(b.amount || "").includes(q);
     const matchStatus   = filterStatus === "all"   || b.status === filterStatus;
-    const matchCategory = filterCategory === "all" || b.category === filterCategory;
-    const matchJob      = filterJob === "all"      || String(b.jobId) === filterJob;
-    return matchSearch && matchStatus && matchCategory && matchJob;
+    return matchSearch && matchStatus;
   });
 
   // ── Actions
@@ -207,6 +204,13 @@ const Bills = () => {
     setPostBill(null);
   };
 
+  const handleKanbanDrop = useCallback(async (itemId, newStatus) => {
+    const bill = bills.find(b => String(b.id) === itemId);
+    if (!bill || bill.status === newStatus) return;
+    if (newStatus === "posted") { setPostBill(bill); return; }
+    await setStatus(bill.id, newStatus);
+  }, [bills]);
+  const { dragOverCol, cardDragProps, colDragProps } = useKanbanDnD(handleKanbanDrop);
   const toggleSelect = (id) => setSelectedIds(si => si.includes(id) ? si.filter(x => x !== id) : [...si, id]);
   const toggleAll = () => setSelectedIds(si => si.length === filtered.length ? [] : filtered.map(b => b.id));
 
@@ -237,10 +241,6 @@ const Bills = () => {
         <select className={`form-control ${s.filterSelect}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="all">All Statuses</option>
           {BILL_STATUSES.map(st => <option key={st} value={st}>{BILL_STATUS_LABELS[st]}</option>)}
-        </select>
-        <select className={`form-control ${s.filterSelect}`} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
-          <option value="all">All Categories</option>
-          {BILL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <div className={s.viewToggle}>
           <button className={`btn btn-xs ${tab === "list" ? "" : "btn-ghost"}`} style={tab === "list" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("list")}><Icon name="list_view" size={12} /></button>
@@ -312,7 +312,7 @@ const Bills = () => {
             const stageBills = filtered.filter(b => b.status === status);
             const sc = BILL_STATUS_COLORS[status];
             return (
-              <div key={status} className="kanban-col">
+              <div key={status} className={`kanban-col${dragOverCol === status ? ' drag-over' : ''}`} {...colDragProps(status)}>
                 <div className="kanban-col-header">
                   <span>{BILL_STATUS_LABELS[status]}</span>
                   <span className={s.kanbanBadge} style={{ background: sc.bg, color: sc.text }}>{stageBills.length}</span>
@@ -321,7 +321,7 @@ const Bills = () => {
                 {stageBills.map(b => {
                   const job = jobs.find(j => j.id === b.jobId);
                   return (
-                    <div key={b.id} className="kanban-card" onClick={() => openEdit(b)}>
+                    <div key={b.id} className="kanban-card" onClick={() => openEdit(b)} {...cardDragProps(b.id)}>
                       <div className={s.kanbanCardHeader}>
                         <div className={s.kanbanCardLeft}>
                           <div className={s.kanbanSupplier}>{b.supplier}</div>

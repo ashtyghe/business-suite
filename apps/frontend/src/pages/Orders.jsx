@@ -1,9 +1,10 @@
-import { useState, useMemo, memo } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { useAuth } from '../lib/AuthContext';
 import {
   ORDER_STATUSES, ORDER_TERMINAL,
 } from '../fixtures/seedData.jsx';
+import { updateWorkOrder, updatePurchaseOrder } from '../lib/db';
 import { orderJobDisplay, orderFmtDate } from '../utils/helpers';
 import { Icon } from '../components/Icon';
 import {
@@ -11,6 +12,7 @@ import {
 } from '../components/shared';
 import { OrderCard } from '../components/OrderCard';
 import { OrderDrawer } from '../components/OrderDrawer';
+import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import s from './Orders.module.css';
 
 const OrdersPage = () => {
@@ -20,7 +22,6 @@ const OrdersPage = () => {
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
-  const [filterType, setFilterType] = useState("all");
   const allOrders = useMemo(() => [
     ...workOrders.map(o => ({ ...o, _type: "wo" })),
     ...purchaseOrders.map(o => ({ ...o, _type: "po" }))
@@ -32,10 +33,9 @@ const OrdersPage = () => {
       const q = search.toLowerCase();
       const matchSearch = !search || o.ref.toLowerCase().includes(q) || (partyName || "").toLowerCase().includes(q) || (jd?.name || "").toLowerCase().includes(q) || (o.description || "").toLowerCase().includes(q) || (o.notes || "").toLowerCase().includes(q) || (o.items || []).some(i => (i.description || "").toLowerCase().includes(q)) || (o.status || "").toLowerCase().includes(q);
       const matchStatus = filterStatus === "All" || o.status === filterStatus;
-      const matchType = filterType === "all" || o._type === filterType;
-      return matchSearch && matchStatus && matchType;
+      return matchSearch && matchStatus;
     });
-  }, [allOrders, search, filterStatus, filterType, jobs]);
+  }, [allOrders, search, filterStatus, jobs]);
   const openNew = (t) => setModal({ type: t, order: null });
   const openOrder = (type, order, mode = "view") => setModal({ type, order, mode });
   const handleSave = (order) => {
@@ -44,6 +44,18 @@ const OrdersPage = () => {
     setModal(m => m ? { ...m, order } : null);
   };
   const handleDelete = (type, id) => { if (!window.confirm("Delete this order?")) return; (type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.filter(o => o.id !== id)); };
+  const handleKanbanDrop = useCallback(async (itemId, newStatus) => {
+    const order = allOrders.find(o => String(o._type + o.id) === itemId);
+    if (!order || order.status === newStatus) return;
+    const updateFn = order._type === "wo" ? updateWorkOrder : updatePurchaseOrder;
+    const setFn = order._type === "wo" ? setWorkOrders : setPurchaseOrders;
+    try {
+      const { _type, ...data } = order;
+      const saved = await updateFn(order.id, { ...data, status: newStatus });
+      setFn(prev => prev.map(o => o.id === order.id ? saved : o));
+    } catch (err) { console.error('Failed to update order status:', err); }
+  }, [allOrders, setWorkOrders, setPurchaseOrders]);
+  const { dragOverCol, cardDragProps, colDragProps } = useKanbanDnD(handleKanbanDrop);
   const orderStatusColors = { Draft: "#888", Approved: "#7c3aed", Sent: "#2563eb", Viewed: "#0891b2", Accepted: "#16a34a", Completed: "#111", Billed: "#059669", Cancelled: "#dc2626" };
   const summaryStatuses = ["Draft", "Sent", "Accepted", "Completed"];
   return (
@@ -71,11 +83,6 @@ const OrdersPage = () => {
           <Icon name="search" size={14} />
           <input placeholder="Search orders, jobs, contractors..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className={`form-control ${s.filterSelect}`} value={filterType} onChange={e => setFilterType(e.target.value)}>
-          <option value="all">All Types</option>
-          <option value="wo">Work Orders</option>
-          <option value="po">Purchase Orders</option>
-        </select>
         <select className={`form-control ${s.filterSelectWide}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="All">All Statuses</option>
           {ORDER_STATUSES.map(s => <option key={s}>{s}</option>)}
@@ -101,7 +108,7 @@ const OrdersPage = () => {
           {ORDER_STATUSES.filter(s => s !== "Cancelled").map(col => {
             const colOrders = filtered.filter(o => o.status === col);
             return (
-              <div key={col} className="kanban-col">
+              <div key={col} className={`kanban-col${dragOverCol === col ? ' drag-over' : ''}`} {...colDragProps(col)}>
                 <div className="kanban-col-header">
                   <span>{col}</span>
                   <span className={s.kanbanBadge}>{colOrders.length}</span>
@@ -110,7 +117,7 @@ const OrdersPage = () => {
                   const jd = orderJobDisplay(jobs.find(j => j.id === o.jobId));
                   const partyName = o._type === "wo" ? o.contractorName : o.supplierName;
                   return (
-                    <div key={o._type + o.id} className="kanban-card" onClick={() => openOrder(o._type, o, "view")}>
+                    <div key={o._type + o.id} className="kanban-card" onClick={() => openOrder(o._type, o, "view")} {...cardDragProps(o._type + o.id)}>
                       <div className={s.kanbanCardHeader}>
                         <span className={`${s.typeBadge} ${o._type === "wo" ? s.typeBadgeWo : s.typeBadgePo}`}>{o._type === "wo" ? "WO" : "PO"}</span>
                         <span className={s.kanbanRef}>{o.ref}</span>

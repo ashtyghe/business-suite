@@ -1,7 +1,8 @@
-import { useState, memo } from "react";
+import { useState, useCallback, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { createInvoice, updateInvoice, deleteInvoice } from '../lib/db';
 import { sendEmail, xeroSyncInvoice } from '../lib/supabase';
+import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import { buildInvoicePdfHtml, htmlToPdfBase64 } from '../lib/pdf';
 import { fmt, calcQuoteTotal } from '../utils/helpers';
 import { SECTION_COLORS, ViewField } from '../fixtures/seedData.jsx';
@@ -106,6 +107,18 @@ const Invoices = () => {
       }
     } catch (err) { console.error('Failed to mark invoice paid:', err); }
   };
+  const handleKanbanDrop = useCallback(async (itemId, newStatus) => {
+    const inv = invoices.find(i => String(i.id) === itemId);
+    if (!inv || inv.status === newStatus) return;
+    try {
+      const saved = await updateInvoice(inv.id, { ...inv, status: newStatus });
+      setInvoices(is => is.map(i => i.id === saved.id ? saved : i));
+      if (newStatus === "sent" && inv.status !== "sent" && saved.xeroInvoiceId) {
+        xeroSyncInvoice("push", inv.id).catch(() => {});
+      }
+    } catch (err) { console.error('Failed to update invoice status:', err); }
+  }, [invoices, setInvoices]);
+  const { dragOverCol, cardDragProps, colDragProps } = useKanbanDnD(handleKanbanDrop);
 
   const filtered = invoices.filter(inv => {
     const job = jobs.find(j => j.id === inv.jobId);
@@ -152,12 +165,6 @@ const Invoices = () => {
         <select className="form-control" style={{ width: "auto" }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           {INV_STATUSES.map(st => <option key={st} value={st}>{st === "all" ? "All Statuses" : st.charAt(0).toUpperCase() + st.slice(1)}</option>)}
         </select>
-        {quotes.filter(q => q.status === "accepted").length > 0 && (
-          <select className="form-control" style={{ width: "auto" }} onChange={e => { const q = quotes.find(q => String(q.id) === e.target.value); if (q) fromQuote(q); e.target.value = ""; }}>
-            <option value="">From Quote...</option>
-            {quotes.filter(q => q.status === "accepted").map(q => <option key={q.id} value={q.id}>{q.number}</option>)}
-          </select>
-        )}
         <div className={s.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.invoices.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.invoices.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
@@ -173,7 +180,7 @@ const Invoices = () => {
             const labels = { draft: "Draft", sent: "Sent", paid: "Paid", overdue: "Overdue", void: "Void" };
             const colTotal = colInvoices.reduce((s, inv) => s + calcQuoteTotal(inv), 0);
             return (
-              <div key={col} className="kanban-col">
+              <div key={col} className={`kanban-col${dragOverCol === col ? ' drag-over' : ''}`} {...colDragProps(col)}>
                 <div className="kanban-col-header">
                   <span>{labels[col]}</span>
                   <span className={s.kanbanBadge}>{colInvoices.length}</span>
@@ -184,7 +191,7 @@ const Invoices = () => {
                   const client = clients.find(c => c.id === job?.clientId);
                   const total = calcQuoteTotal(inv);
                   return (
-                    <div key={inv.id} className="kanban-card" onClick={() => openEdit(inv)}>
+                    <div key={inv.id} className="kanban-card" onClick={() => openEdit(inv)} {...cardDragProps(inv.id)}>
                       <div className={s.kanbanCardHeader}>
                         <span className={s.kanbanCardNumber}>{inv.number}</span>
                         <StatusBadge status={inv.status} />

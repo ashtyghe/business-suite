@@ -1,8 +1,9 @@
-import { useState, memo } from "react";
+import { useState, useCallback, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { useAuth } from '../lib/AuthContext';
 import { createJob, updateJob, deleteJob } from '../lib/db';
 import { fmt, calcQuoteTotal, mkLog, addLog } from '../utils/helpers';
+import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import { SECTION_COLORS, ViewField, TEAM } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import { StatusBadge, AvatarGroup, SectionProgressBar, SectionDrawer } from '../components/shared';
@@ -76,6 +77,15 @@ const Jobs = () => {
 
   const STATUSES = ["all","draft","scheduled","quoted","in_progress","completed","cancelled"];
   const kanbanCols = ["draft","scheduled","quoted","in_progress","completed"];
+  const handleKanbanDrop = useCallback(async (itemId, newStatus) => {
+    const job = jobs.find(j => String(j.id) === itemId);
+    if (!job || job.status === newStatus) return;
+    try {
+      const saved = await updateJob(job.id, { ...job, status: newStatus });
+      setJobs(js => js.map(j => j.id === job.id ? { ...saved, activityLog: addLog(j.activityLog, `Status → ${newStatus.replace("_"," ")}`) } : j));
+    } catch (err) { console.error('Failed to update job status:', err); }
+  }, [jobs, setJobs]);
+  const { dragOverCol, cardDragProps, colDragProps } = useKanbanDnD(handleKanbanDrop);
 
   // Relationship counts per job
   const jobStats = (jobId) => ({
@@ -226,7 +236,7 @@ const Jobs = () => {
             const colJobs = filtered.filter(j => j.status === col);
             const labels = { draft: "Draft", scheduled: "Scheduled", quoted: "Quoted", in_progress: "In Progress", completed: "Completed" };
             return (
-              <div key={col} className="kanban-col">
+              <div key={col} className={`kanban-col${dragOverCol === col ? ' drag-over' : ''}`} {...colDragProps(col)}>
                 <div className="kanban-col-header">
                   <span>{labels[col]}</span>
                   <span className={s.kanbanCount}>{colJobs.length}</span>
@@ -235,7 +245,7 @@ const Jobs = () => {
                   const client = clients.find(c => c.id === job.clientId);
                   const stats = jobStats(job.id);
                   return (
-                    <div key={job.id} className="kanban-card" onClick={() => openDetail(job)}>
+                    <div key={job.id} className="kanban-card" onClick={() => openDetail(job)} {...cardDragProps(job.id)}>
                       <div className={s.kanbanTitleRow}>
                         <span className={`priority-dot priority-${job.priority}`} />
                         <span className={s.kanbanTitle}>{job.title}</span>

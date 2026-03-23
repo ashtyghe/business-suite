@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useMemo, memo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { useAppStore } from "../lib/store";
 import { fmt, daysUntil, COMPLIANCE_DOC_TYPES, COMPLIANCE_STATUS_COLORS, getComplianceStatus, getDaysUntilExpiry, getContractorComplianceCount, hexToRgba } from "../utils/helpers";
 import { Icon } from "../components/Icon";
 import { StatusBadge, OrderStatusBadge, SectionDrawer, BILL_STATUS_LABELS } from "../components/shared";
 import { ORDER_TERMINAL, SECTION_COLORS, ViewField, CONTRACTOR_TRADES, STATUS_COLORS } from "../fixtures/seedData.jsx";
 import { extractDocumentFromImage, sendEmail } from "../lib/supabase";
+import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import s from './Contractors.module.css';
 
 const Contractors = () => {
@@ -15,7 +16,6 @@ const Contractors = () => {
   const [form, setForm] = useState({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" });
   const [search, setSearch] = useState("");
   const [filterTrade, setFilterTrade] = useState("all");
-  const [filterCompliance, setFilterCompliance] = useState("all");
   const [showDocForm, setShowDocForm] = useState(false);
   const [editDoc, setEditDoc] = useState(null);
   const [docForm, setDocForm] = useState({ type: "workers_comp" });
@@ -44,14 +44,15 @@ const Contractors = () => {
     const q = search.toLowerCase();
     const matchSearch = !search || c.name.toLowerCase().includes(q) || (c.contact || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q) || (c.trade || "").toLowerCase().includes(q) || (c.phone || "").toLowerCase().includes(q) || (c.abn || "").toLowerCase().includes(q) || (c.notes || "").toLowerCase().includes(q) || (c.complianceDocs || []).some(d => (d.name || d.type || "").toLowerCase().includes(q));
     const matchTrade = filterTrade === "all" || c.trade === filterTrade;
-    if (!matchSearch || !matchTrade) return false;
-    if (filterCompliance === "all") return true;
-    const issues = getContractorComplianceCount(c);
-    if (filterCompliance === "compliant") return issues === 0;
-    if (filterCompliance === "issues") return issues > 0;
-    return true;
+    return matchSearch && matchTrade;
   });
   const trades = [...new Set(contractors.map(c => c.trade).filter(Boolean))].sort();
+  const handleKanbanDrop = useCallback((itemId, newTrade) => {
+    const contractor = contractors.find(c => String(c.id) === itemId);
+    if (!contractor || contractor.trade === newTrade) return;
+    setContractors(cs => cs.map(c => c.id === contractor.id ? { ...c, trade: newTrade } : c));
+  }, [contractors, setContractors]);
+  const { dragOverCol, cardDragProps, colDragProps } = useKanbanDnD(handleKanbanDrop);
 
   const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" }); setShowDocForm(false); setShowModal(true); };
   const openEdit = (c) => { setEditItem(c); setMode("view"); setForm(c); setShowDocForm(false); setShowModal(true); };
@@ -158,11 +159,6 @@ const Contractors = () => {
           <option value="all">All Trades</option>
           {CONTRACTOR_TRADES.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <select className={`form-control ${s.autoWidth}`} value={filterCompliance} onChange={e => setFilterCompliance(e.target.value)}>
-          <option value="all">All Compliance</option>
-          <option value="compliant">Compliant</option>
-          <option value="issues">Has Issues</option>
-        </select>
         <div className={s.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
@@ -239,7 +235,7 @@ const Contractors = () => {
           {(trades.length > 0 ? trades : ["Other"]).map(trade => {
             const colItems = filtered.filter(c => c.trade === trade);
             return (
-              <div key={trade} className="kanban-col">
+              <div key={trade} className={`kanban-col${dragOverCol === trade ? ' drag-over' : ''}`} {...colDragProps(trade)}>
                 <div className="kanban-col-header">
                   <span>{trade}</span>
                   <span className={s.kanbanCount}>{colItems.length}</span>
@@ -248,7 +244,7 @@ const Contractors = () => {
                   const activeWOs = getActiveWOs(c);
                   const billCount = getContractorBills(c).length;
                   return (
-                    <div key={c.id} className="kanban-card" onClick={() => openEdit(c)}>
+                    <div key={c.id} className="kanban-card" onClick={() => openEdit(c)} {...cardDragProps(c.id)}>
                       <div className={s.kanbanCardHeader}>
                         <div className={s.kanbanCardName}>{c.name}</div>
                         <ComplianceBadge contractor={c} />

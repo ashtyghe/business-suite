@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, Fragment } from "react";
 import { useAppStore } from '../lib/store';
 import { supabase } from '../lib/supabase';
+import { updateScheduleEntry } from '../lib/db';
 import { fmt, calcQuoteTotal, daysUntil, getContractorComplianceCount } from '../utils/helpers';
 import { Icon } from '../components/Icon';
 import { SectionLabel, StatusBadge, AvatarGroup } from '../components/shared';
@@ -8,7 +9,7 @@ import { SECTION_COLORS, ORDER_STATUS_COLORS } from '../fixtures/seedData.jsx';
 import s from './Dashboard.module.css';
 
 const Dashboard = ({ onNav }) => {
-  const { jobs, clients, quotes, invoices, bills, timeEntries, schedule, workOrders, purchaseOrders, contractors, suppliers } = useAppStore();
+  const { jobs, clients, quotes, invoices, bills, timeEntries, schedule, setSchedule, workOrders, purchaseOrders, contractors, suppliers } = useAppStore();
   // ── Financial KPIs ──
   const totalQuoted = quotes.filter(q => q.status !== "declined").reduce((s, q) => s + calcQuoteTotal(q), 0);
   const revenueCollected = invoices.filter(i => i.status === "paid").reduce((s, inv) => s + calcQuoteTotal(inv), 0);
@@ -33,6 +34,22 @@ const Dashboard = ({ onNav }) => {
   const pipelineTotal = pipelineQuotes.reduce((s, q) => s + calcQuoteTotal(q), 0);
   const quoteDrafts = quotes.filter(q => q.status === "draft").length;
   const todayStr = new Date().toISOString().slice(0, 10);
+  const dashDragRef = useRef(null);
+  const dashHandleDrop = async (dateStr, e) => {
+    e.preventDefault();
+    document.querySelectorAll(".schedule-day-col.drag-over").forEach(el => el.classList.remove("drag-over"));
+    const entryId = dashDragRef.current;
+    if (!entryId) return;
+    const entry = schedule.find(x => x.id === entryId);
+    dashDragRef.current = null;
+    if (!entry || entry.date === dateStr) return;
+    const movedEntry = { ...entry, date: dateStr };
+    setSchedule(prev => prev.map(x => x.id === entry.id ? movedEntry : x));
+    try {
+      const saved = await updateScheduleEntry(entry.id, movedEntry);
+      setSchedule(prev => prev.map(x => x.id === entry.id ? saved : x));
+    } catch (err) { console.error('Failed to persist schedule move:', err); }
+  };
   const startOfWeek = (() => { const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.toISOString().slice(0, 10); })();
   const endOfWeek = (() => { const d = new Date(startOfWeek); d.setDate(d.getDate() + 6); return d.toISOString().slice(0, 10); })();
 
@@ -370,8 +387,15 @@ const Dashboard = ({ onNav }) => {
           const isPast = dateStr < todayStr;
           const isWeekend = dayName === "Sat" || dayName === "Sun";
           const dayEntries = weekEntries.filter(e => e.date === dateStr);
+          const counterRef = useRef(0);
           return (
-            <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`} style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? schAccent : "#e5e5e5" }} onClick={() => onNav("schedule")}>
+            <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`}
+              style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? schAccent : "#e5e5e5" }}
+              onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+              onDragEnter={e => { e.preventDefault(); counterRef.current++; e.currentTarget.classList.add("drag-over"); }}
+              onDragLeave={e => { counterRef.current--; if (counterRef.current <= 0) { counterRef.current = 0; e.currentTarget.classList.remove("drag-over"); } }}
+              onDrop={e => { counterRef.current = 0; dashHandleDrop(dateStr, e); }}
+            >
               <div className="schedule-day-header" style={{ background: isToday ? schAccent : isPast ? "#e0e0e0" : "#f5f5f5", color: isToday ? "#fff" : isPast ? "#999" : "#333", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <div className={s.dayHeaderContent}>
                   <span className={s.dayHeaderLabel}>{dayName}</span>
@@ -384,7 +408,16 @@ const Dashboard = ({ onNav }) => {
                   const job = jobs.find(j => j.id === entry.jobId);
                   const client = clients.find(c => c.id === job?.clientId);
                   return (
-                    <div key={entry.id} className="schedule-card" style={{ borderLeft: `3px solid ${isPast ? "#ddd" : schAccent}` }}>
+                    <div key={entry.id} className="schedule-card"
+                      draggable="true"
+                      onDragStart={e => {
+                        dashDragRef.current = entry.id;
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", entry.id);
+                        requestAnimationFrame(() => e.target.classList.add("dragging"));
+                      }}
+                      onDragEnd={e => { dashDragRef.current = null; e.target.classList.remove("dragging"); document.querySelectorAll(".schedule-day-col.drag-over").forEach(el => el.classList.remove("drag-over")); }}
+                      style={{ borderLeft: `3px solid ${isPast ? "#ddd" : schAccent}` }}>
                       <div className={s.scheduleEntryTitle}>{entry.title || job?.title || "Unknown"}</div>
                       {client && <div className={s.scheduleEntryClient}>{client.name}</div>}
                       {entry.startTime && <div className={s.scheduleEntryTime}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}

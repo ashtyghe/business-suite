@@ -131,11 +131,13 @@ const Suppliers = () => {
             mode={mode} setMode={setMode}
             showToggle={!isNew} isNew={isNew}
             onClose={() => setShowModal(false)}
-            footer={
-              <div className={s.drawerFooter}>
-                {mode === "edit" && <button className="btn btn-primary" style={{ background: accent }} onClick={save}><Icon name="check" size={14} />{isNew ? "Create" : "Save"}</button>}
-              </div>
-            }
+            footer={mode === "view" ? <>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowModal(false)}>Close</button>
+              <button className="btn btn-sm" style={{ background: accent, color: '#fff' }} onClick={() => setMode("edit")}><Icon name="edit" size={13} /> Edit</button>
+            </> : <>
+              <button className="btn btn-ghost btn-sm" onClick={() => editItem ? setMode("view") : setShowModal(false)}>Cancel</button>
+              <button className="btn btn-sm" style={{ background: accent, color: '#fff' }} onClick={save} disabled={!form.name}><Icon name="check" size={13} /> {isNew ? "Create" : "Save"}</button>
+            </>}
           >
             <div className={s.drawerBody}>
               {mode === "view" ? (

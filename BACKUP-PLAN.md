@@ -79,7 +79,77 @@ A single Node.js script (`apps/api/scripts/backup-to-s3.ts`) that:
 4. **Secrets manifest** — writes a JSON listing all expected env var names (not values) with last-known-good dates
 5. **Run log** — writes a summary JSON with counts, sizes, duration, any errors
 
-### 1.5 Scheduling
+### 1.5 Backup Dashboard (Static HTML)
+
+A single `dashboard.html` file hosted in the S3 bucket, served via CloudFront or S3 static website hosting. Works independently of FieldOps/Supabase — available even during an outage.
+
+**Location in bucket:** `s3://fieldops-backup-sydney/dashboard/index.html`
+
+**Access:** CloudFront distribution with simple passphrase protection (or Cognito auth later)
+
+**Sections:**
+
+| Section | What it shows |
+|---------|--------------|
+| **Status banner** | Last backup time, pass/fail badge, "X days since last successful backup" warning if >1 day |
+| **History table** | Last 30 runs — date, DB size, file count, files changed, duration, pass/fail status |
+| **Trigger button** | "Run Backup Now" — dispatches GitHub Actions workflow via API (`POST /repos/{owner}/{repo}/actions/workflows/backup.yml/dispatches`) |
+| **Recovery guide** | Step-by-step restore instructions with copy-paste commands for both Supabase and AWS recovery paths |
+| **Secrets checklist** | List of all required env vars (from manifest) with checkboxes persisted in localStorage — so you can track which secrets you've sourced from your password manager |
+| **Download links** | Direct links to download latest DB dumps, code snapshot, and storage manifest |
+
+**How it works:**
+
+- Reads backup log JSON files from `s3://fieldops-backup-sydney/logs/` (public-read on `/logs/` and `/dashboard/` prefixes only, everything else stays private)
+- No server, no backend, no framework — vanilla HTML + CSS + JS
+- Fetches log list via S3 `ListObjectsV2` with a read-only API key scoped to the `/logs/` prefix
+- "Run Now" button uses a GitHub PAT (stored in browser localStorage, entered once) to trigger the workflow
+- Mobile-friendly responsive layout for checking status on the go
+- Auto-refreshes status every 60 seconds when the page is open
+
+**Dashboard folder structure in bucket:**
+
+```
+fieldops-backup-sydney/
+├── dashboard/
+│   ├── index.html        (single-file app — HTML + CSS + JS inline)
+│   └── fieldops-logo.svg (optional branding)
+├── logs/                 (public-read, consumed by dashboard)
+│   ├── latest.json       (symlink/copy of most recent run)
+│   ├── backup-run-2026-03-23.json
+│   └── ...
+└── ...                   (everything else stays private)
+```
+
+**Log file format** (written by backup script, read by dashboard):
+
+```json
+{
+  "timestamp": "2026-03-23T16:00:00Z",
+  "status": "success",
+  "duration_seconds": 142,
+  "database": {
+    "roles_size_bytes": 2048,
+    "schema_size_bytes": 45000,
+    "data_size_bytes": 1200000,
+    "table_count": 30
+  },
+  "storage": {
+    "files_checked": 850,
+    "files_uploaded": 12,
+    "total_size_bytes": 5400000000,
+    "buckets": ["attachments", "documents"]
+  },
+  "code": {
+    "functions_count": 11,
+    "migrations_count": 16,
+    "snapshot_size_bytes": 320000
+  },
+  "errors": []
+}
+```
+
+### 1.6 Scheduling
 
 **Option A — GitHub Actions (recommended, free):**
 - Cron workflow runs daily at 2am AEST
@@ -332,12 +402,13 @@ vs. Supabase Pro at $25/mo — comparable cost but you own the infrastructure.
 | # | Task | Effort | Priority |
 |---|------|--------|----------|
 | 1 | Create S3 bucket in Sydney with lifecycle rules | 30 min | **Now** |
-| 2 | Build backup script (DB + Storage + Code) | 4-6 hours | **Now** |
+| 2 | Build backup script (DB + Storage + Code + log JSON) | 4-6 hours | **Now** |
 | 3 | Set up GitHub Actions daily schedule | 1 hour | **Now** |
-| 4 | Build restore-to-Supabase script | 2-3 hours | **Next** |
-| 5 | Test full backup → restore cycle | 2 hours | **Next** |
-| 6 | Document secrets in password manager | 1 hour | **Next** |
-| 7 | AWS stack port (if/when needed) | 3-5 days | **Later** |
+| 4 | Build backup dashboard (static HTML) | 2-3 hours | **Now** |
+| 5 | Build restore-to-Supabase script | 2-3 hours | **Next** |
+| 6 | Test full backup → restore cycle | 2 hours | **Next** |
+| 7 | Document secrets in password manager | 1 hour | **Next** |
+| 8 | AWS stack port (if/when needed) | 3-5 days | **Later** |
 
 ---
 

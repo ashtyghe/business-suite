@@ -42,7 +42,7 @@ body { font-family: 'Open Sans', sans-serif !important; }
 .card-body { padding: 20px; }
 
 /* ── Stats ── */
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
 .stat-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 22px; }
 .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-bottom: 8px; }
 .stat-value { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; color: #111; }
@@ -301,7 +301,7 @@ input, select, textarea { max-width: 100%; box-sizing: border-box; }
 }
 @media (min-width: 768px) and (max-width: 1024px) {
   .jm-content { padding: 20px; }
-  .stat-grid { grid-template-columns: repeat(3, 1fr); }
+  .stat-grid { grid-template-columns: repeat(4, 1fr); }
   .kanban { grid-template-columns: repeat(3, minmax(160px,1fr)); overflow-x: auto; }
   .dashboard-grid { grid-template-columns: 1fr 1fr !important; }
   .modal .grid-2, .modal .grid-3 { grid-template-columns: 1fr; }
@@ -319,7 +319,7 @@ input, select, textarea { max-width: 100%; box-sizing: border-box; }
 @media (min-width: 1440px) {
   .jm-content { padding: 32px 48px; }
   .jm-topbar { padding: 0 48px; }
-  .stat-grid { grid-template-columns: repeat(6, 1fr); gap: 18px; }
+  .stat-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; }
   .dashboard-grid { grid-template-columns: 1fr 1fr !important; gap: 24px !important; }
   .kanban { gap: 20px; }
   .kanban-card { padding: 14px; }
@@ -330,7 +330,7 @@ input, select, textarea { max-width: 100%; box-sizing: border-box; }
 @media (min-width: 1800px) {
   .jm-content { padding: 36px 56px; }
   .jm-topbar { padding: 0 56px; }
-  .stat-grid { grid-template-columns: repeat(6, 1fr); gap: 20px; }
+  .stat-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
   .stat-value { font-size: 32px; }
   .dashboard-grid { grid-template-columns: 1fr 1fr 1fr !important; }
 }

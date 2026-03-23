@@ -8,7 +8,7 @@ import { extractDocumentFromImage, sendEmail } from "../lib/supabase";
 import s from './Contractors.module.css';
 
 const Contractors = () => {
-  const { contractors, setContractors, workOrders, bills } = useAppStore();
+  const { contractors, setContractors, workOrders, bills, sectionView: view, setSectionView: setView } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [mode, setMode] = useState("edit");
@@ -16,7 +16,6 @@ const Contractors = () => {
   const [search, setSearch] = useState("");
   const [filterTrade, setFilterTrade] = useState("all");
   const [filterCompliance, setFilterCompliance] = useState("all");
-  const [view, setView] = useState("list");
   const [showDocForm, setShowDocForm] = useState(false);
   const [editDoc, setEditDoc] = useState(null);
   const [docForm, setDocForm] = useState({ type: "workers_comp" });

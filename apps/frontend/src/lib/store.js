@@ -30,6 +30,9 @@ export const useAppStore = create((set) => ({
   loading: true,
   dbError: null,
 
+  // ── UI preferences ─────────────────────────────────────────────────────
+  sectionView: 'list',   // shared view mode across sections: "list" | "grid" | "kanban"
+
   // ── Setters (mirror the old setState calls) ──────────────────────────────
   setClients: (v) => set({ clients: typeof v === 'function' ? v(useAppStore.getState().clients) : v }),
   setJobs: (v) => set({ jobs: typeof v === 'function' ? v(useAppStore.getState().jobs) : v }),
@@ -54,6 +57,7 @@ export const useAppStore = create((set) => ({
   setWorkOrders: (v) => set({ workOrders: typeof v === 'function' ? v(useAppStore.getState().workOrders) : v }),
   setPurchaseOrders: (v) => set({ purchaseOrders: typeof v === 'function' ? v(useAppStore.getState().purchaseOrders) : v }),
   setUserPermissions: (v) => set({ userPermissions: typeof v === 'function' ? v(useAppStore.getState().userPermissions) : v }),
+  setSectionView: (v) => set({ sectionView: v }),
 
   // ── Initialise: load from Supabase or seed data ──────────────────────────
   // Called once from App's useEffect. Receives seed data constants from the

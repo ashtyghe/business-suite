@@ -428,13 +428,15 @@ const TimeTracking = () => {
           { label: "Today", val: todayHrs, o: DAY_THR.orange, g: DAY_THR.green },
           { label: "This Week", val: weekHrs, o: DAY_THR.orange * 5, g: DAY_THR.green * 5 },
           { label: "This Month", val: monthHrs, o: DAY_THR.orange * 20, g: DAY_THR.green * 20 },
+          { label: "Total Entries", val: entries.length, o: 1, g: 1 },
         ].map(st => {
           const color = statClr(st.val, st.o, st.g);
+          const isCount = st.label === "Total Entries";
           return (
             <div key={st.label} className={`stat-card ${s.statCardPad}`} style={{ borderTop: `3px solid ${color}` }}>
               <div className="stat-label">{st.label}</div>
-              <div className={`stat-value ${s.statValueSize}`} style={{ color }}>{st.val.toFixed(1)}h</div>
-              <div className="stat-sub">{st.val > 0 ? `${(st.val / st.g * 100).toFixed(0)}% of target` : "No hours logged"}</div>
+              <div className={`stat-value ${s.statValueSize}`} style={{ color }}>{isCount ? st.val : `${st.val.toFixed(1)}h`}</div>
+              <div className="stat-sub">{isCount ? (st.val === 1 ? "entry" : "entries") : st.val > 0 ? `${(st.val / st.g * 100).toFixed(0)}% of target` : "No hours logged"}</div>
             </div>
           );
         })}

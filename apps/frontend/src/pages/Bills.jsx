@@ -100,11 +100,10 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
 
 // ── Main Bills Component ───────────────────────────────────────────────────────
 const Bills = () => {
-  const { bills, setBills, jobs, setJobs, clients } = useAppStore();
+  const { bills, setBills, jobs, setJobs, clients, sectionView: tab, setSectionView: setTab } = useAppStore();
   const auth = useAuth();
   const canApprove = auth.isAdmin || auth.isLocalDev;
   const canDelete = auth.isAdmin || auth.isLocalDev;
-  const [tab, setTab] = useState("kanban");
   const [showBillModal, setShowBillModal] = useState(false);
   const [editBill, setEditBill] = useState(null);
   const [postBill, setPostBill] = useState(null);

@@ -1,9 +1,12 @@
 import { useState, useMemo } from "react";
 import { useAppStore } from '../lib/store';
+import { SECTION_COLORS } from '../fixtures/seedData.jsx';
+import { Icon } from '../components/Icon';
 import s from './CallLog.module.css';
 
 const CallLog = ({ onNav }) => {
-  const { callLog } = useAppStore();
+  const { callLog, sectionView, setSectionView } = useAppStore();
+  const view = sectionView === "kanban" ? "list" : sectionView;
   const [search, setSearch] = useState("");
   const [filterDir, setFilterDir] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -61,25 +64,30 @@ const CallLog = ({ onNav }) => {
   const dirColor = (dir) => dir === "inbound" ? "#2563eb" : "#7c3aed";
   const actionTypeIcon = { reminder: "🔔", note: "📝", schedule: "📅", quote: "📄", task: "✅", confirmation: "✓" };
 
+  const accent = SECTION_COLORS.calllog.accent;
+
   return (
-    <div className={s.wrapper}>
-      <div className={s.filterBar}>
-        <div className={s.searchWrapper}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={s.searchIcon}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search calls..." className={s.searchInput} />
+    <div>
+      <div className="section-toolbar">
+        <div className={`search-bar ${s.searchBar}`}>
+          <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search calls..." />
         </div>
-        <select value={filterDir} onChange={e => setFilterDir(e.target.value)} className={s.selectInput}>
+        <select className={`form-control ${s.filterSelect}`} value={filterDir} onChange={e => setFilterDir(e.target.value)}>
           <option value="all">All Directions</option>
           <option value="inbound">Inbound</option>
           <option value="outbound">Outbound</option>
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className={s.selectInput}>
+        <select className={`form-control ${s.filterSelect}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="all">All Statuses</option>
           <option value="completed">Completed</option>
           <option value="missed">Missed</option>
           <option value="no_answer">No Answer</option>
         </select>
-        <div className={s.filterCount}>{filtered.length} call{filtered.length !== 1 ? "s" : ""}</div>
+        <div className={s.viewToggle}>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setSectionView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accent, color: '#fff' } : undefined} onClick={() => setSectionView("grid")}><Icon name="grid_view" size={12} /></button>
+          <button className={`btn btn-xs ${sectionView === "kanban" ? "" : "btn-ghost"}`} style={sectionView === "kanban" ? { background: accent, color: '#fff' } : undefined} onClick={() => setSectionView("kanban")}><Icon name="kanban" size={12} /></button>
+        </div>
       </div>
 
       <div className={s.tableContainer}>

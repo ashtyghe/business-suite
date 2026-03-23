@@ -11,13 +11,12 @@ import {
 import s from './Suppliers.module.css';
 
 const Suppliers = () => {
-  const { suppliers, setSuppliers, purchaseOrders, bills } = useAppStore();
+  const { suppliers, setSuppliers, purchaseOrders, bills, sectionView: view, setSectionView: setView } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [mode, setMode] = useState("edit");
   const [form, setForm] = useState({ name: "", contact: "", email: "", phone: "", abn: "", notes: "" });
   const [search, setSearch] = useState("");
-  const [view, setView] = useState("list");
 
   const filtered = suppliers.filter(s => {
     const q = search.toLowerCase();

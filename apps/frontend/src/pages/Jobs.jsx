@@ -10,11 +10,10 @@ import JobDetail from './JobDetail';
 import s from './Jobs.module.css';
 
 const Jobs = () => {
-  const { jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders } = useAppStore();
+  const { jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, sectionView: view, setSectionView: setView } = useAppStore();
   const auth = useAuth();
   const canDeleteJob = auth.isAdmin || auth.isLocalDev;
   const canEditJob = (j) => auth.isAdmin || auth.isLocalDev || (j.assignedTo || []).includes(auth.currentUserName);
-  const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [showModal, setShowModal] = useState(false);
@@ -86,7 +85,7 @@ const Jobs = () => {
   });
 
   const jobStatusColors = { draft: "#888", scheduled: "#0891b2", quoted: "#7c3aed", in_progress: "#d97706", completed: "#16a34a", cancelled: "#dc2626" };
-  const jobStatusLabels = { draft: "Draft", scheduled: "Scheduled", quoted: "Quoted", in_progress: "In Progress", completed: "Completed" };
+  const jobStatusLabels = { draft: "Draft", scheduled: "Scheduled", in_progress: "In Progress", completed: "Completed" };
 
   return (
     <div>

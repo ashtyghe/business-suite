@@ -1,10 +1,12 @@
 import { useState, useMemo, memo } from "react";
 import { useAppStore } from '../lib/store';
+import { SECTION_COLORS } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import s from './Files.module.css';
 
 const FilesPage = () => {
-  const { jobs, bills, contractors, quotes, invoices, workOrders, purchaseOrders } = useAppStore();
+  const { jobs, bills, contractors, quotes, invoices, workOrders, purchaseOrders, sectionView, setSectionView } = useAppStore();
+  const view = sectionView === "kanban" ? "list" : sectionView;
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState("date");
   const [sortDir, setSortDir] = useState("desc");
@@ -100,23 +102,28 @@ const FilesPage = () => {
     return "#888";
   };
 
+  const accent = SECTION_COLORS.files.accent;
+
   return (
-    <div className={s.page}>
+    <div>
       {/* Toolbar */}
-      <div className={s.toolbar}>
-        <div className={s.searchWrap}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={s.searchIcon}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search files..." className={s.searchInput} />
+      <div className="section-toolbar">
+        <div className={`search-bar ${s.searchBar}`}>
+          <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search files..." />
         </div>
-        <select value={filterSource} onChange={e => setFilterSource(e.target.value)} className={s.selectInput}>
+        <select className={`form-control ${s.filterSelect}`} value={filterSource} onChange={e => setFilterSource(e.target.value)}>
           <option value="all">All Sources</option>
           {sources.map(src => <option key={src} value={src}>{src}</option>)}
         </select>
-        <select value={filterType} onChange={e => setFilterType(e.target.value)} className={s.selectInput}>
+        <select className={`form-control ${s.filterSelect}`} value={filterType} onChange={e => setFilterType(e.target.value)}>
           <option value="all">All Types</option>
           {types.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <div className={s.fileCount}>{filtered.length} file{filtered.length !== 1 ? "s" : ""}</div>
+        <div className={s.viewToggle}>
+          <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setSectionView("list")}><Icon name="list_view" size={12} /></button>
+          <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accent, color: '#fff' } : undefined} onClick={() => setSectionView("grid")}><Icon name="grid_view" size={12} /></button>
+          <button className={`btn btn-xs ${sectionView === "kanban" ? "" : "btn-ghost"}`} style={sectionView === "kanban" ? { background: accent, color: '#fff' } : undefined} onClick={() => setSectionView("kanban")}><Icon name="kanban" size={12} /></button>
+        </div>
       </div>
 
       {/* Table */}

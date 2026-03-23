@@ -14,14 +14,13 @@ import { OrderDrawer } from '../components/OrderDrawer';
 import s from './Orders.module.css';
 
 const OrdersPage = () => {
-  const { workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs, companyInfo } = useAppStore();
+  const { workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs, companyInfo, sectionView: view, setSectionView: setView } = useAppStore();
   const auth = useAuth();
   const canDeleteOrder = auth.isAdmin || auth.isLocalDev;
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("all");
-  const [view, setView] = useState("grid");
   const allOrders = useMemo(() => [
     ...workOrders.map(o => ({ ...o, _type: "wo" })),
     ...purchaseOrders.map(o => ({ ...o, _type: "po" }))
@@ -46,7 +45,7 @@ const OrdersPage = () => {
   };
   const handleDelete = (type, id) => { if (!window.confirm("Delete this order?")) return; (type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.filter(o => o.id !== id)); };
   const orderStatusColors = { Draft: "#888", Approved: "#7c3aed", Sent: "#2563eb", Viewed: "#0891b2", Accepted: "#16a34a", Completed: "#111", Billed: "#059669", Cancelled: "#dc2626" };
-  const summaryStatuses = ORDER_STATUSES.filter(s => s !== "Cancelled");
+  const summaryStatuses = ["Draft", "Sent", "Accepted", "Completed"];
   return (
     <div>
       {/* ── Summary strip */}

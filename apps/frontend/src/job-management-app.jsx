@@ -4629,7 +4629,6 @@ export default function App() {
     return () => mq.removeEventListener('change', handler);
   }, []);
   const collapsed = sidebarCollapsed && isDesktop;
-  const [moreOpen, setMoreOpen] = useState(false);
   const [showQuickNote, setShowQuickNote] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -4680,20 +4679,19 @@ export default function App() {
     { id: "actions", label: "Actions", icon: "notification", badge: totalActionsCount || null, badgeColor: "#dc2626" },
     { id: "schedule", label: "Schedule", icon: "schedule" },
     { id: "reminders", label: "Reminders", icon: "notification", badge: overdueRemindersCount || null, badgeColor: "#dc2626" },
-    { id: "assistant", label: "My Assistant", icon: "send" },
-    // Main — 5..6
+    // Main — 4..5
     { id: "jobs", label: "Jobs", icon: "jobs", badge: activeJobsCount || null },
     { id: "orders", label: "Orders", icon: "orders", badge: ordersOverdueCount || null },
-    // Finance — 7..10
+    // Finance — 6..9
     { id: "time", label: "Time", icon: "time" },
     { id: "bills", label: "Bills", icon: "bills", badge: pendingBillsCount || null },
     { id: "quotes", label: "Quotes", icon: "quotes" },
     { id: "invoices", label: "Invoices", icon: "invoices", badge: unpaidInvCount || null },
-    // Partners — 11..13
+    // Partners — 10..12
     { id: "clients", label: "Clients", icon: "clients" },
     { id: "contractors", label: "Contractors", icon: "contractors", badge: contractorComplianceIssues || null, badgeColor: "#dc2626" },
     { id: "suppliers", label: "Suppliers", icon: "suppliers" },
-    // System — 14+
+    // System — 13+
     ...((auth.isAdmin || auth.isLocalDev) ? [{ id: "settings", label: "Settings", icon: "settings" }] : []),
     { id: "files", label: "Files", icon: "quotes" },
     { id: "calllog", label: "Call Log", icon: "send" },
@@ -4710,15 +4708,12 @@ export default function App() {
     { id: "notes", label: "Notes", icon: "quotes" },
     { id: "reminders", label: "Reminders", icon: "notification", badge: overdueRemindersCount || null, badgeColor: "#dc2626" },
   ];
-  const moreNavItems = navItems.filter(n => !bottomNavIds.includes(n.id));
-  const moreIsActive = moreNavItems.some(n => n.id === page) && !bottomNavIds.includes(page);
 
   const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", actions: "Actions", reminders: "Reminders", activity: "Activity Log", status: "System Status", settings: "Settings", files: "Files", calllog: "Call Log", assistant: "My Assistant", memory: "Caller Memory", account: "Account" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
     setSidebarOpen(false);
-    setMoreOpen(false);
   };
 
   const toggleSidebarCollapse = () => {
@@ -4775,7 +4770,7 @@ export default function App() {
   }
 
   return (
-    <div className="jm-root" onClick={() => moreOpen && setMoreOpen(false)}>
+    <div className="jm-root">
       {loading && (
         <div className={sh.fullScreenOverlay}>
           <div className={sh.spinner} />
@@ -4811,8 +4806,8 @@ export default function App() {
           </button>
         </div>
         <div className="jm-nav">
-          {/* Top — Dashboard, Actions, Schedule, Reminders, My Assistant (no section header) */}
-          {navItems.slice(0, 5).map(n => {
+          {/* Top — Dashboard, Actions, Schedule, Reminders (no section header) */}
+          {navItems.slice(0, 4).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -4823,7 +4818,7 @@ export default function App() {
             );
           })}
           {!collapsed && <div className="jm-nav-section">Main</div>}{collapsed && <div className="jm-nav-divider" />}
-          {navItems.slice(5, 7).map(n => {
+          {navItems.slice(4, 6).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -4834,7 +4829,7 @@ export default function App() {
             );
           })}
           {!collapsed && <div className="jm-nav-section">Finance</div>}{collapsed && <div className="jm-nav-divider" />}
-          {navItems.slice(7, 11).map(n => {
+          {navItems.slice(6, 10).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -4845,7 +4840,7 @@ export default function App() {
             );
           })}
           {!collapsed && <div className="jm-nav-section">Partners</div>}{collapsed && <div className="jm-nav-divider" />}
-          {navItems.slice(11, 14).map(n => {
+          {navItems.slice(10, 13).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -4856,7 +4851,7 @@ export default function App() {
             );
           })}
           {!collapsed && <div className="jm-nav-section">System</div>}{collapsed && <div className="jm-nav-divider" />}
-          {navItems.slice(14).map(n => {
+          {navItems.slice(13).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.activity)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -4937,25 +4932,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* More menu (slides up from bottom nav) */}
-      {moreOpen && (
-        <div className="jm-more-menu" onClick={e => e.stopPropagation()}>
-          {moreNavItems.map(n => {
-            const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.activity)?.accent;
-            return (
-            <button key={n.id} className={`jm-more-menu-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
-              onMouseEnter={e => { e.currentTarget.style.background = hexToRgba(accent, 0.12); e.currentTarget.style.color = '#fff'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = ''; }}
-              style={page === n.id ? { color: '#fff', background: hexToRgba(accent, 0.15) } : undefined}>
-              <Icon name={n.icon} size={16} />
-              {n.id === "time" ? "Time Tracking" : n.id === "bills" ? "Bills & Costs" : n.label}
-              {n.badge ? <span className="jm-more-badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
-            </button>
-            );
-          })}
-        </div>
-      )}
-
       {/* Bottom navigation (mobile only) */}
       <div className="jm-bottom-nav">
         <div className="jm-bottom-nav-inner">
@@ -4973,19 +4949,6 @@ export default function App() {
             </button>
             );
           })}
-          {/* More button */}
-          <button
-            className={`jm-bottom-nav-item ${moreIsActive ? "active" : ""}`}
-            onClick={e => { e.stopPropagation(); setMoreOpen(o => !o); }}
-          >
-            {(pendingBillsCount + unpaidInvCount + overdueRemindersCount) > 0 && !moreIsActive
-              ? <span className="bnav-badge" style={overdueRemindersCount > 0 ? { background: "#dc2626", color: "#fff" } : undefined}>{pendingBillsCount + unpaidInvCount + overdueRemindersCount}</span>
-              : null}
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-              <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>
-            </svg>
-            <span>More</span>
-          </button>
         </div>
       </div>
       </>

@@ -1,4 +1,4 @@
-import { useState, useMemo, memo } from "react";
+import { useState, memo } from "react";
 import { useAppStore } from '../lib/store';
 import {
   SECTION_COLORS, ORDER_TERMINAL, ViewField,
@@ -11,7 +11,8 @@ import {
 import s from './Suppliers.module.css';
 
 const Suppliers = () => {
-  const { suppliers, setSuppliers, purchaseOrders, bills, sectionView: view, setSectionView: setView } = useAppStore();
+  const { suppliers, setSuppliers, purchaseOrders, bills, sectionView: rawView, setSectionView: setView } = useAppStore();
+  const view = rawView === "kanban" ? "list" : rawView;
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [mode, setMode] = useState("edit");
@@ -40,16 +41,6 @@ const Suppliers = () => {
   const getActivePOs = (s) => purchaseOrders.filter(po => (po.supplierName === s.name || po.supplierId === s.id) && !ORDER_TERMINAL.includes(po.status));
   const getBillCount = (s) => bills.filter(b => b.supplier === s.name).length;
 
-  const kanbanGroups = useMemo(() => {
-    const groups = { "Active POs": [], "Bills Only": [], "Inactive": [] };
-    filtered.forEach(s => {
-      if (getActivePOs(s).length > 0) groups["Active POs"].push(s);
-      else if (getBillCount(s) > 0) groups["Bills Only"].push(s);
-      else groups["Inactive"].push(s);
-    });
-    return groups;
-  }, [filtered, purchaseOrders, bills]);
-
   return (
     <div>
       <div className="section-toolbar">
@@ -59,7 +50,6 @@ const Suppliers = () => {
         <div className={s.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
-          <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
         </div>
         <div className="section-action-btns"><button className="btn btn-primary" style={{ background: accent }} onClick={openNew}><Icon name="plus" size={14} />New Supplier</button></div>
       </div>
@@ -106,29 +96,6 @@ const Suppliers = () => {
                 </div>
                 <button className={`btn btn-ghost btn-xs ${s.deleteBtn}`} onClick={e => { e.stopPropagation(); del(s2.id); }}><Icon name="trash" size={12} /></button>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {view === "kanban" && (
-        <div className={`kanban ${s.kanbanThreeCol}`}>
-          {Object.entries(kanbanGroups).map(([group, items]) => (
-            <div key={group} className="kanban-col">
-              <div className="kanban-col-header">
-                <span>{group}</span>
-                <span className={s.kanbanCount}>{items.length}</span>
-              </div>
-              {items.map(s2 => (
-                <div key={s2.id} className="kanban-card" onClick={() => openEdit(s2)}>
-                  <div className={s.kanbanCardName}>{s2.name}</div>
-                  {s2.contact && <div className={s.kanbanCardContact}>{s2.contact}</div>}
-                  <div className={s.kanbanChipGroup}>
-                    {getPOCount(s2) > 0 && <span className={`chip ${s.chipSmall}`}>{getPOCount(s2)} PO{getPOCount(s2) > 1 ? "s" : ""}</span>}
-                    {getBillCount(s2) > 0 && <span className={`chip ${s.chipSmall}`}>{getBillCount(s2)} bill{getBillCount(s2) > 1 ? "s" : ""}</span>}
-                  </div>
-                </div>
-              ))}
             </div>
           ))}
         </div>

@@ -8,7 +8,7 @@ import s from './Clients.module.css';
 
 const Clients = () => {
   const { clients, setClients, jobs, templates, sectionView: rawView, setSectionView: setView } = useAppStore();
-  const view = rawView === "kanban" ? "list" : rawView;
+  const view = rawView === "kanban" ? "list" : rawView; // kanban not used here
   const [showModal, setShowModal] = useState(false);
   const [editClient, setEditClient] = useState(null);
   const [clientMode, setClientMode] = useState("edit");
@@ -135,7 +135,6 @@ const Clients = () => {
         <div className={s.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: SECTION_COLORS.clients.accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: SECTION_COLORS.clients.accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
-          <button className={`btn btn-xs ${rawView === "kanban" ? "" : "btn-ghost"}`} style={rawView === "kanban" ? { background: SECTION_COLORS.clients.accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
         </div>
         <div className="section-action-btns"><button className="btn btn-primary" style={{ background: SECTION_COLORS.clients.accent }} onClick={openNew}><Icon name="plus" size={14} />New Client</button></div>
       </div>

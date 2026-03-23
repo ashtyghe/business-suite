@@ -108,8 +108,6 @@ const Bills = () => {
   const [editBill, setEditBill] = useState(null);
   const [postBill, setPostBill] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
-  const [filterCategory, setFilterCategory] = useState("all");
-  const [filterJob, setFilterJob] = useState("all");
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -136,9 +134,7 @@ const Bills = () => {
       (b.lineItems || []).some(i => (i.description || "").toLowerCase().includes(q)) ||
       String(b.amount || "").includes(q);
     const matchStatus   = filterStatus === "all"   || b.status === filterStatus;
-    const matchCategory = filterCategory === "all" || b.category === filterCategory;
-    const matchJob      = filterJob === "all"      || String(b.jobId) === filterJob;
-    return matchSearch && matchStatus && matchCategory && matchJob;
+    return matchSearch && matchStatus;
   });
 
   // ── Actions
@@ -237,10 +233,6 @@ const Bills = () => {
         <select className={`form-control ${s.filterSelect}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="all">All Statuses</option>
           {BILL_STATUSES.map(st => <option key={st} value={st}>{BILL_STATUS_LABELS[st]}</option>)}
-        </select>
-        <select className={`form-control ${s.filterSelect}`} value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
-          <option value="all">All Categories</option>
-          {BILL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <div className={s.viewToggle}>
           <button className={`btn btn-xs ${tab === "list" ? "" : "btn-ghost"}`} style={tab === "list" ? { background: SECTION_COLORS.bills.accent, color: '#fff' } : undefined} onClick={() => setTab("list")}><Icon name="list_view" size={12} /></button>

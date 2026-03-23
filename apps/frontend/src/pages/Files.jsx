@@ -10,7 +10,6 @@ const FilesPage = () => {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState("date");
   const [sortDir, setSortDir] = useState("desc");
-  const [filterSource, setFilterSource] = useState("all");
   const [filterType, setFilterType] = useState("all");
 
   // Aggregate files from all sources
@@ -58,13 +57,11 @@ const FilesPage = () => {
   }, [bills, contractors, workOrders, purchaseOrders, quotes, invoices, jobs]);
 
   // Get unique sources and types for filters
-  const sources = useMemo(() => [...new Set(allFiles.map(f => f.source))].sort(), [allFiles]);
   const types = useMemo(() => [...new Set(allFiles.map(f => f.type))].sort(), [allFiles]);
 
   // Filter and search
   const filtered = useMemo(() => {
     let list = allFiles;
-    if (filterSource !== "all") list = list.filter(f => f.source === filterSource);
     if (filterType !== "all") list = list.filter(f => f.type === filterType);
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -83,7 +80,7 @@ const FilesPage = () => {
       return 0;
     });
     return list;
-  }, [allFiles, filterSource, filterType, search, sortField, sortDir]);
+  }, [allFiles, filterType, search, sortField, sortDir]);
 
   const toggleSort = (field) => {
     if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -111,10 +108,6 @@ const FilesPage = () => {
         <div className={`search-bar ${s.searchBar}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search files..." />
         </div>
-        <select className={`form-control ${s.filterSelect}`} value={filterSource} onChange={e => setFilterSource(e.target.value)}>
-          <option value="all">All Sources</option>
-          {sources.map(src => <option key={src} value={src}>{src}</option>)}
-        </select>
         <select className={`form-control ${s.filterSelect}`} value={filterType} onChange={e => setFilterType(e.target.value)}>
           <option value="all">All Types</option>
           {types.map(t => <option key={t} value={t}>{t}</option>)}

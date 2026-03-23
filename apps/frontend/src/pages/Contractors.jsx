@@ -15,7 +15,6 @@ const Contractors = () => {
   const [form, setForm] = useState({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" });
   const [search, setSearch] = useState("");
   const [filterTrade, setFilterTrade] = useState("all");
-  const [filterCompliance, setFilterCompliance] = useState("all");
   const [showDocForm, setShowDocForm] = useState(false);
   const [editDoc, setEditDoc] = useState(null);
   const [docForm, setDocForm] = useState({ type: "workers_comp" });
@@ -44,12 +43,7 @@ const Contractors = () => {
     const q = search.toLowerCase();
     const matchSearch = !search || c.name.toLowerCase().includes(q) || (c.contact || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q) || (c.trade || "").toLowerCase().includes(q) || (c.phone || "").toLowerCase().includes(q) || (c.abn || "").toLowerCase().includes(q) || (c.notes || "").toLowerCase().includes(q) || (c.complianceDocs || []).some(d => (d.name || d.type || "").toLowerCase().includes(q));
     const matchTrade = filterTrade === "all" || c.trade === filterTrade;
-    if (!matchSearch || !matchTrade) return false;
-    if (filterCompliance === "all") return true;
-    const issues = getContractorComplianceCount(c);
-    if (filterCompliance === "compliant") return issues === 0;
-    if (filterCompliance === "issues") return issues > 0;
-    return true;
+    return matchSearch && matchTrade;
   });
   const trades = [...new Set(contractors.map(c => c.trade).filter(Boolean))].sort();
 
@@ -157,11 +151,6 @@ const Contractors = () => {
         <select className={`form-control ${s.autoWidth}`} value={filterTrade} onChange={e => setFilterTrade(e.target.value)}>
           <option value="all">All Trades</option>
           {CONTRACTOR_TRADES.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <select className={`form-control ${s.autoWidth}`} value={filterCompliance} onChange={e => setFilterCompliance(e.target.value)}>
-          <option value="all">All Compliance</option>
-          <option value="compliant">Compliant</option>
-          <option value="issues">Has Issues</option>
         </select>
         <div className={s.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>

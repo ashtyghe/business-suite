@@ -8,7 +8,6 @@ const CallLog = ({ onNav }) => {
   const { callLog, sectionView, setSectionView } = useAppStore();
   const view = sectionView === "kanban" ? "list" : sectionView;
   const [search, setSearch] = useState("");
-  const [filterDir, setFilterDir] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortField, setSortField] = useState("date");
   const [sortDir, setSortDir] = useState("desc");
@@ -33,7 +32,6 @@ const CallLog = ({ onNav }) => {
 
   const filtered = useMemo(() => {
     let list = [...callLog];
-    if (filterDir !== "all") list = list.filter(c => c.direction === filterDir);
     if (filterStatus !== "all") list = list.filter(c => c.status === filterStatus);
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -50,7 +48,7 @@ const CallLog = ({ onNav }) => {
       return 0;
     });
     return list;
-  }, [callLog, filterDir, filterStatus, search, sortField, sortDir]);
+  }, [callLog, filterStatus, search, sortField, sortDir]);
 
   const toggleSort = (field) => {
     if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -72,11 +70,6 @@ const CallLog = ({ onNav }) => {
         <div className={`search-bar ${s.searchBar}`}>
           <Icon name="search" size={14} /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search calls..." />
         </div>
-        <select className={`form-control ${s.filterSelect}`} value={filterDir} onChange={e => setFilterDir(e.target.value)}>
-          <option value="all">All Directions</option>
-          <option value="inbound">Inbound</option>
-          <option value="outbound">Outbound</option>
-        </select>
         <select className={`form-control ${s.filterSelect}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="all">All Statuses</option>
           <option value="completed">Completed</option>

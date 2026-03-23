@@ -20,7 +20,6 @@ const OrdersPage = () => {
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
-  const [filterType, setFilterType] = useState("all");
   const allOrders = useMemo(() => [
     ...workOrders.map(o => ({ ...o, _type: "wo" })),
     ...purchaseOrders.map(o => ({ ...o, _type: "po" }))
@@ -32,10 +31,9 @@ const OrdersPage = () => {
       const q = search.toLowerCase();
       const matchSearch = !search || o.ref.toLowerCase().includes(q) || (partyName || "").toLowerCase().includes(q) || (jd?.name || "").toLowerCase().includes(q) || (o.description || "").toLowerCase().includes(q) || (o.notes || "").toLowerCase().includes(q) || (o.items || []).some(i => (i.description || "").toLowerCase().includes(q)) || (o.status || "").toLowerCase().includes(q);
       const matchStatus = filterStatus === "All" || o.status === filterStatus;
-      const matchType = filterType === "all" || o._type === filterType;
-      return matchSearch && matchStatus && matchType;
+      return matchSearch && matchStatus;
     });
-  }, [allOrders, search, filterStatus, filterType, jobs]);
+  }, [allOrders, search, filterStatus, jobs]);
   const openNew = (t) => setModal({ type: t, order: null });
   const openOrder = (type, order, mode = "view") => setModal({ type, order, mode });
   const handleSave = (order) => {
@@ -71,11 +69,6 @@ const OrdersPage = () => {
           <Icon name="search" size={14} />
           <input placeholder="Search orders, jobs, contractors..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className={`form-control ${s.filterSelect}`} value={filterType} onChange={e => setFilterType(e.target.value)}>
-          <option value="all">All Types</option>
-          <option value="wo">Work Orders</option>
-          <option value="po">Purchase Orders</option>
-        </select>
         <select className={`form-control ${s.filterSelectWide}`} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="All">All Statuses</option>
           {ORDER_STATUSES.map(s => <option key={s}>{s}</option>)}

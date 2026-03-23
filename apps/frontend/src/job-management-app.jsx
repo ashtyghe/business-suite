@@ -4680,20 +4680,19 @@ export default function App() {
     { id: "actions", label: "Actions", icon: "notification", badge: totalActionsCount || null, badgeColor: "#dc2626" },
     { id: "schedule", label: "Schedule", icon: "schedule" },
     { id: "reminders", label: "Reminders", icon: "notification", badge: overdueRemindersCount || null, badgeColor: "#dc2626" },
-    { id: "assistant", label: "My Assistant", icon: "send" },
-    // Main — 5..6
+    // Main — 4..5
     { id: "jobs", label: "Jobs", icon: "jobs", badge: activeJobsCount || null },
     { id: "orders", label: "Orders", icon: "orders", badge: ordersOverdueCount || null },
-    // Finance — 7..10
+    // Finance — 6..9
     { id: "time", label: "Time", icon: "time" },
     { id: "bills", label: "Bills", icon: "bills", badge: pendingBillsCount || null },
     { id: "quotes", label: "Quotes", icon: "quotes" },
     { id: "invoices", label: "Invoices", icon: "invoices", badge: unpaidInvCount || null },
-    // Partners — 11..13
+    // Partners — 10..12
     { id: "clients", label: "Clients", icon: "clients" },
     { id: "contractors", label: "Contractors", icon: "contractors", badge: contractorComplianceIssues || null, badgeColor: "#dc2626" },
     { id: "suppliers", label: "Suppliers", icon: "suppliers" },
-    // System — 14+
+    // System — 13+
     ...((auth.isAdmin || auth.isLocalDev) ? [{ id: "settings", label: "Settings", icon: "settings" }] : []),
     { id: "files", label: "Files", icon: "quotes" },
     { id: "calllog", label: "Call Log", icon: "send" },
@@ -4811,8 +4810,8 @@ export default function App() {
           </button>
         </div>
         <div className="jm-nav">
-          {/* Top — Dashboard, Actions, Schedule, Reminders, My Assistant (no section header) */}
-          {navItems.slice(0, 5).map(n => {
+          {/* Top — Dashboard, Actions, Schedule, Reminders (no section header) */}
+          {navItems.slice(0, 4).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -4823,7 +4822,7 @@ export default function App() {
             );
           })}
           {!collapsed && <div className="jm-nav-section">Main</div>}{collapsed && <div className="jm-nav-divider" />}
-          {navItems.slice(5, 7).map(n => {
+          {navItems.slice(4, 6).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -4834,7 +4833,7 @@ export default function App() {
             );
           })}
           {!collapsed && <div className="jm-nav-section">Finance</div>}{collapsed && <div className="jm-nav-divider" />}
-          {navItems.slice(7, 11).map(n => {
+          {navItems.slice(6, 10).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -4845,7 +4844,7 @@ export default function App() {
             );
           })}
           {!collapsed && <div className="jm-nav-section">Partners</div>}{collapsed && <div className="jm-nav-divider" />}
-          {navItems.slice(11, 14).map(n => {
+          {navItems.slice(10, 13).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.wo)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
@@ -4856,7 +4855,7 @@ export default function App() {
             );
           })}
           {!collapsed && <div className="jm-nav-section">System</div>}{collapsed && <div className="jm-nav-divider" />}
-          {navItems.slice(14).map(n => {
+          {navItems.slice(13).map(n => {
             const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.activity)?.accent;
             return (
             <div key={n.id} className={`jm-nav-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}

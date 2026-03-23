@@ -428,7 +428,7 @@ const TimeTracking = () => {
           { label: "Today", val: todayHrs, o: DAY_THR.orange, g: DAY_THR.green },
           { label: "This Week", val: weekHrs, o: DAY_THR.orange * 5, g: DAY_THR.green * 5 },
           { label: "This Month", val: monthHrs, o: DAY_THR.orange * 20, g: DAY_THR.green * 20 },
-          { label: "Total Entries", val: entries.length, o: 1, g: 1 },
+          { label: "Total Entries", val: workerEntries.length, o: 1, g: 1 },
         ].map(st => {
           const color = statClr(st.val, st.o, st.g);
           const isCount = st.label === "Total Entries";

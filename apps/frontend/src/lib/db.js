@@ -20,6 +20,17 @@ async function q(promise, fallback = []) {
   }
 }
 
+// Strict query helper for mutations — throws on error so callers can handle failures
+async function qStrict(promise) {
+  const result = await Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 15000)),
+  ]);
+  const { data, error } = result;
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // ── Normalizers (DB → frontend shape) ─────────────────────────────────────
 
 function normalizeSite(row) {
@@ -987,14 +998,14 @@ export async function deletePurchaseOrder(id) {
 // ── Contractors ───────────────────────────────────────────────────────────
 
 export async function createContractor(data) {
-  const row = await q(
+  const row = await qStrict(
     supabase.from('contractors').insert(denormalizeContractor(data)).select().single()
   );
   return { ...normalizeContractor(row), documents: [] };
 }
 
 export async function updateContractor(id, data) {
-  const row = await q(
+  const row = await qStrict(
     supabase.from('contractors')
       .update({ ...denormalizeContractor(data), updated_at: new Date().toISOString() })
       .eq('id', id).select().single()
@@ -1014,13 +1025,13 @@ export async function deleteContractor(id) {
       } catch { /* ignore */ }
     }
   }
-  return q(supabase.from('contractors').delete().eq('id', id));
+  return qStrict(supabase.from('contractors').delete().eq('id', id));
 }
 
 // ── Contractor Documents ──────────────────────────────────────────────────
 
 export async function createContractorDoc(contractorId, data) {
-  const row = await q(
+  const row = await qStrict(
     supabase.from('contractor_documents')
       .insert(denormalizeContractorDoc(data, contractorId))
       .select().single()
@@ -1029,7 +1040,7 @@ export async function createContractorDoc(contractorId, data) {
 }
 
 export async function updateContractorDoc(id, data, contractorId) {
-  const row = await q(
+  const row = await qStrict(
     supabase.from('contractor_documents')
       .update(denormalizeContractorDoc(data, contractorId))
       .eq('id', id).select().single()
@@ -1046,7 +1057,7 @@ export async function deleteContractorDoc(id) {
       if (pathMatch) await deleteFile('documents', pathMatch[1]);
     } catch { /* ignore */ }
   }
-  return q(supabase.from('contractor_documents').delete().eq('id', id));
+  return qStrict(supabase.from('contractor_documents').delete().eq('id', id));
 }
 
 // ── Suppliers ─────────────────────────────────────────────────────────────
@@ -1077,14 +1088,14 @@ function denormalizeSupplier(data) {
 }
 
 export async function createSupplier(data) {
-  const row = await q(
+  const row = await qStrict(
     supabase.from('suppliers').insert(denormalizeSupplier(data)).select().single()
   );
   return normalizeSupplier(row);
 }
 
 export async function updateSupplier(id, data) {
-  const row = await q(
+  const row = await qStrict(
     supabase.from('suppliers')
       .update({ ...denormalizeSupplier(data), updated_at: new Date().toISOString() })
       .eq('id', id).select().single()
@@ -1093,7 +1104,7 @@ export async function updateSupplier(id, data) {
 }
 
 export async function deleteSupplier(id) {
-  return q(supabase.from('suppliers').delete().eq('id', id));
+  return qStrict(supabase.from('suppliers').delete().eq('id', id));
 }
 
 // ── Phases (Gantt) ────────────────────────────────────────────────────────
@@ -1214,9 +1225,9 @@ export async function fetchCompanyInfo() {
 export async function saveCompanyInfo(settings) {
   const existing = await q(supabase.from('company_info').select('id').limit(1));
   if (existing.length) {
-    return q(supabase.from('company_info').update({ settings, updated_at: new Date().toISOString() }).eq('id', existing[0].id).select());
+    return qStrict(supabase.from('company_info').update({ settings, updated_at: new Date().toISOString() }).eq('id', existing[0].id).select());
   }
-  return q(supabase.from('company_info').insert({ settings }).select());
+  return qStrict(supabase.from('company_info').insert({ settings }).select());
 }
 
 // ── Email Templates ───────────────────────────────────────────────────────

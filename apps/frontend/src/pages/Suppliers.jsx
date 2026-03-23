@@ -36,10 +36,11 @@ const Suppliers = () => {
         const saved = await createSupplier(form);
         setSuppliers(ss => [...ss, saved]);
       }
+      setShowModal(false);
     } catch (err) {
       console.error('Failed to save supplier:', err);
+      alert('Failed to save supplier: ' + err.message);
     }
-    setShowModal(false);
   };
   const del = async (id) => {
     if (!window.confirm("Delete this supplier?")) return;
@@ -48,6 +49,7 @@ const Suppliers = () => {
       setSuppliers(ss => ss.filter(s => s.id !== id));
     } catch (err) {
       console.error('Failed to delete supplier:', err);
+      alert('Failed to delete supplier: ' + err.message);
     }
   };
   const accent = SECTION_COLORS.suppliers.accent;

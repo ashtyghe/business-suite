@@ -537,6 +537,7 @@ export async function fetchAll() {
     poLines,
     contractors,
     contractorDocs,
+    suppliers,
     phases,
     tasks,
     notes,
@@ -559,6 +560,7 @@ export async function fetchAll() {
     q(supabase.from('purchase_order_lines').select('*')),
     q(supabase.from('contractors').select('*').order('name')),
     q(supabase.from('contractor_documents').select('*')),
+    q(supabase.from('suppliers').select('*').order('name')),
     q(supabase.from('job_phases').select('*').order('sort_order')),
     q(supabase.from('job_tasks').select('*').order('sort_order')),
     q(supabase.from('job_notes').select('*').order('created_at', { ascending: false })),
@@ -634,6 +636,7 @@ export async function fetchAll() {
     workOrders: normalizedWOs,
     purchaseOrders: normalizedPOs,
     contractors: normalizedContractors,
+    suppliers: suppliers.map(normalizeSupplier),
     phases: phases.map(normalizePhase),
     tasks: tasks.map(normalizeTask),
     notes: normalizedNotes,
@@ -1044,6 +1047,53 @@ export async function deleteContractorDoc(id) {
     } catch { /* ignore */ }
   }
   return q(supabase.from('contractor_documents').delete().eq('id', id));
+}
+
+// ── Suppliers ─────────────────────────────────────────────────────────────
+
+function normalizeSupplier(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    contact: row.contact || '',
+    email: row.email || '',
+    phone: row.phone || '',
+    abn: row.abn || '',
+    notes: row.notes || '',
+    address: row.address || '',
+  };
+}
+
+function denormalizeSupplier(data) {
+  return {
+    name: data.name,
+    contact: data.contact || null,
+    email: data.email || null,
+    phone: data.phone || null,
+    abn: data.abn || null,
+    notes: data.notes || null,
+    address: data.address || null,
+  };
+}
+
+export async function createSupplier(data) {
+  const row = await q(
+    supabase.from('suppliers').insert(denormalizeSupplier(data)).select().single()
+  );
+  return normalizeSupplier(row);
+}
+
+export async function updateSupplier(id, data) {
+  const row = await q(
+    supabase.from('suppliers')
+      .update({ ...denormalizeSupplier(data), updated_at: new Date().toISOString() })
+      .eq('id', id).select().single()
+  );
+  return normalizeSupplier(row);
+}
+
+export async function deleteSupplier(id) {
+  return q(supabase.from('suppliers').delete().eq('id', id));
 }
 
 // ── Phases (Gantt) ────────────────────────────────────────────────────────

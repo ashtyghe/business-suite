@@ -5,6 +5,7 @@ import { Icon } from "../components/Icon";
 import { StatusBadge, OrderStatusBadge, SectionDrawer, BILL_STATUS_LABELS } from "../components/shared";
 import { ORDER_TERMINAL, SECTION_COLORS, ViewField, CONTRACTOR_TRADES, STATUS_COLORS } from "../fixtures/seedData.jsx";
 import { extractDocumentFromImage, sendEmail } from "../lib/supabase";
+import { createContractor, updateContractor, deleteContractor as dbDeleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc } from "../lib/db";
 import s from './Contractors.module.css';
 
 const Contractors = () => {
@@ -50,15 +51,29 @@ const Contractors = () => {
 
   const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" }); setShowDocForm(false); setShowModal(true); };
   const openEdit = (c) => { setEditItem(c); setMode("view"); setForm(c); setShowDocForm(false); setShowModal(true); };
-  const save = () => {
-    if (editItem) {
-      setContractors(cs => cs.map(c => c.id === editItem.id ? { ...c, ...form } : c));
-    } else {
-      setContractors(cs => [...cs, { ...form, id: "c" + Date.now(), documents: [] }]);
+  const save = async () => {
+    try {
+      if (editItem) {
+        await updateContractor(editItem.id, form);
+        setContractors(cs => cs.map(c => c.id === editItem.id ? { ...c, ...form } : c));
+      } else {
+        const saved = await createContractor(form);
+        setContractors(cs => [...cs, { ...saved, documents: [] }]);
+      }
+    } catch (err) {
+      console.error('Failed to save contractor:', err);
     }
     setShowModal(false);
   };
-  const del = (id) => { if (window.confirm("Delete this contractor?")) setContractors(cs => cs.filter(c => c.id !== id)); };
+  const del = async (id) => {
+    if (!window.confirm("Delete this contractor?")) return;
+    try {
+      await dbDeleteContractor(id);
+      setContractors(cs => cs.filter(c => c.id !== id));
+    } catch (err) {
+      console.error('Failed to delete contractor:', err);
+    }
+  };
   const accent = SECTION_COLORS.contractors.accent;
 
   const getWOCount = (c) => workOrders.filter(wo => wo.contractorName === c.name || wo.contractorId === c.id).length;
@@ -80,28 +95,43 @@ const Contractors = () => {
     setShowDocForm(true);
   };
 
-  const saveDoc = () => {
+  const saveDoc = async () => {
     const contractorId = editItem?.id;
     if (!contractorId) return;
-    setContractors(cs => cs.map(c => {
-      if (c.id !== contractorId) return c;
-      const docs = [...(c.documents || [])];
+    try {
+      let savedDoc;
       if (editDoc) {
-        const idx = docs.findIndex(d => d.id === editDoc.id);
-        if (idx >= 0) docs[idx] = { ...docForm, id: editDoc.id };
+        savedDoc = await updateContractorDoc(editDoc.id, { ...docForm, docType: docForm.type }, contractorId);
       } else {
-        docs.push({ ...docForm, id: "d" + Date.now(), uploadedAt: new Date().toISOString().slice(0, 10) });
+        savedDoc = await createContractorDoc(contractorId, { ...docForm, docType: docForm.type });
       }
-      const updated = { ...c, documents: docs };
-      setEditItem(updated);
-      setForm(updated);
-      return updated;
-    }));
+      setContractors(cs => cs.map(c => {
+        if (c.id !== contractorId) return c;
+        const docs = [...(c.documents || [])];
+        if (editDoc) {
+          const idx = docs.findIndex(d => d.id === editDoc.id);
+          if (idx >= 0) docs[idx] = savedDoc;
+        } else {
+          docs.push(savedDoc);
+        }
+        const updated = { ...c, documents: docs };
+        setEditItem(updated);
+        setForm(updated);
+        return updated;
+      }));
+    } catch (err) {
+      console.error('Failed to save document:', err);
+    }
     setShowDocForm(false);
   };
 
-  const deleteDoc = (docId) => {
+  const deleteDoc = async (docId) => {
     if (!editItem || !window.confirm("Delete this document?")) return;
+    try {
+      await deleteContractorDoc(docId);
+    } catch (err) {
+      console.error('Failed to delete document:', err);
+    }
     setContractors(cs => cs.map(c => {
       if (c.id !== editItem.id) return c;
       const updated = { ...c, documents: (c.documents || []).filter(d => d.id !== docId) };

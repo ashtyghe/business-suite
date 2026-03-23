@@ -20,6 +20,17 @@ async function q(promise, fallback = []) {
   }
 }
 
+// Strict query helper for mutations — throws on error so callers can handle failures
+async function qStrict(promise) {
+  const result = await Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 15000)),
+  ]);
+  const { data, error } = result;
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // ── Normalizers (DB → frontend shape) ─────────────────────────────────────
 
 function normalizeSite(row) {
@@ -537,6 +548,7 @@ export async function fetchAll() {
     poLines,
     contractors,
     contractorDocs,
+    suppliers,
     phases,
     tasks,
     notes,
@@ -559,6 +571,7 @@ export async function fetchAll() {
     q(supabase.from('purchase_order_lines').select('*')),
     q(supabase.from('contractors').select('*').order('name')),
     q(supabase.from('contractor_documents').select('*')),
+    q(supabase.from('suppliers').select('*').order('name')),
     q(supabase.from('job_phases').select('*').order('sort_order')),
     q(supabase.from('job_tasks').select('*').order('sort_order')),
     q(supabase.from('job_notes').select('*').order('created_at', { ascending: false })),
@@ -634,6 +647,7 @@ export async function fetchAll() {
     workOrders: normalizedWOs,
     purchaseOrders: normalizedPOs,
     contractors: normalizedContractors,
+    suppliers: suppliers.map(normalizeSupplier),
     phases: phases.map(normalizePhase),
     tasks: tasks.map(normalizeTask),
     notes: normalizedNotes,
@@ -984,14 +998,14 @@ export async function deletePurchaseOrder(id) {
 // ── Contractors ───────────────────────────────────────────────────────────
 
 export async function createContractor(data) {
-  const row = await q(
+  const row = await qStrict(
     supabase.from('contractors').insert(denormalizeContractor(data)).select().single()
   );
   return { ...normalizeContractor(row), documents: [] };
 }
 
 export async function updateContractor(id, data) {
-  const row = await q(
+  const row = await qStrict(
     supabase.from('contractors')
       .update({ ...denormalizeContractor(data), updated_at: new Date().toISOString() })
       .eq('id', id).select().single()
@@ -1011,13 +1025,13 @@ export async function deleteContractor(id) {
       } catch { /* ignore */ }
     }
   }
-  return q(supabase.from('contractors').delete().eq('id', id));
+  return qStrict(supabase.from('contractors').delete().eq('id', id));
 }
 
 // ── Contractor Documents ──────────────────────────────────────────────────
 
 export async function createContractorDoc(contractorId, data) {
-  const row = await q(
+  const row = await qStrict(
     supabase.from('contractor_documents')
       .insert(denormalizeContractorDoc(data, contractorId))
       .select().single()
@@ -1026,7 +1040,7 @@ export async function createContractorDoc(contractorId, data) {
 }
 
 export async function updateContractorDoc(id, data, contractorId) {
-  const row = await q(
+  const row = await qStrict(
     supabase.from('contractor_documents')
       .update(denormalizeContractorDoc(data, contractorId))
       .eq('id', id).select().single()
@@ -1043,7 +1057,54 @@ export async function deleteContractorDoc(id) {
       if (pathMatch) await deleteFile('documents', pathMatch[1]);
     } catch { /* ignore */ }
   }
-  return q(supabase.from('contractor_documents').delete().eq('id', id));
+  return qStrict(supabase.from('contractor_documents').delete().eq('id', id));
+}
+
+// ── Suppliers ─────────────────────────────────────────────────────────────
+
+function normalizeSupplier(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    contact: row.contact || '',
+    email: row.email || '',
+    phone: row.phone || '',
+    abn: row.abn || '',
+    notes: row.notes || '',
+    address: row.address || '',
+  };
+}
+
+function denormalizeSupplier(data) {
+  return {
+    name: data.name,
+    contact: data.contact || null,
+    email: data.email || null,
+    phone: data.phone || null,
+    abn: data.abn || null,
+    notes: data.notes || null,
+    address: data.address || null,
+  };
+}
+
+export async function createSupplier(data) {
+  const row = await qStrict(
+    supabase.from('suppliers').insert(denormalizeSupplier(data)).select().single()
+  );
+  return normalizeSupplier(row);
+}
+
+export async function updateSupplier(id, data) {
+  const row = await qStrict(
+    supabase.from('suppliers')
+      .update({ ...denormalizeSupplier(data), updated_at: new Date().toISOString() })
+      .eq('id', id).select().single()
+  );
+  return normalizeSupplier(row);
+}
+
+export async function deleteSupplier(id) {
+  return qStrict(supabase.from('suppliers').delete().eq('id', id));
 }
 
 // ── Phases (Gantt) ────────────────────────────────────────────────────────
@@ -1164,9 +1225,9 @@ export async function fetchCompanyInfo() {
 export async function saveCompanyInfo(settings) {
   const existing = await q(supabase.from('company_info').select('id').limit(1));
   if (existing.length) {
-    return q(supabase.from('company_info').update({ settings, updated_at: new Date().toISOString() }).eq('id', existing[0].id).select());
+    return qStrict(supabase.from('company_info').update({ settings, updated_at: new Date().toISOString() }).eq('id', existing[0].id).select());
   }
-  return q(supabase.from('company_info').insert({ settings }).select());
+  return qStrict(supabase.from('company_info').insert({ settings }).select());
 }
 
 // ── Email Templates ───────────────────────────────────────────────────────

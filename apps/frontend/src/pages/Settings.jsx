@@ -467,10 +467,15 @@ const Settings = () => {
   const [companySaved, setCompanySaved] = useState(false);
   const updateCompanyField = (key, value) => { setCompanyForm(f => ({ ...f, [key]: value })); setCompanyDirty(true); setCompanySaved(false); };
   const saveCompanyInfo = async () => {
-    setCompanyInfo(companyForm);
-    try { await dbSaveCompanyInfo(companyForm); } catch {}
-    setCompanyDirty(false); setCompanySaved(true);
-    setTimeout(() => setCompanySaved(false), 2500);
+    try {
+      await dbSaveCompanyInfo(companyForm);
+      setCompanyInfo(companyForm);
+      setCompanyDirty(false); setCompanySaved(true);
+      setTimeout(() => setCompanySaved(false), 2500);
+    } catch (err) {
+      console.error('Failed to save company info:', err);
+      alert('Failed to save company info. Please try again.');
+    }
   };
   const [voiceSettings, setVoiceSettings] = useState(DEFAULT_VOICE_SETTINGS);
   const [saved, setSaved] = useState(false);

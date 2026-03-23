@@ -8,6 +8,7 @@ import { Icon } from '../components/Icon';
 import {
   OrderStatusBadge, SectionDrawer,
 } from '../components/shared';
+import { createSupplier, updateSupplier, deleteSupplier as dbDeleteSupplier } from '../lib/db';
 import s from './Suppliers.module.css';
 
 const Suppliers = () => {
@@ -26,15 +27,31 @@ const Suppliers = () => {
 
   const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", abn: "", notes: "" }); setShowModal(true); };
   const openEdit = (s) => { setEditItem(s); setMode("view"); setForm(s); setShowModal(true); };
-  const save = () => {
-    if (editItem) {
-      setSuppliers(ss => ss.map(s => s.id === editItem.id ? { ...s, ...form } : s));
-    } else {
-      setSuppliers(ss => [...ss, { ...form, id: "s" + Date.now() }]);
+  const save = async () => {
+    try {
+      if (editItem) {
+        await updateSupplier(editItem.id, form);
+        setSuppliers(ss => ss.map(s => s.id === editItem.id ? { ...s, ...form } : s));
+      } else {
+        const saved = await createSupplier(form);
+        setSuppliers(ss => [...ss, saved]);
+      }
+      setShowModal(false);
+    } catch (err) {
+      console.error('Failed to save supplier:', err);
+      alert('Failed to save supplier: ' + err.message);
     }
-    setShowModal(false);
   };
-  const del = (id) => { if (window.confirm("Delete this supplier?")) setSuppliers(ss => ss.filter(s => s.id !== id)); };
+  const del = async (id) => {
+    if (!window.confirm("Delete this supplier?")) return;
+    try {
+      await dbDeleteSupplier(id);
+      setSuppliers(ss => ss.filter(s => s.id !== id));
+    } catch (err) {
+      console.error('Failed to delete supplier:', err);
+      alert('Failed to delete supplier: ' + err.message);
+    }
+  };
   const accent = SECTION_COLORS.suppliers.accent;
 
   const getPOCount = (s) => purchaseOrders.filter(po => po.supplierName === s.name || po.supplierId === s.id).length;

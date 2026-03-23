@@ -112,6 +112,7 @@ const DisplaySchedule = lazy(() => import('./pages/DisplaySchedule'));
 const DisplayOverview = lazy(() => import('./pages/DisplayOverview'));
 const MyAssistant = lazy(() => import('./pages/MyAssistant'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Account = lazy(() => import('./pages/Account'));
 const FilesPage = lazy(() => import('./pages/Files'));
 const CallLog = lazy(() => import('./pages/CallLog'));
 const SystemStatus = lazy(() => import('./pages/SystemStatus'));
@@ -4602,6 +4603,7 @@ const ROUTE_MAP = {
   calllog: "/call-log",
   assistant: "/my-assistant",
   memory: "/caller-memory",
+  account: "/account",
 };
 const PATH_TO_ID = Object.fromEntries(
   Object.entries(ROUTE_MAP).map(([id, path]) => [path, id])
@@ -4711,7 +4713,7 @@ export default function App() {
   const moreNavItems = navItems.filter(n => !bottomNavIds.includes(n.id));
   const moreIsActive = moreNavItems.some(n => n.id === page) && !bottomNavIds.includes(page);
 
-  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", actions: "Actions", reminders: "Reminders", activity: "Activity Log", status: "System Status", settings: "Settings", files: "Files", calllog: "Call Log", assistant: "My Assistant", memory: "Caller Memory" };
+  const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", actions: "Actions", reminders: "Reminders", activity: "Activity Log", status: "System Status", settings: "Settings", files: "Files", calllog: "Call Log", assistant: "My Assistant", memory: "Caller Memory", account: "Account" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
@@ -4748,6 +4750,7 @@ export default function App() {
           <Route path="/status" element={<SystemStatus />} />
           <Route path="/settings" element={(auth.isAdmin || auth.isLocalDev) ? <Settings /> : <Navigate to="/" replace />} />
           <Route path="/my-assistant" element={<MyAssistant />} />
+          <Route path="/account" element={<Account />} />
           <Route path="/caller-memory" element={<CallerMemory />} />
           <Route path="/call-log" element={<CallLog onNav={navigate} />} />
           <Route path="/files" element={<FilesPage />} />
@@ -4868,10 +4871,15 @@ export default function App() {
           {/* User menu popover */}
           {showUserMenu && !auth.isLocalDev && (
             <div className={sh.userMenuPopover}>
-              <button onClick={() => { setShowChangePassword(true); setShowUserMenu(false); }} className={sh.userMenuBtn}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                Change Password
+              <button onClick={() => { navigate("account"); setShowUserMenu(false); }} className={sh.userMenuBtn}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+                Account
               </button>
+              <button onClick={() => { navigate("assistant"); setShowUserMenu(false); }} className={sh.userMenuBtn}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 00-3 3v4a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1m7 8v4m-4 0h8"/></svg>
+                My Assistant
+              </button>
+              <div className={sh.userMenuDivider} />
               <button onClick={() => { auth.signOut(); setShowUserMenu(false); }} className={sh.userMenuBtnDanger}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/></svg>
                 Sign Out

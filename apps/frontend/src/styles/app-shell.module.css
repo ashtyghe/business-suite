@@ -36,6 +36,7 @@
 .userMenuPopover { position: absolute; bottom: 100%; left: 12px; right: 12px; background: #1e1e1e; border-radius: 8px; border: 1px solid #333; padding: 4px; margin-bottom: 4px; z-index: 10; }
 .userMenuBtn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; background: transparent; border: none; color: #ccc; font-size: 12px; cursor: pointer; border-radius: 6px; font-family: 'Open Sans', sans-serif; text-align: left; }
 .userMenuBtn:hover { background: #333; }
+.userMenuDivider { height: 1px; background: #333; margin: 4px 0; }
 .userMenuBtnDanger { composes: userMenuBtn; color: #f87171; }
 .userMenuBtnDanger:hover { background: #333; }
 .userRow { display: flex; align-items: center; gap: 10px; }

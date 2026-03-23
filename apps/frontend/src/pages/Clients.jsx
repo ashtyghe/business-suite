@@ -7,14 +7,14 @@ import { StatusBadge, SectionDrawer } from '../components/shared';
 import s from './Clients.module.css';
 
 const Clients = () => {
-  const { clients, setClients, jobs, templates } = useAppStore();
+  const { clients, setClients, jobs, templates, sectionView: rawView, setSectionView: setView } = useAppStore();
+  const view = rawView === "kanban" ? "grid" : rawView;
   const [showModal, setShowModal] = useState(false);
   const [editClient, setEditClient] = useState(null);
   const [clientMode, setClientMode] = useState("edit");
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", sites: [], mainContact: { name: "", phone: "", email: "" }, accountsContact: { name: "", phone: "", email: "" }, rates: { labourRate: 0, materialMargin: 0, subcontractorMargin: 0 } });
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [view, setView] = useState("grid");
   const [expandedSites, setExpandedSites] = useState({});
   // Site sub-modal
   const [showSiteModal, setShowSiteModal] = useState(false);

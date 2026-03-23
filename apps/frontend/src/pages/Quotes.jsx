@@ -14,14 +14,13 @@ import s from './Quotes.module.css';
 const QUOTE_STATUSES = ["all", "draft", "sent", "accepted", "declined"];
 
 const Quotes = () => {
-  const { quotes, setQuotes, jobs, clients, invoices, templates, companyInfo } = useAppStore();
+  const { quotes, setQuotes, jobs, clients, invoices, templates, companyInfo, sectionView: view, setSectionView: setView } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [editQuote, setEditQuote] = useState(null);
   const [quoteMode, setQuoteMode] = useState("edit");
   const [form, setForm] = useState({ jobId: "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" });
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [view, setView] = useState("list");
   const [emailSending, setEmailSending] = useState(false);
   const [emailStatus, setEmailStatus] = useState(null);
 

@@ -14,14 +14,13 @@ import { OrderDrawer } from '../components/OrderDrawer';
 import s from './Orders.module.css';
 
 const OrdersPage = () => {
-  const { workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs, companyInfo } = useAppStore();
+  const { workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, jobs, companyInfo, sectionView: view, setSectionView: setView } = useAppStore();
   const auth = useAuth();
   const canDeleteOrder = auth.isAdmin || auth.isLocalDev;
   const [modal, setModal] = useState(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("all");
-  const [view, setView] = useState("grid");
   const allOrders = useMemo(() => [
     ...workOrders.map(o => ({ ...o, _type: "wo" })),
     ...purchaseOrders.map(o => ({ ...o, _type: "po" }))

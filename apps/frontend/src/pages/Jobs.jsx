@@ -10,11 +10,10 @@ import JobDetail from './JobDetail';
 import s from './Jobs.module.css';
 
 const Jobs = () => {
-  const { jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders } = useAppStore();
+  const { jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, sectionView: view, setSectionView: setView } = useAppStore();
   const auth = useAuth();
   const canDeleteJob = auth.isAdmin || auth.isLocalDev;
   const canEditJob = (j) => auth.isAdmin || auth.isLocalDev || (j.assignedTo || []).includes(auth.currentUserName);
-  const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [showModal, setShowModal] = useState(false);

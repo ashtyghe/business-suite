@@ -14,14 +14,13 @@ import s from './Invoices.module.css';
 const INV_STATUSES = ["all", "draft", "sent", "paid", "overdue", "void"];
 
 const Invoices = () => {
-  const { invoices, setInvoices, jobs, clients, quotes, templates, companyInfo } = useAppStore();
+  const { invoices, setInvoices, jobs, clients, quotes, templates, companyInfo, sectionView: view, setSectionView: setView } = useAppStore();
   const [showModal, setShowModal] = useState(false);
   const [editInvoice, setEditInvoice] = useState(null);
   const [invMode, setInvMode] = useState("edit");
   const [form, setForm] = useState({ jobId: "", status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" });
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [view, setView] = useState("list");
   const [emailSending, setEmailSending] = useState(false);
   const [emailStatus, setEmailStatus] = useState(null);
 

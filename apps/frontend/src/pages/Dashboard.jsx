@@ -180,15 +180,14 @@ const Dashboard = ({ onNav }) => {
             {/* Header */}
             <div onClick={() => setAiExpanded(e => !e)} className={s.aiHeader}>
               <div className={s.aiHeaderLeft}>
-                <span className={s.aiSparkle}>&#10024;</span>
-                <span className={s.aiTitle}>AI Business Insight</span>
+                <span className={s.aiTitle}>Business Insights</span>
                 {insightCards.length > 0 && !aiExpanded && <span className={s.aiInsightCount}>{insightCards.length} insights</span>}
               </div>
               <div className={s.aiHeaderRight}>
                 <button onClick={e => { e.stopPropagation(); generateInsight(); }} disabled={aiLoading} className={s.aiRefreshBtn}>
                   {aiLoading ? "Analysing..." : "Refresh"}
                 </button>
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" className={`${s.chevron} ${aiExpanded ? s.chevronExpanded : ""}`}><polyline points="5 8 10 13 15 8"/></svg>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" className={`${s.chevron} ${aiExpanded ? s.chevronExpanded : ""}`}><polyline points="5 8 10 13 15 8"/></svg>
               </div>
             </div>
             {/* Expandable content */}
@@ -220,7 +219,7 @@ const Dashboard = ({ onNav }) => {
                         {aiChatMessages.slice(1).map((msg, i) => (
                           <div key={i} className={`${s.aiChatRow} ${msg.role === "user" ? s.aiChatRowUser : s.aiChatRowAssistant}`}>
                             <div className={`${s.aiChatBubble} ${msg.role === "user" ? s.aiChatBubbleUser : s.aiChatBubbleAssistant}`}>
-                              {msg.role === "assistant" && <div className={s.aiChatLabel}>AI Analyst</div>}
+                              {msg.role === "assistant" && <div className={s.aiChatLabel}>Analyst</div>}
                               <div className={msg.role === "user" ? s.aiChatTextUser : s.aiChatTextAssistant}>{msg.content}</div>
                             </div>
                           </div>
@@ -260,7 +259,7 @@ const Dashboard = ({ onNav }) => {
                         disabled={!aiChatInput.trim() || aiChatLoading}
                         className={`${s.aiSendBtn} ${aiChatInput.trim() && !aiChatLoading ? s.aiSendBtnActive : s.aiSendBtnDisabled}`}
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={aiChatInput.trim() && !aiChatLoading ? "#fff" : "#666"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={aiChatInput.trim() && !aiChatLoading ? "#fff" : "#94a3b8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                       </button>
                     </div>
                   </div>

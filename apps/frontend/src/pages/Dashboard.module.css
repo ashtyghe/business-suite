@@ -1,9 +1,10 @@
-/* ── AI Business Insight Panel ── */
+/* ── Business Insight Panel ── */
 .aiPanel {
-  background: linear-gradient(135deg, #111 0%, #1e293b 100%);
+  background: #fff;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   margin-bottom: 20px;
-  color: #fff;
+  color: #1e293b;
   overflow: hidden;
 }
 
@@ -22,18 +23,19 @@
 }
 
 .aiSparkle {
-  font-size: 16px;
+  display: none;
 }
 
 .aiTitle {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.03em;
+  color: #1e293b;
 }
 
 .aiInsightCount {
   font-size: 11px;
-  color: #94a3b8;
+  color: #64748b;
   margin-left: 4px;
 }
 
@@ -44,13 +46,13 @@
 }
 
 .aiRefreshBtn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
   padding: 4px 12px;
   font-size: 11px;
   font-weight: 600;
-  color: #fff;
+  color: #475569;
   cursor: pointer;
   font-family: 'Open Sans', sans-serif;
 }
@@ -65,12 +67,12 @@
 
 .aiLoadingText {
   font-size: 13px;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .aiErrorText {
   font-size: 12px;
-  color: #f87171;
+  color: #dc2626;
   margin-bottom: 12px;
 }
 
@@ -82,8 +84,8 @@
 }
 
 .aiCard {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 14px 16px;
 }
@@ -91,26 +93,26 @@
 .aiCardHeading {
   font-size: 13px;
   font-weight: 700;
-  color: #fff;
+  color: #1e293b;
   margin-bottom: 6px;
 }
 
 .aiCardDetail {
   font-size: 12px;
   line-height: 1.5;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .aiInsightFallback {
   font-size: 13px;
   line-height: 1.6;
-  color: #e2e8f0;
+  color: #334155;
   white-space: pre-wrap;
   margin-bottom: 16px;
 }
 
 .aiChatSection {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid #e5e7eb;
   padding-top: 16px;
 }
 
@@ -140,21 +142,21 @@
 }
 
 .aiChatBubbleUser {
-  background: rgba(99, 102, 241, 0.3);
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   border-radius: 12px 12px 4px 12px;
 }
 
 .aiChatBubbleAssistant {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 12px 12px 12px 4px;
 }
 
 .aiChatLabel {
   font-size: 10px;
   font-weight: 700;
-  color: #6366f1;
+  color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 4px;
@@ -163,20 +165,20 @@
 .aiChatTextUser {
   font-size: 13px;
   line-height: 1.6;
-  color: #e2e8f0;
+  color: #1e293b;
   white-space: pre-wrap;
 }
 
 .aiChatTextAssistant {
   font-size: 13px;
   line-height: 1.6;
-  color: #cbd5e1;
+  color: #334155;
   white-space: pre-wrap;
 }
 
 .aiThinking {
   font-size: 13px;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .aiSuggestedWrap {
@@ -187,20 +189,20 @@
 }
 
 .aiSuggestBtn {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
   padding: 6px 14px;
   font-size: 12px;
-  color: #94a3b8;
+  color: #475569;
   cursor: pointer;
   font-family: 'Open Sans', sans-serif;
   transition: all 0.15s;
 }
 
 .aiSuggestBtn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #e2e8f0;
+  background: #e2e8f0;
+  color: #1e293b;
 }
 
 .aiInputRow {
@@ -210,12 +212,12 @@
 
 .aiInput {
   flex: 1;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 13px;
-  color: #fff;
+  color: #1e293b;
   font-family: 'Open Sans', sans-serif;
   outline: none;
 }
@@ -230,12 +232,12 @@
 }
 
 .aiSendBtnActive {
-  background: #6366f1;
+  background: #3b82f6;
   cursor: pointer;
 }
 
 .aiSendBtnDisabled {
-  background: rgba(255, 255, 255, 0.08);
+  background: #f1f5f9;
   cursor: default;
 }
 

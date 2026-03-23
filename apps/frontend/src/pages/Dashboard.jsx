@@ -372,17 +372,21 @@ const Dashboard = ({ onNav }) => {
           const dayEntries = weekEntries.filter(e => e.date === dateStr);
           return (
             <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`} style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? schAccent : "#e5e5e5" }} onClick={() => onNav("schedule")}>
-              <div className="schedule-day-header" style={{ background: isToday ? schAccent : isPast ? "#e0e0e0" : "#f5f5f5", color: isToday ? "#fff" : isPast ? "#999" : "#333" }}>
-                <span className={s.dayHeaderLabel}>{dayName}</span>
-                <span className={isCompact ? s.dayHeaderDateCompact : s.dayHeaderDateFull}>{d.getDate()}</span>
+              <div className="schedule-day-header" style={{ background: isToday ? schAccent : isPast ? "#e0e0e0" : "#f5f5f5", color: isToday ? "#fff" : isPast ? "#999" : "#333", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <div className={s.dayHeaderContent}>
+                  <span className={s.dayHeaderLabel}>{dayName}</span>
+                  <span className={isCompact ? s.dayHeaderDateCompact : s.dayHeaderDateFull}>{d.getDate()}</span>
+                </div>
               </div>
               <div className="schedule-day-body">
                 {dayEntries.length === 0 && <div className={`${s.emptyDay} ${isCompact ? s.emptyDayCompact : s.emptyDayFull}`}>—</div>}
                 {dayEntries.map(entry => {
                   const job = jobs.find(j => j.id === entry.jobId);
+                  const client = clients.find(c => c.id === job?.clientId);
                   return (
                     <div key={entry.id} className="schedule-card" style={{ borderLeft: `3px solid ${isPast ? "#ddd" : schAccent}` }}>
-                      <div className={s.scheduleEntryTitle}>{entry.title}</div>
+                      <div className={s.scheduleEntryTitle}>{entry.title || job?.title || "Unknown"}</div>
+                      {client && <div className={s.scheduleEntryClient}>{client.name}</div>}
                       {entry.startTime && <div className={s.scheduleEntryTime}>{entry.startTime}{entry.endTime ? `–${entry.endTime}` : ""}</div>}
                       {(entry.assignedTo || []).length > 0 && (
                         <div className={s.scheduleEntryAvatars}><AvatarGroup names={entry.assignedTo} max={2} /></div>

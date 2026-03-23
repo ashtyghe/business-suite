@@ -6,6 +6,7 @@ import { Icon } from "../components/Icon";
 import { SectionDrawer } from "../components/shared";
 import { SECTION_COLORS, TEAM } from "../fixtures/seedData.jsx";
 import { createTimeEntry, updateTimeEntry, deleteTimeEntry } from "../lib/db";
+import { getTodayStr } from "../utils/timezone";
 import s from './TimeTracking.module.css';
 
 // ── Time Tracking ─────────────────────────────────────────────────────────────
@@ -36,7 +37,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
   const staffNames = (staff && staff.length > 0) ? staff.map(s => s.name) : TEAM;
   const isStaffRole = !auth.isAdmin && !auth.isLocalDev;
   const defaultWorker = isStaffRole ? auth.currentUserName : (staffNames[0] || "");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayStr();
   const [form, setForm] = useState(() => {
     if (editEntry) return {
       jobId: String(editEntry.jobId),
@@ -224,7 +225,7 @@ const TimeCalendar = ({ timeEntries, selectedWorker, onDayClick, calMonth, setCa
   const month = viewDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // Mon=0
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayStr();
   const monthStr = `${year}-${String(month + 1).padStart(2, "0")}`;
   const monthLabel = viewDate.toLocaleDateString("en-AU", { month: "long", year: "numeric" });
 
@@ -278,7 +279,7 @@ const TimeCalendar = ({ timeEntries, selectedWorker, onDayClick, calMonth, setCa
 
 // ── Week strip ────────────────────────────────────────────────────────────────
 const WeekStrip = ({ timeEntries, selectedWorker, weekOffset, setWeekOffset, selectedDay, setSelectedDay }) => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayStr();
   const now = new Date();
   const dow = now.getDay() === 0 ? 6 : now.getDay() - 1; // Mon=0
   const monday = new Date(now);
@@ -340,7 +341,7 @@ const TimeTracking = () => {
   const isOwn = (entry) => entry.worker === auth.currentUserName;
   const canEditEntry = (entry) => auth.isAdmin || auth.isLocalDev || isOwn(entry);
   const canDeleteEntry = (entry) => auth.isAdmin || auth.isLocalDev || isOwn(entry);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayStr();
   const [tsTab, setTsTab] = useState("week");           // "week" | "team" | "calendar"
   const [selectedWorker, setSelectedWorker] = useState("all");
   const [selectedDay, setSelectedDay] = useState(today);

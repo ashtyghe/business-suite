@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useAppStore } from '../lib/store';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
+import { getTimezone } from '../utils/timezone';
 import s from './CallLog.module.css';
 
 const CallLog = ({ onNav }) => {
@@ -20,14 +21,15 @@ const CallLog = ({ onNav }) => {
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
+  const tz = getTimezone();
   const formatDate = (iso) => {
     const d = new Date(iso);
-    return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+    return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: tz });
   };
 
   const formatTime = (iso) => {
     const d = new Date(iso);
-    return d.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: true });
+    return d.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: tz });
   };
 
   const filtered = useMemo(() => {

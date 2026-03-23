@@ -1,16 +1,11 @@
 import { useState, useEffect } from "react";
 import { useAppStore } from '../lib/store';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
+import { getTodayStr } from '../utils/timezone';
 import s from './DisplayOverview.module.css';
 
 // ── Display Dashboard Constants ──
 const accent = "#0891b2";
-
-// Sydney timezone date helper
-const sydneyToday = () => {
-  const syd = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-  return syd;
-};
 
 const displayGetMonday = (d) => {
   const dt = new Date(d + "T12:00:00");
@@ -33,7 +28,7 @@ const useDisplayRefresh = (intervalMs = 30000) => {
 const DisplayOverview = () => {
   const { jobs, quotes, timeEntries, schedule, clients } = useAppStore();
   useDisplayRefresh(30000);
-  const today = sydneyToday();
+  const today = getTodayStr();
   const todayMon = displayGetMonday(today);
   const weekEnd = (() => { const d = new Date(todayMon + "T12:00:00"); d.setDate(d.getDate() + 4); return d.toISOString().slice(0, 10); })();
 

@@ -1,15 +1,10 @@
 import { useState, useEffect } from "react";
 import { useAppStore } from '../lib/store';
+import { getTodayStr, getTimezone } from '../utils/timezone';
 import s from './DisplaySchedule.module.css';
 
 // ── Display Dashboard Constants ──
 const ACCENT = "#0891b2";
-
-// Sydney timezone date helper
-const sydneyToday = () => {
-  const syd = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-  return syd; // returns YYYY-MM-DD
-};
 
 const displayGetMonday = (d) => {
   const dt = new Date(d + "T12:00:00");
@@ -32,7 +27,7 @@ const useDisplayRefresh = (intervalMs = 30000) => {
 const DisplaySchedule = () => {
   const { schedule, jobs, clients } = useAppStore();
   useDisplayRefresh(30000);
-  const today = sydneyToday();
+  const today = getTodayStr();
   const allDays = (mon) => Array.from({ length: 7 }, (_, i) => { const d = new Date(mon + "T12:00:00"); d.setDate(d.getDate() + i); return d.toISOString().slice(0, 10); });
   const todayMon = displayGetMonday(today);
   const nextMon = (() => { const d = new Date(todayMon + "T12:00:00"); d.setDate(d.getDate() + 7); return d.toISOString().slice(0, 10); })();
@@ -41,12 +36,12 @@ const DisplaySchedule = () => {
   const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  // Weather data for Coffs Harbour NSW
   const [weather, setWeather] = useState({});
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=-30.2963&longitude=153.1157&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=Australia%2FSydney&forecast_days=14");
+        const tz = encodeURIComponent(getTimezone());
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=-30.2963&longitude=153.1157&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=${tz}&forecast_days=14`);
         const data = await res.json();
         if (data.daily) {
           const w = {};

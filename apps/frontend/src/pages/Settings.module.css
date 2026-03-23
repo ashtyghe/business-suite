@@ -939,6 +939,34 @@
   padding: 16px 20px;
 }
 
+.userCardInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userCardActions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .userCard {
+    padding: 12px 14px;
+  }
+  .userCardInner {
+    flex-wrap: wrap;
+  }
+  .userCardActions {
+    flex-wrap: wrap;
+    width: 100%;
+    padding-top: 8px;
+    flex-shrink: 1;
+  }
+}
+
 .userAvatar {
   width: 36px;
   height: 36px;
@@ -967,6 +995,21 @@
   font-size: 14px;
   font-weight: 600;
   color: #111;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.adminBadge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #bbf7d0;
 }
 
 .userMeta {
@@ -1160,6 +1203,58 @@
   font-size: 12px;
   color: #888;
   margin-bottom: 20px;
+}
+
+.adminToggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.adminToggleLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adminToggleLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111;
+}
+
+.adminToggleDesc {
+  font-size: 11px;
+  color: #888;
+}
+
+.adminToggleOn {
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid #bbf7d0;
+  background: #ecfdf5;
+  color: #059669;
+  font-family: 'Open Sans', sans-serif;
+}
+
+.adminToggleOff {
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #e8e8e8;
+  background: #fff;
+  color: #999;
+  font-family: 'Open Sans', sans-serif;
 }
 
 .permSectionList {

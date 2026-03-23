@@ -903,7 +903,8 @@ const Settings = () => {
       } catch (err) { setUpdateError(`Failed to update phone: ${err.message}`); }
     };
 
-    const openPermissions = (st) => { setPermEditId(st.id); setPermData(JSON.parse(JSON.stringify(getUserPerms(st.id)))); };
+    const [permEditRole, setPermEditRole] = useState(null);
+    const openPermissions = (st) => { setPermEditId(st.id); setPermData(JSON.parse(JSON.stringify(getUserPerms(st.id)))); setPermEditRole(st.role || "staff"); };
     const toggleAction = (sectionId, action) => {
       setPermData(prev => {
         const current = prev[sectionId] || [];
@@ -922,7 +923,17 @@ const Settings = () => {
         return { ...prev, [sectionId]: current.length === sec.actions.length ? [] : [...sec.actions] };
       });
     };
-    const savePermissions = () => { saveUserPerms(permEditId, permData); setPermEditId(null); };
+    const savePermissions = async () => {
+      saveUserPerms(permEditId, permData);
+      const currentStaff = staff.find(x => x.id === permEditId);
+      if (currentStaff && currentStaff.role !== permEditRole) {
+        try {
+          await updateStaffRecord(permEditId, { role: permEditRole });
+          if (setStaff) { setStaff(prev => prev.map(x => x.id === permEditId ? { ...x, role: permEditRole } : x)); }
+        } catch (err) { console.error('Failed to update role:', err); }
+      }
+      setPermEditId(null);
+    };
 
     return (
       <div>
@@ -1002,10 +1013,10 @@ const Settings = () => {
             const { total: permTotal, enabled: permEnabled } = countPerms(perms);
             return (
               <div key={st.id} className={s.userCard} style={{ opacity: st.active ? 1 : 0.5 }}>
-                <div className={s.flexGap12}>
+                <div className={s.userCardInner}>
                   <div className={st.active ? s.userAvatarActive : s.userAvatarInactive}>{initials}</div>
                   <div className={s.flex1}>
-                    <div className={s.userName}>{st.name}{isSelf ? " (you)" : ""}</div>
+                    <div className={s.userName}>{st.name}{isSelf ? " (you)" : ""}{st.role === "admin" && <span className={s.adminBadge}>Admin</span>}</div>
                     <div className={s.userMeta}>
                       <span>{st.email}</span>
                       {editPhoneId === st.id ? (
@@ -1021,7 +1032,7 @@ const Settings = () => {
                       )}
                     </div>
                   </div>
-                  <div className={s.flexGap6} style={{ flexShrink: 0 }}>
+                  <div className={s.userCardActions}>
                     <span className={s.permBadge} style={{ color: permEnabled === permTotal ? "#059669" : "#f59e0b" }}>{permEnabled}/{permTotal} permissions</span>
                     <button onClick={() => openPermissions(st)} className={s.permBtnSm}>Permissions</button>
                     {!isSelf && (
@@ -1043,6 +1054,17 @@ const Settings = () => {
             <div className={s.modalContentPermissions} onClick={e => e.stopPropagation()}>
               <div className={s.modalTitleSm}>Permissions</div>
               <div className={s.modalSubtitle}>{staff.find(x => x.id === permEditId)?.name} — {(() => { const c = countPerms(permData); return `${c.enabled}/${c.total} enabled`; })()}</div>
+
+              <div className={s.adminToggleRow}>
+                <div className={s.adminToggleLeft}>
+                  <span className={s.adminToggleLabel}>Admin</span>
+                  <span className={s.adminToggleDesc}>Full access to all settings, user management, and data</span>
+                </div>
+                <button
+                  onClick={() => setPermEditRole(r => r === "admin" ? "staff" : "admin")}
+                  className={permEditRole === "admin" ? s.adminToggleOn : s.adminToggleOff}
+                >{permEditRole === "admin" ? "On" : "Off"}</button>
+              </div>
 
               <div className={s.permSectionList}>
                 {PERMISSION_SECTIONS.map(sec => {

@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
+import { useState, useRef, memo } from "react";
 import { useAppStore } from "../lib/store";
 import { fmt, daysUntil, COMPLIANCE_DOC_TYPES, COMPLIANCE_STATUS_COLORS, getComplianceStatus, getDaysUntilExpiry, getContractorComplianceCount, hexToRgba } from "../utils/helpers";
 import { Icon } from "../components/Icon";
 import { StatusBadge, OrderStatusBadge, SectionDrawer, BILL_STATUS_LABELS } from "../components/shared";
 import { ORDER_TERMINAL, SECTION_COLORS, ViewField, CONTRACTOR_TRADES, STATUS_COLORS } from "../fixtures/seedData.jsx";
 import { extractDocumentFromImage, sendEmail } from "../lib/supabase";
-import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import s from './Contractors.module.css';
 
 const Contractors = () => {
-  const { contractors, setContractors, workOrders, bills, sectionView: view, setSectionView: setView } = useAppStore();
+  const { contractors, setContractors, workOrders, bills, sectionView: rawView, setSectionView: setView } = useAppStore();
+  const view = rawView === "kanban" ? "list" : rawView;
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [mode, setMode] = useState("edit");
@@ -47,12 +47,6 @@ const Contractors = () => {
     return matchSearch && matchTrade;
   });
   const trades = [...new Set(contractors.map(c => c.trade).filter(Boolean))].sort();
-  const handleKanbanDrop = useCallback((itemId, newTrade) => {
-    const contractor = contractors.find(c => String(c.id) === itemId);
-    if (!contractor || contractor.trade === newTrade) return;
-    setContractors(cs => cs.map(c => c.id === contractor.id ? { ...c, trade: newTrade } : c));
-  }, [contractors, setContractors]);
-  const { dragOverCol, cardDragProps, colDragProps } = useKanbanDnD(handleKanbanDrop);
 
   const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" }); setShowDocForm(false); setShowModal(true); };
   const openEdit = (c) => { setEditItem(c); setMode("view"); setForm(c); setShowDocForm(false); setShowModal(true); };
@@ -162,7 +156,6 @@ const Contractors = () => {
         <div className={s.viewToggle}>
           <button className={`btn btn-xs ${view === "list" ? "" : "btn-ghost"}`} style={view === "list" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("list")}><Icon name="list_view" size={12} /></button>
           <button className={`btn btn-xs ${view === "grid" ? "" : "btn-ghost"}`} style={view === "grid" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("grid")}><Icon name="grid_view" size={12} /></button>
-          <button className={`btn btn-xs ${view === "kanban" ? "" : "btn-ghost"}`} style={view === "kanban" ? { background: accent, color: '#fff' } : undefined} onClick={() => setView("kanban")}><Icon name="kanban" size={12} /></button>
         </div>
         <div className="section-action-btns"><button className="btn btn-primary" style={{ background: accent }} onClick={openNew}><Icon name="plus" size={14} />New Contractor</button></div>
       </div>
@@ -224,40 +217,6 @@ const Contractors = () => {
                   <button className={`btn btn-ghost btn-xs ${s.deleteBtn}`} onClick={e => { e.stopPropagation(); del(c.id); }}><Icon name="trash" size={12} /></button>
                 </div>
                 {billTotal > 0 && <div className={s.gridBillTotal}>Bills total: <span className={s.gridBillAmount}>{fmt(billTotal)}</span></div>}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {view === "kanban" && (
-        <div className="kanban" style={{ gridTemplateColumns: `repeat(${trades.length || 1}, minmax(200px,1fr))` }}>
-          {(trades.length > 0 ? trades : ["Other"]).map(trade => {
-            const colItems = filtered.filter(c => c.trade === trade);
-            return (
-              <div key={trade} className={`kanban-col${dragOverCol === trade ? ' drag-over' : ''}`} {...colDragProps(trade)}>
-                <div className="kanban-col-header">
-                  <span>{trade}</span>
-                  <span className={s.kanbanCount}>{colItems.length}</span>
-                </div>
-                {colItems.map(c => {
-                  const activeWOs = getActiveWOs(c);
-                  const billCount = getContractorBills(c).length;
-                  return (
-                    <div key={c.id} className="kanban-card" onClick={() => openEdit(c)} {...cardDragProps(c.id)}>
-                      <div className={s.kanbanCardHeader}>
-                        <div className={s.kanbanCardName}>{c.name}</div>
-                        <ComplianceBadge contractor={c} />
-                      </div>
-                      {c.contact && <div className={s.kanbanContact}>{c.contact}</div>}
-                      {c.phone && <div className={s.kanbanPhone}>{c.phone}</div>}
-                      <div className={s.kanbanChips}>
-                        {activeWOs.length > 0 && <span className={`chip ${s.chipSmall}`}>{activeWOs.length} active WO{activeWOs.length > 1 ? "s" : ""}</span>}
-                        {billCount > 0 && <span className={`chip ${s.chipSmall}`}>{billCount} bill{billCount > 1 ? "s" : ""}</span>}
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             );
           })}

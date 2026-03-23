@@ -1,7 +1,8 @@
-import { useState, memo } from "react";
+import { useState, useCallback, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { createQuote, updateQuote, deleteQuote } from '../lib/db';
 import { sendEmail } from '../lib/supabase';
+import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import { buildQuotePdfHtml, htmlToPdfBase64 } from '../lib/pdf';
 import { fmt, calcQuoteTotal } from '../utils/helpers';
 import { SECTION_COLORS, ViewField } from '../fixtures/seedData.jsx';
@@ -90,6 +91,15 @@ const Quotes = () => {
     } catch (err) { console.error('Failed to duplicate quote:', err); }
   };
 
+  const handleKanbanDrop = useCallback(async (itemId, newStatus) => {
+    const quote = quotes.find(q => String(q.id) === itemId);
+    if (!quote || quote.status === newStatus) return;
+    try {
+      const saved = await updateQuote(quote.id, { ...quote, status: newStatus });
+      setQuotes(qs => qs.map(q => q.id === saved.id ? saved : q));
+    } catch (err) { console.error('Failed to update quote status:', err); }
+  }, [quotes, setQuotes]);
+  const { dragOverCol, cardDragProps, colDragProps } = useKanbanDnD(handleKanbanDrop);
   const quoteStatusColors = { draft: "#888", sent: "#2563eb", accepted: "#16a34a", declined: "#dc2626" };
   const quoteStatusLabels = { draft: "Draft", sent: "Sent", accepted: "Accepted", declined: "Declined" };
 
@@ -134,7 +144,7 @@ const Quotes = () => {
             const colQuotes = filtered.filter(q => q.status === col);
             const labels = { draft: "Draft", sent: "Sent", accepted: "Accepted", declined: "Declined" };
             return (
-              <div key={col} className="kanban-col">
+              <div key={col} className={`kanban-col${dragOverCol === col ? ' drag-over' : ''}`} {...colDragProps(col)}>
                 <div className="kanban-col-header">
                   <span>{labels[col]}</span>
                   <span className={s.kanbanBadge}>{colQuotes.length}</span>
@@ -144,7 +154,7 @@ const Quotes = () => {
                   const client = clients.find(c => c.id === job?.clientId);
                   const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
                   return (
-                    <div key={q.id} className="kanban-card" onClick={() => openEdit(q)}>
+                    <div key={q.id} className="kanban-card" onClick={() => openEdit(q)} {...cardDragProps(q.id)}>
                       <div className={s.kanbanCardHeader}>
                         <span className={s.kanbanCardNumber}>{q.number}</span>
                       </div>

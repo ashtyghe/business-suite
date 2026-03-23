@@ -60,10 +60,11 @@ const Contractors = () => {
         const saved = await createContractor(form);
         setContractors(cs => [...cs, { ...saved, documents: [] }]);
       }
+      setShowModal(false);
     } catch (err) {
       console.error('Failed to save contractor:', err);
+      alert('Failed to save contractor: ' + err.message);
     }
-    setShowModal(false);
   };
   const del = async (id) => {
     if (!window.confirm("Delete this contractor?")) return;
@@ -72,6 +73,7 @@ const Contractors = () => {
       setContractors(cs => cs.filter(c => c.id !== id));
     } catch (err) {
       console.error('Failed to delete contractor:', err);
+      alert('Failed to delete contractor: ' + err.message);
     }
   };
   const accent = SECTION_COLORS.contractors.accent;

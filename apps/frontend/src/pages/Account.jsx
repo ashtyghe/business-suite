@@ -4,7 +4,7 @@ import { useAppStore } from '../lib/store';
 import { changePassword } from '../lib/auth';
 import { updateStaffRecord } from '../lib/supabase';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
-import Icon from '../components/Icon';
+import { Icon } from '../components/Icon';
 import s from './Account.module.css';
 
 const accent = SECTION_COLORS.settings.accent;

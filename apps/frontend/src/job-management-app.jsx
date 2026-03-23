@@ -388,7 +388,7 @@ const XeroSyncBadge = ({ syncStatus, xeroId }) => {
   const c = colors[syncStatus] || (xeroId ? colors.synced : { bg: "#f5f5f5", text: "#888", label: "Not synced" });
   return (
     <span className={sh.xeroBadge} style={{ background: c.bg, color: c.text }}>
-      <span className={sh.xeroDot} className={pg.u1} />
+      <span className={`${sh.xeroDot} ${pg.u1}`} />
       Xero
     </span>
   );
@@ -401,11 +401,11 @@ const AvatarGroup = ({ names = [], max = 3 }) => {
   return (
     <div className="avatar-group">
       {shown.map((n, i) => (
-        <div key={i} className="avatar" title={n} className={pg.u2}>
+        <div key={i} className={`avatar ${pg.u2}`} title={n}>
           {n.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase()}
         </div>
       ))}
-      {extra > 0 && <div className="avatar" className={pg.u3}>+{extra}</div>}
+      {extra > 0 && <div className={`avatar ${pg.u3}`}>+{extra}</div>}
     </div>
   );
 };
@@ -497,7 +497,7 @@ const OrderIcon = ({ name, size = 16, cls = "" }) => {
     zap: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></>,
   };
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cls} className={pg.flexShrink0}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${cls} ${pg.flexShrink0}`}>
       {icons[name]}
     </svg>
   );
@@ -604,9 +604,9 @@ const OrderLineItems = ({ lines, onChange }) => {
       </div>
       {lines.map(l => (
         <div key={l.id} className={pg.u16}>
-          <input className="form-control" className={pg.h36fs13} placeholder="Description" value={l.desc} onChange={e => update(l.id, "desc", e.target.value)} />
-          <input className="form-control" className={pg.h36fs13} type="number" min="0" placeholder="Qty" value={l.qty} onChange={e => update(l.id, "qty", e.target.value)} />
-          <select className="form-control" className={pg.h36fs13} value={l.unit} onChange={e => update(l.id, "unit", e.target.value)}>
+          <input className={`form-control ${pg.h36fs13}`} placeholder="Description" value={l.desc} onChange={e => update(l.id, "desc", e.target.value)} />
+          <input className={`form-control ${pg.h36fs13}`} type="number" min="0" placeholder="Qty" value={l.qty} onChange={e => update(l.id, "qty", e.target.value)} />
+          <select className={`form-control ${pg.h36fs13}`} value={l.unit} onChange={e => update(l.id, "unit", e.target.value)}>
             {ORDER_UNITS.map(u => <option key={u}>{u}</option>)}
           </select>
           <button onClick={() => remove(l.id)} className={pg.ghostBtn}><OrderIcon name="x" size={14} /></button>
@@ -954,7 +954,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
     <div className={pg.flexCenter}>
       {mode === "edit" && dirty && <button className={`btn btn-primary ${pg.sectionAccentBtn}`} style={{ background: accent }} onClick={handleSave}>Save</button>}
       {mode === "edit" && !isNew && !dirty && <button className="btn btn-secondary" onClick={() => setMode("view")}>Done editing</button>}
-      {mode === "view" && <button className="btn btn-sm" className={pg.bluePrimaryBtn} disabled={orderEmailSending} onClick={handleDirectSendOrder}><OrderIcon name="send" size={14} /> {orderEmailSending ? "Sending..." : `Email ${isWO ? "Contractor" : "Supplier"}`}</button>}
+      {mode === "view" && <button className={`btn btn-sm ${pg.bluePrimaryBtn}`} disabled={orderEmailSending} onClick={handleDirectSendOrder}><OrderIcon name="send" size={14} /> {orderEmailSending ? "Sending..." : `Email ${isWO ? "Contractor" : "Supplier"}`}</button>}
       {mode === "view" && <button className={`btn btn-primary ${pg.sectionAccentBtn}`} style={{ background: accent }} onClick={() => setShowEmail(true)}><OrderIcon name="mail" size={14} /> Draft Email</button>}
       {isNew && <button className={`btn btn-primary ${pg.sectionAccentBtn}`} style={{ background: accent }} onClick={handleSave}>Create {isWO ? "Work Order" : "Purchase Order"}</button>}
     </div>
@@ -1001,7 +1001,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
           {form.internalNotes && <div className={pg.u75}><div className={pg.u76}>Internal Notes</div><div className={pg.u77}>{form.internalNotes}</div></div>}
           {form.attachments && form.attachments.length > 0 && (
             <div className={pg.borderTopPt16}>
-              <div className="form-label" className={pg.cardStatusRow}><OrderIcon name="paperclip" size={11} /> Attachments ({form.attachments.length})</div>
+              <div className={`form-label ${pg.cardStatusRow}`}><OrderIcon name="paperclip" size={11} /> Attachments ({form.attachments.length})</div>
               <div className={pg.grid2colGap8}>
                 {form.attachments.map(f => (
                   <div key={f.id} className={f.dataUrl ? pg.fileAttachRowClickable : pg.fileAttachRow}
@@ -1015,7 +1015,7 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
             </div>
           )}
           <div className={pg.borderTopPt16}>
-            <div className="form-label" className={pg.cardStatusRow}><OrderIcon name="activity" size={11} /> Activity Log</div>
+            <div className={`form-label ${pg.cardStatusRow}`}><OrderIcon name="activity" size={11} /> Activity Log</div>
             <OrderAuditLog log={form.auditLog} />
           </div>
         </div>
@@ -1029,27 +1029,27 @@ const OrderDrawer = ({ type, order, initialMode = "view", onSave, onClose, onTra
             <div className="form-group"><label className="form-label">Issue Date</label><input type="date" className="form-control" value={form.issueDate} onChange={e => set("issueDate", e.target.value)} /></div>
             <div className="form-group"><label className="form-label">{isWO ? "Due Date" : "Delivery Date"}</label><input type="date" className="form-control" value={form.dueDate} onChange={e => set("dueDate", e.target.value)} /></div>
           </div>
-          {isWO && <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div className={pg.posRel}><span className={pg.p2_4}>$</span><input type="number" min="0" step="0.01" className="form-control" className={pg.p2_5} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>}
+          {isWO && <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div className={pg.posRel}><span className={pg.p2_4}>$</span><input type="number" min="0" step="0.01" className={`form-control ${pg.p2_5}`} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>}
           {isWO ? (
-            <div className="form-group"><label className="form-label">Scope of Work</label><textarea rows={6} className="form-control" className={pg.heightAuto} placeholder="Describe the full scope of work..." value={form.scopeOfWork} onChange={e => set("scopeOfWork", e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Scope of Work</label><textarea rows={6} className={`form-control ${pg.heightAuto}`} placeholder="Describe the full scope of work..." value={form.scopeOfWork} onChange={e => set("scopeOfWork", e.target.value)} /></div>
           ) : (
             <>
               <div className="form-group"><label className="form-label">Delivery Address</label><input type="text" className="form-control" placeholder="Site or warehouse delivery address" value={form.deliveryAddress} onChange={e => set("deliveryAddress", e.target.value)} /></div>
               <div className="form-group"><label className="form-label">Items to Order</label><OrderLineItems lines={form.lines} onChange={v => set("lines", v)} /></div>
-              <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div className={pg.posRel}><span className={pg.p2_4}>$</span><input type="number" min="0" step="0.01" className="form-control" className={pg.p2_5} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>
+              <div className="form-group"><label className="form-label">PO Limit (AUD)</label><div className={pg.posRel}><span className={pg.p2_4}>$</span><input type="number" min="0" step="0.01" className={`form-control ${pg.p2_5}`} placeholder="e.g. 5000.00" value={form.poLimit} onChange={e => set("poLimit", e.target.value)} /></div></div>
             </>
           )}
           <div className="grid-2">
-            <div className="form-group"><label className="form-label">{isWO ? "Terms & Notes (visible to contractor)" : "Notes (visible to supplier)"}</label><textarea rows={3} className="form-control" className={pg.heightAuto} placeholder="Payment terms, special instructions..." value={form.notes} onChange={e => set("notes", e.target.value)} /></div>
-            <div className="form-group"><label className="form-label">Internal Notes</label><textarea rows={3} className="form-control" className={pg.heightAuto} placeholder="Not shown on document" value={form.internalNotes} onChange={e => set("internalNotes", e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">{isWO ? "Terms & Notes (visible to contractor)" : "Notes (visible to supplier)"}</label><textarea rows={3} className={`form-control ${pg.heightAuto}`} placeholder="Payment terms, special instructions..." value={form.notes} onChange={e => set("notes", e.target.value)} /></div>
+            <div className="form-group"><label className="form-label">Internal Notes</label><textarea rows={3} className={`form-control ${pg.heightAuto}`} placeholder="Not shown on document" value={form.internalNotes} onChange={e => set("internalNotes", e.target.value)} /></div>
           </div>
           <div className="form-group">
             <div className={pg.flexBetweenMb6Alt}>
-              <label className="form-label" className={pg.u81}><OrderIcon name="paperclip" size={12} /> Attachments</label>
+              <label className={`form-label ${pg.u81}`}><OrderIcon name="paperclip" size={12} /> Attachments</label>
               <div className={pg.flexGap6}>
-                <button type="button" className="btn btn-sm" className={pg.u82} onClick={() => orderPdfInputRef.current?.click()}>📄 Fill PDF</button>
+                <button type="button" className={`btn btn-sm ${pg.u82}`} onClick={() => orderPdfInputRef.current?.click()}>📄 Fill PDF</button>
                 <input ref={orderPdfInputRef} type="file" accept=".pdf" className={pg.hidden} onChange={handleOrderPdfFile} />
-                <button type="button" className="btn btn-sm" className={pg.u83} onClick={() => setShowPlanDrawing(true)}>📐 Draw Plan</button>
+                <button type="button" className={`btn btn-sm ${pg.u83}`} onClick={() => setShowPlanDrawing(true)}>📐 Draw Plan</button>
               </div>
             </div>
             <OrderFileAttachments files={form.attachments} onChange={updater => { setForm(f => ({ ...f, attachments: typeof updater === "function" ? updater(f.attachments) : updater })); setDirty(true); }}
@@ -2151,14 +2151,14 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
     <div className={pg.flexShrink0}>
       <div className={pg.statusStripBarSm} style={{ background: jobLight }}>
         {["draft","scheduled","in_progress","completed","cancelled"].filter(s => s !== job.status).map(s => (
-          <button key={s} className="btn btn-xs" className={pg.u187} onClick={() => {
+          <button key={s} className={`btn btn-xs ${pg.u187}`} onClick={() => {
             const updated = { ...job, status: s, activityLog: addLog(job.activityLog, `Status → ${s.replace("_"," ")}`) };
             setJobs(js => js.map(j => j.id === job.id ? updated : j));
           }}>{s.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</button>
         ))}
       </div>
       {/* Tabs */}
-      <div className="tabs" className={pg.u188}>
+      <div className={`tabs ${pg.u188}`}>
         {tabs.map(t => <div key={t.id} className={`tab ${tab === t.id ? "active" : ""} ${pg.tabItem}`} onClick={() => setTab(t.id)} style={{ borderBottomColor: tab === t.id ? jobAccent : "transparent" }}>{t.label}</div>)}
       </div>
     </div>
@@ -2255,7 +2255,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           <div className={pg.mb16}>
             <div className={pg.textLabelMb8}>Estimate</div>
             <div className={pg.u189}>
-              <div className="grid-2" className={pg.p2_17}>
+              <div className={`grid-2 ${pg.p2_17}`}>
                 <div className={`form-group ${jb.formGroupNoMb}`}>
                   <label className={`form-label ${jb.formLabelSm}`}>Labour ($)</label>
                   <input type="number" className="form-control" min="0" step="100" value={detailForm.estimate?.labour || ""} onChange={e => setDetailForm(f => ({ ...f, estimate: { ...f.estimate, labour: Number(e.target.value) || 0 } }))} placeholder="0" />
@@ -2333,7 +2333,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     ? <div className={pg.u193}>No team assigned</div>
                     : job.assignedTo.map((w,i) => (
                       <div key={i} className={pg.u194}>
-                        <div className="avatar" className={pg.u195}>{w.split(" ").map(p=>p[0]).join("")}</div>
+                        <div className={`avatar ${pg.u195}`}>{w.split(" ").map(p=>p[0]).join("")}</div>
                         <span className={pg.fs13fw600}>{w}</span>
                         <span className={pg.u196}>{jobTime.filter(t=>t.worker===w).reduce((s,t)=>s+t.hours,0)}h</span>
                       </div>
@@ -2454,7 +2454,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                             <button className={`btn btn-primary btn-xs ${pg.sectionAccentBtn}`} style={{ background: SECTION_COLORS.invoices.accent }} onClick={() => markInvPaid(inv.id)}>Mark Paid</button>
                           )}
                           {!inv.xeroInvoiceId && inv.status !== "draft" && (
-                            <button className="btn btn-ghost btn-xs" className={pg.color0369a1} onClick={() => xeroSyncInvoice("push", inv.id)} title="Send to Xero"><Icon name="send" size={11} /> Xero</button>
+                            <button className={`btn btn-ghost btn-xs ${pg.color0369a1}`} onClick={() => xeroSyncInvoice("push", inv.id)} title="Send to Xero"><Icon name="send" size={11} /> Xero</button>
                           )}
                           <button className="btn btn-ghost btn-xs" onClick={() => { setEditingInvoice(inv); setInlineInvMode("view"); }}><Icon name="edit" size={11} /></button>
                           <button className={`btn btn-ghost btn-xs ${pg.deleteBtn}`} onClick={() => delInvoice(inv.id)}><Icon name="trash" size={11} /></button>
@@ -2491,7 +2491,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               </div>
               {showTimeForm && (
                 <div className={pg.u205}>
-                  <div className="grid-3" className={pg.mb10}>
+                  <div className={`grid-3 ${pg.mb10}`}>
                     <div className={`form-group ${jb.formGroupNoMb}`}>
                       <label className="form-label">Worker</label>
                       <select className="form-control" value={timeForm.worker} onChange={e => setTimeForm(f => ({ ...f, worker: e.target.value }))}>
@@ -2509,7 +2509,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                       </div>
                     </div>
                   </div>
-                  <div className="grid-2" className={pg.mb10}>
+                  <div className={`grid-2 ${pg.mb10}`}>
                     <div className={`form-group ${jb.formGroupNoMb}`}>
                       <label className="form-label">Start Time</label>
                       <input type="time" className="form-control" value={timeForm.startTime}
@@ -2521,7 +2521,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                         onChange={e => setTimeForm(f => ({ ...f, endTime: e.target.value }))} />
                     </div>
                   </div>
-                  <div className="form-group" className={pg.mb10}>
+                  <div className={`form-group ${pg.mb10}`}>
                     <label className="form-label">Description</label>
                     <input className="form-control" value={timeForm.description} onChange={e => setTimeForm(f => ({ ...f, description: e.target.value }))} placeholder="Work description" />
                   </div>
@@ -2542,7 +2542,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     <tbody>
                       {[...jobTime].sort((a,b) => b.date > a.date ? 1 : -1).map(t => (
                         <tr key={t.id}>
-                          <td><div className={pg.flexCenter}><div className="avatar" className={pg.u207}>{t.worker.split(" ").map(w=>w[0]).join("")}</div><span className={pg.textBold13}>{t.worker}</span></div></td>
+                          <td><div className={pg.flexCenter}><div className={`avatar ${pg.u207}`}>{t.worker.split(" ").map(w=>w[0]).join("")}</div><span className={pg.textBold13}>{t.worker}</span></div></td>
                           <td className={pg.textSub}>{t.date}</td>
                           <td><span className={pg.cellAmount}>{t.hours}h</span></td>
                           <td><span className={`badge ${t.billable ? pg.billableBadge : pg.nonBillBadge}`}>{t.billable ? "Billable" : "Non-bill"}</span></td>
@@ -2602,10 +2602,10 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                             <td>
                               <div className={pg.flexGap4}>
                                 {!b.xeroBillId && (b.status === "approved" || b.status === "posted") && (
-                                  <button className="btn btn-ghost btn-xs" className={pg.color0369a1} title="Send to Xero" onClick={() => xeroSyncBill("push", b.id)}><Icon name="send" size={11} /></button>
+                                  <button className={`btn btn-ghost btn-xs ${pg.color0369a1}`} title="Send to Xero" onClick={() => xeroSyncBill("push", b.id)}><Icon name="send" size={11} /></button>
                                 )}
                                 {b.status === "linked" && (
-                                  <button className="btn btn-ghost btn-xs" className={pg.color1e7e34} title="Approve"
+                                  <button className={`btn btn-ghost btn-xs ${pg.color1e7e34}`} title="Approve"
                                     onClick={async () => {
                                       try {
                                         const saved = await updateBill(b.id, { ...b, status: "approved" });
@@ -2668,11 +2668,11 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                     : "No orders yet"}
                 </div>
                 <div className={pg.flexGap6}>
-                  <button className="btn btn-primary btn-sm" className={pg.p2_10} onClick={() => {
+                  <button className={`btn btn-primary btn-sm ${pg.p2_10}`} onClick={() => {
                     const newWo = { id: genId(), ref: "WO-" + String((workOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", contractorId: "", contractorName: "", contractorContact: "", contractorEmail: "", contractorPhone: "", trade: "", scopeOfWork: "", notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Work order created")] };
                     setWorkOrders(prev => [...prev, newWo]);
                   }}><Icon name="plus" size={12} />New WO</button>
-                  <button className="btn btn-primary btn-sm" className={pg.u216} onClick={() => {
+                  <button className={`btn btn-primary btn-sm ${pg.u216}`} onClick={() => {
                     const newPo = { id: genId(), ref: "PO-" + String((purchaseOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", supplierId: "", supplierName: "", supplierContact: "", supplierEmail: "", supplierAbn: "", deliveryAddress: "", lines: [{ id: genId(), desc: "", qty: 1, unit: "ea" }], notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Purchase order created")] };
                     setPurchaseOrders(prev => [...prev, newPo]);
                   }}><Icon name="plus" size={12} />New PO</button>
@@ -2811,7 +2811,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                           <label className="form-label">{f.label}</label>
                           <div className={pg.p2_14}>
                             <span className={pg.p2_32}>$</span>
-                            <input type="number" className="form-control" value={estimateForm[f.key] || ""} onChange={e => setEstimateForm(prev => ({ ...prev, [f.key]: parseFloat(e.target.value) || 0 }))} className={pg.flex1} />
+                            <input type="number" className={`form-control ${pg.flex1}`} value={estimateForm[f.key] || ""} onChange={e => setEstimateForm(prev => ({ ...prev, [f.key]: parseFloat(e.target.value) || 0 }))} />
                           </div>
                         </div>
                       ))}
@@ -3091,8 +3091,8 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                       <div className={pg.u257}>
                         <div className={pg.ganttPhaseDot} style={{ background: p.color }} />
                         <span className={pg.u258}>{p.name}</span>
-                        <button className="btn btn-ghost" className={pg.u259} onClick={() => { setEditPhase(p); setPhaseForm({ name: p.name, startDate: p.startDate, endDate: p.endDate, color: p.color, progress: p.progress }); setShowPhaseForm(true); }}>✏️</button>
-                        <button className="btn btn-ghost" className={pg.u260} onClick={() => deletePhase(p.id)}>🗑</button>
+                        <button className={`btn btn-ghost ${pg.u259}`} onClick={() => { setEditPhase(p); setPhaseForm({ name: p.name, startDate: p.startDate, endDate: p.endDate, color: p.color, progress: p.progress }); setShowPhaseForm(true); }}>✏️</button>
+                        <button className={`btn btn-ghost ${pg.u260}`} onClick={() => deletePhase(p.id)}>🗑</button>
                       </div>
                       <div className={pg.u261}>
                         {todayPct > 0 && todayPct < 100 && <div className={pg.ganttTodayMarker} style={{ left: `${todayPct}%` }} />}
@@ -3157,7 +3157,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
 
               {showTaskForm && (
                 <div className={pg.p2_41}>
-                  <input className="form-control" value={taskForm.text} onChange={e => setTaskForm(f => ({ ...f, text: e.target.value }))} placeholder="Task description…" className={pg.mb10} />
+                  <input className={`form-control ${pg.mb10}`} value={taskForm.text} onChange={e => setTaskForm(f => ({ ...f, text: e.target.value }))} placeholder="Task description…" />
                   <div className={pg.p2_42}>
                     <div><label className={pg.fs11fw600c888}>Due Date</label><input type="date" className="form-control" value={taskForm.dueDate} onChange={e => setTaskForm(f => ({ ...f, dueDate: e.target.value }))} /></div>
                     <div><label className={pg.fs11fw600c888}>Assigned To</label>
@@ -3192,7 +3192,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                             {task.assignedTo && <span>· {task.assignedTo}</span>}
                           </div>
                         </div>
-                        <button className="btn btn-ghost" className={pg.u266} onClick={() => deleteTask(task.id)}>✕</button>
+                        <button className={`btn btn-ghost ${pg.u266}`} onClick={() => deleteTask(task.id)}>✕</button>
                       </div>
                     );
                   })}
@@ -3351,7 +3351,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         statusStrip={inlineQuoteMode === "edit" ?
           <div className={pg.statusStripBarQuote} style={{ background: SECTION_COLORS.quotes.light }}>
             {["draft","sent","accepted","declined"].filter(s => s !== editingQuote.status).map(s => (
-              <button key={s} className="btn btn-xs" className={pg.p2_49}
+              <button key={s} className={`btn btn-xs ${pg.p2_49}`}
                 onClick={() => setEditingQuote(q => ({ ...q, status: s }))}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>
             ))}
           </div>
@@ -3408,7 +3408,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         </div>
         ) : (
         <div className={pg.drawerBody}>
-          <div className="grid-2" className={pg.mb16}>
+          <div className={`grid-2 ${pg.mb16}`}>
             <div className="form-group">
               <label className="form-label">Status</label>
               <select className="form-control" value={editingQuote.status}
@@ -3432,7 +3432,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
             <span className={pg.textMuted}>GST <strong>{fmt(qGst)}</strong></span>
             <span className={pg.fs14fw700}>Total {fmt(qTotal)}</span>
           </div>
-          <div className="form-group" className={pg.mt16}>
+          <div className={`form-group ${pg.mt16}`}>
             <label className="form-label">Notes / Terms</label>
             <textarea className="form-control" value={editingQuote.notes||""}
               onChange={e => setEditingQuote(q => ({ ...q, notes: e.target.value }))}
@@ -3462,7 +3462,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         statusStrip={inlineInvMode === "edit" ?
           <div className={pg.statusStripBarQuote} style={{ background: SECTION_COLORS.invoices.light }}>
             {["draft","sent","paid","overdue","void"].filter(s => s !== editingInvoice.status).map(s => (
-              <button key={s} className="btn btn-xs" className={pg.p2_49}
+              <button key={s} className={`btn btn-xs ${pg.p2_49}`}
                 onClick={() => setEditingInvoice(i => ({ ...i, status: s }))}>{s.charAt(0).toUpperCase()+s.slice(1)}</button>
             ))}
           </div>
@@ -3520,7 +3520,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         </div>
         ) : (
         <div className={pg.drawerBody}>
-          <div className="grid-3" className={pg.mb16}>
+          <div className={`grid-3 ${pg.mb16}`}>
             <div className="form-group">
               <label className="form-label">Status</label>
               <select className="form-control" value={editingInvoice.status}
@@ -3549,7 +3549,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
             <span className={pg.textMuted}>GST <strong>{fmt(iGst)}</strong></span>
             <span className={pg.fs14fw700}>Total {fmt(iTotal)}</span>
           </div>
-          <div className="form-group" className={pg.mt16}>
+          <div className={`form-group ${pg.mt16}`}>
             <label className="form-label">Notes</label>
             <textarea className="form-control" value={editingInvoice.notes||""}
               onChange={e => setEditingInvoice(i => ({ ...i, notes: e.target.value }))}
@@ -3665,7 +3665,7 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
               <input type="time" className="form-control" value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} />
             )}
             {field.type === "textarea" && (
-              <textarea className="form-control" rows={3} value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} className={pg.u354} />
+              <textarea className={`form-control ${pg.u354}`} rows={3} value={formData[field.key] || ""} onChange={e => setFormData(d => ({ ...d, [field.key]: e.target.value }))} />
             )}
             {field.type === "checklist" && (
               <div className={pg.u355}>
@@ -3694,7 +3694,7 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
                       onTouchMove={draw} onTouchEnd={endDraw}
                       onClick={() => setSigField(field.key)}
                     />
-                    <button className="btn btn-ghost btn-xs" className={pg.u360} onClick={clearSig}>Clear</button>
+                    <button className={`btn btn-ghost btn-xs ${pg.u360}`} onClick={clearSig}>Clear</button>
                   </div>
                 )}
               </div>
@@ -3704,8 +3704,8 @@ const FormFillerModal = ({ template, job, client, site, onSave, onClose }) => {
 
         <div className={pg.u361}>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-          <button className="btn btn-sm" className={pg.bluePrimaryBtn} onClick={() => onSave(formData, false)}>Save to Notes</button>
-          <button className="btn btn-sm" className={pg.u362} onClick={() => onSave(formData, true)}>Save & Print PDF</button>
+          <button className={`btn btn-sm ${pg.bluePrimaryBtn}`} onClick={() => onSave(formData, false)}>Save to Notes</button>
+          <button className={`btn btn-sm ${pg.u362}`} onClick={() => onSave(formData, true)}>Save & Print PDF</button>
         </div>
       </div>
     </div>
@@ -3864,7 +3864,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
           <div className="form-group">
             <label className="form-label">Worker</label>
             {isStaffRole ? (
-              <input className="form-control" value={auth.currentUserName} disabled className={pg.u370} />
+              <input className={`form-control ${pg.u370}`} value={auth.currentUserName} disabled />
             ) : (
               <select className="form-control" value={form.worker} onChange={e => setForm(f => ({ ...f, worker: e.target.value }))}>
                 {staffNames.map(t => <option key={t}>{t}</option>)}
@@ -4273,7 +4273,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
                     {extractError && !extracting && (
                       <div className={bl.extractError}>{extractError}</div>
                     )}
-                    <button className="btn btn-secondary btn-sm" className={pg.p2_30} onClick={() => { setImagePreview(null); setExtracted(false); setExtractError(null); setLineItems([]); }}>
+                    <button className={`btn btn-secondary btn-sm ${pg.p2_30}`} onClick={() => { setImagePreview(null); setExtracted(false); setExtractError(null); setLineItems([]); }}>
                       Remove image
                     </button>
                   </div>
@@ -4311,7 +4311,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
 
           {/* Supplier & Reference */}
           <div className={bl.sectionDivider}>Supplier Details</div>
-          <div className="grid-2" className={pg.mb0}>
+          <div className={`grid-2 ${pg.mb0}`}>
             <div className="form-group">
               <label className="form-label">Supplier Name *</label>
               <input className="form-control" value={form.supplier} onChange={e => setForm(f=>({...f, supplier: e.target.value}))} placeholder="e.g. Bunnings, ElecPro…" />
@@ -4321,7 +4321,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
               <input className="form-control" value={form.invoiceNo} onChange={e => setForm(f=>({...f, invoiceNo: e.target.value}))} placeholder="e.g. INV-1234" />
             </div>
           </div>
-          <div className="grid-2" className={pg.mb0}>
+          <div className={`grid-2 ${pg.mb0}`}>
             <div className="form-group">
               <label className="form-label">Bill Date</label>
               <input type="date" className="form-control" value={form.date} onChange={e => setForm(f=>({...f, date: e.target.value}))} />
@@ -4341,7 +4341,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           {/* Amount & GST */}
           <div className={bl.sectionBorder}>
             <div className={bl.sectionDivider}>Amount & Tax</div>
-            <div className="grid-2" className={pg.mb0}>
+            <div className={`grid-2 ${pg.mb0}`}>
               <div className="form-group">
                 <label className="form-label">Total Amount (as on receipt)</label>
                 <div className={bl.inputWrap}>
@@ -4361,7 +4361,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
             </div>
             {/* GST breakdown */}
             {parseFloat(form.amount) > 0 && (
-              <div className={bl.gstBreakdown} className={pg.p2_35}>
+              <div className={`${bl.gstBreakdown} ${pg.p2_35}`}>
                 <div><span className={bl.gstLabel}>Ex-GST </span><strong>{fmt(exGst)}</strong></div>
                 <div><span className={pg.color999}>GST </span><strong>{fmt(gst)}</strong></div>
                 <div className={pg.p2_72}><span className={pg.color999}>Total (inc.) </span><strong>{fmt(parseFloat(form.amount)||0)}</strong></div>
@@ -4372,7 +4372,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           {/* Link to job & markup */}
           <div className={bl.sectionBorderOnly}>
             <div className={bl.sectionDivider}>Job Allocation & Markup</div>
-            <div className="grid-2" className={pg.mb0}>
+            <div className={`grid-2 ${pg.mb0}`}>
               <div className="form-group">
                 <label className="form-label">Link to Job</label>
                 <select className="form-control" value={form.jobId || ""} onChange={e => setForm(f=>({...f, jobId: e.target.value || null}))}>

@@ -351,13 +351,6 @@ const Dashboard = ({ onNav }) => {
           <div className="stat-sub">{billableHours}h billable</div>
         </div>
 
-        {/* Open Quotes */}
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.quotes.accent}` }} onClick={() => onNav("quotes")}>
-          <div className={s.statHeaderRow}><Icon name="quotes" size={13} /><div className="stat-label">Open Quotes</div></div>
-          <div className="stat-value">{pipelineQuotes.length}</div>
-          <div className="stat-sub">{fmt(pipelineTotal)} pending</div>
-          {quoteDrafts > 0 && <div className={s.accentText} style={{ color: SECTION_COLORS.quotes.accent }}>{quoteDrafts} draft{quoteDrafts > 1 ? "s" : ""} to send</div>}
-        </div>
       </div>
 
       {/* ── ROW 3: This Week Schedule (full width, week grid) ── */}

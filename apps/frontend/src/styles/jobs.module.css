@@ -1,5 +1,6 @@
 /* ── Jobs summary strip ── */
-.summaryGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.summaryGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 767px) { .summaryGrid { grid-template-columns: repeat(2, 1fr); } }
 .summaryCard { padding: 14px 16px; cursor: pointer; }
 
 /* ── Jobs toolbar ── */

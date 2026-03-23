@@ -46,7 +46,7 @@ const OrdersPage = () => {
   };
   const handleDelete = (type, id) => { if (!window.confirm("Delete this order?")) return; (type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.filter(o => o.id !== id)); };
   const orderStatusColors = { Draft: "#888", Approved: "#7c3aed", Sent: "#2563eb", Viewed: "#0891b2", Accepted: "#16a34a", Completed: "#111", Billed: "#059669", Cancelled: "#dc2626" };
-  const summaryStatuses = ORDER_STATUSES.filter(s => s !== "Cancelled");
+  const summaryStatuses = ["Draft", "Sent", "Accepted", "Completed"];
   return (
     <div>
       {/* ── Summary strip */}

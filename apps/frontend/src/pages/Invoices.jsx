@@ -125,7 +125,7 @@ const Invoices = () => {
   });
 
   const invStatusColors = { draft: "#888", sent: "#2563eb", paid: "#16a34a", overdue: "#dc2626", void: "#555" };
-  const invStatusLabels = { draft: "Draft", sent: "Sent", paid: "Paid", overdue: "Overdue", void: "Void" };
+  const invStatusLabels = { draft: "Draft", sent: "Sent", paid: "Paid", overdue: "Overdue" };
 
   return (
     <div>

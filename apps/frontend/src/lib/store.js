@@ -141,6 +141,7 @@ export const useAppStore = create((set) => ({
         ...(data.workOrders ? { workOrders: data.workOrders } : {}),
         ...(data.purchaseOrders ? { purchaseOrders: data.purchaseOrders } : {}),
         ...(data.contractors ? { contractors: data.contractors } : {}),
+        ...(data.suppliers ? { suppliers: data.suppliers } : {}),
         templates: resolvedTemplates || seedData.templates,
         companyInfo: resolvedCompanyInfo || seedData.companyInfo,
         userPermissions: userPermsData || {},

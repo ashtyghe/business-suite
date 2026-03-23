@@ -4629,7 +4629,6 @@ export default function App() {
     return () => mq.removeEventListener('change', handler);
   }, []);
   const collapsed = sidebarCollapsed && isDesktop;
-  const [moreOpen, setMoreOpen] = useState(false);
   const [showQuickNote, setShowQuickNote] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -4709,15 +4708,12 @@ export default function App() {
     { id: "notes", label: "Notes", icon: "quotes" },
     { id: "reminders", label: "Reminders", icon: "notification", badge: overdueRemindersCount || null, badgeColor: "#dc2626" },
   ];
-  const moreNavItems = navItems.filter(n => !bottomNavIds.includes(n.id));
-  const moreIsActive = moreNavItems.some(n => n.id === page) && !bottomNavIds.includes(page);
 
   const pageTitles = { dashboard: "Dashboard", jobs: "Jobs", orders: "Orders", clients: "Clients", contractors: "Contractors", suppliers: "Suppliers", schedule: "Schedule", quotes: "Quotes", time: "Time Tracking", bills: "Bills & Costs", invoices: "Invoices", actions: "Actions", reminders: "Reminders", activity: "Activity Log", status: "System Status", settings: "Settings", files: "Files", calllog: "Call Log", assistant: "My Assistant", memory: "Caller Memory", account: "Account" };
 
   const navigate = (id) => {
     routerNavigate(ROUTE_MAP[id] || "/");
     setSidebarOpen(false);
-    setMoreOpen(false);
   };
 
   const toggleSidebarCollapse = () => {
@@ -4774,7 +4770,7 @@ export default function App() {
   }
 
   return (
-    <div className="jm-root" onClick={() => moreOpen && setMoreOpen(false)}>
+    <div className="jm-root">
       {loading && (
         <div className={sh.fullScreenOverlay}>
           <div className={sh.spinner} />
@@ -4936,25 +4932,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* More menu (slides up from bottom nav) */}
-      {moreOpen && (
-        <div className="jm-more-menu" onClick={e => e.stopPropagation()}>
-          {moreNavItems.map(n => {
-            const accent = (SECTION_COLORS[n.id] || SECTION_COLORS.activity)?.accent;
-            return (
-            <button key={n.id} className={`jm-more-menu-item ${page === n.id ? "active" : ""}`} onClick={() => navigate(n.id)}
-              onMouseEnter={e => { e.currentTarget.style.background = hexToRgba(accent, 0.12); e.currentTarget.style.color = '#fff'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = ''; }}
-              style={page === n.id ? { color: '#fff', background: hexToRgba(accent, 0.15) } : undefined}>
-              <Icon name={n.icon} size={16} />
-              {n.id === "time" ? "Time Tracking" : n.id === "bills" ? "Bills & Costs" : n.label}
-              {n.badge ? <span className="jm-more-badge" style={n.badgeColor ? { background: n.badgeColor, color: "#fff" } : undefined}>{n.badge}</span> : null}
-            </button>
-            );
-          })}
-        </div>
-      )}
-
       {/* Bottom navigation (mobile only) */}
       <div className="jm-bottom-nav">
         <div className="jm-bottom-nav-inner">
@@ -4972,19 +4949,6 @@ export default function App() {
             </button>
             );
           })}
-          {/* More button */}
-          <button
-            className={`jm-bottom-nav-item ${moreIsActive ? "active" : ""}`}
-            onClick={e => { e.stopPropagation(); setMoreOpen(o => !o); }}
-          >
-            {(pendingBillsCount + unpaidInvCount + overdueRemindersCount) > 0 && !moreIsActive
-              ? <span className="bnav-badge" style={overdueRemindersCount > 0 ? { background: "#dc2626", color: "#fff" } : undefined}>{pendingBillsCount + unpaidInvCount + overdueRemindersCount}</span>
-              : null}
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-              <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>
-            </svg>
-            <span>More</span>
-          </button>
         </div>
       </div>
       </>

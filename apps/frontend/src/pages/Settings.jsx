@@ -7,8 +7,9 @@ import { SECTION_COLORS, DEFAULT_COLUMNS, SEED_TEMPLATES } from "../fixtures/see
 import { supabase, inviteUser, updateStaffRecord, xeroOAuth, xeroSyncInvoice, xeroSyncBill, xeroSyncContact, xeroPollUpdates, xeroFetchAccounts, xeroGetMappings, xeroSaveMappings } from "../lib/supabase";
 import { adminResetUserPassword } from "../lib/auth";
 import { saveCompanyInfo as dbSaveCompanyInfo, saveTemplates as dbSaveTemplates, saveUserPermissions as dbSaveUserPermissions } from "../lib/db";
-import { hexToRgba } from "../utils/helpers";
+import { hexToRgba, formatAddress } from "../utils/helpers";
 import { TIMEZONE_OPTIONS } from "../utils/timezone";
+import AddressFields from '../components/AddressFields';
 import s from './Settings.module.css';
 
 // ── Settings Page ───────────────────────────────────────────────────────────
@@ -1153,10 +1154,7 @@ const Settings = () => {
                 <input value={companyForm.abn} onChange={e => updateCompanyField("abn", e.target.value)} className={s.inputLg} />
               </div>
             </div>
-            <div className={s.mb12}>
-              <label className={s.label}>Address</label>
-              <input value={companyForm.address} onChange={e => updateCompanyField("address", e.target.value)} className={s.inputLg} />
-            </div>
+            <AddressFields id="company-addr" values={{ address: companyForm.address, suburb: companyForm.suburb, state: companyForm.state, postcode: companyForm.postcode }} onChange={(field, val) => updateCompanyField(field, val)} />
             <div className={s.grid2}>
               <div>
                 <label className={s.label}>Phone</label>
@@ -1393,7 +1391,7 @@ const Settings = () => {
                   </div>
                   <div className={s.tplCompanyDetailBox}>
                     <div className={s.tplCompanyDetailLabel}>Address</div>
-                    <div className={s.tplCompanyDetailValue}>{companyInfo.address}</div>
+                    <div className={s.tplCompanyDetailValue}>{formatAddress(companyInfo)}</div>
                   </div>
                   <div className={s.tplCompanyDetailBox}>
                     <div className={s.tplCompanyDetailLabel}>Phone</div>
@@ -1472,7 +1470,7 @@ const Settings = () => {
                       {tplForm.logo && <img src={tplForm.logo} alt="Logo" className={s.previewLogo} />}
                       <div className={s.previewCompanyName} style={{ color: tplForm.accentColor }}>{companyInfo.companyName}</div>
                       {companyInfo.abn && <div className={s.previewSmallMuted}>ABN: {companyInfo.abn}</div>}
-                      <div className={s.previewSmallMuted}>{companyInfo.address}</div>
+                      <div className={s.previewSmallMuted}>{formatAddress(companyInfo)}</div>
                       <div className={s.previewSmallMuted}>{companyInfo.phone} | {tplForm.email}</div>
                     </div>
                     <div className={s.previewRight}>

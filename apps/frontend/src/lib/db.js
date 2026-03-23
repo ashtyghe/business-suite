@@ -38,6 +38,9 @@ function normalizeSite(row) {
     id: row.id,
     name: row.name,
     address: row.address || '',
+    suburb: row.suburb || '',
+    state: row.state || '',
+    postcode: row.postcode || '',
     contactName: row.contact_name || '',
     contactPhone: row.contact_phone || '',
   };
@@ -50,6 +53,9 @@ function normalizeCustomer(row, allSites) {
     email: row.email || '',
     phone: row.phone || '',
     address: row.address || '',
+    suburb: row.suburb || '',
+    state: row.state || '',
+    postcode: row.postcode || '',
     xeroContactId: row.xero_contact_id || null,
     sites: allSites.filter(s => s.customer_id === row.id).map(normalizeSite),
   };
@@ -308,6 +314,10 @@ function normalizeContractor(row) {
     contact: row.contact || '',
     email: row.email || '',
     phone: row.phone || '',
+    address: row.address || '',
+    suburb: row.suburb || '',
+    state: row.state || '',
+    postcode: row.postcode || '',
     trade: row.trade || '',
     abn: row.abn || '',
     notes: row.notes || '',
@@ -433,6 +443,10 @@ function denormalizeContractor(data) {
     contact: data.contact || null,
     email: data.email || null,
     phone: data.phone || null,
+    address: data.address || null,
+    suburb: data.suburb || null,
+    state: data.state || null,
+    postcode: data.postcode || null,
     trade: data.trade || null,
     abn: data.abn || null,
     notes: data.notes || null,
@@ -659,7 +673,7 @@ export async function fetchAll() {
 export async function createCustomer(data) {
   const row = await q(
     supabase.from('customers')
-      .insert({ name: data.name, email: data.email || null, phone: data.phone || null, address: data.address || null })
+      .insert({ name: data.name, email: data.email || null, phone: data.phone || null, address: data.address || null, suburb: data.suburb || null, state: data.state || null, postcode: data.postcode || null })
       .select().single()
   );
   return normalizeCustomer(row, []);
@@ -668,7 +682,7 @@ export async function createCustomer(data) {
 export async function updateCustomer(id, data) {
   const row = await q(
     supabase.from('customers')
-      .update({ name: data.name, email: data.email || null, phone: data.phone || null, address: data.address || null })
+      .update({ name: data.name, email: data.email || null, phone: data.phone || null, address: data.address || null, suburb: data.suburb || null, state: data.state || null, postcode: data.postcode || null })
       .eq('id', id).select().single()
   );
   return row;
@@ -683,7 +697,7 @@ export async function deleteCustomer(id) {
 export async function createSite(clientId, data) {
   const row = await q(
     supabase.from('sites')
-      .insert({ customer_id: clientId, name: data.name, address: data.address || null, contact_name: data.contactName || null, contact_phone: data.contactPhone || null })
+      .insert({ customer_id: clientId, name: data.name, address: data.address || null, suburb: data.suburb || null, state: data.state || null, postcode: data.postcode || null, contact_name: data.contactName || null, contact_phone: data.contactPhone || null })
       .select().single()
   );
   return normalizeSite(row);
@@ -692,7 +706,7 @@ export async function createSite(clientId, data) {
 export async function updateSite(id, data) {
   const row = await q(
     supabase.from('sites')
-      .update({ name: data.name, address: data.address || null, contact_name: data.contactName || null, contact_phone: data.contactPhone || null })
+      .update({ name: data.name, address: data.address || null, suburb: data.suburb || null, state: data.state || null, postcode: data.postcode || null, contact_name: data.contactName || null, contact_phone: data.contactPhone || null })
       .eq('id', id).select().single()
   );
   return normalizeSite(row);
@@ -1105,6 +1119,62 @@ export async function updateSupplier(id, data) {
 
 export async function deleteSupplier(id) {
   return qStrict(supabase.from('suppliers').delete().eq('id', id));
+}
+
+// ── Suppliers ──────────────────────────────────────────────────────────────
+
+function normalizeSupplier(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    contact: row.contact || '',
+    email: row.email || '',
+    phone: row.phone || '',
+    address: row.address || '',
+    suburb: row.suburb || '',
+    state: row.state || '',
+    postcode: row.postcode || '',
+    abn: row.abn || '',
+    notes: row.notes || '',
+  };
+}
+
+function denormalizeSupplier(data) {
+  return {
+    name: data.name,
+    contact: data.contact || null,
+    email: data.email || null,
+    phone: data.phone || null,
+    address: data.address || null,
+    suburb: data.suburb || null,
+    state: data.state || null,
+    postcode: data.postcode || null,
+    abn: data.abn || null,
+    notes: data.notes || null,
+  };
+}
+
+export async function fetchSuppliers() {
+  const rows = await q(supabase.from('suppliers').select('*').order('name'));
+  return rows.map(normalizeSupplier);
+}
+
+export async function createSupplier(data) {
+  const row = await q(
+    supabase.from('suppliers').insert(denormalizeSupplier(data)).select().single()
+  );
+  return normalizeSupplier(row);
+}
+
+export async function updateSupplier(id, data) {
+  const row = await q(
+    supabase.from('suppliers').update(denormalizeSupplier(data)).eq('id', id).select().single()
+  );
+  return normalizeSupplier(row);
+}
+
+export async function deleteSupplier(id) {
+  return q(supabase.from('suppliers').delete().eq('id', id));
 }
 
 // ── Phases (Gantt) ────────────────────────────────────────────────────────

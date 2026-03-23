@@ -4,6 +4,10 @@
  */
 
 const fmt = (n) => "$" + Number(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+const fmtAddr = ({ address, suburb, state, postcode } = {}) => {
+  if (suburb || state || postcode) return [address, [suburb, state, postcode].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  return address || "";
+};
 const fmtDate = (d) => {
   if (!d) return "—";
   const dt = new Date(d + (d.includes("T") ? "" : "T00:00:00"));
@@ -99,7 +103,7 @@ export function buildQuotePdfHtml({ quote, job, client, company, template, accep
       <div class="party-label">From</div>
       <div class="party-name">${esc(company?.companyName || "FieldOps")}</div>
       ${company?.abn ? `<div class="party-detail">ABN: ${esc(company.abn)}</div>` : ""}
-      ${company?.address ? `<div class="party-detail">${esc(company.address)}</div>` : ""}
+      ${fmtAddr(company) ? `<div class="party-detail">${esc(fmtAddr(company))}</div>` : ""}
       ${company?.phone ? `<div class="party-detail">${esc(company.phone)}</div>` : ""}
       ${company?.email ? `<div class="party-detail">${esc(company.email)}</div>` : ""}
     </div>
@@ -108,7 +112,7 @@ export function buildQuotePdfHtml({ quote, job, client, company, template, accep
       <div class="party-name">${esc(client?.name || "—")}</div>
       ${client?.email ? `<div class="party-detail">${esc(client.email)}</div>` : ""}
       ${client?.phone ? `<div class="party-detail">${esc(client.phone)}</div>` : ""}
-      ${client?.address ? `<div class="party-detail">${esc(client.address)}</div>` : ""}
+      ${fmtAddr(client) ? `<div class="party-detail">${esc(fmtAddr(client))}</div>` : ""}
     </div>
   </div>
 
@@ -167,7 +171,7 @@ export function buildInvoicePdfHtml({ invoice, job, client, company, template })
       <div class="party-label">From</div>
       <div class="party-name">${esc(company?.companyName || "FieldOps")}</div>
       ${company?.abn ? `<div class="party-detail">ABN: ${esc(company.abn)}</div>` : ""}
-      ${company?.address ? `<div class="party-detail">${esc(company.address)}</div>` : ""}
+      ${fmtAddr(company) ? `<div class="party-detail">${esc(fmtAddr(company))}</div>` : ""}
       ${company?.phone ? `<div class="party-detail">${esc(company.phone)}</div>` : ""}
       ${company?.email ? `<div class="party-detail">${esc(company.email)}</div>` : ""}
     </div>
@@ -176,7 +180,7 @@ export function buildInvoicePdfHtml({ invoice, job, client, company, template })
       <div class="party-name">${esc(client?.name || "—")}</div>
       ${client?.email ? `<div class="party-detail">${esc(client.email)}</div>` : ""}
       ${client?.phone ? `<div class="party-detail">${esc(client.phone)}</div>` : ""}
-      ${client?.address ? `<div class="party-detail">${esc(client.address)}</div>` : ""}
+      ${fmtAddr(client) ? `<div class="party-detail">${esc(fmtAddr(client))}</div>` : ""}
     </div>
   </div>
 
@@ -259,7 +263,7 @@ export function buildOrderPdfHtml({ type, order, job, company, template, acceptU
       <div class="party-label">From</div>
       <div class="party-name">${esc(company?.companyName || "FieldOps")}</div>
       ${company?.abn ? `<div class="party-detail">ABN: ${esc(company.abn)}</div>` : ""}
-      ${company?.address ? `<div class="party-detail">${esc(company.address)}</div>` : ""}
+      ${fmtAddr(company) ? `<div class="party-detail">${esc(fmtAddr(company))}</div>` : ""}
     </div>
     <div>
       <div class="party-label">${partyLabel}</div>

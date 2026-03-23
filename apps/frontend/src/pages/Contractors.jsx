@@ -6,6 +6,8 @@ import { StatusBadge, OrderStatusBadge, SectionDrawer, BILL_STATUS_LABELS } from
 import { ORDER_TERMINAL, SECTION_COLORS, ViewField, CONTRACTOR_TRADES, STATUS_COLORS } from "../fixtures/seedData.jsx";
 import { extractDocumentFromImage, sendEmail } from "../lib/supabase";
 import { createContractor, updateContractor, deleteContractor as dbDeleteContractor, createContractorDoc, updateContractorDoc, deleteContractorDoc } from "../lib/db";
+import AddressFields from '../components/AddressFields';
+import { formatAddress } from '../utils/helpers';
 import s from './Contractors.module.css';
 
 const Contractors = () => {
@@ -14,7 +16,7 @@ const Contractors = () => {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [mode, setMode] = useState("edit");
-  const [form, setForm] = useState({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" });
+  const [form, setForm] = useState({ name: "", contact: "", email: "", phone: "", address: "", suburb: "", state: "", postcode: "", trade: "Other", abn: "", notes: "" });
   const [search, setSearch] = useState("");
   const [filterTrade, setFilterTrade] = useState("all");
   const [showDocForm, setShowDocForm] = useState(false);
@@ -43,13 +45,13 @@ const Contractors = () => {
 
   const filtered = contractors.filter(c => {
     const q = search.toLowerCase();
-    const matchSearch = !search || c.name.toLowerCase().includes(q) || (c.contact || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q) || (c.trade || "").toLowerCase().includes(q) || (c.phone || "").toLowerCase().includes(q) || (c.abn || "").toLowerCase().includes(q) || (c.notes || "").toLowerCase().includes(q) || (c.complianceDocs || []).some(d => (d.name || d.type || "").toLowerCase().includes(q));
+    const matchSearch = !search || c.name.toLowerCase().includes(q) || (c.contact || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q) || (c.trade || "").toLowerCase().includes(q) || (c.phone || "").toLowerCase().includes(q) || (c.abn || "").toLowerCase().includes(q) || (c.notes || "").toLowerCase().includes(q) || (c.address || "").toLowerCase().includes(q) || (c.suburb || "").toLowerCase().includes(q) || (c.state || "").toLowerCase().includes(q) || (c.postcode || "").toLowerCase().includes(q) || (c.complianceDocs || []).some(d => (d.name || d.type || "").toLowerCase().includes(q));
     const matchTrade = filterTrade === "all" || c.trade === filterTrade;
     return matchSearch && matchTrade;
   });
   const trades = [...new Set(contractors.map(c => c.trade).filter(Boolean))].sort();
 
-  const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", trade: "Other", abn: "", notes: "" }); setShowDocForm(false); setShowModal(true); };
+  const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", address: "", suburb: "", state: "", postcode: "", trade: "Other", abn: "", notes: "" }); setShowDocForm(false); setShowModal(true); };
   const openEdit = (c) => { setEditItem(c); setMode("view"); setForm(c); setShowDocForm(false); setShowModal(true); };
   const save = async () => {
     try {
@@ -285,6 +287,7 @@ const Contractors = () => {
                   <ViewField label="Contact Person" value={form.contact} />
                   <ViewField label="Email" value={form.email} />
                   <ViewField label="Phone" value={form.phone} />
+                  <ViewField label="Address" value={formatAddress(form)} />
                   <ViewField label="Trade" value={form.trade} />
                   <ViewField label="ABN" value={form.abn} />
                   <ViewField label="Notes" value={form.notes} />
@@ -391,6 +394,7 @@ const Contractors = () => {
                   <div className="form-group"><label>Contact Person</label><input className="form-control" value={form.contact} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} /></div>
                   <div className="form-group"><label>Email</label><input className="form-control" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
                   <div className="form-group"><label>Phone</label><input className="form-control" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+                  <AddressFields id="contractor-addr" values={{ address: form.address, suburb: form.suburb, state: form.state, postcode: form.postcode }} onChange={(field, val) => setForm(f => ({ ...f, [field]: val }))} />
                   <div className="form-group"><label>Trade</label><select className="form-control" value={form.trade} onChange={e => setForm(f => ({ ...f, trade: e.target.value }))}>{CONTRACTOR_TRADES.map(t => <option key={t}>{t}</option>)}</select></div>
                   <div className="form-group"><label>ABN</label><input className="form-control" value={form.abn} onChange={e => setForm(f => ({ ...f, abn: e.target.value }))} /></div>
                   <div className="form-group"><label>Notes</label><textarea className="form-control" rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>

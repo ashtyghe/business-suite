@@ -4,6 +4,8 @@ import { createCustomer, updateCustomer, deleteCustomer, createSite, updateSite,
 import { SECTION_COLORS, ViewField } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import { StatusBadge, SectionDrawer } from '../components/shared';
+import AddressFields from '../components/AddressFields';
+import { formatAddress } from '../utils/helpers';
 import s from './Clients.module.css';
 
 const Clients = () => {
@@ -12,7 +14,7 @@ const Clients = () => {
   const [showModal, setShowModal] = useState(false);
   const [editClient, setEditClient] = useState(null);
   const [clientMode, setClientMode] = useState("edit");
-  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", sites: [], mainContact: { name: "", phone: "", email: "" }, accountsContact: { name: "", phone: "", email: "" }, rates: { labourRate: 0, materialMargin: 0, subcontractorMargin: 0 } });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", suburb: "", state: "", postcode: "", sites: [], mainContact: { name: "", phone: "", email: "" }, accountsContact: { name: "", phone: "", email: "" }, rates: { labourRate: 0, materialMargin: 0, subcontractorMargin: 0 } });
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [expandedSites, setExpandedSites] = useState({});
@@ -20,7 +22,7 @@ const Clients = () => {
   const [showSiteModal, setShowSiteModal] = useState(false);
   const [editSite, setEditSite] = useState(null);
   const [siteClientId, setSiteClientId] = useState(null);
-  const [siteForm, setSiteForm] = useState({ name: "", address: "", contactName: "", contactPhone: "", contactEmail: "" });
+  const [siteForm, setSiteForm] = useState({ name: "", address: "", suburb: "", state: "", postcode: "", contactName: "", contactPhone: "", contactEmail: "" });
 
   const filtered = clients.filter(c => {
     const q = search.toLowerCase();
@@ -30,6 +32,9 @@ const Clients = () => {
       (c.email || "").toLowerCase().includes(q) ||
       (c.phone || "").toLowerCase().includes(q) ||
       (c.address || "").toLowerCase().includes(q) ||
+      (c.suburb || "").toLowerCase().includes(q) ||
+      (c.state || "").toLowerCase().includes(q) ||
+      (c.postcode || "").toLowerCase().includes(q) ||
       (c.mainContact?.name || "").toLowerCase().includes(q) ||
       (c.mainContact?.phone || "").toLowerCase().includes(q) ||
       (c.mainContact?.email || "").toLowerCase().includes(q) ||
@@ -45,7 +50,7 @@ const Clients = () => {
   const openNew = () => {
     setEditClient(null);
     setClientMode("edit");
-    setForm({ name: "", email: "", phone: "", address: "", sites: [], mainContact: { name: "", phone: "", email: "" }, accountsContact: { name: "", phone: "", email: "" }, rates: { labourRate: 0, materialMargin: 0, subcontractorMargin: 0 } });
+    setForm({ name: "", email: "", phone: "", address: "", suburb: "", state: "", postcode: "", sites: [], mainContact: { name: "", phone: "", email: "" }, accountsContact: { name: "", phone: "", email: "" }, rates: { labourRate: 0, materialMargin: 0, subcontractorMargin: 0 } });
     setShowModal(true);
   };
   const openEdit = (c) => {
@@ -83,7 +88,7 @@ const Clients = () => {
   const openNewSite = (clientId) => {
     setSiteClientId(clientId);
     setEditSite(null);
-    setSiteForm({ name: "", address: "", contactName: "", contactPhone: "", contactEmail: "" });
+    setSiteForm({ name: "", address: "", suburb: "", state: "", postcode: "", contactName: "", contactPhone: "", contactEmail: "" });
     setShowSiteModal(true);
   };
   const openEditSite = (clientId, site) => {
@@ -187,7 +192,7 @@ const Clients = () => {
                     <div className={s.contactRow}>
                       {client.email  && <span className={s.contactDetail}>📧 {client.email}</span>}
                       {client.phone  && <span className={s.contactDetail}>📞 {client.phone}</span>}
-                      {client.address && <span className={s.contactDetail}>📍 {client.address}</span>}
+                      {formatAddress(client) && <span className={s.contactDetail}>📍 {formatAddress(client)}</span>}
                     </div>
                     {client.mainContact?.name && <div className={s.mainContactLabel}>👤 {client.mainContact.name} — Main Contact</div>}
                     {client.rates?.labourRate > 0 && <div className={s.labourRate}>${client.rates.labourRate}/hr labour rate</div>}
@@ -236,7 +241,7 @@ const Clients = () => {
                         <div className={s.siteIcon}>🏢</div>
                         <div className={s.siteContent}>
                           <div className={s.siteName}>{site.name}</div>
-                          {site.address && <div className={s.siteAddress}>📍 {site.address}</div>}
+                          {formatAddress(site) && <div className={s.siteAddress}>📍 {formatAddress(site)}</div>}
                           {(site.contactName || site.contactPhone || site.contactEmail) && (
                             <div className={s.siteContactRow}>
                               {site.contactName  && <span className={s.siteContactName}>👤 {site.contactName}</span>}
@@ -306,7 +311,7 @@ const Clients = () => {
                 <ViewField label="Email" value={form.email} />
                 <ViewField label="Phone" value={form.phone} />
               </div>
-              <ViewField label="Address" value={form.address} />
+              <ViewField label="Address" value={formatAddress(form)} />
               {/* Contact cards */}
               <div className={s.contactCardsGrid}>
                 {form.mainContact?.name && (
@@ -373,7 +378,7 @@ const Clients = () => {
                   {clientSites.map(st => (
                     <div key={st.id} className={s.viewSiteCard}>
                       <div className={s.viewSiteName}>{st.name}</div>
-                      {st.address && <div className={s.viewSiteAddress}>{st.address}</div>}
+                      {formatAddress(st) && <div className={s.viewSiteAddress}>{formatAddress(st)}</div>}
                       {st.contactName && <div className={s.viewSiteContact}>👤 {st.contactName}{st.contactPhone ? ` · ${st.contactPhone}` : ""}{st.contactEmail ? ` · ${st.contactEmail}` : ""}</div>}
                     </div>
                   ))}
@@ -387,7 +392,7 @@ const Clients = () => {
               <div className="form-group"><label className="form-label">Email</label><input type="email" className="form-control" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
               <div className="form-group"><label className="form-label">Phone</label><input className="form-control" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
             </div>
-            <div className="form-group"><label className="form-label">Address</label><input className="form-control" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
+            <AddressFields id="client-addr" values={{ address: form.address, suburb: form.suburb, state: form.state, postcode: form.postcode }} onChange={(field, val) => setForm(f => ({ ...f, [field]: val }))} />
             {/* Main Contact */}
             <div className={s.formSection}>
               <div className={s.formSectionLabel}>Main Contact</div>
@@ -441,7 +446,7 @@ const Clients = () => {
         >
           <div className={s.drawerPadding}>
             <div className="form-group"><label className="form-label">Site Name *</label><input className="form-control" value={siteForm.name} onChange={e => setSiteForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Head Office, Warehouse, Site A" /></div>
-            <div className="form-group"><label className="form-label">Address</label><input className="form-control" value={siteForm.address} onChange={e => setSiteForm(f => ({ ...f, address: e.target.value }))} placeholder="Physical address" /></div>
+            <AddressFields id="site-addr" values={{ address: siteForm.address, suburb: siteForm.suburb, state: siteForm.state, postcode: siteForm.postcode }} onChange={(field, val) => setSiteForm(f => ({ ...f, [field]: val }))} />
             <div className={s.siteSectionDivider}>
               <div className={s.formSectionLabel}>Site Contact</div>
               <div className={s.threeColGrid}>

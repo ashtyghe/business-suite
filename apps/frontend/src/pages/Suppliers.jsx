@@ -3,8 +3,9 @@ import { useAppStore } from '../lib/store';
 import {
   SECTION_COLORS, ORDER_TERMINAL, ViewField,
 } from '../fixtures/seedData.jsx';
-import { fmt } from '../utils/helpers';
+import { fmt, formatAddress } from '../utils/helpers';
 import { Icon } from '../components/Icon';
+import AddressFields from '../components/AddressFields';
 import {
   OrderStatusBadge, SectionDrawer,
 } from '../components/shared';
@@ -17,15 +18,15 @@ const Suppliers = () => {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [mode, setMode] = useState("edit");
-  const [form, setForm] = useState({ name: "", contact: "", email: "", phone: "", abn: "", notes: "" });
+  const [form, setForm] = useState({ name: "", contact: "", email: "", phone: "", address: "", suburb: "", state: "", postcode: "", abn: "", notes: "" });
   const [search, setSearch] = useState("");
 
   const filtered = suppliers.filter(s => {
     const q = search.toLowerCase();
-    return !search || s.name.toLowerCase().includes(q) || (s.contact || "").toLowerCase().includes(q) || (s.email || "").toLowerCase().includes(q) || (s.phone || "").toLowerCase().includes(q) || (s.abn || "").toLowerCase().includes(q) || (s.notes || "").toLowerCase().includes(q) || (s.address || "").toLowerCase().includes(q);
+    return !search || s.name.toLowerCase().includes(q) || (s.contact || "").toLowerCase().includes(q) || (s.email || "").toLowerCase().includes(q) || (s.phone || "").toLowerCase().includes(q) || (s.abn || "").toLowerCase().includes(q) || (s.notes || "").toLowerCase().includes(q) || (s.address || "").toLowerCase().includes(q) || (s.suburb || "").toLowerCase().includes(q) || (s.state || "").toLowerCase().includes(q) || (s.postcode || "").toLowerCase().includes(q);
   });
 
-  const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", abn: "", notes: "" }); setShowModal(true); };
+  const openNew = () => { setEditItem(null); setMode("edit"); setForm({ name: "", contact: "", email: "", phone: "", address: "", suburb: "", state: "", postcode: "", abn: "", notes: "" }); setShowModal(true); };
   const openEdit = (s) => { setEditItem(s); setMode("view"); setForm(s); setShowModal(true); };
   const save = async () => {
     try {
@@ -146,6 +147,7 @@ const Suppliers = () => {
                   <ViewField label="Contact" value={form.contact} />
                   <ViewField label="Email" value={form.email} />
                   <ViewField label="Phone" value={form.phone} />
+                  <ViewField label="Address" value={formatAddress(form)} />
                   <ViewField label="ABN" value={form.abn} />
                   <ViewField label="Notes" value={form.notes} />
                   {linkedPOs.length > 0 && (
@@ -179,6 +181,7 @@ const Suppliers = () => {
                   <div className="form-group"><label>Contact</label><input className="form-control" value={form.contact} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} /></div>
                   <div className="form-group"><label>Email</label><input className="form-control" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
                   <div className="form-group"><label>Phone</label><input className="form-control" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+                  <AddressFields id="supplier-addr" values={{ address: form.address, suburb: form.suburb, state: form.state, postcode: form.postcode }} onChange={(field, val) => setForm(f => ({ ...f, [field]: val }))} />
                   <div className="form-group"><label>ABN</label><input className="form-control" value={form.abn} onChange={e => setForm(f => ({ ...f, abn: e.target.value }))} /></div>
                   <div className="form-group"><label>Notes</label><textarea className="form-control" rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
                 </>

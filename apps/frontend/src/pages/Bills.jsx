@@ -387,7 +387,7 @@ const Bills = () => {
                     const gst = b.amount - exGst;
                     const onCharge = exGst * (1 + (b.markup||0) / 100);
                     return (
-                      <tr key={b.id} style={{ background: selectedIds.includes(b.id) ? "#f5f8ff" : "transparent" }}>
+                      <tr key={b.id} onClick={() => openEdit(b)} style={{ background: selectedIds.includes(b.id) ? "#f5f8ff" : "transparent", cursor: "pointer" }}>
                         <td onClick={e => e.stopPropagation()}>
                           <input type="checkbox" checked={selectedIds.includes(b.id)} onChange={() => toggleSelect(b.id)} />
                         </td>
@@ -408,7 +408,7 @@ const Bills = () => {
                           {b.markup > 0 ? <span className={s.markupValue}>{b.markup}% → <strong>{fmt(onCharge)}</strong></span> : <span className={s.markupDash}>—</span>}
                         </td>
                         <td><BillStatusBadge status={b.status} /> <XeroSyncBadge syncStatus={b.xeroSyncStatus} xeroId={b.xeroBillId} /></td>
-                        <td>
+                        <td onClick={e => e.stopPropagation()}>
                           <div className={s.listActions}>
                             {b.status === "inbox"    && <button className="btn btn-ghost btn-xs" title="Link" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}><Icon name="arrow_right" size={11} /></button>}
                             {canApprove && b.status === "linked"   && <button className={`btn btn-ghost btn-xs ${s.approveColor}`} title="Approve" onClick={() => setStatus(b.id, "approved")}><Icon name="check" size={11} /></button>}

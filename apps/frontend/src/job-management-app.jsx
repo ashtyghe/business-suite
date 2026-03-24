@@ -3988,7 +3988,7 @@ const TimeCalendar = ({ timeEntries, selectedWorker, onDayClick, calMonth, setCa
       <div className={tm.calHeader}>
         <button className={`btn btn-ghost btn-sm ${tm.calNavBtn}`} onClick={() => setCalMonth(m => m - 1)}>‹</button>
         <span className={tm.calMonthLabel}>{monthLabel}</span>
-        <button className="btn btn-ghost btn-sm" onClick={() => setCalMonth(m => m + 1)} className={tm.calNavBtn}>›</button>
+        <button className={`btn btn-ghost btn-sm ${tm.calNavBtn}`} onClick={() => setCalMonth(m => m + 1)}>›</button>
       </div>
       <div className={tm.calGrid}>
         {DOW.map(d => <div key={d} className={tm.calDow}>{d}</div>)}
@@ -4019,7 +4019,7 @@ const WeekStrip = ({ timeEntries, selectedWorker, weekOffset, setWeekOffset, sel
       <div className={tm.weekStripHeader}>
         <button className={`btn btn-ghost btn-sm ${tm.weekStripNavBtn}`} onClick={() => setWeekOffset(w => w - 1)}>‹</button>
         <span className={tm.weekStripLabel}>{weekLabel}</span>
-        <button className="btn btn-ghost btn-sm" onClick={() => setWeekOffset(w => w + 1)} className={tm.weekStripNavBtn}>›</button>
+        <button className={`btn btn-ghost btn-sm ${tm.weekStripNavBtn}`} onClick={() => setWeekOffset(w => w + 1)}>›</button>
       </div>
       <div className={tm.weekStripDays}>
         {days.map(d => {
@@ -4400,7 +4400,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
           <div className={bl.sectionBorderOnly}>
             <div className={`form-group ${jb.formGroupNoMb}`}>
               <label className="form-label">Internal Notes</label>
-              <textarea className="form-control" value={form.notes} onChange={e => setForm(f=>({...f, notes: e.target.value}))} placeholder="Any notes for approver, discrepancies, receipt condition…" className={pg.u389} />
+              <textarea className="form-control" value={form.notes} onChange={e => setForm(f=>({...f, notes: e.target.value}))} placeholder="Any notes for approver, discrepancies, receipt condition…" />
             </div>
           </div>
 
@@ -4522,7 +4522,7 @@ const ChangePasswordModal = ({ onClose }) => {
         {success ? (
           <>
             <div className={pg.u666}>Password updated successfully.</div>
-            <button className="btn btn-ghost btn-sm" onClick={onClose} className={pg.p2_43}>Close</button>
+            <button className={`btn btn-ghost btn-sm ${pg.p2_43}`} onClick={onClose}>Close</button>
           </>
         ) : (
           <form onSubmit={save}>

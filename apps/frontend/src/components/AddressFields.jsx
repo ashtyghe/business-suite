@@ -42,21 +42,32 @@ export default function AddressFields({ values, onChange, id = "addr" }) {
     let mounted = true;
     loadGoogleMapsScript().then(google => {
       if (!google || !mounted || !inputRef.current || autocompleteRef.current) return;
-      const ac = new google.maps.places.Autocomplete(inputRef.current, {
-        types: ["address"],
-        componentRestrictions: { country: "au" },
-        fields: ["address_components"],
-      });
-      ac.addListener("place_changed", () => {
-        const place = ac.getPlace();
-        if (!place.address_components) return;
-        const parsed = parseGooglePlace(place);
-        onChange("address", parsed.address);
-        onChange("suburb", parsed.suburb);
-        onChange("state", parsed.state);
-        onChange("postcode", parsed.postcode);
-      });
-      autocompleteRef.current = ac;
+      try {
+        const ac = new google.maps.places.Autocomplete(inputRef.current, {
+          types: ["address"],
+          componentRestrictions: { country: "au" },
+          fields: ["address_components"],
+        });
+        ac.addListener("place_changed", () => {
+          const place = ac.getPlace();
+          if (!place.address_components) return;
+          const parsed = parseGooglePlace(place);
+          onChange("address", parsed.address);
+          onChange("suburb", parsed.suburb);
+          onChange("state", parsed.state);
+          onChange("postcode", parsed.postcode);
+        });
+        autocompleteRef.current = ac;
+        // If Google flags the input with error styling, clean it up so manual entry still works
+        const observer = new MutationObserver(() => {
+          if (inputRef.current?.style.backgroundImage) {
+            inputRef.current.style.backgroundImage = "";
+            inputRef.current.style.backgroundColor = "";
+          }
+        });
+        if (inputRef.current) observer.observe(inputRef.current, { attributes: true, attributeFilter: ["style"] });
+        return () => observer.disconnect();
+      } catch { /* Google Maps failed — fields still work for manual entry */ }
     }).catch(() => {});
     return () => { mounted = false; };
   }, []);

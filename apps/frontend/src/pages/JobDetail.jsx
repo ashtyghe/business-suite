@@ -290,7 +290,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
             <label className="form-label">Job Title *</label>
             <input className="form-control" value={detailForm.title} onChange={e => setDetailForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
           </div>
-          <div className="grid-2">
+          <div className={s.grid2Fixed}>
             <div className="form-group">
               <label className="form-label">Client *</label>
               <select className="form-control" value={detailForm.clientId} onChange={e => setDetailForm(f => ({ ...f, clientId: e.target.value, siteId: "" }))}>

@@ -1,5 +1,5 @@
 import { OrderIcon, OrderStatusBadge, DueDateChip, OrderProgressBar } from "./shared";
-import { orderFmtDate } from "../utils/helpers";
+import { orderFmtDate, orderJobDisplay } from "../utils/helpers";
 import { ORDER_TERMINAL } from "../fixtures/seedData.jsx";
 import s from './OrderCard.module.css';
 

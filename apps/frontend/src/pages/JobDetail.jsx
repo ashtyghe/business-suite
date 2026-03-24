@@ -27,6 +27,7 @@ import {
 } from "../components/shared";
 import { BillModal } from "../components/BillModal";
 import { OrderCard } from "../components/OrderCard";
+import { OrderDrawer } from "../components/OrderDrawer";
 import {
   TEAM, SECTION_COLORS, ViewField,
   ORDER_CONTRACTORS, ORDER_SUPPLIERS, ORDER_UNITS,
@@ -50,9 +51,10 @@ import s from './JobDetail.module.css';
 
 // ── Job Detail Drawer ─────────────────────────────────────────────────────────
 const JobDetail = ({ job, onClose, onEdit }) => {
-  const { clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, jobs, setJobs, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders } = useAppStore();
+  const { clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, jobs, setJobs, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, companyInfo } = useAppStore();
   const [tab, setTab] = useState("overview");
   const [detailMode, setDetailMode] = useState("view");
+  const [orderModal, setOrderModal] = useState(null);
   const [detailForm, setDetailForm] = useState({ title: job.title, clientId: job.clientId, siteId: job.siteId || null, status: job.status, priority: job.priority, description: job.description || "", startDate: job.startDate || "", dueDate: job.dueDate || "", assignedTo: job.assignedTo || [], tags: (job.tags || []).join(", "), estimate: job.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } });
   const client = clients.find(c => c.id === job.clientId);
 
@@ -803,25 +805,11 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                     : "No orders yet"}
                 </div>
                 <div className={s.ordersActions}>
-                  <button className="btn btn-primary btn-sm" style={{ background: "#2563eb" }} onClick={async () => {
-                    try {
-                      const saved = await createWorkOrder({ jobId: job.id });
-                      setWorkOrders(prev => [...prev, saved]);
-                    } catch (err) {
-                      console.warn("DB create failed, creating locally:", err.message);
-                      const newWo = { id: genId(), ref: "WO-" + String((workOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", contractorId: "", contractorName: "", contractorContact: "", contractorEmail: "", contractorPhone: "", trade: "", scopeOfWork: "", notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Work order created")] };
-                      setWorkOrders(prev => [...prev, newWo]);
-                    }
+                  <button className="btn btn-primary btn-sm" style={{ background: "#2563eb" }} onClick={() => {
+                    setOrderModal({ type: "wo", order: null });
                   }}><Icon name="plus" size={12} />New WO</button>
-                  <button className="btn btn-primary btn-sm" style={{ background: "#16a34a" }} onClick={async () => {
-                    try {
-                      const saved = await createPurchaseOrder({ jobId: job.id, lines: [{ desc: "", qty: 1, unit: "ea" }] });
-                      setPurchaseOrders(prev => [...prev, saved]);
-                    } catch (err) {
-                      console.warn("DB create failed, creating locally:", err.message);
-                      const newPo = { id: genId(), ref: "PO-" + String((purchaseOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", supplierId: "", supplierName: "", supplierContact: "", supplierEmail: "", supplierAbn: "", deliveryAddress: "", lines: [{ id: genId(), desc: "", qty: 1, unit: "ea" }], notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Purchase order created")] };
-                      setPurchaseOrders(prev => [...prev, newPo]);
-                    }
+                  <button className="btn btn-primary btn-sm" style={{ background: "#16a34a" }} onClick={() => {
+                    setOrderModal({ type: "po", order: null });
                   }}><Icon name="plus" size={12} />New PO</button>
                 </div>
               </div>
@@ -829,13 +817,21 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                 ? <div className={s.ordersEmpty}>No work orders or purchase orders linked to this job yet.</div>
                 : <div className="order-cards-grid">
                     {[...jobWOs.map(o => ({ ...o, _type: "wo" })), ...jobPOs.map(o => ({ ...o, _type: "po" }))].sort((a,b) => b.id - a.id).map(o => (
-                      <OrderCard key={o.id} type={o._type} order={o} jobs={jobs} onOpen={() => {}} onDelete={() => {
+                      <OrderCard key={o.id} type={o._type} order={o} jobs={jobs} onOpen={() => setOrderModal({ type: o._type, order: o })} onDelete={() => {
                         if (o._type === "wo") setWorkOrders(prev => prev.filter(x => x.id !== o.id));
                         else setPurchaseOrders(prev => prev.filter(x => x.id !== o.id));
                       }} />
                     ))}
                   </div>
               }
+              {orderModal && <OrderDrawer type={orderModal.type} order={orderModal.order} initialMode={orderModal.order ? "view" : "edit"} presetJobId={job.id} onSave={(order) => {
+                const target = orderModal.type === "wo" ? setWorkOrders : setPurchaseOrders;
+                target(prev => { const exists = prev.find(o => o.id === order.id); return exists ? prev.map(o => o.id === order.id ? order : o) : [...prev, order]; });
+                setOrderModal(m => m ? { ...m, order } : null);
+              }} onClose={() => setOrderModal(null)} jobs={jobs} companyInfo={companyInfo} onTransition={(updated) => {
+                (orderModal.type === "wo" ? setWorkOrders : setPurchaseOrders)(prev => prev.map(o => o.id === updated.id ? updated : o));
+                setOrderModal(m => m ? { ...m, order: updated } : null);
+              }} />}
             </div>
           )}
 

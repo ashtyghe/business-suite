@@ -61,8 +61,8 @@ const JobDetail = ({ job, onClose, onEdit }) => {
   const jobTime      = timeEntries.filter(t => t.jobId === job.id);
   const jobBills     = bills.filter(b => b.jobId === job.id);
   const jobSchedule  = schedule.filter(s => s.jobId === job.id).sort((a,b) => a.date > b.date ? 1 : -1);
-  const jobWOs = (workOrders || []).filter(o => o.jobId === job.id);
-  const jobPOs = (purchaseOrders || []).filter(o => o.jobId === job.id);
+  const jobWOs = (workOrders || []).filter(o => String(o.jobId) === String(job.id));
+  const jobPOs = (purchaseOrders || []).filter(o => String(o.jobId) === String(job.id));
 
   const totalQuoted   = jobQuotes.filter(q => q.status === "accepted").reduce((s,q) => s + calcQuoteTotal(q), 0);
   const totalInvoiced = jobInvoices.reduce((s,i) => s + calcQuoteTotal(i), 0);
@@ -112,6 +112,17 @@ const JobDetail = ({ job, onClose, onEdit }) => {
     setTimeForm({ worker: (staff && staff[0]?.name) || TEAM[0], date: new Date().toISOString().slice(0,10), startTime: "", endTime: "", hours: 1, description: "", billable: true });
   };
 
+  // Quick-add schedule entry
+  const [showSchedForm, setShowSchedForm] = useState(false);
+  const [schedForm, setSchedForm] = useState({ date: new Date().toISOString().slice(0, 10), assignedTo: [], notes: "" });
+  const saveScheduleEntry = async () => {
+    try {
+      const saved = await createScheduleEntry({ jobId: job.id, date: schedForm.date, assignedTo: schedForm.assignedTo, notes: schedForm.notes });
+      setSchedule(prev => [...prev, saved]);
+    } catch (err) { console.error("Failed to create schedule entry:", err); }
+    setShowSchedForm(false);
+    setSchedForm({ date: new Date().toISOString().slice(0, 10), assignedTo: [], notes: "" });
+  };
 
   const delTime = async (id) => {
     try {
@@ -727,8 +738,38 @@ const JobDetail = ({ job, onClose, onEdit }) => {
           {/* ── Schedule ── */}
           {tab === "schedule" && (
             <div>
-              {jobSchedule.length === 0
-                ? <div className="empty-state"><div className="empty-state-icon">📅</div><div className="empty-state-text">No schedule entries</div></div>
+              <div className={s.tabHeader}>
+                <div className={s.summaryText}>{jobSchedule.length} schedule entr{jobSchedule.length === 1 ? "y" : "ies"}</div>
+                <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.schedule.accent }} onClick={() => setShowSchedForm(v => !v)}><Icon name="plus" size={12} />{showSchedForm ? "Cancel" : "Schedule Day"}</button>
+              </div>
+              {showSchedForm && (
+                <div className={s.quickForm}>
+                  <div className={s.grid2Fixed}>
+                    <div className="form-group">
+                      <label className="form-label">Date *</label>
+                      <input type="date" className="form-control" value={schedForm.date} onChange={e => setSchedForm(f => ({ ...f, date: e.target.value }))} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Notes</label>
+                      <input className="form-control" value={schedForm.notes} onChange={e => setSchedForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional notes..." />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Assigned Team</label>
+                    <div className="multi-select">
+                      {(staff && staff.length > 0 ? staff.map(st => st.name) : TEAM).map(t => (
+                        <span key={t} className={`multi-option ${schedForm.assignedTo.includes(t) ? "selected" : ""}`}
+                          onClick={() => setSchedForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.schedule.accent }} onClick={saveScheduleEntry} disabled={!schedForm.date}><Icon name="check" size={12} /> Add to Schedule</button>
+                </div>
+              )}
+              {jobSchedule.length === 0 && !showSchedForm
+                ? <div className="empty-state"><div className="empty-state-icon">📅</div><div className="empty-state-text">No schedule entries</div><div className="empty-state-sub">Click "Schedule Day" to add one</div></div>
                 : jobSchedule.map(sch => {
                   const schClient = clients.find(c => c.id === job.clientId);
                   const schSite = schClient?.sites?.find(st => st.id === job.siteId);
@@ -762,13 +803,25 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                     : "No orders yet"}
                 </div>
                 <div className={s.ordersActions}>
-                  <button className="btn btn-primary btn-sm" style={{ background: "#2563eb" }} onClick={() => {
-                    const newWo = { id: genId(), ref: "WO-" + String((workOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", contractorId: "", contractorName: "", contractorContact: "", contractorEmail: "", contractorPhone: "", trade: "", scopeOfWork: "", notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Work order created")] };
-                    setWorkOrders(prev => [...prev, newWo]);
+                  <button className="btn btn-primary btn-sm" style={{ background: "#2563eb" }} onClick={async () => {
+                    try {
+                      const saved = await createWorkOrder({ jobId: job.id });
+                      setWorkOrders(prev => [...prev, saved]);
+                    } catch (err) {
+                      console.warn("DB create failed, creating locally:", err.message);
+                      const newWo = { id: genId(), ref: "WO-" + String((workOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", contractorId: "", contractorName: "", contractorContact: "", contractorEmail: "", contractorPhone: "", trade: "", scopeOfWork: "", notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Work order created")] };
+                      setWorkOrders(prev => [...prev, newWo]);
+                    }
                   }}><Icon name="plus" size={12} />New WO</button>
-                  <button className="btn btn-primary btn-sm" style={{ background: "#16a34a" }} onClick={() => {
-                    const newPo = { id: genId(), ref: "PO-" + String((purchaseOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", supplierId: "", supplierName: "", supplierContact: "", supplierEmail: "", supplierAbn: "", deliveryAddress: "", lines: [{ id: genId(), desc: "", qty: 1, unit: "ea" }], notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Purchase order created")] };
-                    setPurchaseOrders(prev => [...prev, newPo]);
+                  <button className="btn btn-primary btn-sm" style={{ background: "#16a34a" }} onClick={async () => {
+                    try {
+                      const saved = await createPurchaseOrder({ jobId: job.id, lines: [{ desc: "", qty: 1, unit: "ea" }] });
+                      setPurchaseOrders(prev => [...prev, saved]);
+                    } catch (err) {
+                      console.warn("DB create failed, creating locally:", err.message);
+                      const newPo = { id: genId(), ref: "PO-" + String((purchaseOrders || []).length + 1).padStart(3,"0"), status: "Draft", jobId: job.id, issueDate: orderToday(), dueDate: orderAddDays(14), poLimit: "", supplierId: "", supplierName: "", supplierContact: "", supplierEmail: "", supplierAbn: "", deliveryAddress: "", lines: [{ id: genId(), desc: "", qty: 1, unit: "ea" }], notes: "", internalNotes: "", attachments: [], auditLog: [makeLogEntry("Created","Purchase order created")] };
+                      setPurchaseOrders(prev => [...prev, newPo]);
+                    }
                   }}><Icon name="plus" size={12} />New PO</button>
                 </div>
               </div>

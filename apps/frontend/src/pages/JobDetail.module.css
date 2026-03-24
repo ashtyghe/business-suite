@@ -200,6 +200,14 @@
   margin-bottom: 14px;
 }
 
+.quickForm {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
 .summaryText {
   font-size: 13px;
   color: #888;

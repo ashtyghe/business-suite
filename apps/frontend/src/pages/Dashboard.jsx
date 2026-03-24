@@ -22,7 +22,7 @@ const Dashboard = ({ onNav }) => {
   // ── Section counts & metrics ──
   const activeJobs = jobs.filter(j => j.status === "in_progress").length;
   const completedJobs = jobs.filter(j => j.status === "completed").length;
-  const overdueJobs = jobs.filter(j => j.dueDate && daysUntil(j.dueDate) < 0 && j.status !== "completed" && j.status !== "cancelled").length;
+  const overdueJobs = jobs.filter(j => j.dueDate && daysUntil(j.dueDate) < 0 && j.status !== "completed" && j.status !== "cancelled");
   const activeWOs = workOrders.filter(wo => !["Cancelled", "Billed", "Completed"].includes(wo.status)).length;
   const overdueWOs = workOrders.filter(wo => wo.dueDate && daysUntil(wo.dueDate) < 0 && !["Cancelled", "Billed", "Completed"].includes(wo.status)).length;
   const woAwaitingAcceptance = workOrders.filter(wo => wo.status === "Sent").length;
@@ -59,6 +59,11 @@ const Dashboard = ({ onNav }) => {
   const totalInvoiced = invoices.reduce((s, inv) => s + calcQuoteTotal(inv), 0);
   const margin = totalInvoiced > 0 ? Math.round(((totalInvoiced - totalBillsCost) / totalInvoiced) * 100) : 0;
 
+  // ── New Row 2 KPIs ──
+  const jobsDueThisWeek = jobs.filter(j => j.dueDate && j.dueDate >= todayStr && j.dueDate <= endOfWeek && j.status !== "completed" && j.status !== "cancelled");
+  const jobsToBill = jobs.filter(j => j.status === "completed" && !invoices.some(inv => inv.jobId === j.id));
+  const unpaidInvoices = invoices.filter(i => ["sent", "overdue"].includes(i.status));
+
   // ── Lists ──
   const upcomingSchedule = [...schedule].filter(s => s.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 7);
   const todaySchedule = schedule.filter(s => s.date === todayStr);
@@ -75,7 +80,7 @@ const Dashboard = ({ onNav }) => {
 
   // ── Action items (things needing attention) ──
   const actionItems = [];
-  if (overdueJobs > 0) actionItems.push({ label: `${overdueJobs} overdue job${overdueJobs > 1 ? "s" : ""}`, color: "#dc2626", section: "jobs", icon: "jobs" });
+  if (overdueJobs.length > 0) actionItems.push({ label: `${overdueJobs.length} overdue job${overdueJobs.length > 1 ? "s" : ""}`, color: "#dc2626", section: "jobs", icon: "jobs" });
   if (quoteDrafts > 0) actionItems.push({ label: `${quoteDrafts} draft quote${quoteDrafts > 1 ? "s" : ""} to send`, color: SECTION_COLORS.quotes.accent, section: "quotes", icon: "quotes" });
   if (overdueWOs > 0) actionItems.push({ label: `${overdueWOs} overdue work order${overdueWOs > 1 ? "s" : ""}`, color: "#dc2626", section: "orders", icon: "orders" });
   if (woAwaitingAcceptance > 0) actionItems.push({ label: `${woAwaitingAcceptance} WO${woAwaitingAcceptance > 1 ? "s" : ""} awaiting acceptance`, color: SECTION_COLORS.wo.accent, section: "orders", icon: "orders" });
@@ -87,6 +92,30 @@ const Dashboard = ({ onNav }) => {
   const jobStatusColors = { draft: "#888", scheduled: "#0891b2", quoted: "#7c3aed", in_progress: "#ea580c", completed: "#16a34a" };
   const billStatusColors = { inbox: "#888", linked: "#2563eb", approved: "#059669", posted: "#111" };
   const billStatusLabels = { inbox: "Inbox", linked: "Linked", approved: "Approved", posted: "Posted" };
+
+  // ── Weather ──
+  const [weather, setWeather] = useState({});
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=-30.2963&longitude=153.1157&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=Australia%2FSydney&forecast_days=14");
+        const data = await res.json();
+        if (data.daily) {
+          const w = {};
+          data.daily.time.forEach((date, i) => {
+            w[date] = {
+              maxTemp: data.daily.temperature_2m_max[i],
+              minTemp: data.daily.temperature_2m_min[i],
+              rain: data.daily.precipitation_sum[i],
+              rainChance: data.daily.precipitation_probability_max[i],
+            };
+          });
+          setWeather(w);
+        }
+      } catch (err) { console.error("Weather fetch failed:", err); }
+    };
+    fetchWeather();
+  }, []);
 
   // ── AI Business Insight + Chat ──
   const [aiInsight, setAiInsight] = useState(null);
@@ -101,7 +130,7 @@ const Dashboard = ({ onNav }) => {
   const getKpiData = () => ({
     totalQuoted, revenueCollected, outstandingInv, outstandingInvCount,
     unpostedBills: unpostedBills.length, unpostedBillsTotal,
-    activeJobs, completedJobs, overdueJobs,
+    activeJobs, completedJobs, overdueJobs: overdueJobs.length,
     activeWOs, overdueWOs, woAwaitingAcceptance, activePOs, overduePOs,
     totalHours, billableHours, billableRatio, margin,
     pipelineTotal, quoteDrafts, todayScheduleCount: todaySchedule.length,
@@ -127,7 +156,6 @@ const Dashboard = ({ onNav }) => {
       const result = typeof data === "string" ? JSON.parse(data) : data;
       const insight = result?.insight || "No insight generated.";
       setAiInsight(insight);
-      // Reset chat with the initial insight as first assistant message
       setAiChatMessages([{ role: "assistant", content: insight }]);
     } catch (err) {
       setAiError(err.message);
@@ -170,7 +198,6 @@ const Dashboard = ({ onNav }) => {
     <div>
       {/* ── AI Business Insight + Chat ── */}
       {(() => {
-        // Parse insight text into cards
         const parseInsightCards = (text) => text ? text.split(/\n/).filter(l => l.trim()).reduce((cards, line) => {
           const trimmed = line.trim();
           const bulletMatch = trimmed.match(/^[•\-\*]\s*\*?\*?(.+?)\*?\*?:\s*(.+)/) || trimmed.match(/^[•\-\*]\s*\*?\*?(.+?)\*?\*?\s*[—–-]\s*(.+)/) || trimmed.match(/^\d+\.\s*\*?\*?(.+?)\*?\*?:\s*(.+)/);
@@ -195,7 +222,6 @@ const Dashboard = ({ onNav }) => {
 
         return (
           <div className={s.aiPanel}>
-            {/* Header */}
             <div onClick={() => setAiExpanded(e => !e)} className={s.aiHeader}>
               <div className={s.aiHeaderLeft}>
                 <span className={s.aiTitle}>Business Insights</span>
@@ -208,12 +234,10 @@ const Dashboard = ({ onNav }) => {
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" className={`${s.chevron} ${aiExpanded ? s.chevronExpanded : ""}`}><polyline points="5 8 10 13 15 8"/></svg>
               </div>
             </div>
-            {/* Expandable content */}
             {aiExpanded && (
               <div className={s.aiExpandBody}>
                 {aiLoading && !aiInsight && <div className={s.aiLoadingText}>Analysing your business data...</div>}
                 {aiError && <div className={s.aiErrorText}>Failed to generate insight: {aiError}</div>}
-                {/* Insight cards */}
                 {insightCards.length > 0 && !aiLoading && (
                   <div className={s.aiCardsGrid}>
                     {insightCards.map((card, i) => (
@@ -227,11 +251,8 @@ const Dashboard = ({ onNav }) => {
                 {!aiLoading && !aiError && aiInsight && insightCards.length === 0 && (
                   <div className={s.aiInsightFallback}>{aiInsight}</div>
                 )}
-
-                {/* Chat section */}
                 {aiInsight && (
                   <div className={s.aiChatSection}>
-                    {/* Chat messages (skip the first assistant message which is shown as insight cards above) */}
                     {aiChatMessages.length > 1 && (
                       <div className={s.aiChatScroll}>
                         {aiChatMessages.slice(1).map((msg, i) => (
@@ -252,8 +273,6 @@ const Dashboard = ({ onNav }) => {
                         <div ref={aiChatEndRef} />
                       </div>
                     )}
-
-                    {/* Suggested questions (only show when no chat history yet) */}
                     {aiChatMessages.length <= 1 && (
                       <div className={s.aiSuggestedWrap}>
                         {suggestedQuestions.map((q, i) => (
@@ -261,8 +280,6 @@ const Dashboard = ({ onNav }) => {
                         ))}
                       </div>
                     )}
-
-                    {/* Chat input */}
                     <div className={s.aiInputRow}>
                       <input
                         type="text"
@@ -288,89 +305,141 @@ const Dashboard = ({ onNav }) => {
         );
       })()}
 
-      {/* ── ROW 1: Financial Hero Strip (full width) ── */}
-      <div className={`stat-grid ${s.financialGrid}`}>
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.quotes.accent}` }} onClick={() => onNav("quotes")}>
-          <div className={s.statHeaderRow}><Icon name="quotes" size={13} /><div className="stat-label">Total Quoted</div></div>
-          <div className="stat-value">{fmt(totalQuoted)}</div>
-          <div className="stat-sub">{quotes.filter(q => q.status !== "declined").length} quotes in pipeline</div>
-        </div>
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.invoices.accent}` }} onClick={() => onNav("invoices")}>
-          <div className={s.statHeaderRow}><Icon name="invoices" size={13} /><div className="stat-label">Revenue Collected</div></div>
-          <div className="stat-value">{fmt(revenueCollected)}</div>
-          <div className={s.progressRow}>
-            <div className={s.progressTrack}>
-              <div className={s.progressFill} style={{ width: totalQuoted > 0 ? `${Math.min(100, Math.round((revenueCollected / totalQuoted) * 100))}%` : "0%", background: SECTION_COLORS.invoices.accent }} />
-            </div>
-            <span className={s.progressLabel}>{totalQuoted > 0 ? Math.round((revenueCollected / totalQuoted) * 100) : 0}%</span>
-          </div>
-        </div>
-        <div className="stat-card" style={{ borderTop: `3px solid ${outstandingInvCount > 0 ? "#dc2626" : "#e5e5e5"}` }} onClick={() => onNav("invoices")}>
-          <div className={s.statHeaderRow}><Icon name="invoices" size={13} /><div className="stat-label">Outstanding</div></div>
-          <div className="stat-value" style={{ color: outstandingInvCount > 0 ? "#dc2626" : undefined }}>{fmt(outstandingInv)}</div>
-          <div className="stat-sub">{outstandingInvCount > 0 ? `${outstandingInvCount} unpaid — action needed` : "All invoices paid ✓"}</div>
-        </div>
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.bills.accent}` }} onClick={() => onNav("bills")}>
-          <div className={s.statHeaderRow}><Icon name="bills" size={13} /><div className="stat-label">Costs to Process</div></div>
-          <div className="stat-value">{fmt(unpostedBillsTotal)}</div>
-          <div className={s.billPillRow}>
-            {["inbox", "linked", "approved"].map(st => {
-              const c = bills.filter(b => b.status === st).length;
-              return c > 0 ? <span key={st} className={s.billPill} style={{ background: billStatusColors[st] }}>{c} {billStatusLabels[st]}</span> : null;
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* ── ROW 2: Operational KPI Cards (5 cards with progress/actions) ── */}
-      <SectionLabel>Operations</SectionLabel>
-      <div className={`stat-grid ${s.opsGrid}`}>
-        {/* Active Jobs */}
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.jobs.accent}` }} onClick={() => onNav("jobs")}>
-          <div className={s.statHeaderRow}><Icon name="jobs" size={13} /><div className="stat-label">Active Jobs</div></div>
-          <div className="stat-value">{activeJobs}</div>
-          <div className={s.progressRow}>
-            <div className={s.progressTrack}>
-              <div className={s.progressFill} style={{ width: jobs.length > 0 ? `${Math.round((completedJobs / jobs.length) * 100)}%` : "0%", background: "#16a34a" }} />
-            </div>
-            <span className={s.progressLabel}>{completedJobs}/{jobs.length}</span>
-          </div>
-          {overdueJobs > 0 && <div className={s.overdueText}>⚠ {overdueJobs} overdue</div>}
-        </div>
-
-        {/* Work Orders */}
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.wo.accent}` }} onClick={() => onNav("orders")}>
-          <div className={s.statHeaderRow}><Icon name="orders" size={13} /><div className="stat-label">Work Orders</div></div>
-          <div className="stat-value">{activeWOs}</div>
-          <div className="stat-sub">{workOrders.length} total · {fmt(workOrders.reduce((s, wo) => s + (parseFloat(wo.poLimit) || 0), 0))}</div>
-          {woAwaitingAcceptance > 0 && <div className={s.accentText} style={{ color: SECTION_COLORS.wo.accent }}>{woAwaitingAcceptance} awaiting acceptance</div>}
-          {overdueWOs > 0 && <div className={s.accentText} style={{ color: "#dc2626" }}>⚠ {overdueWOs} overdue</div>}
-        </div>
-
-        {/* Purchase Orders */}
-        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.po.accent}` }} onClick={() => onNav("orders")}>
-          <div className={s.statHeaderRow}><Icon name="orders" size={13} /><div className="stat-label">Purchase Orders</div></div>
-          <div className="stat-value">{activePOs}</div>
-          <div className="stat-sub">{purchaseOrders.length} total</div>
-          {overduePOs > 0 && <div className={s.accentText} style={{ color: "#dc2626" }}>⚠ {overduePOs} overdue</div>}
-        </div>
-
-        {/* Hours Logged */}
+      {/* ── ROW 1: Two wide tiles — Timesheets + Profitability ── */}
+      <div className={`stat-grid ${s.heroGrid}`}>
+        {/* Timesheets */}
         <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.time.accent}` }} onClick={() => onNav("time")}>
-          <div className={s.statHeaderRow}><Icon name="time" size={13} /><div className="stat-label">Hours Logged</div></div>
-          <div className="stat-value">{totalHours}h</div>
-          <div className={s.progressRow}>
-            <div className={s.progressTrack}>
-              <div className={s.progressFill} style={{ width: `${billableRatio}%`, background: SECTION_COLORS.time.accent }} />
+          <div className={s.statHeaderRow}><Icon name="time" size={13} /><div className="stat-label">Timesheets</div></div>
+          <div className={s.heroRow}>
+            <div className={s.heroBig}>
+              <span className="stat-value">{totalHours}h</span>
+              <span className={s.heroSub}>total</span>
             </div>
-            <span className={s.progressLabel}>{billableRatio}%</span>
+            <div className={s.heroMeta}>
+              <div className={s.heroMetaRow}><span className={s.heroMetaLabel}>Billable</span><span className={s.heroMetaValue}>{billableHours}h</span></div>
+              <div className={s.heroMetaRow}><span className={s.heroMetaLabel}>Non-billable</span><span className={s.heroMetaValue}>{totalHours - billableHours}h</span></div>
+              <div className={s.heroMetaRow}><span className={s.heroMetaLabel}>Billable %</span><span className={s.heroMetaValue} style={{ color: billableRatio >= 80 ? "#16a34a" : billableRatio >= 50 ? "#d97706" : "#dc2626" }}>{billableRatio}%</span></div>
+            </div>
           </div>
-          <div className="stat-sub">{billableHours}h billable</div>
+          {/* Team utilisation bars */}
+          {workerHours.slice(0, 4).map(([name, hrs]) => {
+            const ratio = hrs.total > 0 ? (hrs.billable / hrs.total) * 100 : 0;
+            return (
+              <div key={name} className={s.workerRowMini}>
+                <div className={s.workerRowMiniHeader}>
+                  <span className={s.workerRowMiniName}>
+                    <span className={s.workerAvatarSm}>{name.split(" ").map(n => n[0]).join("")}</span>
+                    {name}
+                  </span>
+                  <span className={s.workerRowMiniHours}>{hrs.total}h</span>
+                </div>
+                <div className={s.thinProgressTrack}>
+                  <div className={s.thinProgressFill} style={{ width: `${ratio}%`, background: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : SECTION_COLORS.time.accent }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
+        {/* Profitability */}
+        <div className="stat-card" style={{ borderTop: `3px solid ${margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626"}` }} onClick={() => onNav("jobs")}>
+          <div className={s.statHeaderRow}><Icon name="jobs" size={13} /><div className="stat-label">Profitability</div></div>
+          <div className={s.heroRow}>
+            <div className={s.heroBig}>
+              <span className="stat-value" style={{ color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
+              <span className={s.heroSub}>margin</span>
+            </div>
+            <div className={s.heroMeta}>
+              <div className={s.heroMetaRow}><span className={s.heroMetaLabel}>Revenue</span><span className={s.heroMetaValue}>{fmt(totalInvoiced)}</span></div>
+              <div className={s.heroMetaRow}><span className={s.heroMetaLabel}>Costs</span><span className={s.heroMetaValue}>{fmt(totalBillsCost)}</span></div>
+              <div className={s.heroMetaRow}><span className={s.heroMetaLabel}>Profit</span><span className={s.heroMetaValue} style={{ color: margin >= 20 ? "#16a34a" : "#d97706" }}>{fmt(totalInvoiced - totalBillsCost)}</span></div>
+            </div>
+          </div>
+          {/* Top job margins */}
+          {jobs.slice(0, 3).map(job => {
+            const jobInvoices = invoices.filter(inv => inv.jobId === job.id);
+            const jobBills = bills.filter(b => b.jobId === job.id);
+            const invoiced = jobInvoices.reduce((s, inv) => s + calcQuoteTotal(inv), 0);
+            const costs = jobBills.reduce((s, b) => s + b.amount, 0);
+            const jobMargin = invoiced > 0 ? Math.round(((invoiced - costs) / invoiced) * 100) : null;
+            if (jobMargin === null) return null;
+            const costPct = invoiced > 0 ? Math.min(100, Math.round((costs / invoiced) * 100)) : 0;
+            return (
+              <div key={job.id} className={s.profitRowMini}>
+                <div className={s.profitRowMiniHeader}>
+                  <span className={s.profitRowMiniTitle}>{job.title}</span>
+                  <span style={{ color: jobMargin >= 20 ? "#16a34a" : jobMargin >= 0 ? "#d97706" : "#dc2626", fontWeight: 700, fontSize: 11 }}>{jobMargin}%</span>
+                </div>
+                <div className={s.thinProgressTrack}>
+                  <div className={s.thinProgressFill} style={{ width: `${costPct}%`, background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#16a34a" }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* ── ROW 3: This Week Schedule (full width, week grid) ── */}
+      {/* ── ROW 2: Four action tiles ── */}
+      <div className={`stat-grid ${s.opsGrid}`}>
+        {/* Overdue Jobs */}
+        <div className="stat-card" style={{ borderTop: `3px solid ${overdueJobs.length > 0 ? "#dc2626" : "#e5e5e5"}` }} onClick={() => onNav("jobs")}>
+          <div className={s.statHeaderRow}><Icon name="jobs" size={13} /><div className="stat-label">Overdue Jobs</div></div>
+          <div className="stat-value" style={{ color: overdueJobs.length > 0 ? "#dc2626" : undefined }}>{overdueJobs.length}</div>
+          {overdueJobs.length > 0 ? (
+            <div className={s.tileList}>
+              {overdueJobs.slice(0, 3).map(j => (
+                <div key={j.id} className={s.tileListItem}><span className={s.tileListTitle}>{j.title}</span><span className={s.tileListSub}>Due {j.dueDate}</span></div>
+              ))}
+              {overdueJobs.length > 3 && <div className={s.tileListMore}>+{overdueJobs.length - 3} more</div>}
+            </div>
+          ) : <div className="stat-sub" style={{ color: "#16a34a" }}>All on track ✓</div>}
+        </div>
+
+        {/* Jobs Due This Week */}
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.jobs.accent}` }} onClick={() => onNav("jobs")}>
+          <div className={s.statHeaderRow}><Icon name="jobs" size={13} /><div className="stat-label">Due This Week</div></div>
+          <div className="stat-value">{jobsDueThisWeek.length}</div>
+          {jobsDueThisWeek.length > 0 ? (
+            <div className={s.tileList}>
+              {jobsDueThisWeek.slice(0, 3).map(j => (
+                <div key={j.id} className={s.tileListItem}><span className={s.tileListTitle}>{j.title}</span><span className={s.tileListSub}>{j.dueDate}</span></div>
+              ))}
+              {jobsDueThisWeek.length > 3 && <div className={s.tileListMore}>+{jobsDueThisWeek.length - 3} more</div>}
+            </div>
+          ) : <div className="stat-sub">No jobs due this week</div>}
+        </div>
+
+        {/* Jobs To Bill */}
+        <div className="stat-card" style={{ borderTop: `3px solid ${SECTION_COLORS.invoices.accent}` }} onClick={() => onNav("invoices")}>
+          <div className={s.statHeaderRow}><Icon name="invoices" size={13} /><div className="stat-label">Jobs To Bill</div></div>
+          <div className="stat-value">{jobsToBill.length}</div>
+          {jobsToBill.length > 0 ? (
+            <div className={s.tileList}>
+              {jobsToBill.slice(0, 3).map(j => (
+                <div key={j.id} className={s.tileListItem}><span className={s.tileListTitle}>{j.title}</span><span className={s.tileListSub}>Completed — no invoice</span></div>
+              ))}
+              {jobsToBill.length > 3 && <div className={s.tileListMore}>+{jobsToBill.length - 3} more</div>}
+            </div>
+          ) : <div className="stat-sub">All billed ✓</div>}
+        </div>
+
+        {/* Unpaid Invoices */}
+        <div className="stat-card" style={{ borderTop: `3px solid ${unpaidInvoices.length > 0 ? "#dc2626" : "#e5e5e5"}` }} onClick={() => onNav("invoices")}>
+          <div className={s.statHeaderRow}><Icon name="invoices" size={13} /><div className="stat-label">Unpaid Invoices</div></div>
+          <div className="stat-value" style={{ color: unpaidInvoices.length > 0 ? "#dc2626" : undefined }}>{fmt(outstandingInv)}</div>
+          <div className="stat-sub">{unpaidInvoices.length} invoice{unpaidInvoices.length !== 1 ? "s" : ""} outstanding</div>
+          {unpaidInvoices.length > 0 && (
+            <div className={s.tileList}>
+              {unpaidInvoices.slice(0, 3).map(inv => {
+                const job = jobs.find(j => j.id === inv.jobId);
+                return <div key={inv.id} className={s.tileListItem}><span className={s.tileListTitle}>{inv.number}</span><span className={s.tileListSub}>{fmt(calcQuoteTotal(inv))}</span></div>;
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── ROW 3: This Week Schedule with Weather ── */}
       {(() => {
         const schAccent = SECTION_COLORS.schedule.accent;
         const getMonday = (d) => { const dt = new Date(d + "T12:00:00"); const day = dt.getDay(); const diff = day === 0 ? -6 : 1 - day; dt.setDate(dt.getDate() + diff); return dt.toISOString().slice(0, 10); };
@@ -389,6 +458,7 @@ const Dashboard = ({ onNav }) => {
           const isWeekend = dayName === "Sat" || dayName === "Sun";
           const dayEntries = weekEntries.filter(e => e.date === dateStr);
           const counterRef = useRef(0);
+          const w = weather[dateStr];
           return (
             <div className={`schedule-day-col${isCompact ? " schedule-day-compact" : ""}`}
               style={{ background: isToday ? "#ecfeff" : isWeekend ? "#fafafa" : "#fff", borderColor: isToday ? schAccent : "#e5e5e5" }}
@@ -402,6 +472,18 @@ const Dashboard = ({ onNav }) => {
                   <span className={s.dayHeaderLabel}>{dayName}</span>
                   <span className={isCompact ? s.dayHeaderDateCompact : s.dayHeaderDateFull}>{d.getDate()}</span>
                 </div>
+                {w && !isCompact && (
+                  <div className={s.weatherFull} style={{ color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#bbb" : "#666" }}>
+                    <span className={s.weatherTemp}>{Math.round(w.minTemp)}–{Math.round(w.maxTemp)}°</span>
+                    {w.rainChance > 0 && <span style={{ color: isToday ? "rgba(255,255,255,0.85)" : w.rainChance >= 50 ? "#2563eb" : "#888" }}>💧{w.rainChance}%{w.rain > 0 ? ` ${w.rain}mm` : ""}</span>}
+                  </div>
+                )}
+                {w && isCompact && (
+                  <div className={s.weatherCompact} style={{ color: isToday ? "rgba(255,255,255,0.85)" : isPast ? "#bbb" : "#666" }}>
+                    <span>{Math.round(w.maxTemp)}°</span>
+                    {w.rainChance > 0 && <span>💧{w.rainChance}%</span>}
+                  </div>
+                )}
               </div>
               <div className="schedule-day-body">
                 {dayEntries.length === 0 && <div className={`${s.emptyDay} ${isCompact ? s.emptyDayCompact : s.emptyDayFull}`}>—</div>}
@@ -474,10 +556,92 @@ const Dashboard = ({ onNav }) => {
         </div>
       )}
 
-      {/* ── ROW 4: Detail Panels (2-col grid) ── */}
+      {/* ── ROW 4: Detail Panels (2-col grid, reordered) ── */}
       <div className={`dashboard-grid ${s.detailGrid}`}>
 
-        {/* Panel 1: Jobs by Status */}
+        {/* Panel 1: Team & Time */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Team & Time</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNav("time")}>View all <Icon name="arrow_right" size={12} /></button>
+          </div>
+          <div className="card-body">
+            <SectionLabel>Team Utilisation</SectionLabel>
+            {workerHours.map(([name, hrs]) => {
+              const ratio = hrs.total > 0 ? (hrs.billable / hrs.total) * 100 : 0;
+              return (
+                <div key={name} className={s.workerRow}>
+                  <div className={s.workerRowHeader}>
+                    <span className={s.workerName}>
+                      <span className={s.workerAvatar}>{name.split(" ").map(n => n[0]).join("")}</span>
+                      {name}
+                    </span>
+                    <span className={s.workerHours}>{hrs.total}h <span className={s.workerRatio} style={{ color: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : "#dc2626" }}>({Math.round(ratio)}%)</span></span>
+                  </div>
+                  <div className={s.thinProgressTrack}>
+                    <div className={s.thinProgressFill} style={{ width: `${ratio}%`, background: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : SECTION_COLORS.time.accent }} />
+                  </div>
+                </div>
+              );
+            })}
+            {workerHours.length === 0 && <div className={s.emptyText}>No time entries</div>}
+            <div className={s.sectionSpacer}><SectionLabel>Recent Entries</SectionLabel></div>
+            {recentTime.map(t => {
+              const job = jobs.find(j => j.id === t.jobId);
+              return (
+                <div key={t.id} className={s.listRow}>
+                  <div className={s.listRowLeft}>
+                    <div className={s.listRowTitle}>{t.worker}</div>
+                    <div className={s.listRowSub}>{job?.title} · {t.date}</div>
+                  </div>
+                  <div className={s.timeEntryRight}>
+                    <div className={s.timeEntryHours}>{t.hours}h</div>
+                    {t.billable && <span className={s.billableTag}>BILLABLE</span>}
+                    {!t.billable && <span className={s.nonBillTag}>NON-BILL</span>}
+                  </div>
+                </div>
+              );
+            })}
+            <div className={s.summaryBar}>
+              <span className={s.summaryLabel}>Billable Rate</span>
+              <span className={s.summaryValue} style={{ color: billableRatio >= 80 ? "#16a34a" : billableRatio >= 50 ? "#d97706" : "#dc2626" }}>{billableRatio}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Panel 2: Quotes */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Quotes</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNav("quotes")}>View all <Icon name="arrow_right" size={12} /></button>
+          </div>
+          <div className="card-body">
+            {quotes.length === 0 && <div className={s.emptyText}>No quotes yet</div>}
+            {quotes.map(q => {
+              const job = jobs.find(j => j.id === q.jobId);
+              return (
+                <div key={q.id} className={s.listRow}>
+                  <div className={s.listRowLeft}>
+                    <div className={s.listRowTitle}>{q.number}</div>
+                    <div className={s.listRowSub}>{job?.title}</div>
+                  </div>
+                  <div className={s.listRowRight}>
+                    <div className={s.listRowAmount}>{fmt(calcQuoteTotal(q))}</div>
+                    <StatusBadge status={q.status} />
+                  </div>
+                </div>
+              );
+            })}
+            {quotes.length > 0 && (
+              <div className={s.summaryBar}>
+                <span className={s.summaryLabel}>Conversion Rate</span>
+                <span className={s.summaryValue} style={{ color: "#16a34a" }}>{Math.round((quotes.filter(q => q.status === "accepted").length / quotes.length) * 100)}%</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Panel 3: Jobs by Status */}
         <div className="card">
           <div className="card-header">
             <span className="card-title">Jobs by Status</span>
@@ -502,7 +666,6 @@ const Dashboard = ({ onNav }) => {
                 </div>
               );
             })}
-            {/* Job completion rate */}
             <div className={s.summaryBar}>
               <span className={s.summaryLabel}>Completion Rate</span>
               <span className={s.summaryValue} style={{ color: jobs.length > 0 ? "#16a34a" : "#999" }}>{jobs.length > 0 ? Math.round((completedJobs / jobs.length) * 100) : 0}%</span>
@@ -510,108 +673,7 @@ const Dashboard = ({ onNav }) => {
           </div>
         </div>
 
-        {/* Panel 2: Quote & Invoice Pipeline */}
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Quote & Invoice Pipeline</span>
-          </div>
-          <div className="card-body">
-            <div className={s.sectionBetween}>
-              <SectionLabel>Quotes</SectionLabel>
-              <button className={`btn btn-ghost btn-sm ${s.btnNudgeUp}`} onClick={() => onNav("quotes")}>View all <Icon name="arrow_right" size={12} /></button>
-            </div>
-            {quotes.map(q => {
-              const job = jobs.find(j => j.id === q.jobId);
-              return (
-                <div key={q.id} className={s.listRow}>
-                  <div className={s.listRowLeft}>
-                    <div className={s.listRowTitle}>{q.number}</div>
-                    <div className={s.listRowSub}>{job?.title}</div>
-                  </div>
-                  <div className={s.listRowRight}>
-                    <div className={s.listRowAmount}>{fmt(calcQuoteTotal(q))}</div>
-                    <StatusBadge status={q.status} />
-                  </div>
-                </div>
-              );
-            })}
-            {/* Quote conversion rate */}
-            {quotes.length > 0 && (
-              <div className={s.summaryBar}>
-                <span className={s.summaryLabel}>Conversion Rate</span>
-                <span className={s.summaryValue} style={{ color: "#16a34a" }}>{Math.round((quotes.filter(q => q.status === "accepted").length / quotes.length) * 100)}%</span>
-              </div>
-            )}
-            <div className={`${s.sectionBetween} ${s.sectionBetweenTop}`}>
-              <SectionLabel>Invoices</SectionLabel>
-              <button className={`btn btn-ghost btn-sm ${s.btnNudgeUp}`} onClick={() => onNav("invoices")}>View all <Icon name="arrow_right" size={12} /></button>
-            </div>
-            {invoices.length === 0 && <div className={s.emptyText}>No invoices yet</div>}
-            {invoices.map(inv => {
-              const job = jobs.find(j => j.id === inv.jobId);
-              const overdue = inv.dueDate && daysUntil(inv.dueDate) < 0 && inv.status !== "paid";
-              return (
-                <div key={inv.id} className={s.listRow}>
-                  <div className={s.listRowLeft}>
-                    <div className={s.listRowTitle}>{inv.number}</div>
-                    <div className={s.listRowSub} style={{ color: overdue ? "#dc2626" : undefined }}>{job?.title}{inv.dueDate ? ` · Due ${inv.dueDate}` : ""}{overdue ? " — OVERDUE" : ""}</div>
-                  </div>
-                  <div className={s.listRowRight}>
-                    <div className={s.listRowAmount}>{fmt(calcQuoteTotal(inv))}</div>
-                    <StatusBadge status={inv.status} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Panel 3: Bills & Cost Tracking */}
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Bills & Cost Tracking</span>
-            <button className="btn btn-ghost btn-sm" onClick={() => onNav("bills")}>View all <Icon name="arrow_right" size={12} /></button>
-          </div>
-          <div className="card-body">
-            {/* Bill workflow pipeline */}
-            <div className={s.billPipeline}>
-              {["inbox", "linked", "approved", "posted"].map((st, i) => {
-                const count = bills.filter(b => b.status === st).length;
-                return (
-                  <Fragment key={st}>
-                    <div className={s.billPipelineStep} style={{ background: count > 0 ? billStatusColors[st] + "15" : "#f5f5f5", border: `1px solid ${count > 0 ? billStatusColors[st] + "40" : "#e5e5e5"}` }}>
-                      <div className={s.billPipelineCount} style={{ color: count > 0 ? billStatusColors[st] : "#ccc" }}>{count}</div>
-                      <div className={s.billPipelineLabel} style={{ color: count > 0 ? billStatusColors[st] : "#bbb" }}>{billStatusLabels[st]}</div>
-                    </div>
-                    {i < 3 && <span className={s.pipelineArrow}>→</span>}
-                  </Fragment>
-                );
-              })}
-            </div>
-            {recentBills.map(b => {
-              const job = jobs.find(j => j.id === b.jobId);
-              return (
-                <div key={b.id} className={s.listRow}>
-                  <div className={s.listRowLeft}>
-                    <div className={s.listRowTitle}>{b.supplier}</div>
-                    <div className={s.listRowSub}>{b.invoiceNo}{job ? ` · ${job.title}` : ""}</div>
-                  </div>
-                  <div className={s.listRowRight}>
-                    <div className={s.listRowAmount}>{fmt(b.amount)}</div>
-                    <StatusBadge status={b.status} />
-                  </div>
-                </div>
-              );
-            })}
-            {/* Margin indicator */}
-            <div className={s.summaryBar}>
-              <span className={s.summaryLabel}>Gross Margin</span>
-              <span className={s.summaryValue} style={{ color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Panel 4: Orders Snapshot */}
+        {/* Panel 4: Orders */}
         <div className="card">
           <div className="card-header">
             <span className="card-title">Orders</span>
@@ -656,7 +718,6 @@ const Dashboard = ({ onNav }) => {
                 </div>
               );
             })}
-            {/* Order value summary */}
             <div className={s.summaryBar}>
               <span className={s.summaryLabel}>Total Committed</span>
               <span className={s.summaryValue} style={{ color: "#333" }}>{fmt(workOrders.reduce((s, wo) => s + (parseFloat(wo.poLimit) || 0), 0) + purchaseOrders.reduce((s, po) => s + ((po.lines || []).reduce((ls, l) => ls + (l.qty || 0) * (l.rate || 0), 0)), 0))}</span>
@@ -664,96 +725,79 @@ const Dashboard = ({ onNav }) => {
           </div>
         </div>
 
-        {/* Panel 5: Team & Time */}
+        {/* Panel 5: Bills & Costs */}
         <div className="card">
           <div className="card-header">
-            <span className="card-title">Team & Time</span>
-            <button className="btn btn-ghost btn-sm" onClick={() => onNav("time")}>View all <Icon name="arrow_right" size={12} /></button>
+            <span className="card-title">Bills & Costs</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNav("bills")}>View all <Icon name="arrow_right" size={12} /></button>
           </div>
           <div className="card-body">
-            <SectionLabel>Team Utilisation</SectionLabel>
-            {workerHours.map(([name, hrs]) => {
-              const ratio = hrs.total > 0 ? (hrs.billable / hrs.total) * 100 : 0;
+            <div className={s.billPipeline}>
+              {["inbox", "linked", "approved", "posted"].map((st, i) => {
+                const count = bills.filter(b => b.status === st).length;
+                return (
+                  <Fragment key={st}>
+                    <div className={s.billPipelineStep} style={{ background: count > 0 ? billStatusColors[st] + "15" : "#f5f5f5", border: `1px solid ${count > 0 ? billStatusColors[st] + "40" : "#e5e5e5"}` }}>
+                      <div className={s.billPipelineCount} style={{ color: count > 0 ? billStatusColors[st] : "#ccc" }}>{count}</div>
+                      <div className={s.billPipelineLabel} style={{ color: count > 0 ? billStatusColors[st] : "#bbb" }}>{billStatusLabels[st]}</div>
+                    </div>
+                    {i < 3 && <span className={s.pipelineArrow}>→</span>}
+                  </Fragment>
+                );
+              })}
+            </div>
+            {recentBills.map(b => {
+              const job = jobs.find(j => j.id === b.jobId);
               return (
-                <div key={name} className={s.workerRow}>
-                  <div className={s.workerRowHeader}>
-                    <span className={s.workerName}>
-                      <span className={s.workerAvatar}>{name.split(" ").map(n => n[0]).join("")}</span>
-                      {name}
-                    </span>
-                    <span className={s.workerHours}>{hrs.total}h <span className={s.workerRatio} style={{ color: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : "#dc2626" }}>({Math.round(ratio)}%)</span></span>
-                  </div>
-                  <div className={s.thinProgressTrack}>
-                    <div className={s.thinProgressFill} style={{ width: `${ratio}%`, background: ratio >= 80 ? "#16a34a" : ratio >= 50 ? "#d97706" : SECTION_COLORS.time.accent }} />
-                  </div>
-                </div>
-              );
-            })}
-            {workerHours.length === 0 && <div className={s.emptyText}>No time entries</div>}
-            <div className={s.sectionSpacer}><SectionLabel>Recent Entries</SectionLabel></div>
-            {recentTime.map(t => {
-              const job = jobs.find(j => j.id === t.jobId);
-              return (
-                <div key={t.id} className={s.listRow}>
+                <div key={b.id} className={s.listRow}>
                   <div className={s.listRowLeft}>
-                    <div className={s.listRowTitle}>{t.worker}</div>
-                    <div className={s.listRowSub}>{job?.title} · {t.date}</div>
+                    <div className={s.listRowTitle}>{b.supplier}</div>
+                    <div className={s.listRowSub}>{b.invoiceNo}{job ? ` · ${job.title}` : ""}</div>
                   </div>
-                  <div className={s.timeEntryRight}>
-                    <div className={s.timeEntryHours}>{t.hours}h</div>
-                    {t.billable && <span className={s.billableTag}>BILLABLE</span>}
-                    {!t.billable && <span className={s.nonBillTag}>NON-BILL</span>}
+                  <div className={s.listRowRight}>
+                    <div className={s.listRowAmount}>{fmt(b.amount)}</div>
+                    <StatusBadge status={b.status} />
                   </div>
                 </div>
               );
             })}
-            {/* Overall billable rate */}
             <div className={s.summaryBar}>
-              <span className={s.summaryLabel}>Billable Rate</span>
-              <span className={s.summaryValue} style={{ color: billableRatio >= 80 ? "#16a34a" : billableRatio >= 50 ? "#d97706" : "#dc2626" }}>{billableRatio}%</span>
+              <span className={s.summaryLabel}>Gross Margin</span>
+              <span className={s.summaryValue} style={{ color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
             </div>
           </div>
         </div>
 
-        {/* Panel 6: Profitability by Job */}
+        {/* Panel 6: Invoices Pipeline */}
         <div className="card">
           <div className="card-header">
-            <span className="card-title">Job Profitability</span>
-            <button className="btn btn-ghost btn-sm" onClick={() => onNav("jobs")}>View all <Icon name="arrow_right" size={12} /></button>
+            <span className="card-title">Invoices Pipeline</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => onNav("invoices")}>View all <Icon name="arrow_right" size={12} /></button>
           </div>
           <div className="card-body">
-            {jobs.map(job => {
-              const jobQuotes = quotes.filter(q => q.jobId === job.id);
-              const jobInvoices = invoices.filter(inv => inv.jobId === job.id);
-              const jobBills = bills.filter(b => b.jobId === job.id);
-              const quoted = jobQuotes.reduce((s, q) => s + calcQuoteTotal(q), 0);
-              const invoiced = jobInvoices.reduce((s, inv) => s + calcQuoteTotal(inv), 0);
-              const costs = jobBills.reduce((s, b) => s + b.amount, 0);
-              const jobMargin = invoiced > 0 ? Math.round(((invoiced - costs) / invoiced) * 100) : (quoted > 0 ? Math.round(((quoted - costs) / quoted) * 100) : null);
-              const costPct = quoted > 0 ? Math.min(100, Math.round((costs / quoted) * 100)) : 0;
+            {invoices.length === 0 && <div className={s.emptyText}>No invoices yet</div>}
+            {invoices.map(inv => {
+              const job = jobs.find(j => j.id === inv.jobId);
+              const overdue = inv.dueDate && daysUntil(inv.dueDate) < 0 && inv.status !== "paid";
               return (
-                <div key={job.id} className={s.profitRow}>
-                  <div className={s.profitRowHeader}>
-                    <span className={s.profitJobTitle}>
-                      {job.title}
-                      <StatusBadge status={job.status} />
-                    </span>
-                    {jobMargin !== null && <span className={s.profitMargin} style={{ color: jobMargin >= 20 ? "#16a34a" : jobMargin >= 0 ? "#d97706" : "#dc2626" }}>{jobMargin}% margin</span>}
+                <div key={inv.id} className={s.listRow}>
+                  <div className={s.listRowLeft}>
+                    <div className={s.listRowTitle}>{inv.number}</div>
+                    <div className={s.listRowSub} style={{ color: overdue ? "#dc2626" : undefined }}>{job?.title}{inv.dueDate ? ` · Due ${inv.dueDate}` : ""}{overdue ? " — OVERDUE" : ""}</div>
                   </div>
-                  <div className={s.profitBarRow}>
-                    <div className={s.profitTrack}>
-                      <div className={s.profitFill} style={{ width: `${costPct}%`, background: costPct > 90 ? "#dc2626" : costPct > 70 ? "#d97706" : "#16a34a" }} />
-                    </div>
-                    <span className={s.profitAmount}>{fmt(costs)} / {fmt(quoted || invoiced)}</span>
+                  <div className={s.listRowRight}>
+                    <div className={s.listRowAmount}>{fmt(calcQuoteTotal(inv))}</div>
+                    <StatusBadge status={inv.status} />
                   </div>
                 </div>
               );
             })}
-            {/* Total margin */}
-            <div className={`${s.summaryBar} ${s.summaryBarTop}`}>
-              <span className={s.summaryLabel}>Overall Margin</span>
-              <span className={s.summaryValue} style={{ color: margin >= 20 ? "#16a34a" : margin >= 0 ? "#d97706" : "#dc2626" }}>{margin}%</span>
-            </div>
+            {invoices.length > 0 && (
+              <div className={s.summaryBar}>
+                <span className={s.summaryLabel}>Total Outstanding</span>
+                <span className={s.summaryValue} style={{ color: outstandingInvCount > 0 ? "#dc2626" : "#16a34a" }}>{fmt(outstandingInv)}</span>
+              </div>
+            )}
           </div>
         </div>
 

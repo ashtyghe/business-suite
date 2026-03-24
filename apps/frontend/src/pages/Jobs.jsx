@@ -1,9 +1,8 @@
-import { useState, useCallback, memo } from "react";
+import { useState, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { useAuth } from '../lib/AuthContext';
 import { createJob, updateJob, deleteJob } from '../lib/db';
-import { fmt, calcQuoteTotal, mkLog, addLog } from '../utils/helpers';
-import { useKanbanDnD } from '../hooks/useKanbanDnD';
+import { fmt, calcQuoteTotal, daysUntil, mkLog, addLog } from '../utils/helpers';
 import { SECTION_COLORS, ViewField, TEAM } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import { StatusBadge, AvatarGroup, SectionProgressBar, SectionDrawer } from '../components/shared';
@@ -11,10 +10,11 @@ import JobDetail from './JobDetail';
 import s from './Jobs.module.css';
 
 const Jobs = () => {
-  const { jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders, sectionView: view, setSectionView: setView } = useAppStore();
+  const { jobs, setJobs, clients, quotes, setQuotes, invoices, setInvoices, timeEntries, setTimeEntries, bills, setBills, schedule, setSchedule, staff, workOrders, setWorkOrders, purchaseOrders, setPurchaseOrders } = useAppStore();
   const auth = useAuth();
   const canDeleteJob = auth.isAdmin || auth.isLocalDev;
   const canEditJob = (j) => auth.isAdmin || auth.isLocalDev || (j.assignedTo || []).includes(auth.currentUserName);
+  const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [showModal, setShowModal] = useState(false);
@@ -77,15 +77,6 @@ const Jobs = () => {
 
   const STATUSES = ["all","draft","scheduled","quoted","in_progress","completed","cancelled"];
   const kanbanCols = ["draft","scheduled","quoted","in_progress","completed"];
-  const handleKanbanDrop = useCallback(async (itemId, newStatus) => {
-    const job = jobs.find(j => String(j.id) === itemId);
-    if (!job || job.status === newStatus) return;
-    try {
-      const saved = await updateJob(job.id, { ...job, status: newStatus });
-      setJobs(js => js.map(j => j.id === job.id ? { ...saved, activityLog: addLog(j.activityLog, `Status → ${newStatus.replace("_"," ")}`) } : j));
-    } catch (err) { console.error('Failed to update job status:', err); }
-  }, [jobs, setJobs]);
-  const { dragOverCol, cardDragProps, colDragProps } = useKanbanDnD(handleKanbanDrop);
 
   // Relationship counts per job
   const jobStats = (jobId) => ({
@@ -95,25 +86,50 @@ const Jobs = () => {
   });
 
   const jobStatusColors = { draft: "#888", scheduled: "#0891b2", quoted: "#7c3aed", in_progress: "#d97706", completed: "#16a34a", cancelled: "#dc2626" };
-  const jobStatusLabels = { draft: "Draft", scheduled: "Scheduled", in_progress: "In Progress", completed: "Completed" };
+  const jobStatusLabels = { draft: "Draft", scheduled: "Scheduled", quoted: "Quoted", in_progress: "In Progress", completed: "Completed" };
 
   return (
     <div>
       {/* ── Summary strip */}
-      <div className={s.summaryGrid}>
-        {Object.entries(jobStatusLabels).map(([key, label]) => {
-          const count = jobs.filter(j => j.status === key).length;
-          const color = jobStatusColors[key];
-          return (
-            <div key={key} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${color}`, cursor: "pointer" }}
-              onClick={() => { setFilterStatus(key); setView("list"); }}>
-              <div className="stat-label">{label}</div>
-              <div className="stat-value" style={{ fontSize: 22, color }}>{count}</div>
-              <div className="stat-sub">{count === 1 ? "job" : "jobs"}</div>
-            </div>
-          );
-        })}
-      </div>
+      {(() => {
+        const today = new Date().toISOString().slice(0, 10);
+        const nextWeekStart = (() => { const d = new Date(); d.setDate(d.getDate() + (7 - ((d.getDay() + 6) % 7))); return d.toISOString().slice(0, 10); })();
+        const nextWeekEnd = (() => { const d = new Date(nextWeekStart); d.setDate(d.getDate() + 6); return d.toISOString().slice(0, 10); })();
+        const overdueCount = jobs.filter(j => j.dueDate && daysUntil(j.dueDate) < 0 && j.status !== "completed" && j.status !== "cancelled").length;
+        const dueNextWeek = jobs.filter(j => j.dueDate && j.dueDate >= nextWeekStart && j.dueDate <= nextWeekEnd && j.status !== "completed" && j.status !== "cancelled").length;
+
+        const scheduledCount = jobs.filter(j => j.status === "scheduled").length;
+        // Weekdays this week missing time entries
+        const monDate = (() => { const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d; })();
+        const weekdayDates = Array.from({ length: 5 }, (_, i) => { const d = new Date(monDate); d.setDate(d.getDate() + i); return d.toISOString().slice(0, 10); }).filter(d => d <= today);
+        const datesWithTime = new Set(timeEntries.map(t => t.date));
+        const missingTimeDays = weekdayDates.filter(d => !datesWithTime.has(d)).length;
+
+        const quotedCount = jobs.filter(j => j.status === "quoted").length;
+        const quotedOverdue = jobs.filter(j => j.status === "quoted" && j.dueDate && daysUntil(j.dueDate) < 0).length;
+
+        const inProgressCount = jobs.filter(j => j.status === "in_progress").length;
+
+        const tiles = [
+          { key: "overdue", label: "Overdue", color: "#dc2626", count: overdueCount, sub: dueNextWeek > 0 ? `${dueNextWeek} due next week` : "None due next week" },
+          { key: "scheduled", label: "Scheduled", color: jobStatusColors.scheduled, count: scheduledCount, sub: missingTimeDays > 0 ? `${missingTimeDays} day${missingTimeDays !== 1 ? "s" : ""} missing time` : "All days logged ✓" },
+          { key: "quoted", label: "Quoted", color: jobStatusColors.quoted, count: quotedCount, sub: quotedOverdue > 0 ? `${quotedOverdue} overdue` : "None overdue" },
+          { key: "in_progress", label: "In Progress", color: jobStatusColors.in_progress, count: inProgressCount, sub: `${inProgressCount === 1 ? "job" : "jobs"} active` },
+        ];
+
+        return (
+          <div className={s.summaryGrid}>
+            {tiles.map(tile => (
+              <div key={tile.key} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${tile.color}`, cursor: "pointer" }}
+                onClick={() => { if (tile.key === "overdue") { setFilterStatus(""); setView("list"); } else { setFilterStatus(tile.key); setView("list"); } }}>
+                <div className="stat-label">{tile.label}</div>
+                <div className="stat-value" style={{ fontSize: 22, color: tile.color }}>{tile.count}</div>
+                <div className="stat-sub">{tile.sub}</div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       <div className="section-toolbar">
         <div className={`search-bar ${s.searchBar}`}>
@@ -236,7 +252,7 @@ const Jobs = () => {
             const colJobs = filtered.filter(j => j.status === col);
             const labels = { draft: "Draft", scheduled: "Scheduled", quoted: "Quoted", in_progress: "In Progress", completed: "Completed" };
             return (
-              <div key={col} className={`kanban-col${dragOverCol === col ? ' drag-over' : ''}`} {...colDragProps(col)}>
+              <div key={col} className="kanban-col">
                 <div className="kanban-col-header">
                   <span>{labels[col]}</span>
                   <span className={s.kanbanCount}>{colJobs.length}</span>
@@ -245,7 +261,7 @@ const Jobs = () => {
                   const client = clients.find(c => c.id === job.clientId);
                   const stats = jobStats(job.id);
                   return (
-                    <div key={job.id} className="kanban-card" onClick={() => openDetail(job)} {...cardDragProps(job.id)}>
+                    <div key={job.id} className="kanban-card" onClick={() => openDetail(job)}>
                       <div className={s.kanbanTitleRow}>
                         <span className={`priority-dot priority-${job.priority}`} />
                         <span className={s.kanbanTitle}>{job.title}</span>
@@ -314,11 +330,11 @@ const Jobs = () => {
                 <ViewField label="Client" value={jobClient?.name} />
                 <ViewField label="Site" value={jobSite?.name || "No specific site"} />
               </div>
-              <div className="grid-3">
+              <div className="grid-2">
                 <ViewField label="Status" value={form.status?.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())} />
                 <ViewField label="Priority" value={form.priority?.charAt(0).toUpperCase() + form.priority?.slice(1)} />
-                <ViewField label="Tags" value={form.tags || "—"} />
               </div>
+              <ViewField label="Tags" value={form.tags || "—"} />
               <div className="grid-2">
                 <ViewField label="Start Date" value={form.startDate || "—"} />
                 <ViewField label="Due Date" value={form.dueDate || "—"} />
@@ -347,7 +363,7 @@ const Jobs = () => {
                         <div><div className={s.estimateItemLabel}>Other</div><div className={s.estimateItemValue}>{fmt(est.other || 0)}</div></div>
                       </div>
                       <div className={s.estimateFooter}>
-                        <div className={s.estimateTotal}>Total Estimate: {fmt(totalEst)}</div>
+                        <div className={s.estimateTotalRight}>Total Estimate: {fmt(totalEst)}</div>
                         {acceptedTotal > 0 && <div className={s.acceptedQuotes}>Accepted Quotes: {fmt(acceptedTotal)}</div>}
                       </div>
                     </div>
@@ -361,7 +377,7 @@ const Jobs = () => {
               <label className="form-label">Job Title *</label>
               <input className="form-control" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
             </div>
-            <div className="grid-3">
+            <div className="grid-2">
               <div className="form-group">
                 <label className="form-label">Client *</label>
                 <select className="form-control" value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value, siteId: "" }))}>
@@ -377,26 +393,26 @@ const Jobs = () => {
                   ))}
                 </select>
               </div>
+            </div>
+            <div className={s.grid2Fixed}>
               <div className="form-group">
                 <label className="form-label">Status</label>
                 <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
                   {["draft","scheduled","quoted","in_progress","completed","cancelled"].map(st => <option key={st} value={st}>{st.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
                 </select>
               </div>
-            </div>
-            <div className="grid-2">
               <div className="form-group">
                 <label className="form-label">Priority</label>
                 <select className="form-control" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
                   {["high","medium","low"].map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
                 </select>
               </div>
-              <div className="form-group">
-                <label className="form-label">Tags (comma separated)</label>
-                <input className="form-control" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
-              </div>
             </div>
-            <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Tags (comma separated)</label>
+              <input className="form-control" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
+            </div>
+            <div className={s.grid2Fixed}>
               <div className="form-group">
                 <label className="form-label">Start Date</label>
                 <input type="date" className="form-control" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
@@ -416,6 +432,10 @@ const Jobs = () => {
                   </span>
                 ))}
               </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Description</label>
+              <textarea className="form-control" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
             </div>
             <div className={s.estimateEditSection}>
               <div className={s.estimateSectionLabel}>Estimate *</div>
@@ -442,13 +462,9 @@ const Jobs = () => {
                 </div>
                 {(() => {
                   const t = (form.estimate?.labour || 0) + (form.estimate?.materials || 0) + (form.estimate?.subcontractors || 0) + (form.estimate?.other || 0);
-                  return <div className={s.estimateEditTotal}>Total: {fmt(t)}</div>;
+                  return <div className={s.estimateEditTotalRight}>Total: {fmt(t)}</div>;
                 })()}
               </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Description</label>
-              <textarea className="form-control" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
             </div>
           </div>
           )}

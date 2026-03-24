@@ -199,3 +199,150 @@
 .itemArrow {
   flex-shrink: 0;
 }
+
+/* ── Expand Button ── */
+.expandBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  background: #f8fafb;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  transition: all 0.15s;
+}
+
+.expandBtn:hover {
+  background: #f0f2f4;
+  color: #333;
+}
+
+.expandChevronDown {
+  transition: transform 0.2s;
+}
+
+.expandChevronUp {
+  transform: rotate(180deg);
+  transition: transform 0.2s;
+}
+
+/* ── Timesheet Summary Tile ── */
+.timesheetSummary {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.timesheetSummary:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.tsRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 14px;
+}
+
+.tsBig {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.tsValue {
+  font-size: 28px;
+  font-weight: 800;
+  color: #111;
+  line-height: 1;
+}
+
+.tsLabel {
+  font-size: 11px;
+  color: #999;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tsMeta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tsMetaRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.tsMetaLabel {
+  color: #888;
+}
+
+.tsMetaValue {
+  font-weight: 700;
+  color: #333;
+}
+
+.tsWorkerRow {
+  margin-bottom: 8px;
+}
+
+.tsWorkerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.tsWorkerName {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tsWorkerAvatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.tsWorkerHours {
+  color: #999;
+  font-size: 12px;
+}
+
+.tsProgressTrack {
+  height: 4px;
+  background: #f1f5f9;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tsProgressFill {
+  height: 100%;
+  border-radius: 2px;
+}

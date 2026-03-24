@@ -79,6 +79,21 @@
   font-weight: 800;
 }
 
+.grid2Fixed {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.estimateTotalRight {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: right;
+}
+
 /* ── Overview tab ── */
 .jobDescription {
   font-size: 13px;

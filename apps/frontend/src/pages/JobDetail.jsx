@@ -290,7 +290,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
             <label className="form-label">Job Title *</label>
             <input className="form-control" value={detailForm.title} onChange={e => setDetailForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
           </div>
-          <div className="grid-3">
+          <div className="grid-2">
             <div className="form-group">
               <label className="form-label">Client *</label>
               <select className="form-control" value={detailForm.clientId} onChange={e => setDetailForm(f => ({ ...f, clientId: e.target.value, siteId: "" }))}>
@@ -306,26 +306,26 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                 ))}
               </select>
             </div>
+          </div>
+          <div className={s.grid2Fixed}>
             <div className="form-group">
               <label className="form-label">Status</label>
               <select className="form-control" value={detailForm.status} onChange={e => setDetailForm(f => ({ ...f, status: e.target.value }))}>
                 {["draft","scheduled","quoted","in_progress","completed","cancelled"].map(s => <option key={s} value={s}>{s.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
               </select>
             </div>
-          </div>
-          <div className="grid-2">
             <div className="form-group">
               <label className="form-label">Priority</label>
               <select className="form-control" value={detailForm.priority} onChange={e => setDetailForm(f => ({ ...f, priority: e.target.value }))}>
                 {["high","medium","low"].map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
               </select>
             </div>
-            <div className="form-group">
-              <label className="form-label">Tags (comma separated)</label>
-              <input className="form-control" value={detailForm.tags} onChange={e => setDetailForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
-            </div>
           </div>
-          <div className="grid-2">
+          <div className="form-group">
+            <label className="form-label">Tags (comma separated)</label>
+            <input className="form-control" value={detailForm.tags} onChange={e => setDetailForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
+          </div>
+          <div className={s.grid2Fixed}>
             <div className="form-group">
               <label className="form-label">Start Date</label>
               <input type="date" className="form-control" value={detailForm.startDate} onChange={e => setDetailForm(f => ({ ...f, startDate: e.target.value }))} />
@@ -345,6 +345,10 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                 </span>
               ))}
             </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Description</label>
+            <textarea className="form-control" value={detailForm.description} onChange={e => setDetailForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
           </div>
           <div className={s.estimateWrap}>
             <div className={s.sectionHeading}>Estimate</div>
@@ -371,13 +375,9 @@ const JobDetail = ({ job, onClose, onEdit }) => {
               </div>
               {(() => {
                 const t = (detailForm.estimate?.labour || 0) + (detailForm.estimate?.materials || 0) + (detailForm.estimate?.subcontractors || 0) + (detailForm.estimate?.other || 0);
-                return <div className={s.estimateTotal}>Total: {fmt(t)}</div>;
+                return <div className={s.estimateTotalRight}>Total: {fmt(t)}</div>;
               })()}
             </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Description</label>
-            <textarea className="form-control" value={detailForm.description} onChange={e => setDetailForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
           </div>
         </div>
         ) : (

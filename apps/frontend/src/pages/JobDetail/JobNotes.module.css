@@ -171,6 +171,13 @@
   line-height: 1;
 }
 
+.attachActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .uploadLabel {
   display: inline-flex;
   align-items: center;
@@ -183,6 +190,28 @@
   font-size: 12px;
   font-weight: 500;
 }
+
+.attachDivider {
+  width: 1px;
+  height: 20px;
+  background: #e2e8f0;
+}
+
+.attachOptionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Open Sans', sans-serif;
+  cursor: pointer;
+}
+.attachOptionBtn:hover { background: #f8fafc; border-color: #cbd5e1; color: #475569; }
 
 .formActions {
   display: flex;

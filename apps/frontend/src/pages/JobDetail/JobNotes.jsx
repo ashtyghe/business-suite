@@ -206,27 +206,6 @@ const JobNotes = ({ job }) => {
                   {NOTE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                 </select>
                 <div className={s.spacer} />
-                <div className={s.dropdownWrap}>
-                  <button className={`btn btn-sm ${s.formMenuBtn}`} onClick={() => setShowFormMenu(m => !m)}>
-                    📋 New Form ▾
-                  </button>
-                  {showFormMenu && (
-                    <div className={s.dropdownMenu}>
-                      {FORM_TEMPLATES.map(tmpl => (
-                        <button key={tmpl.id} className={s.dropdownItem}
-                          onClick={() => { setShowFormMenu(false); setShowFormFiller(tmpl); }}>
-                          {tmpl.icon} {tmpl.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <button className={`btn btn-sm ${s.planBtn}`} onClick={() => setShowPlanDrawing(true)}>
-                  📐 Draw Plan
-                </button>
-                <button className={`btn btn-sm ${s.pdfBtn}`} onClick={() => pdfInputRef.current?.click()}>
-                  📄 Fill PDF
-                </button>
                 <input ref={pdfInputRef} type="file" accept=".pdf" className={s.hiddenInput} onChange={handlePdfFileSelect} />
                 <button className={`btn btn-sm ${s.addNoteBtn}`} style={{ background: jobAccent }} onClick={() => setShowNoteForm(true)}>
                   + Add Note
@@ -258,11 +237,35 @@ const JobNotes = ({ job }) => {
                         ))}
                       </div>
                     )}
-                    <label className={s.uploadLabel}>
-                      <OrderIcon name="upload" size={14} />
-                      Attach photos / files
-                      <input type="file" multiple className={s.hiddenInput} onChange={handleNoteFiles} accept="*/*" />
-                    </label>
+                    <div className={s.attachActions}>
+                      <label className={s.uploadLabel}>
+                        <OrderIcon name="upload" size={14} />
+                        Upload Photo
+                        <input type="file" multiple className={s.hiddenInput} onChange={handleNoteFiles} accept="*/*" />
+                      </label>
+                      <div className={s.attachDivider} />
+                      <div className={s.dropdownWrap}>
+                        <button className={s.attachOptionBtn} onClick={() => setShowFormMenu(m => !m)}>
+                          New Form ▾
+                        </button>
+                        {showFormMenu && (
+                          <div className={s.dropdownMenu}>
+                            {FORM_TEMPLATES.map(tmpl => (
+                              <button key={tmpl.id} className={s.dropdownItem}
+                                onClick={() => { setShowFormMenu(false); setShowFormFiller(tmpl); }}>
+                                {tmpl.icon} {tmpl.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <button className={s.attachOptionBtn} onClick={() => setShowPlanDrawing(true)}>
+                        Draw Plan
+                      </button>
+                      <button className={s.attachOptionBtn} onClick={() => pdfInputRef.current?.click()}>
+                        Fill PDF
+                      </button>
+                    </div>
                   </div>
                   {/* Actions */}
                   <div className={s.formActions}>

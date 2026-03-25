@@ -5,7 +5,7 @@ import { createJob, updateJob, deleteJob } from '../lib/db';
 import { fmt, fmtDate, calcQuoteTotal, daysUntil, mkLog, addLog } from '../utils/helpers';
 import { SECTION_COLORS, ViewField, TEAM } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
-import { StatusBadge, AvatarGroup, SectionProgressBar, SectionDrawer } from '../components/shared';
+import { StatusBadge, AvatarGroup, SectionProgressBar, SectionDrawer, SectionLabel } from '../components/shared';
 import JobDetail from './JobDetail';
 import s from './Jobs.module.css';
 
@@ -374,72 +374,79 @@ const Jobs = () => {
             </div>
           ) : (
           <div className={s.drawerBody}>
-            <div className="form-group">
-              <label className="form-label">Job Title *</label>
-              <input className="form-control" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
-            </div>
-            <div className={s.grid2Fixed}>
+            <div>
+              <SectionLabel>Job Details</SectionLabel>
               <div className="form-group">
-                <label className="form-label">Client *</label>
-                <select className="form-control" value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value, siteId: "" }))}>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <label className="form-label">Job Title *</label>
+                <input className="form-control" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
+              </div>
+              <div className={s.grid2Fixed}>
+                <div className="form-group">
+                  <label className="form-label">Client *</label>
+                  <select className="form-control" value={form.clientId} onChange={e => setForm(f => ({ ...f, clientId: e.target.value, siteId: "" }))}>
+                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Site</label>
+                  <select className="form-control" value={form.siteId || ""} onChange={e => setForm(f => ({ ...f, siteId: e.target.value || null }))}>
+                    <option value="">— No specific site —</option>
+                    {(clients.find(c => String(c.id) === String(form.clientId))?.sites || []).map(si => (
+                      <option key={si.id} value={si.id}>{si.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className={s.grid2Fixed}>
+                <div className="form-group">
+                  <label className="form-label">Priority</label>
+                  <select className="form-control" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
+                    {["high","medium","low"].map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Status</label>
+                  <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+                    {["draft","scheduled","quoted","in_progress","completed","cancelled"].map(st => <option key={st} value={st}>{st.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className={s.grid2Fixed}>
+                <div className="form-group">
+                  <label className="form-label">Start Date</label>
+                  <input type="date" className="form-control" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Due Date</label>
+                  <input type="date" className="form-control" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
+                </div>
               </div>
               <div className="form-group">
-                <label className="form-label">Site</label>
-                <select className="form-control" value={form.siteId || ""} onChange={e => setForm(f => ({ ...f, siteId: e.target.value || null }))}>
-                  <option value="">— No specific site —</option>
-                  {(clients.find(c => String(c.id) === String(form.clientId))?.sites || []).map(si => (
-                    <option key={si.id} value={si.id}>{si.name}</option>
+                <label className="form-label">Description</label>
+                <textarea className="form-control" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
+              </div>
+            </div>
+            <div>
+              <SectionLabel>Team</SectionLabel>
+              <div className="form-group">
+                <div className="multi-select">
+                  {(staff && staff.length > 0 ? staff.map(st => st.name) : TEAM).map(t => (
+                    <span key={t} className={`multi-option ${form.assignedTo.includes(t) ? "selected" : ""}`}
+                      onClick={() => setForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
+                      {t}
+                    </span>
                   ))}
-                </select>
+                </div>
               </div>
             </div>
-            <div className={s.grid2Fixed}>
+            <div>
+              <SectionLabel>Tags</SectionLabel>
               <div className="form-group">
-                <label className="form-label">Status</label>
-                <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-                  {["draft","scheduled","quoted","in_progress","completed","cancelled"].map(st => <option key={st} value={st}>{st.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
-                </select>
+                <input className="form-control" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
               </div>
-              <div className="form-group">
-                <label className="form-label">Priority</label>
-                <select className="form-control" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
-                  {["high","medium","low"].map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Tags (comma separated)</label>
-              <input className="form-control" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
-            </div>
-            <div className={s.grid2Fixed}>
-              <div className="form-group">
-                <label className="form-label">Start Date</label>
-                <input type="date" className="form-control" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Due Date</label>
-                <input type="date" className="form-control" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Assigned Team Members</label>
-              <div className="multi-select">
-                {(staff && staff.length > 0 ? staff.map(st => st.name) : TEAM).map(t => (
-                  <span key={t} className={`multi-option ${form.assignedTo.includes(t) ? "selected" : ""}`}
-                    onClick={() => setForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Description</label>
-              <textarea className="form-control" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
             </div>
             <div className={s.estimateEditSection}>
-              <div className={s.estimateSectionLabel}>Estimate *</div>
+              <SectionLabel>Estimate *</SectionLabel>
               <div className={s.estimateEditCard}>
                 <div className={`grid-2 ${s.estimateEditGrid}`}>
                   <div className={`form-group ${s.formGroupNoMargin}`}>

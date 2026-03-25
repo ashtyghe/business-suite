@@ -555,6 +555,8 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                       </div>
                       <div className={s.totalsRow}>
                         <span className={s.totalsMuted}>{q.lineItems.length} item{q.lineItems.length !== 1 ? "s" : ""}</span>
+                        <span className={s.totalsMuted}>Costs <strong className={s.strongDark}>{fmt(sub)}</strong></span>
+                        <span className={s.totalsMuted}>Profit <strong className={s.strongDark}>{fmt(sub * q.tax / 100)}</strong></span>
                         <span className={s.totalsGrand}>Total {fmt(calcQuoteTotal(q))}</span>
                       </div>
                       {q.notes && <div className={s.itemNotes}>{q.notes}</div>}

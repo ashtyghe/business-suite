@@ -4924,6 +4924,7 @@ export default function App() {
               <HamburgerIcon open={sidebarOpen} />
             </button>
             <span className="jm-page-title">{pageTitles[page]}</span>
+            <span className={sh.versionBadge}>v{__APP_VERSION__}</span>
           </div>
           <div className="jm-topbar-actions">
             <button className={`btn btn-ghost btn-sm ${sh.topbarNotifBtn}`}><Icon name="notification" size={16} /></button>

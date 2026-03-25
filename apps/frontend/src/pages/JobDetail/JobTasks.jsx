@@ -51,7 +51,7 @@ const JobTasks = ({ job }) => {
           </div>
         )}
         {!tasks.length && <div className={s.spacer} />}
-        {(job.phases || []).length > 0 && <button className="btn btn-ghost btn-sm" onClick={copyFromGantt}>📋 Copy from Gantt</button>}
+        {(job.phases || []).length > 0 && <button className="btn btn-sm" style={{ background: jobAccent }} onClick={copyFromGantt}>Copy from Gantt</button>}
         <button className="btn btn-sm" style={{ background: jobAccent }} onClick={() => setShowTaskForm(true)}>+ Add Task</button>
       </div>
 

@@ -1,6 +1,6 @@
 import { useState, useRef, memo } from "react";
 import { useAppStore } from "../lib/store";
-import { fmt, daysUntil, COMPLIANCE_DOC_TYPES, COMPLIANCE_STATUS_COLORS, getComplianceStatus, getDaysUntilExpiry, getContractorComplianceCount, hexToRgba } from "../utils/helpers";
+import { fmt, fmtDate, daysUntil, COMPLIANCE_DOC_TYPES, COMPLIANCE_STATUS_COLORS, getComplianceStatus, getDaysUntilExpiry, getContractorComplianceCount, hexToRgba } from "../utils/helpers";
 import { Icon } from "../components/Icon";
 import { StatusBadge, OrderStatusBadge, SectionDrawer, BILL_STATUS_LABELS } from "../components/shared";
 import { ORDER_TERMINAL, SECTION_COLORS, ViewField, CONTRACTOR_TRADES, STATUS_COLORS } from "../fixtures/seedData.jsx";
@@ -299,7 +299,7 @@ const Contractors = () => {
                         <div key={wo.id} className={s.linkedRow}>
                           <span className={s.linkedBold}>{wo.ref}</span>
                           <OrderStatusBadge status={wo.status} />
-                          {wo.dueDate && <span className={s.linkedDate}>{wo.dueDate}</span>}
+                          {wo.dueDate && <span className={s.linkedDate}>{fmtDate(wo.dueDate)}</span>}
                         </div>
                       ))}
                     </div>
@@ -326,7 +326,7 @@ const Contractors = () => {
                               <span className={`badge ${s.billBadge}`} style={{ background: bsc.bg, color: bsc.text }}>{BILL_STATUS_LABELS[b.status] || b.status}</span>
                               <span className={`chip ${s.chipSmall}`}>{b.category}</span>
                             </div>
-                            <span className={s.billDate}>{b.date}</span>
+                            <span className={s.billDate}>{fmtDate(b.date)}</span>
                           </div>
                           {b.description && <div className={s.billDesc}>{b.description}</div>}
                         </div>

@@ -37,7 +37,7 @@ import {
   fmt, calcQuoteTotal, uid, addLog,
   genId, makeLogEntry, orderAddDays, orderToday, orderFmtDate,
   orderFmtTs, orderAddLog, applyTransition, orderJobDisplay,
-  daysUntil, calcHoursFromTimes, addMinsToTime, hexToRgba,
+  daysUntil, fmtDate, calcHoursFromTimes, addMinsToTime, hexToRgba,
   COMPLIANCE_DOC_TYPES, COMPLIANCE_STATUS_COLORS,
   getComplianceStatus, getDaysUntilExpiry, getContractorComplianceCount,
   ORDER_STATUS_TRIGGERS,
@@ -71,6 +71,9 @@ const JobDetail = ({ job, onClose, onEdit }) => {
   const totalPaid     = jobInvoices.filter(i => i.status === "paid").reduce((s,i) => s + calcQuoteTotal(i), 0);
   const totalHours    = jobTime.reduce((s,t) => s + t.hours, 0);
   const totalCosts    = jobBills.filter(b => b.status === "approved").reduce((s,b) => s + b.amount, 0);
+  const actualLabour  = jobTime.reduce((s,t) => { const st = (staff||[]).find(x => x.name === t.worker); return s + t.hours * (st?.costRate || 55); }, 0);
+  const actualMaterials = jobBills.filter(b => b.category === "Materials").reduce((s,b) => s + b.amount, 0);
+  const actualSubs    = jobBills.filter(b => b.category === "Subcontractor").reduce((s,b) => s + b.amount, 0);
 
   // Quick-add quote from within job
   const addQuoteForJob = async () => {
@@ -296,7 +299,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
       accent={jobAccent}
       icon={<Icon name="jobs" size={16} />}
       typeLabel="Job"
-      title={job.title}
+      title={`${job.jobNumber || `J-${String(job.id).padStart(4,"0")}`} · ${job.title}`}
       statusBadge={<StatusBadge status={job.status} />}
       mode={detailMode} setMode={setDetailMode}
       showToggle={true}
@@ -406,58 +409,65 @@ const JobDetail = ({ job, onClose, onEdit }) => {
           {/* ── Overview ── */}
           {tab === "overview" && (
             <div>
-              {job.description && <p className={s.jobDescription}>{job.description}</p>}
               <div className={s.statGrid}>
-                {[
-                  { label: "Estimate", val: (() => { const e = job.estimate || {}; const t = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0); return t > 0 ? fmt(t) : "—"; })(), sub: (() => { const e = job.estimate || {}; const t = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0); return t > 0 ? "Budget set" : "Not set"; })() },
-                  { label: "Quoted", val: fmt(totalQuoted), sub: `${jobQuotes.filter(q=>q.status==="accepted").length} accepted` },
-                  { label: "Invoiced", val: fmt(totalInvoiced), sub: `${fmt(totalPaid)} paid` },
-                  { label: "Time Logged", val: `${totalHours}h`, sub: `${jobTime.filter(t=>t.billable).reduce((s,t)=>s+t.hours,0)}h billable` },
-                  { label: "Costs", val: fmt(totalCosts), sub: `${jobBills.filter(b=>b.status==="pending").length} pending` },
-                ].map((stat,i) => (
+                {(() => {
+                  const e = job.estimate || {};
+                  const estTotal = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0);
+                  const totalActual = actualLabour + actualMaterials + actualSubs;
+                  const profit = estTotal - totalActual;
+                  const avgRate = totalHours > 0 ? actualLabour / totalHours : 55;
+                  const budgetHours = (e.labour||0) > 0 ? Math.round((e.labour||0) / avgRate) : 0;
+                  return [
+                    { label: "P&L", val: estTotal > 0 ? fmt(profit) : "—", sub: estTotal > 0 ? `${fmt(totalActual)} costs / ${fmt(estTotal)} est` : "No budget set", color: profit >= 0 ? "#16a34a" : "#dc2626" },
+                    { label: "Time Logged", val: `${totalHours}h`, sub: budgetHours > 0 ? `of ${budgetHours}h budget` : "No hours budget" },
+                    { label: "Costs", val: fmt(actualMaterials), sub: `of ${fmt(e.materials || 0)} budget` },
+                    { label: "Contractors", val: fmt(actualSubs), sub: `of ${fmt(e.subcontractors || 0)} budget` },
+                  ];
+                })().map((stat,i) => (
                   <div key={i} className={s.statCard}>
                     <div className={s.statLabel}>{stat.label}</div>
-                    <div className={s.statValue}>{stat.val}</div>
+                    <div className={s.statValue} style={stat.color ? { color: stat.color } : undefined}>{stat.val}</div>
                     <div className={s.statSub}>{stat.sub}</div>
                   </div>
                 ))}
               </div>
-              <div className="grid-2">
-                <div>
-                  <SectionLabel>Job Details</SectionLabel>
-                  <div className={s.detailsCol}>
-                    {[
-                      { label: "Client", val: client?.name },
-                      { label: "Site", val: (() => { const site = client?.sites?.find(x => x.id === job.siteId); return site ? site.name : "—"; })() },
-                      { label: "Site Contact", val: (() => { const site = client?.sites?.find(x => x.id === job.siteId); return site?.contactName ? `${site.contactName}${site.contactPhone ? " · " + site.contactPhone : ""}` : "—"; })() },
-                      { label: "Status", val: <StatusBadge status={job.status} /> },
-                      { label: "Priority", val: <span className={s.capitalize}>{job.priority}</span> },
-                      { label: "Start Date", val: job.startDate || "—" },
-                      { label: "Due Date", val: job.dueDate || "—" },
-                    ].map((r,i) => (
-                      <div key={i} className={s.detailRow}>
-                        <span className={s.detailLabel}>{r.label}</span><span className={s.detailValue}>{r.val}</span>
-                      </div>
-                    ))}
-                  </div>
+              <div>
+                <SectionLabel>Job Details</SectionLabel>
+                <div className={s.detailsCol}>
+                  {(() => {
+                    const site = client?.sites?.find(x => x.id === job.siteId);
+                    return [
+                      [{ label: "Client", val: client?.name || "—" }, { label: "Site", val: site ? site.name : "—" }],
+                      [{ label: "Site Contact", val: site?.contactName ? `${site.contactName}${site.contactPhone ? " · " + site.contactPhone : ""}` : "—" }],
+                      [{ label: "Priority", val: <span className={s.capitalize}>{job.priority}</span> }],
+                      [{ label: "Start Date", val: fmtDate(job.startDate) }, { label: "Due Date", val: fmtDate(job.dueDate) }],
+                      [{ label: "Description", val: job.description || "No description" }],
+                    ];
+                  })().map((row,ri) => (
+                    <div key={ri} className={row.length > 1 ? s.detailRowPair : undefined}>
+                      {row.map((r,ci) => (
+                        <div key={ci} className={s.detailRow}>
+                          <span className={s.detailLabel}>{r.label}</span><span className={s.detailValue}>{r.val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <SectionLabel>Team</SectionLabel>
-                  {job.assignedTo.length === 0
-                    ? <div className={s.emptyText}>No team assigned</div>
-                    : job.assignedTo.map((w,i) => (
-                      <div key={i} className={s.teamRow}>
-                        <div className={`avatar ${s.avatarNoMargin}`}>{w.split(" ").map(p=>p[0]).join("")}</div>
-                        <span className={s.teamName}>{w}</span>
-                        <span className={s.teamHours}>{jobTime.filter(t=>t.worker===w).reduce((sum,t)=>sum+t.hours,0)}h</span>
-                      </div>
-                    ))
-                  }
-                  {job.tags.length > 0 && <>
-                    <SectionLabel>Tags</SectionLabel>
-                    <div className={s.tagWrap}>{job.tags.map((t,i) => <span key={i} className="tag">{t}</span>)}</div>
-                  </>}
-                </div>
+                <SectionLabel>Team</SectionLabel>
+                {job.assignedTo.length === 0
+                  ? <div className={s.emptyText}>No team assigned</div>
+                  : <div className={s.teamGrid}>{job.assignedTo.map((w,i) => (
+                    <div key={i} className={s.teamRow}>
+                      <div className={`avatar ${s.avatarNoMargin}`}>{w.split(" ").map(p=>p[0]).join("")}</div>
+                      <span className={s.teamName}>{w}</span>
+                      <span className={s.teamHours}>{jobTime.filter(t=>t.worker===w).reduce((sum,t)=>sum+t.hours,0)}h</span>
+                    </div>
+                  ))}</div>
+                }
+                {job.tags.length > 0 && <>
+                  <SectionLabel>Tags</SectionLabel>
+                  <div className={s.tagWrap}>{job.tags.map((t,i) => <span key={i} className="tag">{t}</span>)}</div>
+                </>}
               </div>
             </div>
           )}
@@ -486,7 +496,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                       <div className={s.cardHeader}>
                         <div>
                           <div className={s.cardNumber}>{q.number}</div>
-                          <div className={s.cardDate}>{q.createdAt}</div>
+                          <div className={s.cardDate}>{fmtDate(q.createdAt)}</div>
                         </div>
                         <div className={s.cardActions}>
                           <StatusBadge status={q.status} />
@@ -556,9 +566,9 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                         <div>
                           <div className={s.cardNumber}>{inv.number}</div>
                           <div className={s.cardDate}>
-                            {inv.createdAt}
+                            {fmtDate(inv.createdAt)}
                             {fromQuote && <span className={s.fromRef}>from {fromQuote.number}</span>}
-                            {inv.dueDate && <span className={s.dueDateRef}>· Due {inv.dueDate}</span>}
+                            {inv.dueDate && <span className={s.dueDateRef}>· Due {fmtDate(inv.dueDate)}</span>}
                           </div>
                         </div>
                         <div className={s.cardActions}>
@@ -657,7 +667,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                       {[...jobTime].sort((a,b) => b.date > a.date ? 1 : -1).map(t => (
                         <tr key={t.id}>
                           <td><div className={s.workerCell}><div className={`avatar ${s.workerAvatar}`}>{t.worker.split(" ").map(w=>w[0]).join("")}</div><span className={s.workerName}>{t.worker}</span></div></td>
-                          <td className={s.dateCell}>{t.date}</td>
+                          <td className={s.dateCell}>{fmtDate(t.date)}</td>
                           <td><span className={s.hoursBold}>{t.hours}h</span></td>
                           <td><span className="badge" style={{ background: t.billable ? "#111" : "#f0f0f0", color: t.billable ? "#fff" : "#999" }}>{t.billable ? "Billable" : "Non-bill"}</span></td>
                           <td className={s.descCell}>{t.description}</td>
@@ -704,7 +714,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                             </td>
                             <td><span className={s.monoRef}>{b.invoiceNo || "—"}</span></td>
                             <td><span className="chip">{b.category}</span></td>
-                            <td className={s.dateCell}>{b.date}</td>
+                            <td className={s.dateCell}>{fmtDate(b.date)}</td>
                             <td className={s.fontSize13}>{fmt(exGst)}</td>
                             <td className={s.billAmount}>{fmt(b.amount||0)}</td>
                             <td className={s.fontSize12}>
@@ -789,7 +799,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                         <div className={s.dateBadgeDay}>{new Date(sch.date+"T12:00:00").getDate()}</div>
                       </div>
                       <div className={s.scheduleFlex}>
-                        <div className={s.scheduleTitle}>{sch.date} · {new Date(sch.date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long"})}</div>
+                        <div className={s.scheduleTitle}>{fmtDate(sch.date)} · {new Date(sch.date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long"})}</div>
                         {schSite && <div className={s.scheduleMeta}>📍 {schSite.name}</div>}
                         {schSite?.contactName && <div className={s.scheduleMetaPlain}>👤 {schSite.contactName} {schSite.contactPhone && `· ${schSite.contactPhone}`}</div>}
                         {sch.notes && <div className={s.scheduleNotes}>{sch.notes}</div>}
@@ -1018,7 +1028,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
         <div className={s.sectionPad}>
           <div className={s.viewGrid3}>
             <ViewField label="Status" value={editingInvoice.status?.charAt(0).toUpperCase() + editingInvoice.status?.slice(1)} />
-            <ViewField label="Due Date" value={editingInvoice.dueDate || "—"} />
+            <ViewField label="Due Date" value={fmtDate(editingInvoice.dueDate)} />
             <ViewField label="GST" value={`${editingInvoice.tax}%`} />
           </div>
           <div className={s.lineItemsSection}>

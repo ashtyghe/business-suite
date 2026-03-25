@@ -176,6 +176,18 @@
 .detailValue { font-weight: 600; }
 .capitalize { text-transform: capitalize; }
 
+.detailRowPair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.teamGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px 16px;
+}
+
 /* Team */
 .emptyText {
   font-size: 13px;

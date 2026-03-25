@@ -2,6 +2,7 @@ import { useState, useMemo, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
+import { fmtDate } from '../utils/helpers';
 import s from './Files.module.css';
 
 const FilesPage = () => {
@@ -146,7 +147,7 @@ const FilesPage = () => {
                   </td>
                   <td className={s.cell}>{f.type}</td>
                   <td className={s.cell}>{f.source}</td>
-                  <td className={s.dateCell}>{f.date || "—"}</td>
+                  <td className={s.dateCell}>{fmtDate(f.date)}</td>
                   <td className={s.linkedCell}>{f.linkedTo || "—"}</td>
                   <td className={s.statusCell}>
                     {f.status ? <span className={s.statusBadge} style={{ background: statusColor(f.status) + "18", color: statusColor(f.status) }}>{f.status}</span> : "—"}

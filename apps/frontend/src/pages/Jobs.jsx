@@ -2,7 +2,7 @@ import { useState, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { useAuth } from '../lib/AuthContext';
 import { createJob, updateJob, deleteJob } from '../lib/db';
-import { fmt, calcQuoteTotal, daysUntil, mkLog, addLog } from '../utils/helpers';
+import { fmt, fmtDate, calcQuoteTotal, daysUntil, mkLog, addLog } from '../utils/helpers';
 import { SECTION_COLORS, ViewField, TEAM } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import { StatusBadge, AvatarGroup, SectionProgressBar, SectionDrawer } from '../components/shared';
@@ -44,7 +44,8 @@ const Jobs = () => {
   const openEdit = (j) => { setEditJob(j); setJobMode("view"); setForm({ ...j, siteId: j.siteId || null, tags: j.tags.join(", "), estimate: j.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } }); setShowModal(true); };
   const openDetail = (j) => setDetailJob(j);
   const save = async () => {
-    const data = { ...form, clientId: form.clientId, tags: form.tags.split(",").map(t => t.trim()).filter(Boolean), estimate: form.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } };
+    const nextNum = jobs.length > 0 ? Math.max(...jobs.map(j => parseInt((j.jobNumber || "").replace(/\D/g, "") || "0", 10))) + 1 : 1;
+    const data = { ...form, clientId: form.clientId, tags: form.tags.split(",").map(t => t.trim()).filter(Boolean), estimate: form.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 }, ...(!form.jobNumber && !editJob ? { jobNumber: "J-" + String(nextNum).padStart(4, "0") } : {}) };
     try {
       if (editJob) {
         const changes = [];
@@ -164,8 +165,8 @@ const Jobs = () => {
                       <Icon name="jobs" size={15} />
                     </div>
                     <div>
-                      <div className={s.cardTitle}>{job.title}</div>
-                      <div className={s.cardSubtitle}>{job.startDate || "No start date"}</div>
+                      <div className={s.cardTitle}>{job.jobNumber || `J-${String(job.id).padStart(4,"0")}`} · {job.title}</div>
+                      <div className={s.cardSubtitle}>{job.startDate ? fmtDate(job.startDate) : "No start date"}</div>
                     </div>
                   </div>
                   <div className={s.statusWrap}>
@@ -187,7 +188,7 @@ const Jobs = () => {
                 {(job.assignedTo || []).length > 0 && <div className={s.avatarWrap}><AvatarGroup names={job.assignedTo} max={4} /></div>}
                 <SectionProgressBar status={job.status} section="jobs" />
                 <div className={s.cardFooter}>
-                  <span className={s.dueDate} style={{ color: job.dueDate ? "#334155" : "#ccc" }}>{job.dueDate ? `Due ${job.dueDate}` : "No due date"}</span>
+                  <span className={s.dueDate} style={{ color: job.dueDate ? "#334155" : "#ccc" }}>{job.dueDate ? `Due ${fmtDate(job.dueDate)}` : "No due date"}</span>
                   <div className={s.actionRow} onClick={e => e.stopPropagation()}>
                     {canEditJob(job) && <button className="btn btn-ghost btn-xs" onClick={() => openEdit(job)}><Icon name="edit" size={12} /></button>}
                     {canDeleteJob && <button className={`btn btn-ghost btn-xs ${s.deleteBtn}`} onClick={() => del(job.id)}><Icon name="trash" size={12} /></button>}
@@ -210,7 +211,7 @@ const Jobs = () => {
                   return (
                     <tr key={job.id} className={s.rowPointer} onClick={() => openDetail(job)}>
                       <td>
-                        <div className={s.listTitle}>{job.title}</div>
+                        <div className={s.listTitle}>{job.jobNumber || `J-${String(job.id).padStart(4,"0")}`} · {job.title}</div>
                         <div className={s.listDesc}>{job.description?.slice(0, 55)}{job.description?.length > 55 ? "…" : ""}</div>
                       </td>
                       <td>
@@ -224,7 +225,7 @@ const Jobs = () => {
                           <span className={s.priorityText}>{job.priority}</span>
                         </div>
                       </td>
-                      <td><span style={{ fontSize: 12, color: job.dueDate ? "#111" : "#ccc" }}>{job.dueDate || "—"}</span></td>
+                      <td><span style={{ fontSize: 12, color: job.dueDate ? "#111" : "#ccc" }}>{fmtDate(job.dueDate)}</span></td>
                       <td onClick={e => e.stopPropagation()}><AvatarGroup names={job.assignedTo} max={3} /></td>
                       <td onClick={e => e.stopPropagation()}>
                         <div className={s.linksRow}>
@@ -264,10 +265,10 @@ const Jobs = () => {
                     <div key={job.id} className="kanban-card" onClick={() => openDetail(job)}>
                       <div className={s.kanbanTitleRow}>
                         <span className={`priority-dot priority-${job.priority}`} />
-                        <span className={s.kanbanTitle}>{job.title}</span>
+                        <span className={s.kanbanTitle}>{job.jobNumber || `J-${String(job.id).padStart(4,"0")}`} · {job.title}</span>
                       </div>
                       <div className={s.kanbanClient}>{client?.name}</div>
-                      {job.dueDate && <div className={s.kanbanDue}>Due: {job.dueDate}</div>}
+                      {job.dueDate && <div className={s.kanbanDue}>Due: {fmtDate(job.dueDate)}</div>}
                       <div className={s.kanbanChips}>
                         {stats.quotes > 0 && <span className={`chip ${s.kanbanChipSmall}`}><Icon name="quotes" size={9} />{stats.quotes} quote{stats.quotes>1?"s":""}</span>}
                         {stats.invoices > 0 && <span className={`chip ${s.kanbanChipSmall}`}><Icon name="invoices" size={9} />{stats.invoices} inv</span>}
@@ -336,8 +337,8 @@ const Jobs = () => {
               </div>
               <ViewField label="Tags" value={form.tags || "—"} />
               <div className="grid-2">
-                <ViewField label="Start Date" value={form.startDate || "—"} />
-                <ViewField label="Due Date" value={form.dueDate || "—"} />
+                <ViewField label="Start Date" value={fmtDate(form.startDate)} />
+                <ViewField label="Due Date" value={fmtDate(form.dueDate)} />
               </div>
               {(form.assignedTo || []).length > 0 && (
                 <div className={s.assignedSection}>

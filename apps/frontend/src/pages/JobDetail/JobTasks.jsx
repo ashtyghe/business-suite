@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAppStore } from "../../lib/store";
-import { addLog } from "../../utils/helpers";
+import { addLog, fmtDate } from "../../utils/helpers";
 import { TEAM, SECTION_COLORS } from "../../fixtures/seedData.jsx";
 import s from './JobTasks.module.css';
 
@@ -88,7 +88,7 @@ const JobTasks = ({ job }) => {
                 <div className={s.taskContent}>
                   <div className={`${s.taskText} ${task.done ? s.taskTextDone : s.taskTextActive}`}>{task.text}</div>
                   <div className={s.taskMeta}>
-                    {task.dueDate && <span className={isOverdue ? s.overdue : undefined}>{isOverdue ? "⚠️ " : ""}{task.dueDate}</span>}
+                    {task.dueDate && <span className={isOverdue ? s.overdue : undefined}>{isOverdue ? "⚠️ " : ""}{fmtDate(task.dueDate)}</span>}
                     {task.assignedTo && <span>· {task.assignedTo}</span>}
                   </div>
                 </div>

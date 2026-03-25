@@ -1,6 +1,7 @@
 import { useState, memo } from "react";
 import { useAppStore } from '../lib/store';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
+import { fmtDate } from '../utils/helpers';
 import s from './Reminders.module.css';
 
 const Reminders = () => {
@@ -70,8 +71,8 @@ const Reminders = () => {
     return "#666";
   };
   const dueDateLabel = (d, status) => {
-    if (status !== "pending") return d;
-    if (d < today) return `Overdue — ${d}`;
+    if (status !== "pending") return fmtDate(d);
+    if (d < today) return `Overdue — ${fmtDate(d)}`;
     if (d === today) return "Due today";
     const diff = Math.ceil((new Date(d) - new Date(today)) / 86400000);
     return diff === 1 ? "Due tomorrow" : `Due in ${diff} days`;

@@ -1,5 +1,7 @@
 // ── Formatting & IDs ────────────────────────────────────────────────────────
 export const fmt = (n) => `$${Number(n).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+export const fmtDate = (d) => { if (!d) return "—"; const parts = d.split("-"); if (parts.length < 3) return d; return `${parseInt(parts[2],10).toString().padStart(2,"0")} ${MONTHS[parseInt(parts[1],10)-1]}`; };
 export const calcQuoteTotal = (q) => {
   const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
   return sub * (1 + q.tax / 100);
@@ -22,7 +24,7 @@ export const addLog = (prev, action, user = CURRENT_USER) => [...(prev || []), m
 export const genId = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 export const orderToday = () => new Date().toISOString().slice(0, 10);
 export const orderAddDays = (dateStr, n) => { const d = new Date(dateStr); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
-export const orderFmtDate = (d) => { if (!d) return "—"; const [y, m, day] = d.split("-"); return `${day}/${m}/${y}`; };
+export const orderFmtDate = fmtDate;
 export const daysUntil = (dateStr) => { if (!dateStr) return null; return Math.ceil((new Date(dateStr) - new Date(orderToday())) / (1000 * 60 * 60 * 24)); };
 export const fmtFileSize = (bytes) => { if (bytes < 1024) return bytes + " B"; if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"; return (bytes / (1024 * 1024)).toFixed(1) + " MB"; };
 export const orderFmtTs = (ts) => {

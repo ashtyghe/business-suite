@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { SectionDrawer, StatusBadge, BillStatusBadge, BILL_CATEGORIES, BILL_STATUSES, BILL_STATUS_LABELS } from "./shared";
 import { Icon } from "./Icon";
 import { ViewField, SECTION_COLORS } from "../fixtures/seedData.jsx";
-import { fmt } from "../utils/helpers";
+import { fmt, fmtDate } from "../utils/helpers";
 import { extractBillFromImage } from "../lib/supabase";
 import s from './BillModal.module.css';
 
@@ -126,7 +126,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
             <ViewField label="Invoice / Receipt #" value={form.invoiceNo} />
           </div>
           <div className="grid-2">
-            <ViewField label="Date" value={form.date} />
+            <ViewField label="Date" value={fmtDate(form.date)} />
             <ViewField label="Category" value={form.category} />
           </div>
           <ViewField label="Description" value={form.description} />

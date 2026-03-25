@@ -671,6 +671,7 @@ export async function fetchAll() {
 // ── Customers ──────────────────────────────────────────────────────────────
 
 export async function createCustomer(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const row = await q(
     supabase.from('customers')
       .insert({ name: data.name, email: data.email || null, phone: data.phone || null, address: data.address || null, suburb: data.suburb || null, state: data.state || null, postcode: data.postcode || null })
@@ -680,6 +681,7 @@ export async function createCustomer(data) {
 }
 
 export async function updateCustomer(id, data) {
+  if (!supabase) return { id, ...data };
   const row = await q(
     supabase.from('customers')
       .update({ name: data.name, email: data.email || null, phone: data.phone || null, address: data.address || null, suburb: data.suburb || null, state: data.state || null, postcode: data.postcode || null })
@@ -689,12 +691,14 @@ export async function updateCustomer(id, data) {
 }
 
 export async function deleteCustomer(id) {
+  if (!supabase) return;
   return q(supabase.from('customers').delete().eq('id', id));
 }
 
 // ── Sites ──────────────────────────────────────────────────────────────────
 
 export async function createSite(clientId, data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const row = await q(
     supabase.from('sites')
       .insert({ customer_id: clientId, name: data.name, address: data.address || null, suburb: data.suburb || null, state: data.state || null, postcode: data.postcode || null, contact_name: data.contactName || null, contact_phone: data.contactPhone || null })
@@ -704,6 +708,7 @@ export async function createSite(clientId, data) {
 }
 
 export async function updateSite(id, data) {
+  if (!supabase) return { id, ...data };
   const row = await q(
     supabase.from('sites')
       .update({ name: data.name, address: data.address || null, suburb: data.suburb || null, state: data.state || null, postcode: data.postcode || null, contact_name: data.contactName || null, contact_phone: data.contactPhone || null })
@@ -713,6 +718,7 @@ export async function updateSite(id, data) {
 }
 
 export async function deleteSite(id) {
+  if (!supabase) return;
   return q(supabase.from('sites').delete().eq('id', id));
 }
 
@@ -726,6 +732,7 @@ async function nextJobNumber() {
 }
 
 export async function createJob(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const jobNumber = data.jobNumber || await nextJobNumber();
   const row = await q(
     supabase.from('jobs')
@@ -736,6 +743,7 @@ export async function createJob(data) {
 }
 
 export async function updateJob(id, data) {
+  if (!supabase) return { id, ...data };
   const row = await q(
     supabase.from('jobs')
       .update({ ...denormalizeJob(data), updated_at: new Date().toISOString() })
@@ -745,6 +753,7 @@ export async function updateJob(id, data) {
 }
 
 export async function deleteJob(id) {
+  if (!supabase) return;
   return q(supabase.from('jobs').delete().eq('id', id));
 }
 
@@ -758,6 +767,7 @@ async function nextQuoteNumber() {
 }
 
 export async function createQuote(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const quoteNumber = data.number || await nextQuoteNumber();
   const dbData = { ...denormalizeQuote(data), quote_number: quoteNumber };
   const quote = await q(supabase.from('quotes').insert(dbData).select().single());
@@ -769,6 +779,7 @@ export async function createQuote(data) {
 }
 
 export async function updateQuote(id, data) {
+  if (!supabase) return { id, ...data };
   const quote = await q(supabase.from('quotes').update(denormalizeQuote(data)).eq('id', id).select().single());
   await q(supabase.from('line_items').delete().eq('quote_id', id));
   if (data.lineItems?.length) {
@@ -779,6 +790,7 @@ export async function updateQuote(id, data) {
 }
 
 export async function deleteQuote(id) {
+  if (!supabase) return;
   return q(supabase.from('quotes').delete().eq('id', id));
 }
 
@@ -795,6 +807,7 @@ async function nextInvoiceNumber() {
 }
 
 export async function createInvoice(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const invNumber = data.number || await nextInvoiceNumber();
   const dbData = { ...denormalizeInvoice(data), invoice_number: invNumber };
   const invoice = await q(supabase.from('invoices').insert(dbData).select().single());
@@ -806,6 +819,7 @@ export async function createInvoice(data) {
 }
 
 export async function updateInvoice(id, data) {
+  if (!supabase) return { id, ...data };
   const invoice = await q(supabase.from('invoices').update(denormalizeInvoice(data)).eq('id', id).select().single());
   await q(supabase.from('line_items').delete().eq('invoice_id', id));
   if (data.lineItems?.length) {
@@ -816,12 +830,14 @@ export async function updateInvoice(id, data) {
 }
 
 export async function deleteInvoice(id) {
+  if (!supabase) return;
   return q(supabase.from('invoices').delete().eq('id', id));
 }
 
 // ── Time entries ───────────────────────────────────────────────────────────
 
 export async function createTimeEntry(data, staffId) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const row = await q(
     supabase.from('time_entries')
       .insert({ job_id: data.jobId || null, staff_id: staffId || null, entry_date: data.date, hours: data.hours, notes: data.description || null })
@@ -831,6 +847,7 @@ export async function createTimeEntry(data, staffId) {
 }
 
 export async function updateTimeEntry(id, data, staffId) {
+  if (!supabase) return { id, ...data };
   const row = await q(
     supabase.from('time_entries')
       .update({ job_id: data.jobId || null, staff_id: staffId || null, entry_date: data.date, hours: data.hours, notes: data.description || null })
@@ -840,44 +857,52 @@ export async function updateTimeEntry(id, data, staffId) {
 }
 
 export async function deleteTimeEntry(id) {
+  if (!supabase) return;
   return q(supabase.from('time_entries').delete().eq('id', id));
 }
 
 // ── Bills ──────────────────────────────────────────────────────────────────
 
 export async function createBill(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const row = await q(supabase.from('bills').insert(denormalizeBill(data)).select().single());
   return normalizeBill(row);
 }
 
 export async function updateBill(id, data) {
+  if (!supabase) return { id, ...data };
   const row = await q(supabase.from('bills').update(denormalizeBill(data)).eq('id', id).select().single());
   return normalizeBill(row);
 }
 
 export async function deleteBill(id) {
+  if (!supabase) return;
   return q(supabase.from('bills').delete().eq('id', id));
 }
 
 // ── Schedule ───────────────────────────────────────────────────────────────
 
 export async function createScheduleEntry(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const row = await q(supabase.from('schedule').insert(denormalizeSchedule(data)).select().single());
   return normalizeSchedule(row);
 }
 
 export async function updateScheduleEntry(id, data) {
+  if (!supabase) return { id, ...data };
   const row = await q(supabase.from('schedule').update(denormalizeSchedule(data)).eq('id', id).select().single());
   return normalizeSchedule(row);
 }
 
 export async function deleteScheduleEntry(id) {
+  if (!supabase) return;
   return q(supabase.from('schedule').delete().eq('id', id));
 }
 
 // ── File upload helper ────────────────────────────────────────────────────
 
 export async function uploadFile(bucket, path, dataUrl) {
+  if (!supabase) return 'demo://uploaded/' + path;
   const blob = await fetch(dataUrl).then(r => r.blob());
   const { error } = await supabase.storage.from(bucket).upload(path, blob, { upsert: true });
   if (error) throw error;
@@ -886,6 +911,7 @@ export async function uploadFile(bucket, path, dataUrl) {
 }
 
 export async function deleteFile(bucket, path) {
+  if (!supabase) return;
   const { error } = await supabase.storage.from(bucket).remove([path]);
   if (error) throw error;
 }
@@ -893,6 +919,7 @@ export async function deleteFile(bucket, path) {
 // ── Attachments ───────────────────────────────────────────────────────────
 
 export async function createAttachment(parentType, parentId, file) {
+  if (!supabase) return { id: 'demo-' + Date.now(), parentType, parentId, name: file.name, size: file.size, type: file.type, url: file.dataUrl, dataUrl: file.dataUrl };
   // file: { name, size, type, dataUrl }
   const path = `${parentType}s/${parentId}/${file.name}`;
   const url = await uploadFile('attachments', path, file.dataUrl);
@@ -905,6 +932,7 @@ export async function createAttachment(parentType, parentId, file) {
 }
 
 export async function deleteAttachment(id) {
+  if (!supabase) return;
   const rows = await q(supabase.from('attachments').select('*').eq('id', id));
   if (rows.length) {
     const att = rows[0];
@@ -928,6 +956,7 @@ async function nextWORef() {
 }
 
 export async function createWorkOrder(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const ref = data.ref || await nextWORef();
   const row = await q(
     supabase.from('work_orders')
@@ -938,6 +967,7 @@ export async function createWorkOrder(data) {
 }
 
 export async function updateWorkOrder(id, data) {
+  if (!supabase) return { id, ...data };
   const row = await q(
     supabase.from('work_orders')
       .update({ ...denormalizeWorkOrder(data), updated_at: new Date().toISOString() })
@@ -947,6 +977,7 @@ export async function updateWorkOrder(id, data) {
 }
 
 export async function deleteWorkOrder(id) {
+  if (!supabase) return;
   // Delete attachments from storage first
   const atts = await q(supabase.from('attachments').select('*').eq('parent_type', 'work_order').eq('parent_id', id));
   for (const att of atts) {
@@ -969,6 +1000,7 @@ async function nextPORef() {
 }
 
 export async function createPurchaseOrder(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const ref = data.ref || await nextPORef();
   const po = await q(
     supabase.from('purchase_orders')
@@ -983,6 +1015,7 @@ export async function createPurchaseOrder(data) {
 }
 
 export async function updatePurchaseOrder(id, data) {
+  if (!supabase) return { id, ...data };
   const po = await q(
     supabase.from('purchase_orders')
       .update({ ...denormalizePurchaseOrder(data), updated_at: new Date().toISOString() })
@@ -998,6 +1031,7 @@ export async function updatePurchaseOrder(id, data) {
 }
 
 export async function deletePurchaseOrder(id) {
+  if (!supabase) return;
   const atts = await q(supabase.from('attachments').select('*').eq('parent_type', 'purchase_order').eq('parent_id', id));
   for (const att of atts) {
     const urlObj = new URL(att.url);
@@ -1012,6 +1046,7 @@ export async function deletePurchaseOrder(id) {
 // ── Contractors ───────────────────────────────────────────────────────────
 
 export async function createContractor(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const row = await qStrict(
     supabase.from('contractors').insert(denormalizeContractor(data)).select().single()
   );
@@ -1019,6 +1054,7 @@ export async function createContractor(data) {
 }
 
 export async function updateContractor(id, data) {
+  if (!supabase) return { id, ...data };
   const row = await qStrict(
     supabase.from('contractors')
       .update({ ...denormalizeContractor(data), updated_at: new Date().toISOString() })
@@ -1028,6 +1064,7 @@ export async function updateContractor(id, data) {
 }
 
 export async function deleteContractor(id) {
+  if (!supabase) return;
   // Delete document files from storage
   const docs = await q(supabase.from('contractor_documents').select('file_url').eq('contractor_id', id));
   for (const doc of docs) {
@@ -1045,6 +1082,7 @@ export async function deleteContractor(id) {
 // ── Contractor Documents ──────────────────────────────────────────────────
 
 export async function createContractorDoc(contractorId, data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const row = await qStrict(
     supabase.from('contractor_documents')
       .insert(denormalizeContractorDoc(data, contractorId))
@@ -1054,6 +1092,7 @@ export async function createContractorDoc(contractorId, data) {
 }
 
 export async function updateContractorDoc(id, data, contractorId) {
+  if (!supabase) return { id, ...data };
   const row = await qStrict(
     supabase.from('contractor_documents')
       .update(denormalizeContractorDoc(data, contractorId))
@@ -1063,6 +1102,7 @@ export async function updateContractorDoc(id, data, contractorId) {
 }
 
 export async function deleteContractorDoc(id) {
+  if (!supabase) return;
   const rows = await q(supabase.from('contractor_documents').select('file_url').eq('id', id));
   if (rows.length && rows[0].file_url) {
     try {
@@ -1108,6 +1148,7 @@ function denormalizeSupplier(data) {
 }
 
 export async function createSupplier(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const row = await qStrict(
     supabase.from('suppliers').insert(denormalizeSupplier(data)).select().single()
   );
@@ -1115,6 +1156,7 @@ export async function createSupplier(data) {
 }
 
 export async function updateSupplier(id, data) {
+  if (!supabase) return { id, ...data };
   const row = await qStrict(
     supabase.from('suppliers')
       .update({ ...denormalizeSupplier(data), updated_at: new Date().toISOString() })
@@ -1124,12 +1166,14 @@ export async function updateSupplier(id, data) {
 }
 
 export async function deleteSupplier(id) {
+  if (!supabase) return;
   return qStrict(supabase.from('suppliers').delete().eq('id', id));
 }
 
 // ── Phases (Gantt) ────────────────────────────────────────────────────────
 
 export async function createPhase(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const row = await q(
     supabase.from('job_phases')
       .insert({ job_id: data.jobId, name: data.name, start_date: data.startDate || null, end_date: data.endDate || null, color: data.color || '#3b82f6', progress: data.progress || 0, sort_order: data.sortOrder || 0 })
@@ -1139,6 +1183,7 @@ export async function createPhase(data) {
 }
 
 export async function updatePhase(id, data) {
+  if (!supabase) return { id, ...data };
   const row = await q(
     supabase.from('job_phases')
       .update({ name: data.name, start_date: data.startDate || null, end_date: data.endDate || null, color: data.color || '#3b82f6', progress: data.progress || 0, sort_order: data.sortOrder || 0 })
@@ -1148,12 +1193,14 @@ export async function updatePhase(id, data) {
 }
 
 export async function deletePhase(id) {
+  if (!supabase) return;
   return q(supabase.from('job_phases').delete().eq('id', id));
 }
 
 // ── Tasks (to-do) ─────────────────────────────────────────────────────────
 
 export async function createTask(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const row = await q(
     supabase.from('job_tasks')
       .insert({ job_id: data.jobId, text: data.text, is_done: data.done || false, due_date: data.dueDate || null, assigned_to: data.assignedTo || null, sort_order: data.sortOrder || 0 })
@@ -1163,6 +1210,7 @@ export async function createTask(data) {
 }
 
 export async function updateTask(id, data) {
+  if (!supabase) return { id, ...data };
   const row = await q(
     supabase.from('job_tasks')
       .update({ text: data.text, is_done: data.done || false, due_date: data.dueDate || null, assigned_to: data.assignedTo || null, sort_order: data.sortOrder || 0 })
@@ -1172,12 +1220,14 @@ export async function updateTask(id, data) {
 }
 
 export async function deleteTask(id) {
+  if (!supabase) return;
   return q(supabase.from('job_tasks').delete().eq('id', id));
 }
 
 // ── Notes ─────────────────────────────────────────────────────────────────
 
 export async function createNote(data) {
+  if (!supabase) return { id: 'demo-' + Date.now(), ...data };
   const dbData = {
     job_id: data.jobId,
     text: data.text || null,
@@ -1196,6 +1246,7 @@ export async function createNote(data) {
 }
 
 export async function updateNote(id, data) {
+  if (!supabase) return { id, ...data };
   const dbData = {
     text: data.text || null,
     category: data.category || 'general',
@@ -1212,6 +1263,7 @@ export async function updateNote(id, data) {
 }
 
 export async function deleteNote(id) {
+  if (!supabase) return;
   // Delete attachments from storage
   const atts = await q(supabase.from('attachments').select('*').eq('parent_type', 'note').eq('parent_id', id));
   for (const att of atts) {
@@ -1227,6 +1279,7 @@ export async function deleteNote(id) {
 // ── Audit Log ─────────────────────────────────────────────────────────────
 
 export async function createAuditEntry(entityType, entityId, action, detail, userName, isAuto = false) {
+  if (!supabase) return { id: 'demo-' + Date.now(), entityType, entityId, action, detail, user: userName, auto: isAuto, ts: new Date().toISOString() };
   const row = await q(
     supabase.from('audit_log')
       .insert({ entity_type: entityType, entity_id: entityId, action, detail: detail || null, user_name: userName || null, is_auto: isAuto })
@@ -1243,6 +1296,7 @@ export async function fetchCompanyInfo() {
 }
 
 export async function saveCompanyInfo(settings) {
+  if (!supabase) return;
   const existing = await q(supabase.from('company_info').select('id').limit(1));
   if (existing.length) {
     return qStrict(supabase.from('company_info').update({ settings, updated_at: new Date().toISOString() }).eq('id', existing[0].id).select());
@@ -1258,6 +1312,7 @@ export async function fetchTemplates() {
 }
 
 export async function saveTemplates(templates) {
+  if (!supabase) return;
   const existing = await q(supabase.from('email_templates').select('id').limit(1));
   if (existing.length) {
     return q(supabase.from('email_templates').update({ templates, updated_at: new Date().toISOString() }).eq('id', existing[0].id).select());
@@ -1273,6 +1328,7 @@ export async function fetchAllUserPermissions() {
 }
 
 export async function saveUserPermissions(userId, permissions) {
+  if (!supabase) return;
   return q(supabase.from('user_permissions').upsert({
     user_id: userId,
     permissions,

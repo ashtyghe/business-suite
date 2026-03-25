@@ -247,7 +247,9 @@ const ViewField = ({ label, value }) => (
 const genId = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 const orderToday = () => new Date().toISOString().slice(0, 10);
 const orderAddDays = (dateStr, n) => { const d = new Date(dateStr); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
-const orderFmtDate = (d) => { if (!d) return "—"; const [y, m, day] = d.split("-"); return `${day}/${m}/${y}`; };
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtDate = (d) => { if (!d) return "—"; const [y, m, day] = d.split("-"); return `${parseInt(day,10).toString().padStart(2,"0")} ${MONTHS[parseInt(m,10)-1]}`; };
+const orderFmtDate = fmtDate;
 const fmtFileSize = (bytes) => { if (bytes < 1024) return bytes + " B"; if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"; return (bytes / (1024 * 1024)).toFixed(1) + " MB"; };
 const orderFmtTs = (ts) => {
   if (!ts) return "—";
@@ -797,12 +799,6 @@ const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mode, setM
           {statusBadge}
         </div>
         <div className={pg.u51}>
-          {showToggle && !isNew && (
-            <div className={pg.u52}>
-              <button className={mode === "view" ? pg.drawerToggleBtnActive : pg.drawerToggleBtnInactive} onClick={() => setMode("view")}>View</button>
-              <button className={mode === "edit" ? pg.drawerToggleBtnActive : pg.drawerToggleBtnInactive} onClick={() => setMode("edit")}>Edit</button>
-            </div>
-          )}
           <button className={pg.u55} onClick={onClose}>
             <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -1879,6 +1875,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
   const totalPaid     = jobInvoices.filter(i => i.status === "paid").reduce((s,i) => s + calcQuoteTotal(i), 0);
   const totalHours    = jobTime.reduce((s,t) => s + t.hours, 0);
   const totalCosts    = jobBills.filter(b => b.status === "approved").reduce((s,b) => s + b.amount, 0);
+  const actualLabour  = jobTime.reduce((s,t) => { const st = (staff||[]).find(x => x.name === t.worker); return s + t.hours * (st?.costRate || 55); }, 0);
+  const actualMaterials = jobBills.filter(b => b.category === "Materials").reduce((s,b) => s + b.amount, 0);
+  const actualSubs    = jobBills.filter(b => b.category === "Subcontractor").reduce((s,b) => s + b.amount, 0);
 
   // Quick-add quote from within job
   const addQuoteForJob = async () => {
@@ -2293,58 +2292,65 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
           {/* ── Overview ── */}
           {tab === "overview" && (
             <div>
-              {job.description && <p className={pg.u190}>{job.description}</p>}
               <div className={pg.gridAutoFit120}>
-                {[
-                  { label: "Estimate", val: (() => { const e = job.estimate || {}; const t = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0); return t > 0 ? fmt(t) : "—"; })(), sub: (() => { const e = job.estimate || {}; const t = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0); return t > 0 ? "Budget set" : "Not set"; })() },
-                  { label: "Quoted", val: fmt(totalQuoted), sub: `${jobQuotes.filter(q=>q.status==="accepted").length} accepted` },
-                  { label: "Invoiced", val: fmt(totalInvoiced), sub: `${fmt(totalPaid)} paid` },
-                  { label: "Time Logged", val: `${totalHours}h`, sub: `${jobTime.filter(t=>t.billable).reduce((s,t)=>s+t.hours,0)}h billable` },
-                  { label: "Costs", val: fmt(totalCosts), sub: `${jobBills.filter(b=>b.status==="pending").length} pending` },
-                ].map((s,i) => (
+                {(() => {
+                  const e = job.estimate || {};
+                  const estTotal = (e.labour||0)+(e.materials||0)+(e.subcontractors||0)+(e.other||0);
+                  const totalActual = actualLabour + actualMaterials + actualSubs;
+                  const profit = estTotal - totalActual;
+                  const avgRate = totalHours > 0 ? actualLabour / totalHours : 55;
+                  const budgetHours = (e.labour||0) > 0 ? Math.round((e.labour||0) / avgRate) : 0;
+                  return [
+                    { label: "P&L", val: estTotal > 0 ? fmt(profit) : "—", sub: estTotal > 0 ? `${fmt(totalActual)} costs / ${fmt(estTotal)} est` : "No budget set", color: profit >= 0 ? "#16a34a" : "#dc2626" },
+                    { label: "Time Logged", val: `${totalHours}h`, sub: budgetHours > 0 ? `of ${budgetHours}h budget` : "No hours budget" },
+                    { label: "Costs", val: fmt(actualMaterials), sub: `of ${fmt(e.materials || 0)} budget` },
+                    { label: "Contractors", val: fmt(actualSubs), sub: `of ${fmt(e.subcontractors || 0)} budget` },
+                  ];
+                })().map((s,i) => (
                   <div key={i} className={pg.grayBox}>
                     <div className={pg.fs10fw700label}>{s.label}</div>
-                    <div className={pg.fs20fw800tight}>{s.val}</div>
+                    <div className={pg.fs20fw800tight} style={s.color ? { color: s.color } : undefined}>{s.val}</div>
                     <div className={pg.fs11caaamt3}>{s.sub}</div>
                   </div>
                 ))}
               </div>
-              <div className="grid-2">
-                <div>
-                  <SectionLabel>Job Details</SectionLabel>
-                  <div className={pg.flexColGap8}>
-                    {[
-                      { label: "Client", val: client?.name },
-                      { label: "Site", val: (() => { const s = client?.sites?.find(x => x.id === job.siteId); return s ? s.name : "—"; })() },
-                      { label: "Site Contact", val: (() => { const s = client?.sites?.find(x => x.id === job.siteId); return s?.contactName ? `${s.contactName}${s.contactPhone ? " · " + s.contactPhone : ""}` : "—"; })() },
-                      { label: "Status", val: <StatusBadge status={job.status} /> },
-                      { label: "Priority", val: <span className={pg.u191}>{job.priority}</span> },
-                      { label: "Start Date", val: job.startDate || "—" },
-                      { label: "Due Date", val: job.dueDate || "—" },
-                    ].map((r,i) => (
-                      <div key={i} className={pg.u192}>
-                        <span className={pg.color888}>{r.label}</span><span className={pg.fw600}>{r.val}</span>
-                      </div>
-                    ))}
-                  </div>
+              <div>
+                <SectionLabel>Job Details</SectionLabel>
+                <div className={pg.flexColGap8}>
+                  {(() => {
+                    const site = client?.sites?.find(x => x.id === job.siteId);
+                    return [
+                      [{ label: "Client", val: client?.name || "—" }, { label: "Site", val: site ? site.name : "—" }],
+                      [{ label: "Site Contact", val: site?.contactName ? `${site.contactName}${site.contactPhone ? " · " + site.contactPhone : ""}` : "—" }],
+                      [{ label: "Priority", val: <span style={{ textTransform: "capitalize" }}>{job.priority}</span> }],
+                      [{ label: "Start Date", val: fmtDate(job.startDate) }, { label: "Due Date", val: fmtDate(job.dueDate) }],
+                      [{ label: "Description", val: job.description || "No description" }],
+                    ];
+                  })().map((row,ri) => (
+                    <div key={ri} style={row.length > 1 ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" } : undefined}>
+                      {row.map((r,ci) => (
+                        <div key={ci} className={pg.u192}>
+                          <span className={pg.color888}>{r.label}</span><span className={pg.fw600}>{r.val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <SectionLabel>Team</SectionLabel>
-                  {job.assignedTo.length === 0
-                    ? <div className={pg.u193}>No team assigned</div>
-                    : job.assignedTo.map((w,i) => (
-                      <div key={i} className={pg.u194}>
-                        <div className={`avatar ${pg.u195}`}>{w.split(" ").map(p=>p[0]).join("")}</div>
-                        <span className={pg.fs13fw600}>{w}</span>
-                        <span className={pg.u196}>{jobTime.filter(t=>t.worker===w).reduce((s,t)=>s+t.hours,0)}h</span>
-                      </div>
-                    ))
-                  }
-                  {job.tags.length > 0 && <>
-                    <SectionLabel>Tags</SectionLabel>
-                    <div className={pg.u197}>{job.tags.map((t,i) => <span key={i} className="tag">{t}</span>)}</div>
-                  </>}
-                </div>
+                <SectionLabel>Team</SectionLabel>
+                {job.assignedTo.length === 0
+                  ? <div className={pg.u193}>No team assigned</div>
+                  : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "4px 16px" }}>{job.assignedTo.map((w,i) => (
+                    <div key={i} className={pg.u194}>
+                      <div className={`avatar ${pg.u195}`}>{w.split(" ").map(p=>p[0]).join("")}</div>
+                      <span className={pg.fs13fw600}>{w}</span>
+                      <span className={pg.u196}>{jobTime.filter(t=>t.worker===w).reduce((s,t)=>s+t.hours,0)}h</span>
+                    </div>
+                  ))}</div>
+                }
+                {job.tags.length > 0 && <>
+                  <SectionLabel>Tags</SectionLabel>
+                  <div className={pg.u197}>{job.tags.map((t,i) => <span key={i} className="tag">{t}</span>)}</div>
+                </>}
               </div>
             </div>
           )}
@@ -2373,7 +2379,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                       <div className={pg.p2_19}>
                         <div>
                           <div className={pg.p2_20}>{q.number}</div>
-                          <div className={pg.p2_21}>{q.createdAt}</div>
+                          <div className={pg.p2_21}>{fmtDate(q.createdAt)}</div>
                         </div>
                         <div className={pg.p2_22}>
                           <StatusBadge status={q.status} />
@@ -2443,9 +2449,9 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                         <div>
                           <div className={pg.p2_20}>{inv.number}</div>
                           <div className={pg.p2_21}>
-                            {inv.createdAt}
+                            {fmtDate(inv.createdAt)}
                             {fromQuote && <span className={pg.u202}>from {fromQuote.number}</span>}
-                            {inv.dueDate && <span className={pg.u203}>· Due {inv.dueDate}</span>}
+                            {inv.dueDate && <span className={pg.u203}>· Due {fmtDate(inv.dueDate)}</span>}
                           </div>
                         </div>
                         <div className={pg.p2_22}>
@@ -2544,7 +2550,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                       {[...jobTime].sort((a,b) => b.date > a.date ? 1 : -1).map(t => (
                         <tr key={t.id}>
                           <td><div className={pg.flexCenter}><div className={`avatar ${pg.u207}`}>{t.worker.split(" ").map(w=>w[0]).join("")}</div><span className={pg.textBold13}>{t.worker}</span></div></td>
-                          <td className={pg.textSub}>{t.date}</td>
+                          <td className={pg.textSub}>{fmtDate(t.date)}</td>
                           <td><span className={pg.cellAmount}>{t.hours}h</span></td>
                           <td><span className={`badge ${t.billable ? pg.billableBadge : pg.nonBillBadge}`}>{t.billable ? "Billable" : "Non-bill"}</span></td>
                           <td className={pg.fs12c666}>{t.description}</td>
@@ -2591,7 +2597,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                             </td>
                             <td><span className={pg.u210}>{b.invoiceNo || "—"}</span></td>
                             <td><span className="chip">{b.category}</span></td>
-                            <td className={pg.textSub}>{b.date}</td>
+                            <td className={pg.textSub}>{fmtDate(b.date)}</td>
                             <td className={pg.fs13}>{fmt(exGst)}</td>
                             <td className={pg.cellAmount}>{fmt(b.amount||0)}</td>
                             <td className={pg.fs12}>
@@ -2646,7 +2652,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                         <div className={pg.u214}>{new Date(s.date+"T12:00:00").getDate()}</div>
                       </div>
                       <div className={pg.flex1}>
-                        <div className={pg.textBold14}>{s.date} · {new Date(s.date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long"})}</div>
+                        <div className={pg.textBold14}>{fmtDate(s.date)} · {new Date(s.date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"long"})}</div>
                         {schSite && <div className={pg.fs12c888mt2}>📍 {schSite.name}</div>}
                         {schSite?.contactName && <div className={pg.textMuted}>👤 {schSite.contactName} {schSite.contactPhone && `· ${schSite.contactPhone}`}</div>}
                         {s.notes && <div className={pg.u215}>{s.notes}</div>}
@@ -3024,7 +3030,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               phases.forEach(p => {
                 const pStart = ((new Date(p.startDate + "T00:00:00").getTime() - startMs) / rangeMs) * 100;
                 const pWidth = Math.max(2, ((new Date(p.endDate + "T23:59:59").getTime() - new Date(p.startDate + "T00:00:00").getTime()) / rangeMs) * 100);
-                w.document.write(`<tr><td style="font-weight:600">${p.name}</td><td>${p.startDate}</td><td>${p.endDate}</td><td>${p.progress}%</td><td class="bar-cell"><div class="bar" style="left:${pStart}%;width:${pWidth}%;background:${p.color}30"><div class="bar-prog" style="width:${p.progress}%;background:${p.color}"></div></div></td></tr>`);
+                w.document.write(`<tr><td style="font-weight:600">${p.name}</td><td>${fmtDate(p.startDate)}</td><td>${fmtDate(p.endDate)}</td><td>${p.progress}%</td><td class="bar-cell"><div class="bar" style="left:${pStart}%;width:${pWidth}%;background:${p.color}30"><div class="bar-prog" style="width:${p.progress}%;background:${p.color}"></div></div></td></tr>`);
               });
               w.document.write(`</tbody></table></body></html>`);
               w.document.close();
@@ -3189,7 +3195,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
                         <div className={pg.flex1}>
                           <div className={task.done ? pg.taskTextDone : pg.taskTextActive}>{task.text}</div>
                           <div className={pg.u265}>
-                            {task.dueDate && <span className={isOverdue ? pg.taskDueOverdue : pg.taskDueNormal}>{isOverdue ? "⚠️ " : ""}{task.dueDate}</span>}
+                            {task.dueDate && <span className={isOverdue ? pg.taskDueOverdue : pg.taskDueNormal}>{isOverdue ? "⚠️ " : ""}{fmtDate(task.dueDate)}</span>}
                             {task.assignedTo && <span>· {task.assignedTo}</span>}
                           </div>
                         </div>
@@ -3486,7 +3492,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
         <div className={pg.drawerBody}>
           <div className={pg.u277}>
             <ViewField label="Status" value={editingInvoice.status?.charAt(0).toUpperCase() + editingInvoice.status?.slice(1)} />
-            <ViewField label="Due Date" value={editingInvoice.dueDate || "—"} />
+            <ViewField label="Due Date" value={fmtDate(editingInvoice.dueDate)} />
             <ViewField label="GST" value={`${editingInvoice.tax}%`} />
           </div>
           <div className={pg.mb20}>
@@ -3813,7 +3819,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
       accent={SECTION_COLORS.time.accent}
       icon={<Icon name="time" size={16} />}
       typeLabel="Time Entry"
-      title={editEntry ? `${form.date} · ${jobName}` : "Log Time"}
+      title={editEntry ? `${fmtDate(form.date)} · ${jobName}` : "Log Time"}
       mode={mode} setMode={setMode}
       showToggle={!isNewTime}
       isNew={isNewTime}
@@ -3836,7 +3842,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
             <ViewField label="Job" value={jobName} />
             <ViewField label="Worker" value={form.worker} />
           </div>
-          <ViewField label="Date" value={form.date} />
+          <ViewField label="Date" value={fmtDate(form.date)} />
           <div className="grid-2">
             <ViewField label="Start Time" value={form.startTime} />
             <ViewField label="End Time" value={form.endTime} />
@@ -4201,7 +4207,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
             <ViewField label="Invoice / Receipt #" value={form.invoiceNo} />
           </div>
           <div className="grid-2">
-            <ViewField label="Date" value={form.date} />
+            <ViewField label="Date" value={fmtDate(form.date)} />
             <ViewField label="Category" value={form.category} />
           </div>
           <ViewField label="Description" value={form.description} />

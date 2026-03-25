@@ -4,7 +4,7 @@ import { createQuote, updateQuote, deleteQuote } from '../lib/db';
 import { sendEmail } from '../lib/supabase';
 import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import { buildQuotePdfHtml, htmlToPdfBase64 } from '../lib/pdf';
-import { fmt, calcQuoteTotal } from '../utils/helpers';
+import { fmt, fmtDate, calcQuoteTotal } from '../utils/helpers';
 import { SECTION_COLORS, ViewField } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import {
@@ -162,7 +162,7 @@ const Quotes = () => {
                       <div className={s.kanbanCardClient}>{client?.name || "\u2014"}</div>
                       <div className={s.kanbanCardFooter}>
                         <span className={s.kanbanCardTotal}>{fmt(sub * (1 + q.tax / 100))}</span>
-                        <span className={s.kanbanCardDate}>{q.createdAt}</span>
+                        <span className={s.kanbanCardDate}>{fmtDate(q.createdAt)}</span>
                       </div>
                     </div>
                   );
@@ -190,7 +190,7 @@ const Quotes = () => {
                     </div>
                     <div>
                       <div className={s.gridCardNumber}>{q.number}</div>
-                      <div className={s.gridCardDate}>{q.createdAt}</div>
+                      <div className={s.gridCardDate}>{fmtDate(q.createdAt)}</div>
                     </div>
                   </div>
                   <div className={s.gridCardBadge}>
@@ -243,7 +243,7 @@ const Quotes = () => {
                     <td>{fmt(sub)}</td>
                     <td>{fmt(sub * q.tax / 100)}</td>
                     <td className={s.tableTotal}>{fmt(sub * (1 + q.tax / 100))}</td>
-                    <td className={s.tableDate}>{q.createdAt}</td>
+                    <td className={s.tableDate}>{fmtDate(q.createdAt)}</td>
                     <td onClick={e => e.stopPropagation()}>
                       <div className={s.actionBtns}>
                         <button className="btn btn-ghost btn-xs" onClick={() => duplicate(q)} title="Duplicate"><Icon name="copy" size={12} /></button>

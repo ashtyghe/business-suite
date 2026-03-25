@@ -4,7 +4,7 @@ import { useAuth } from '../lib/AuthContext';
 import { createBill, updateBill, deleteBill } from '../lib/db';
 import { xeroSyncBill } from '../lib/supabase';
 import { useKanbanDnD } from '../hooks/useKanbanDnD';
-import { fmt, addLog } from '../utils/helpers';
+import { fmt, fmtDate, addLog } from '../utils/helpers';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import {
@@ -291,7 +291,7 @@ const Bills = () => {
                 </div>
                 <SectionProgressBar status={b.status} section="bills" />
                 <div className={s.cardFooter}>
-                  <span className={s.cardDate}>{b.date}</span>
+                  <span className={s.cardDate}>{fmtDate(b.date)}</span>
                   <div className={s.actionRow} onClick={e => e.stopPropagation()}>
                     {b.status === "inbox" && <button className="btn btn-secondary btn-xs" onClick={() => setStatus(b.id, "linked")} disabled={!b.jobId}>Link →</button>}
                     {canApprove && b.status === "linked" && <button className={`btn btn-secondary btn-xs ${s.approveColor}`} onClick={() => setStatus(b.id, "approved")}>✓</button>}
@@ -400,7 +400,7 @@ const Bills = () => {
                           {job ? <div className={s.listJobTitle}>{job.title}</div> : <span className={s.listUnlinked}>Unlinked</span>}
                         </td>
                         <td><span className="chip">{b.category}</span></td>
-                        <td className={s.listDate}>{b.date}</td>
+                        <td className={s.listDate}>{fmtDate(b.date)}</td>
                         <td className={s.listExGst}>{fmt(exGst)}</td>
                         <td className={s.listGst}>{b.hasGst ? fmt(gst) : <span className={s.listGstDash}>—</span>}</td>
                         <td className={s.listTotal}>{fmt(b.amount)}</td>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAppStore } from "../../lib/store";
-import { addLog } from "../../utils/helpers";
+import { addLog, fmtDate } from "../../utils/helpers";
 import { SECTION_COLORS } from "../../fixtures/seedData.jsx";
 import s from './JobGantt.module.css';
 
@@ -44,7 +44,7 @@ const JobGantt = ({ job }) => {
     phases.forEach(p => {
       const pStart = ((new Date(p.startDate + "T00:00:00").getTime() - startMs) / rangeMs) * 100;
       const pWidth = Math.max(2, ((new Date(p.endDate + "T23:59:59").getTime() - new Date(p.startDate + "T00:00:00").getTime()) / rangeMs) * 100);
-      w.document.write(`<tr><td style="font-weight:600">${p.name}</td><td>${p.startDate}</td><td>${p.endDate}</td><td>${p.progress}%</td><td class="bar-cell"><div class="bar" style="left:${pStart}%;width:${pWidth}%;background:${p.color}30"><div class="bar-prog" style="width:${p.progress}%;background:${p.color}"></div></div></td></tr>`);
+      w.document.write(`<tr><td style="font-weight:600">${p.name}</td><td>${fmtDate(p.startDate)}</td><td>${fmtDate(p.endDate)}</td><td>${p.progress}%</td><td class="bar-cell"><div class="bar" style="left:${pStart}%;width:${pWidth}%;background:${p.color}30"><div class="bar-prog" style="width:${p.progress}%;background:${p.color}"></div></div></td></tr>`);
     });
     w.document.write(`</tbody></table></body></html>`);
     w.document.close();
@@ -97,8 +97,8 @@ const JobGantt = ({ job }) => {
         <div className={s.chartHeader}>
           <div className={s.chartPhaseCol}>Phase</div>
           <div className={s.chartTimelineCol}>
-            <span className={s.dateLabelLeft}>{minDate}</span>
-            <span className={s.dateLabelRight}>{maxDate}</span>
+            <span className={s.dateLabelLeft}>{fmtDate(minDate)}</span>
+            <span className={s.dateLabelRight}>{fmtDate(maxDate)}</span>
           </div>
         </div>
         {phases.map(p => {

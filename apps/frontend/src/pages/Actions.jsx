@@ -4,7 +4,7 @@ import {
   SEED_CLIENTS, SECTION_COLORS, ORDER_TERMINAL,
 } from '../fixtures/seedData.jsx';
 import {
-  fmt, calcQuoteTotal, daysUntil, hexToRgba,
+  fmt, fmtDate, calcQuoteTotal, daysUntil, hexToRgba,
   COMPLIANCE_DOC_TYPES, getComplianceStatus,
 } from '../utils/helpers';
 import { fetchOutboundDefaults } from '../lib/db';
@@ -32,7 +32,7 @@ const Actions = ({ onNav }) => {
   const unbilledTime = timeEntries.filter(t => !t.billable);
   const timesheetItems = unbilledTime.length > 0 ? unbilledTime.slice(0, 10).map(t => {
     const job = t.jobId ? jobs.find(j => j.id === t.jobId) : null;
-    return { id: `time-${t.id}`, title: `${t.worker} — ${t.hours}h`, sub: job?.title, detail: `${t.date} · Non-billable`, severity: "low" };
+    return { id: `time-${t.id}`, title: `${t.worker} — ${t.hours}h`, sub: job?.title, detail: `${fmtDate(t.date)} · Non-billable`, severity: "low" };
   }) : [];
 
   // Build action items per category — new order
@@ -94,7 +94,7 @@ const Actions = ({ onNav }) => {
       id: "overdue-reminders", label: "Overdue Reminders", color: "#f59e0b", nav: "reminders",
       items: reminders.filter(r => r.status === "pending" && r.dueDate < today).map(r => {
         const job = r.jobId ? jobs.find(j => j.id === r.jobId) : null;
-        return { id: `rem-${r.id}`, title: r.text, sub: job?.title, detail: `Due ${r.dueDate}`, severity: "high" };
+        return { id: `rem-${r.id}`, title: r.text, sub: job?.title, detail: `Due ${fmtDate(r.dueDate)}`, severity: "high" };
       }),
     },
     {

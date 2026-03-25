@@ -4,7 +4,7 @@ import { createInvoice, updateInvoice, deleteInvoice } from '../lib/db';
 import { sendEmail, xeroSyncInvoice } from '../lib/supabase';
 import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import { buildInvoicePdfHtml, htmlToPdfBase64 } from '../lib/pdf';
-import { fmt, calcQuoteTotal } from '../utils/helpers';
+import { fmt, fmtDate, calcQuoteTotal } from '../utils/helpers';
 import { SECTION_COLORS, ViewField } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import {
@@ -234,7 +234,7 @@ const Invoices = () => {
                     </div>
                     <div>
                       <div className={s.cardNumber}>{inv.number}</div>
-                      <div className={s.cardDate}>{inv.createdAt || "\u2014"}</div>
+                      <div className={s.cardDate}>{fmtDate(inv.createdAt)}</div>
                     </div>
                   </div>
                   <div className={s.cardStatusWrap}>
@@ -252,7 +252,7 @@ const Invoices = () => {
                 </div>
                 <SectionProgressBar status={inv.status} section="invoices" />
                 <div className={s.cardFooter}>
-                  <span className={s.cardDue} style={{ color: inv.dueDate ? "#334155" : "#ccc" }}>{inv.dueDate ? `Due ${inv.dueDate}` : "No due date"}</span>
+                  <span className={s.cardDue} style={{ color: inv.dueDate ? "#334155" : "#ccc" }}>{inv.dueDate ? `Due ${fmtDate(inv.dueDate)}` : "No due date"}</span>
                   <div className={s.cardActions} onClick={e => e.stopPropagation()}>
                     {inv.status !== "paid" && inv.status !== "void" && <button className={`btn btn-ghost btn-xs ${s.btnGreen}`} onClick={() => markPaid(inv.id)} title="Mark Paid"><Icon name="check" size={12} /></button>}
                     <button className={`btn btn-ghost btn-xs ${s.btnRed}`} onClick={() => del(inv.id)}><Icon name="trash" size={12} /></button>

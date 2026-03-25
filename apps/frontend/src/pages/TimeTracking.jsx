@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, Fragment, memo } from "react";
 import { useAppStore } from "../lib/store";
 import { useAuth } from "../lib/AuthContext";
-import { addLog, calcHoursFromTimes, addMinsToTime } from "../utils/helpers";
+import { addLog, fmtDate, calcHoursFromTimes, addMinsToTime } from "../utils/helpers";
 import { Icon } from "../components/Icon";
 import { SectionDrawer } from "../components/shared";
 import { SECTION_COLORS, TEAM } from "../fixtures/seedData.jsx";
@@ -92,7 +92,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
       accent={SECTION_COLORS.time.accent}
       icon={<Icon name="time" size={16} />}
       typeLabel="Time Entry"
-      title={editEntry ? `${form.date} · ${jobName}` : "Log Time"}
+      title={editEntry ? `${fmtDate(form.date)} · ${jobName}` : "Log Time"}
       mode={mode} setMode={setMode}
       showToggle={!isNewTime}
       isNew={isNewTime}
@@ -115,7 +115,7 @@ const LogTimeModal = ({ jobs, onSave, onClose, editEntry = null, staff }) => {
             <ViewField label="Job" value={jobName} />
             <ViewField label="Worker" value={form.worker} />
           </div>
-          <ViewField label="Date" value={form.date} />
+          <ViewField label="Date" value={fmtDate(form.date)} />
           <div className="grid-2">
             <ViewField label="Start Time" value={form.startTime} />
             <ViewField label="End Time" value={form.endTime} />

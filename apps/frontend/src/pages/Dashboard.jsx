@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, Fragment } from "react";
 import { useAppStore } from '../lib/store';
 import { supabase } from '../lib/supabase';
 import { updateScheduleEntry } from '../lib/db';
-import { fmt, calcQuoteTotal, daysUntil, getContractorComplianceCount } from '../utils/helpers';
+import { fmt, fmtDate, calcQuoteTotal, daysUntil, getContractorComplianceCount } from '../utils/helpers';
 import { getTodayStr } from '../utils/timezone';
 import { Icon } from '../components/Icon';
 import { SectionLabel, StatusBadge, AvatarGroup } from '../components/shared';
@@ -388,7 +388,7 @@ const Dashboard = ({ onNav }) => {
           {overdueJobs.length > 0 ? (
             <div className={s.tileList}>
               {overdueJobs.slice(0, 3).map(j => (
-                <div key={j.id} className={s.tileListItem}><span className={s.tileListTitle}>{j.title}</span><span className={s.tileListSub}>Due {j.dueDate}</span></div>
+                <div key={j.id} className={s.tileListItem}><span className={s.tileListTitle}>{j.title}</span><span className={s.tileListSub}>Due {fmtDate(j.dueDate)}</span></div>
               ))}
               {overdueJobs.length > 3 && <div className={s.tileListMore}>+{overdueJobs.length - 3} more</div>}
             </div>
@@ -402,7 +402,7 @@ const Dashboard = ({ onNav }) => {
           {jobsDueThisWeek.length > 0 ? (
             <div className={s.tileList}>
               {jobsDueThisWeek.slice(0, 3).map(j => (
-                <div key={j.id} className={s.tileListItem}><span className={s.tileListTitle}>{j.title}</span><span className={s.tileListSub}>{j.dueDate}</span></div>
+                <div key={j.id} className={s.tileListItem}><span className={s.tileListTitle}>{j.title}</span><span className={s.tileListSub}>{fmtDate(j.dueDate)}</span></div>
               ))}
               {jobsDueThisWeek.length > 3 && <div className={s.tileListMore}>+{jobsDueThisWeek.length - 3} more</div>}
             </div>
@@ -592,7 +592,7 @@ const Dashboard = ({ onNav }) => {
                 <div key={t.id} className={s.listRow}>
                   <div className={s.listRowLeft}>
                     <div className={s.listRowTitle}>{t.worker}</div>
-                    <div className={s.listRowSub}>{job?.title} · {t.date}</div>
+                    <div className={s.listRowSub}>{job?.title} · {fmtDate(t.date)}</div>
                   </div>
                   <div className={s.timeEntryRight}>
                     <div className={s.timeEntryHours}>{t.hours}h</div>
@@ -689,7 +689,7 @@ const Dashboard = ({ onNav }) => {
                 <div key={wo.id} className={s.listRow}>
                   <div className={s.listRowLeft}>
                     <div className={s.orderRef}>{wo.ref}</div>
-                    <div className={s.listRowSub}>{wo.contractorName}{wo.trade ? ` · ${wo.trade}` : ""}{wo.dueDate ? ` · Due ${wo.dueDate}` : ""}</div>
+                    <div className={s.listRowSub}>{wo.contractorName}{wo.trade ? ` · ${wo.trade}` : ""}{wo.dueDate ? ` · Due ${fmtDate(wo.dueDate)}` : ""}</div>
                   </div>
                   <div className={s.orderRightCol}>
                     {overdue && <span className={s.overdueLabel}>OVERDUE</span>}
@@ -708,7 +708,7 @@ const Dashboard = ({ onNav }) => {
                 <div key={po.id} className={s.listRow}>
                   <div className={s.listRowLeft}>
                     <div className={s.orderRef}>{po.ref}</div>
-                    <div className={s.listRowSub}>{po.supplierName}{po.dueDate ? ` · Due ${po.dueDate}` : ""}</div>
+                    <div className={s.listRowSub}>{po.supplierName}{po.dueDate ? ` · Due ${fmtDate(po.dueDate)}` : ""}</div>
                   </div>
                   <div className={s.orderRightCol}>
                     {overdue && <span className={s.overdueLabel}>OVERDUE</span>}
@@ -783,7 +783,7 @@ const Dashboard = ({ onNav }) => {
                 <div key={inv.id} className={s.listRow}>
                   <div className={s.listRowLeft}>
                     <div className={s.listRowTitle}>{inv.number}</div>
-                    <div className={s.listRowSub} style={{ color: overdue ? "#dc2626" : undefined }}>{job?.title}{inv.dueDate ? ` · Due ${inv.dueDate}` : ""}{overdue ? " — OVERDUE" : ""}</div>
+                    <div className={s.listRowSub} style={{ color: overdue ? "#dc2626" : undefined }}>{job?.title}{inv.dueDate ? ` · Due ${fmtDate(inv.dueDate)}` : ""}{overdue ? " — OVERDUE" : ""}</div>
                   </div>
                   <div className={s.listRowRight}>
                     <div className={s.listRowAmount}>{fmt(calcQuoteTotal(inv))}</div>

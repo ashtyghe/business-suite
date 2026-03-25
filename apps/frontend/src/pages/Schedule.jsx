@@ -5,6 +5,7 @@ import { SECTION_COLORS, ViewField, TEAM } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import { AvatarGroup, SectionDrawer } from '../components/shared';
 import { getTodayStr, getTimezone } from '../utils/timezone';
+import { fmtDate } from '../utils/helpers';
 import s from './Schedule.module.css';
 
 const Schedule = () => {
@@ -287,7 +288,7 @@ const Schedule = () => {
                   const client = clients.find(c => c.id === job?.clientId);
                   return (
                     <tr key={entry.id} onClick={() => openEdit(entry)} className={s.cursorPointer}>
-                      <td className={s.dateCell}>{entry.date}</td>
+                      <td className={s.dateCell}>{fmtDate(entry.date)}</td>
                       <td>{job?.title || "Unknown Job"}</td>
                       <td className={s.clientCell}>{client?.name || "—"}</td>
                       <td>{(entry.assignedTo || []).length > 0 ? <AvatarGroup names={entry.assignedTo} max={3} /> : "—"}</td>
@@ -368,7 +369,7 @@ const Schedule = () => {
           accent={SECTION_COLORS.schedule.accent}
           icon={<Icon name="schedule" size={16} />}
           typeLabel="Schedule"
-          title={editEntry ? `${form.date} · ${schedJobName}` : "Schedule a Job"}
+          title={editEntry ? `${fmtDate(form.date)} · ${schedJobName}` : "Schedule a Job"}
           mode={schedMode} setMode={setSchedMode}
           showToggle={!isNewSched}
           isNew={isNewSched}
@@ -388,7 +389,7 @@ const Schedule = () => {
           {schedMode === "view" ? (
             <div className={s.drawerBody}>
               <ViewField label="Job" value={schedJobName} />
-              <ViewField label="Date" value={form.date} />
+              <ViewField label="Date" value={fmtDate(form.date)} />
               {(form.assignedTo || []).length > 0 && (
                 <div className={s.viewAssignedBlock}>
                   <div className={s.viewAssignedLabel}>Assigned To</div>

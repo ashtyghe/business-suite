@@ -344,72 +344,79 @@ const JobDetail = ({ job, onClose, onEdit }) => {
     >
         {detailMode === "edit" ? (
         <div className={s.sectionPad}>
-          <div className="form-group">
-            <label className="form-label">Job Title *</label>
-            <input className="form-control" value={detailForm.title} onChange={e => setDetailForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
-          </div>
-          <div className={s.grid2Fixed}>
+          <div>
+            <SectionLabel>Job Details</SectionLabel>
             <div className="form-group">
-              <label className="form-label">Client *</label>
-              <select className="form-control" value={detailForm.clientId} onChange={e => setDetailForm(f => ({ ...f, clientId: e.target.value, siteId: "" }))}>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <label className="form-label">Job Title *</label>
+              <input className="form-control" value={detailForm.title} onChange={e => setDetailForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Office Fitout – Level 3" />
+            </div>
+            <div className={s.grid2Fixed}>
+              <div className="form-group">
+                <label className="form-label">Client *</label>
+                <select className="form-control" value={detailForm.clientId} onChange={e => setDetailForm(f => ({ ...f, clientId: e.target.value, siteId: "" }))}>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Site</label>
+                <select className="form-control" value={detailForm.siteId || ""} onChange={e => setDetailForm(f => ({ ...f, siteId: e.target.value || null }))}>
+                  <option value="">— No specific site —</option>
+                  {(clients.find(c => String(c.id) === String(detailForm.clientId))?.sites || []).map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className={s.grid2Fixed}>
+              <div className="form-group">
+                <label className="form-label">Priority</label>
+                <select className="form-control" value={detailForm.priority} onChange={e => setDetailForm(f => ({ ...f, priority: e.target.value }))}>
+                  {["high","medium","low"].map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Status</label>
+                <select className="form-control" value={detailForm.status} onChange={e => setDetailForm(f => ({ ...f, status: e.target.value }))}>
+                  {["draft","scheduled","quoted","in_progress","completed","cancelled"].map(s => <option key={s} value={s}>{s.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className={s.grid2Fixed}>
+              <div className="form-group">
+                <label className="form-label">Start Date</label>
+                <input type="date" className="form-control" value={detailForm.startDate} onChange={e => setDetailForm(f => ({ ...f, startDate: e.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Due Date</label>
+                <input type="date" className="form-control" value={detailForm.dueDate} onChange={e => setDetailForm(f => ({ ...f, dueDate: e.target.value }))} />
+              </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Site</label>
-              <select className="form-control" value={detailForm.siteId || ""} onChange={e => setDetailForm(f => ({ ...f, siteId: e.target.value || null }))}>
-                <option value="">— No specific site —</option>
-                {(clients.find(c => String(c.id) === String(detailForm.clientId))?.sites || []).map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
+              <label className="form-label">Description</label>
+              <textarea className="form-control" value={detailForm.description} onChange={e => setDetailForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
+            </div>
+          </div>
+          <div>
+            <SectionLabel>Team</SectionLabel>
+            <div className="form-group">
+              <div className="multi-select">
+                {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => (
+                  <span key={t} className={`multi-option ${detailForm.assignedTo.includes(t) ? "selected" : ""}`}
+                    onClick={() => setDetailForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
+                    {t}
+                  </span>
                 ))}
-              </select>
+              </div>
             </div>
           </div>
-          <div className={s.grid2Fixed}>
+          <div>
+            <SectionLabel>Tags</SectionLabel>
             <div className="form-group">
-              <label className="form-label">Status</label>
-              <select className="form-control" value={detailForm.status} onChange={e => setDetailForm(f => ({ ...f, status: e.target.value }))}>
-                {["draft","scheduled","quoted","in_progress","completed","cancelled"].map(s => <option key={s} value={s}>{s.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
-              </select>
+              <input className="form-control" value={detailForm.tags} onChange={e => setDetailForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
             </div>
-            <div className="form-group">
-              <label className="form-label">Priority</label>
-              <select className="form-control" value={detailForm.priority} onChange={e => setDetailForm(f => ({ ...f, priority: e.target.value }))}>
-                {["high","medium","low"].map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Tags (comma separated)</label>
-            <input className="form-control" value={detailForm.tags} onChange={e => setDetailForm(f => ({ ...f, tags: e.target.value }))} placeholder="fitout, commercial, urgent" />
-          </div>
-          <div className={s.grid2Fixed}>
-            <div className="form-group">
-              <label className="form-label">Start Date</label>
-              <input type="date" className="form-control" value={detailForm.startDate} onChange={e => setDetailForm(f => ({ ...f, startDate: e.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Due Date</label>
-              <input type="date" className="form-control" value={detailForm.dueDate} onChange={e => setDetailForm(f => ({ ...f, dueDate: e.target.value }))} />
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Assigned Team Members</label>
-            <div className="multi-select">
-              {(staff && staff.length > 0 ? staff.map(s => s.name) : TEAM).map(t => (
-                <span key={t} className={`multi-option ${detailForm.assignedTo.includes(t) ? "selected" : ""}`}
-                  onClick={() => setDetailForm(f => ({ ...f, assignedTo: f.assignedTo.includes(t) ? f.assignedTo.filter(x => x !== t) : [...f.assignedTo, t] }))}>
-                  {t}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Description</label>
-            <textarea className="form-control" value={detailForm.description} onChange={e => setDetailForm(f => ({ ...f, description: e.target.value }))} placeholder="Job details, scope of work..." />
           </div>
           <div className={s.estimateWrap}>
-            <div className={s.sectionHeading}>Estimate</div>
+            <SectionLabel>Estimate</SectionLabel>
             <div className={s.estimateBox}>
               <div className={`grid-2 ${s.gridGap8}`}>
                 <div className={`form-group ${s.formGroupNoMb}`}>

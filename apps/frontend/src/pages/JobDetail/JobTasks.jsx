@@ -33,7 +33,7 @@ const JobTasks = ({ job }) => {
     if (phases.length === 0) return;
     const existingTexts = new Set((job.tasks || []).map(t => t.text));
     const newTasks = phases.filter(p => !existingTexts.has(p.name)).map(p => ({
-      id: Date.now() + Math.random(), text: p.name, done: p.progress >= 100, dueDate: p.endDate, assignedTo: "", createdAt: new Date().toISOString()
+      id: Date.now() + Math.random(), text: p.name, done: p.progress >= 100, dueDate: p.endDate, assignedTo: "", phaseId: p.id, createdAt: new Date().toISOString()
     }));
     if (newTasks.length === 0) return;
     setJobs(js => js.map(j => j.id === job.id ? { ...j, tasks: [...(j.tasks || []), ...newTasks], activityLog: addLog(j.activityLog, `Copied ${newTasks.length} tasks from Gantt phases`) } : j));

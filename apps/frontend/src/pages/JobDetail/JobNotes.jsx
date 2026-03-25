@@ -219,7 +219,7 @@ const JobNotes = ({ job }) => {
                   {/* Category pills */}
                   <div className={s.categoryPills}>
                     {NOTE_CATEGORIES.map(c => (
-                      <button key={c.id} onClick={() => setNoteForm(prev => ({ ...prev, category: c.id }))} style={{ padding: "4px 12px", borderRadius: 20, border: noteForm.category === c.id ? `2px solid ${c.color}` : "1px solid #e2e8f0", background: noteForm.category === c.id ? c.color + "18" : "#fff", color: noteForm.category === c.id ? c.color : "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{c.label}</button>
+                      <button key={c.id} className={s.categoryPill} onClick={() => setNoteForm(prev => ({ ...prev, category: c.id }))} style={{ border: noteForm.category === c.id ? `2px solid ${c.color}` : "1px solid #e2e8f0", background: noteForm.category === c.id ? c.color + "18" : "#fff", color: noteForm.category === c.id ? c.color : "#64748b" }}>{c.label}</button>
                     ))}
                   </div>
                   {/* File attachments */}
@@ -299,7 +299,7 @@ const JobNotes = ({ job }) => {
                             <textarea value={editNoteForm.text} onChange={e => setEditNoteForm(prev => ({ ...prev, text: e.target.value }))} rows={3} className={s.noteTextarea} />
                             <div className={s.categoryPills}>
                               {NOTE_CATEGORIES.map(c => (
-                                <button key={c.id} onClick={() => setEditNoteForm(prev => ({ ...prev, category: c.id }))} style={{ padding: "4px 12px", borderRadius: 20, border: editNoteForm.category === c.id ? `2px solid ${c.color}` : "1px solid #e2e8f0", background: editNoteForm.category === c.id ? c.color + "18" : "#fff", color: editNoteForm.category === c.id ? c.color : "#64748b", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{c.label}</button>
+                                <button key={c.id} className={s.categoryPill} onClick={() => setEditNoteForm(prev => ({ ...prev, category: c.id }))} style={{ border: editNoteForm.category === c.id ? `2px solid ${c.color}` : "1px solid #e2e8f0", background: editNoteForm.category === c.id ? c.color + "18" : "#fff", color: editNoteForm.category === c.id ? c.color : "#64748b" }}>{c.label}</button>
                               ))}
                             </div>
                             <div className={s.attachmentsSection}>

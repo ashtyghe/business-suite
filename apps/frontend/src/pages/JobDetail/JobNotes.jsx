@@ -238,15 +238,19 @@ const JobNotes = ({ job }) => {
                       </div>
                     )}
                     <div className={s.attachActions}>
-                      <label className={s.uploadLabel}>
+                      <label className={s.attachOptionBtn}>
                         <OrderIcon name="upload" size={14} />
-                        Upload Photo
+                        Upload
                         <input type="file" multiple className={s.hiddenInput} onChange={handleNoteFiles} accept="*/*" />
                       </label>
-                      <div className={s.attachDivider} />
+                      <button className={s.attachOptionBtn} onClick={() => setShowPlanDrawing(true)}>
+                        <OrderIcon name="edit" size={14} />
+                        Draw
+                      </button>
                       <div className={s.dropdownWrap}>
                         <button className={s.attachOptionBtn} onClick={() => setShowFormMenu(m => !m)}>
-                          New Form ▾
+                          <OrderIcon name="file" size={14} />
+                          Form ▾
                         </button>
                         {showFormMenu && (
                           <div className={s.dropdownMenu}>
@@ -259,10 +263,8 @@ const JobNotes = ({ job }) => {
                           </div>
                         )}
                       </div>
-                      <button className={s.attachOptionBtn} onClick={() => setShowPlanDrawing(true)}>
-                        Draw Plan
-                      </button>
                       <button className={s.attachOptionBtn} onClick={() => pdfInputRef.current?.click()}>
+                        <OrderIcon name="file-text" size={14} />
                         Fill PDF
                       </button>
                     </div>

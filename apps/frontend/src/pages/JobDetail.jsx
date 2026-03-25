@@ -4,7 +4,7 @@ import { useAuth } from "../lib/AuthContext";
 import {
   createQuote, updateQuote, deleteQuote,
   createInvoice, updateInvoice, deleteInvoice,
-  createTimeEntry, deleteTimeEntry,
+  createTimeEntry, updateTimeEntry, deleteTimeEntry,
   createBill, updateBill, deleteBill,
   updateJob,
   createScheduleEntry, updateScheduleEntry, deleteScheduleEntry,
@@ -101,21 +101,34 @@ const JobDetail = ({ job, onClose, onEdit }) => {
 
   // Quick-add time
   const [showTimeForm, setShowTimeForm] = useState(false);
-  const [timeForm, setTimeForm] = useState({ worker: TEAM[0], date: new Date().toISOString().slice(0,10), startTime: "", endTime: "", hours: 1, description: "", billable: true });
+  const [editingTimeId, setEditingTimeId] = useState(null);
+  const defaultTimeForm = { worker: (staff && staff[0]?.name) || TEAM[0], date: new Date().toISOString().slice(0,10), startTime: "", endTime: "", hours: 1, description: "", billable: true };
+  const [timeForm, setTimeForm] = useState(defaultTimeForm);
   const quickHours = calcHoursFromTimes(timeForm.startTime, timeForm.endTime) || timeForm.hours;
+  const startEditTime = (t) => {
+    setTimeForm({ worker: t.worker, date: t.date, startTime: t.startTime || "", endTime: t.endTime || "", hours: t.hours, description: t.description || "", billable: t.billable });
+    setEditingTimeId(t.id);
+    setShowTimeForm(true);
+  };
   const saveTime = async () => {
     const hours = calcHoursFromTimes(timeForm.startTime, timeForm.endTime) || Number(timeForm.hours);
     try {
       const staffMember = staff ? staff.find(s => s.name === timeForm.worker) : null;
       const staffId = staffMember?.id;
-      const saved = await createTimeEntry({ ...timeForm, jobId: job.id, hours }, staffId);
-      setTimeEntries(ts => [...ts, saved]);
-      setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `${timeForm.worker} logged ${hours}h`) } : j));
+      if (editingTimeId) {
+        const updated = await updateTimeEntry(editingTimeId, { ...timeForm, hours });
+        setTimeEntries(ts => ts.map(t => t.id === editingTimeId ? { ...t, ...updated } : t));
+      } else {
+        const saved = await createTimeEntry({ ...timeForm, jobId: job.id, hours }, staffId);
+        setTimeEntries(ts => [...ts, saved]);
+        setJobs(js => js.map(j => j.id === job.id ? { ...j, activityLog: addLog(j.activityLog, `${timeForm.worker} logged ${hours}h`) } : j));
+      }
     } catch (err) {
       console.error('Failed to save time entry:', err);
     }
     setShowTimeForm(false);
-    setTimeForm({ worker: (staff && staff[0]?.name) || TEAM[0], date: new Date().toISOString().slice(0,10), startTime: "", endTime: "", hours: 1, description: "", billable: true });
+    setEditingTimeId(null);
+    setTimeForm(defaultTimeForm);
   };
 
   // Quick-add schedule entry
@@ -674,7 +687,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                   <div className={s.timeFormActions}>
                     <label className="checkbox-label"><input type="checkbox" checked={timeForm.billable} onChange={e => setTimeForm(f => ({ ...f, billable: e.target.checked }))} /><span>Billable</span></label>
                     <div className={s.flexGap8}>
-                      <button className="btn btn-secondary btn-sm" onClick={() => setShowTimeForm(false)}>Cancel</button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => { setShowTimeForm(false); setEditingTimeId(null); setTimeForm(defaultTimeForm); }}>Cancel</button>
                       <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.time.accent }} onClick={saveTime} disabled={quickHours <= 0}><Icon name="check" size={12} />Save</button>
                     </div>
                   </div>
@@ -682,23 +695,36 @@ const JobDetail = ({ job, onClose, onEdit }) => {
               )}
               {jobTime.length === 0 && !showTimeForm
                 ? <div className="empty-state"><div className="empty-state-icon">⏱</div><div className="empty-state-text">No time logged yet</div></div>
-                : <div className="card"><div className="table-wrap">
-                  <table>
-                    <thead><tr><th>Worker</th><th>Date</th><th>Hours</th><th>Billable</th><th>Description</th><th></th></tr></thead>
-                    <tbody>
-                      {[...jobTime].sort((a,b) => b.date > a.date ? 1 : -1).map(t => (
-                        <tr key={t.id}>
-                          <td><div className={s.workerCell}><div className={`avatar ${s.workerAvatar}`}>{t.worker.split(" ").map(w=>w[0]).join("")}</div><span className={s.workerName}>{t.worker}</span></div></td>
-                          <td className={s.dateCell}>{fmtDate(t.date)}</td>
-                          <td><span className={s.hoursBold}>{t.hours}h</span></td>
-                          <td><span className="badge" style={{ background: t.billable ? "#111" : "#f0f0f0", color: t.billable ? "#fff" : "#999" }}>{t.billable ? "Billable" : "Non-bill"}</span></td>
-                          <td className={s.descCell}>{t.description}</td>
-                          <td><button className={`btn btn-ghost btn-xs ${s.dangerBtn}`} onClick={() => delTime(t.id)}><Icon name="trash" size={11} /></button></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div></div>
+                : (() => {
+                  const sorted = [...jobTime].sort((a,b) => b.date > a.date ? 1 : -1);
+                  const grouped = sorted.reduce((acc, t) => {
+                    const key = t.date || "unknown";
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(t);
+                    return acc;
+                  }, {});
+                  return Object.entries(grouped).map(([date, entries]) => {
+                    const dayTotal = entries.reduce((s, t) => s + t.hours, 0);
+                    return (
+                      <div key={date} className={s.timeDayGroup}>
+                        <div className={s.timeDayHeader}>
+                          <span className={s.timeDayLabel}>{fmtDate(date)}</span>
+                          <span className={s.timeDayTotal}>{dayTotal}h</span>
+                        </div>
+                        {entries.map(t => (
+                          <div key={t.id} className={s.timeEntryRow} onClick={() => startEditTime(t)}>
+                            <div className={s.workerCell}>
+                              <div className={`avatar ${s.workerAvatar}`}>{t.worker.split(" ").map(w=>w[0]).join("")}</div>
+                              <span className={s.workerName}>{t.worker}</span>
+                            </div>
+                            <span className={s.hoursBold}>{t.hours}h</span>
+                            <span className="badge" style={{ background: t.billable ? "#111" : "#f0f0f0", color: t.billable ? "#fff" : "#999" }}>{t.billable ? "Billable" : "Non-bill"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  });
+                })()
               }
             </div>
           )}

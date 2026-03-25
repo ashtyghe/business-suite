@@ -108,7 +108,10 @@ const JobGantt = ({ job }) => {
   return (
     <div>
       <div className={s.header}>
-        <div className={s.phaseSummary}>{phases.length} phase{phases.length !== 1 ? "s" : ""} · {fmtDate(minDate)} – {fmtDate(maxDate)}</div>
+        <div className={s.phaseSummary}>
+          <div>{phases.length} phase{phases.length !== 1 ? "s" : ""}</div>
+          <div>{fmtDate(minDate)} – {fmtDate(maxDate)}</div>
+        </div>
         <button className={`btn btn-sm ${s.accentBtn}`} style={{ background: jobAccent, color: "#fff" }} onClick={printGanttPdf}>Export PDF</button>
         <button className={`btn btn-sm ${s.accentBtn}`} style={{ background: jobAccent, color: "#fff" }} onClick={() => { setEditPhase(null); setPhaseForm({ ...defaultPhase }); setShowPhaseForm(true); }}>+ Add Phase</button>
       </div>

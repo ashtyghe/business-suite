@@ -798,11 +798,7 @@ const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mode, setM
           </div>
           {statusBadge}
         </div>
-        <div className={pg.u51}>
-          <button className={pg.u55} onClick={onClose}>
-            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
+        <div className={pg.u51} />
       </div>
       {/* Status strip */}
       {statusStrip}

@@ -29,7 +29,7 @@ import { BillModal } from "../components/BillModal";
 import { OrderCard } from "../components/OrderCard";
 import { OrderDrawer } from "../components/OrderDrawer";
 import {
-  TEAM, SECTION_COLORS, ViewField,
+  TEAM, SECTION_COLORS, STATUS_BG, ViewField,
   ORDER_CONTRACTORS, ORDER_SUPPLIERS, ORDER_UNITS,
   ORDER_STATUSES, ORDER_TRANSITIONS, ORDER_TERMINAL,
 } from "../fixtures/seedData.jsx";
@@ -254,15 +254,22 @@ const JobDetail = ({ job, onClose, onEdit }) => {
   const jobAccent = SECTION_COLORS.jobs.accent;
   const jobLight = SECTION_COLORS.jobs.light;
 
+  const jobStatuses = ["draft","scheduled","in_progress","completed","cancelled"];
   const jobStatusStrip = detailMode === "view" ? (
     <div className={s.flexShrink0}>
       <div className={s.statusStrip} style={{ background: jobLight }}>
-        {["draft","scheduled","in_progress","completed","cancelled"].filter(st => st !== job.status).map(st => (
-          <button key={st} className={`btn btn-xs ${s.statusBtn}`} onClick={() => {
-            const updated = { ...job, status: st, activityLog: addLog(job.activityLog, `Status → ${st.replace("_"," ")}`) };
-            setJobs(js => js.map(j => j.id === job.id ? updated : j));
-          }}>{st.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</button>
-        ))}
+        {jobStatuses.map(st => {
+          const isActive = st === job.status;
+          return (
+            <button key={st} className={`btn btn-xs ${s.statusBtn} ${isActive ? s.statusBtnActive : s.statusBtnInactive}`}
+              style={isActive ? { background: STATUS_BG[st], color: (st === "draft" || st === "cancelled") ? "#475569" : "#fff", borderColor: STATUS_BG[st] } : undefined}
+              onClick={() => {
+                if (isActive) return;
+                const updated = { ...job, status: st, activityLog: addLog(job.activityLog, `Status → ${st.replace("_"," ")}`) };
+                setJobs(js => js.map(j => j.id === job.id ? updated : j));
+              }}>{st.replace("_"," ").replace(/\b\w/g, c => c.toUpperCase())}</button>
+          );
+        })}
       </div>
       {/* Tabs */}
       <div className={`tabs ${s.tabBar}`}>

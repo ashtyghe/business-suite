@@ -24,12 +24,33 @@
 }
 
 .statusBtn {
-  background: #fff;
-  border: 1px solid #cbd5e1;
-  color: #475569;
   border-radius: 8px;
   white-space: nowrap;
-  flex-shrink: 0;
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  font-weight: 600;
+  font-size: 11px;
+  padding: 6px 4px;
+  transition: all 0.15s ease;
+}
+
+.statusBtnActive {
+  color: #fff;
+  border: 1px solid transparent;
+  cursor: default;
+}
+
+.statusBtnInactive {
+  background: #e2e8f0;
+  border: 1px solid #e2e8f0;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.statusBtnInactive:hover {
+  background: #cbd5e1;
+  color: #475569;
 }
 
 /* Tab bar override */

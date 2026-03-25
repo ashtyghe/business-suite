@@ -629,3 +629,59 @@
 .editGridMb { margin-bottom: 16px; }
 
 .avatarNoMargin { margin: 0; }
+
+/* ── New dropdown menu ── */
+.newMenuWrap { position: relative; }
+
+.newMenuBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Open Sans', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.newMenuBtn:hover { background: rgba(255,255,255,0.3); }
+
+.newMenuBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+.newMenuDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  min-width: 180px;
+  padding: 4px;
+  z-index: 11;
+}
+
+.newMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  background: none;
+  color: #333;
+  font-size: 13px;
+  font-family: 'Open Sans', sans-serif;
+  cursor: pointer;
+  border-radius: 6px;
+  text-align: left;
+}
+.newMenuItem:hover { background: #f3f4f6; }

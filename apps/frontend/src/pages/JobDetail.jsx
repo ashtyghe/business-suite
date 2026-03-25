@@ -55,6 +55,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
   const [tab, setTab] = useState("overview");
   const [detailMode, setDetailMode] = useState("view");
   const [orderModal, setOrderModal] = useState(null);
+  const [showNewMenu, setShowNewMenu] = useState(false);
   const [detailForm, setDetailForm] = useState({ title: job.title, clientId: job.clientId, siteId: job.siteId || null, status: job.status, priority: job.priority, description: job.description || "", startDate: job.startDate || "", dueDate: job.dueDate || "", assignedTo: job.assignedTo || [], tags: (job.tags || []).join(", "), estimate: job.estimate || { labour: 0, materials: 0, subcontractors: 0, other: 0 } });
   const client = clients.find(c => c.id === job.clientId);
 
@@ -293,6 +294,39 @@ const JobDetail = ({ job, onClose, onEdit }) => {
     </button>
   </>;
 
+  const newMenuItems = [
+    { label: "Task", icon: "check", action: () => { setTab("tasks"); setShowNewMenu(false); } },
+    { label: "Note", icon: "notes", action: () => { setTab("notes"); setShowNewMenu(false); } },
+    { label: "Quote", icon: "quotes", action: async () => { setShowNewMenu(false); try { const saved = await createQuote({ jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" }); setQuotes(qs => [...qs, saved]); setEditingQuote(saved); setInlineQuoteMode("edit"); setTab("quotes"); } catch (err) { console.error(err); } } },
+    { label: "Invoice", icon: "invoices", action: async () => { setShowNewMenu(false); try { const saved = await createInvoice({ jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" }); setInvoices(is => [...is, saved]); setEditingInvoice(saved); setInlineInvMode("edit"); setTab("invoices"); } catch (err) { console.error(err); } } },
+    { label: "Log Time", icon: "time", action: () => { setTab("time"); setShowTimeForm(true); setShowNewMenu(false); } },
+    { label: "Bill", icon: "bills", action: () => { setTab("costs"); setEditingBill({}); setShowNewMenu(false); } },
+    { label: "Schedule", icon: "schedule", action: () => { setTab("schedule"); setShowSchedForm(true); setShowNewMenu(false); } },
+    { label: "Work Order", icon: "orders", action: () => { setOrderModal({ type: "wo", order: null }); setTab("orders"); setShowNewMenu(false); } },
+    { label: "Purchase Order", icon: "orders", action: () => { setOrderModal({ type: "po", order: null }); setTab("orders"); setShowNewMenu(false); } },
+  ];
+
+  const newDropdown = detailMode === "view" ? (
+    <div className={s.newMenuWrap}>
+      <button className={s.newMenuBtn} onClick={() => setShowNewMenu(v => !v)}>
+        <Icon name="plus" size={13} /> New
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      {showNewMenu && (
+        <>
+          <div className={s.newMenuBackdrop} onClick={() => setShowNewMenu(false)} />
+          <div className={s.newMenuDropdown}>
+            {newMenuItems.map(item => (
+              <button key={item.label} className={s.newMenuItem} onClick={item.action}>
+                <Icon name={item.icon} size={14} />{item.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  ) : null;
+
   return (
     <>
     <SectionDrawer
@@ -306,6 +340,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
       statusStrip={jobStatusStrip}
       footer={jobFooter}
       onClose={onClose}
+      headerRight={newDropdown}
     >
         {detailMode === "edit" ? (
         <div className={s.sectionPad}>

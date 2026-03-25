@@ -167,7 +167,7 @@ export const SectionLabel = ({ children }) => (
 );
 
 // ── Section Drawer ───────────────────────────────────────────────────────────
-export const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mode, setMode, showToggle = true, isNew, statusStrip, children, footer, onClose, zIndex = 1050 }) => (
+export const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mode, setMode, showToggle = true, isNew, statusStrip, children, footer, onClose, headerRight, zIndex = 1050 }) => (
   <div className="section-drawer-overlay" style={{ zIndex }}>
     <div className="section-drawer-backdrop" onClick={onClose} />
     <div className="section-drawer">
@@ -181,7 +181,7 @@ export const SectionDrawer = ({ accent, icon, typeLabel, title, statusBadge, mod
           </div>
           {statusBadge}
         </div>
-        <div className={s.drawerHeaderRight} />
+        <div className={s.drawerHeaderRight}>{headerRight}</div>
       </div>
       {/* Status strip */}
       {statusStrip}

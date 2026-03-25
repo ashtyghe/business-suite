@@ -644,7 +644,16 @@ const JobDetail = ({ job, onClose, onEdit }) => {
             <div>
               <div className={s.tabHeader}>
                 <div className={s.summaryText}>
-                  {totalHours > 0 && <span><strong className={s.strongDark}>{jobTime.filter(t=>t.billable).reduce((sum,t)=>sum+t.hours,0)}h</strong> billable · <strong className={s.strongDark}>{totalHours}h</strong> total</span>}
+                  {totalHours > 0 && (() => {
+                    const billableHours = jobTime.filter(t=>t.billable).reduce((sum,t)=>sum+t.hours,0);
+                    const labourBudget = job.estimate?.labour || 0;
+                    const avgRate = totalHours > 0 ? actualLabour / totalHours : 55;
+                    const budgetHours = labourBudget > 0 ? Math.round(labourBudget / avgRate) : 0;
+                    return <span>
+                      <strong className={s.strongDark}>{billableHours}h</strong> billable · <strong className={s.strongDark}>{totalHours}h</strong> total
+                      {budgetHours > 0 && <> · <strong className={s.strongDark}>{budgetHours}h</strong> budget</>}
+                    </span>;
+                  })()}
                 </div>
                 <button className="btn btn-primary btn-sm" style={{ background: SECTION_COLORS.time.accent }} onClick={() => setShowTimeForm(v => !v)}><Icon name="plus" size={12} />Log Time</button>
               </div>

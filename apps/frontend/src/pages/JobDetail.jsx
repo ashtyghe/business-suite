@@ -243,15 +243,15 @@ const JobDetail = ({ job, onClose, onEdit }) => {
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "pnl", label: "P&L" },
+    { id: "quotes", label: `Quotes (${jobQuotes.length})` },
     { id: "gantt", label: `Gantt (${jobPhases.length})` },
     { id: "tasks", label: `Tasks${tasksRemaining > 0 ? ` (${tasksRemaining})` : jobTasks.length > 0 ? " ✓" : ""}` },
-    { id: "notes", label: `Notes (${jobNotes.length})` },
-    { id: "quotes", label: `Quotes (${jobQuotes.length})` },
-    { id: "invoices", label: `Invoices (${jobInvoices.length})` },
-    { id: "time", label: `Time (${totalHours}h)` },
-    { id: "costs", label: `Costs (${jobBills.length})` },
     { id: "schedule", label: `Schedule (${jobSchedule.length})` },
     { id: "orders", label: `Orders (${jobWOs.length + jobPOs.length})` },
+    { id: "time", label: `Time (${totalHours}h)` },
+    { id: "costs", label: `Costs (${jobBills.length})` },
+    { id: "invoices", label: `Invoices (${jobInvoices.length})` },
+    { id: "notes", label: `Notes (${jobNotes.length})` },
     { id: "activity", label: `Activity (${(job.activityLog||[]).length})` },
   ];
 
@@ -295,15 +295,15 @@ const JobDetail = ({ job, onClose, onEdit }) => {
   </>;
 
   const newMenuItems = [
-    { label: "Task", icon: "check", action: () => { setTab("tasks"); setShowNewMenu(false); } },
-    { label: "Note", icon: "notes", action: () => { setTab("notes"); setShowNewMenu(false); } },
     { label: "Quote", icon: "quotes", action: async () => { setShowNewMenu(false); try { const saved = await createQuote({ jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, notes: "" }); setQuotes(qs => [...qs, saved]); setEditingQuote(saved); setInlineQuoteMode("edit"); setTab("quotes"); } catch (err) { console.error(err); } } },
-    { label: "Invoice", icon: "invoices", action: async () => { setShowNewMenu(false); try { const saved = await createInvoice({ jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" }); setInvoices(is => [...is, saved]); setEditingInvoice(saved); setInlineInvMode("edit"); setTab("invoices"); } catch (err) { console.error(err); } } },
-    { label: "Log Time", icon: "time", action: () => { setTab("time"); setShowTimeForm(true); setShowNewMenu(false); } },
-    { label: "Bill", icon: "bills", action: () => { setTab("costs"); setEditingBill({}); setShowNewMenu(false); } },
+    { label: "Task", icon: "check", action: () => { setTab("tasks"); setShowNewMenu(false); } },
     { label: "Schedule", icon: "schedule", action: () => { setTab("schedule"); setShowSchedForm(true); setShowNewMenu(false); } },
     { label: "Work Order", icon: "orders", action: () => { setOrderModal({ type: "wo", order: null }); setTab("orders"); setShowNewMenu(false); } },
     { label: "Purchase Order", icon: "orders", action: () => { setOrderModal({ type: "po", order: null }); setTab("orders"); setShowNewMenu(false); } },
+    { label: "Log Time", icon: "time", action: () => { setTab("time"); setShowTimeForm(true); setShowNewMenu(false); } },
+    { label: "Bill", icon: "bills", action: () => { setTab("costs"); setEditingBill({}); setShowNewMenu(false); } },
+    { label: "Invoice", icon: "invoices", action: async () => { setShowNewMenu(false); try { const saved = await createInvoice({ jobId: job.id, status: "draft", lineItems: [{ desc: "", qty: 1, unit: "hrs", rate: 0 }], tax: 10, dueDate: "", notes: "" }); setInvoices(is => [...is, saved]); setEditingInvoice(saved); setInlineInvMode("edit"); setTab("invoices"); } catch (err) { console.error(err); } } },
+    { label: "Note", icon: "notes", action: () => { setTab("notes"); setShowNewMenu(false); } },
   ];
 
   const newDropdown = detailMode === "view" ? (

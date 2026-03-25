@@ -6,7 +6,7 @@ import { PlanDrawingEditor } from "../../components/PlanDrawingEditor";
 import { FormFillerModal } from "../../components/FormFillerModal";
 import { PdfFormFiller } from "../../components/PdfFormFiller";
 import { NOTE_CATEGORIES, FORM_TEMPLATES, SECTION_COLORS } from "../../fixtures/seedData.jsx";
-import { addLog, genId, fmtFileSize, CURRENT_USER } from "../../utils/helpers";
+import { addLog, genId, fmtFileSize, fmtDate, CURRENT_USER } from "../../utils/helpers";
 import s from './JobNotes.module.css';
 
 const JobNotes = ({ job }) => {
@@ -328,76 +328,25 @@ const JobNotes = ({ job }) => {
                           </div>
                         );
                       }
-                      // ── PDF note card ──
-                      if (note.pdfNote) {
-                        return (
-                          <div key={note.id} className={s.pdfNoteCard}>
-                            <div className={s.pdfNoteRow}>
-                              {note.pdfThumbnail && <img src={note.pdfThumbnail} alt="PDF" className={s.pdfThumbnail} />}
-                              <div className={s.pdfNoteContent}>
-                                <div className={s.pdfNoteHeader}>
-                                  <span className={s.pdfBadge}>PDF</span>
-                                  <span className={s.pdfFileName}>{note.attachments?.[0]?.name || "Filled PDF"}</span>
-                                </div>
-                                <div className={s.noteMeta}>{new Date(note.createdAt).toLocaleString()} · {note.createdBy}</div>
-                              </div>
-                              <button className={`btn btn-ghost btn-xs ${s.pdfEditBtn}`} onClick={(e) => { e.stopPropagation(); reopenPdfNote(note); }}>✏️ Edit</button>
-                              {note.attachments?.[0]?.dataUrl && (
-                                <a href={note.attachments[0].dataUrl} download={note.attachments[0].name} onClick={e => e.stopPropagation()} className={s.downloadLink}>⬇ Download</a>
-                              )}
-                              <button onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }} className={s.deleteBtn} title="Delete">🗑</button>
-                            </div>
-                          </div>
-                        );
-                      }
-                      // ── Form note card ──
-                      if (note.category === "form" && note.formType) {
-                        const tmpl = FORM_TEMPLATES.find(t => t.id === note.formType);
-                        return (
-                          <div key={note.id} className={s.formNoteCard} style={{ borderLeft: `3px solid ${cat.color}` }}>
-                            <div className={s.formNoteHeader}>
-                              <span className={s.formIcon}>{tmpl?.icon || "📋"}</span>
-                              <span className={s.formName}>{tmpl?.name || note.formType}</span>
-                              <span className={s.formBadge} style={{ background: cat.color + "18", color: cat.color }}>Form</span>
-                              <span className={s.noteMeta}>{new Date(note.createdAt).toLocaleString()}</span>
-                              <span className={s.noteMetaAuthor}>{note.createdBy}</span>
-                              <div className={s.spacer} />
-                              <button className={`btn btn-ghost btn-xs ${s.formActionBtn}`} onClick={(e) => { e.stopPropagation(); setViewingForm(note); }}>👁 View</button>
-                              <button className={`btn btn-ghost btn-xs ${s.formActionBtn}`} onClick={(e) => { e.stopPropagation(); printFormPdf(note, tmpl); }}>🖨️ PDF</button>
-                              <button onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }} className={s.deleteBtn} title="Delete">🗑</button>
-                            </div>
-                            {note.text && <div className={s.formNoteText}>{note.text}</div>}
-                          </div>
-                        );
-                      }
-                      // ── Regular note card ──
+                      // ── Unified note card ──
+                      const attachments = note.attachments || [];
+                      const imgCount = attachments.filter(a => a.type?.startsWith("image/")).length;
+                      const fileCount = attachments.filter(a => !a.type?.startsWith("image/")).length;
+                      const displayLabel = note.pdfNote ? "PDF" : (note.category === "form" && note.formType) ? "Form" : cat.label;
+                      const previewText = note.pdfNote ? (attachments[0]?.name || "Filled PDF") : (note.category === "form" && note.formType) ? (FORM_TEMPLATES.find(t => t.id === note.formType)?.name || note.formType) : note.text;
                       return (
                         <div key={note.id} onClick={() => startEditNote(note)} className={s.noteCard} style={{ borderLeft: `3px solid ${cat.color}` }}>
                           <div className={s.noteCardHeader}>
-                            <span className={s.categoryBadge} style={{ background: cat.color + "18", color: cat.color }}>{cat.label}</span>
-                            <span className={s.noteMeta}>{new Date(note.createdAt).toLocaleString()}</span>
-                            <span className={s.noteMetaAuthor}>{note.createdBy}</span>
+                            <span className={s.categoryBadge} style={{ background: cat.color + "18", color: cat.color }}>{displayLabel}</span>
                             <div className={s.spacer} />
-                            <button onClick={(e) => { e.stopPropagation(); deleteNote(note.id); }} className={s.deleteBtn} title="Delete note">🗑</button>
+                            <span className={s.noteMeta}>{fmtDate(note.createdAt)} · {note.createdBy}</span>
                           </div>
-                          {note.text && <div className={s.noteText}>{note.text}</div>}
-                          {note.attachments && note.attachments.length > 0 && (
-                            <div className={s.noteAttachments}>
-                              {note.attachments.map(att => (
-                                att.type && att.type.startsWith("image/") && att.dataUrl ? (
-                                  <div key={att.id} className={s.imgWrap} onClick={e => e.stopPropagation()}>
-                                    <img src={att.dataUrl} alt={att.name} onClick={() => setLightboxImg(att.dataUrl)} className={s.thumbImg} />
-                                    <button onClick={() => setMarkupImg({ src: att.dataUrl, noteId: note.id, attachmentId: att.id })}
-                                      className={s.thumbMarkupBtn}
-                                      title="Mark up photo">✏️</button>
-                                  </div>
-                                ) : (
-                                  <div key={att.id} className={s.fileChip}>
-                                    <FileIconBadge name={att.name} />
-                                    <span className={s.fileChipName}>{att.name}</span>
-                                  </div>
-                                )
-                              ))}
+                          {previewText && <div className={s.noteText}>{previewText}</div>}
+                          {attachments.length > 0 && (
+                            <div className={s.noteAttachmentSummary}>
+                              {imgCount > 0 && <span>{imgCount} photo{imgCount !== 1 ? "s" : ""}</span>}
+                              {imgCount > 0 && fileCount > 0 && <span> · </span>}
+                              {fileCount > 0 && <span>{fileCount} file{fileCount !== 1 ? "s" : ""}</span>}
                             </div>
                           )}
                         </div>

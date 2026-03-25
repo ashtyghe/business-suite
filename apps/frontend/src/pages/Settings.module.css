@@ -1906,3 +1906,10 @@
 .fontSize11 {
   font-size: 11px;
 }
+
+.appVersion {
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  padding: 24px 0 8px;
+}

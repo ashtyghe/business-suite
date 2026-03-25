@@ -1661,6 +1661,10 @@ const Settings = () => {
       })()}
       {tab === "xero" && <XeroSettingsTab accent={accent} />}
       {tab === "users" && <UserManagement />}
+
+      <div className={s.appVersion}>
+        v{__APP_VERSION__} · {__APP_COMMIT__} · {new Date(__APP_BUILD_DATE__).toLocaleDateString()}
+      </div>
     </div>
   );
 };

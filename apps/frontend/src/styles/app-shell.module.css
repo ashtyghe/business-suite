@@ -57,3 +57,4 @@
 .topbarNotifBtn { color: #999; }
 .topbarDivider { width: 1px; height: 24px; background: #e8e8e8; }
 .topbarDate { font-size: 12px; color: #999; }
+.versionBadge { font-size: 10px; color: #999; background: #f0f0f0; padding: 2px 8px; border-radius: 10px; font-weight: 600; letter-spacing: 0.02em; }

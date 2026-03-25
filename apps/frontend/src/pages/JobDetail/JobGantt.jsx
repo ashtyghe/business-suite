@@ -12,8 +12,15 @@ const JobGantt = ({ job }) => {
   const [showPhaseForm, setShowPhaseForm] = useState(false);
   const [editPhase, setEditPhase] = useState(null);
   const [phaseForm, setPhaseForm] = useState({ ...defaultPhase });
+  const [expandedPhases, setExpandedPhases] = useState({});
 
   const phases = job.phases || [];
+  const tasks = job.tasks || [];
+
+  const toggleExpand = (phaseId) => setExpandedPhases(prev => ({ ...prev, [phaseId]: !prev[phaseId] }));
+
+  // Match tasks to phases by phaseId or by name
+  const getTasksForPhase = (phase) => tasks.filter(t => t.phaseId === phase.id || (!t.phaseId && t.text === phase.name));
 
   if (phases.length === 0 && !showPhaseForm) {
     return (
@@ -35,6 +42,23 @@ const JobGantt = ({ job }) => {
   const todayStr = new Date().toISOString().slice(0,10);
   const todayMs = new Date(todayStr + "T12:00:00").getTime();
   const todayPct = Math.max(0, Math.min(100, ((todayMs - startMs) / rangeMs) * 100));
+
+  // Generate week markers (Mondays)
+  const weekMarkers = [];
+  const d = new Date(minDate + "T00:00:00");
+  // Move to next Monday
+  const dayOfWeek = d.getDay();
+  const daysToMon = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : 8 - dayOfWeek;
+  d.setDate(d.getDate() + daysToMon);
+  while (d.getTime() <= endMs) {
+    const ms = d.getTime();
+    const pct = ((ms - startMs) / rangeMs) * 100;
+    if (pct > 0 && pct < 100) {
+      const label = `${d.getDate()}/${d.getMonth() + 1}`;
+      weekMarkers.push({ pct, label });
+    }
+    d.setDate(d.getDate() + 7);
+  }
 
   const printGanttPdf = () => {
     const w = window.open("", "_blank");
@@ -62,6 +86,14 @@ const JobGantt = ({ job }) => {
   const handleDeletePhase = (pid) => {
     setJobs(js => js.map(j => j.id === job.id ? { ...j, phases: (j.phases || []).filter(p => p.id !== pid), activityLog: addLog(j.activityLog, "Removed a project phase") } : j));
   };
+
+  const WeekGrid = () => (
+    <>
+      {weekMarkers.map((wk, i) => (
+        <div key={i} className={s.weekLine} style={{ left: `${wk.pct}%` }} />
+      ))}
+    </>
+  );
 
   return (
     <div>
@@ -94,10 +126,14 @@ const JobGantt = ({ job }) => {
 
       {/* Gantt Chart */}
       <div className={s.chartWrap}>
+        {/* Week header labels */}
         <div className={s.chartHeader}>
           <div className={s.chartPhaseCol}>Phase</div>
           <div className={s.chartTimelineCol}>
             <span className={s.dateLabelLeft}>{fmtDate(minDate)}</span>
+            {weekMarkers.map((wk, i) => (
+              <span key={i} className={s.weekLabel} style={{ left: `${wk.pct}%` }}>{wk.label}</span>
+            ))}
             <span className={s.dateLabelRight}>{fmtDate(maxDate)}</span>
           </div>
         </div>
@@ -106,21 +142,60 @@ const JobGantt = ({ job }) => {
           const pEndMs = new Date(p.endDate + "T23:59:59").getTime();
           const leftPct = ((pStartMs - startMs) / rangeMs) * 100;
           const widthPct = Math.max(2, ((pEndMs - pStartMs) / rangeMs) * 100);
+          const phaseTasks = getTasksForPhase(p);
+          const isExpanded = expandedPhases[p.id];
+          const hasSubTasks = phaseTasks.length > 0;
           return (
-            <div key={p.id} className={s.phaseRow}>
-              <div className={s.phaseNameCol}>
-                <div className={s.phaseDot} style={{ background: p.color }} />
-                <span className={s.phaseName}>{p.name}</span>
-                <button className={`btn btn-ghost ${s.phaseActionBtn}`} onClick={() => { setEditPhase(p); setPhaseForm({ name: p.name, startDate: p.startDate, endDate: p.endDate, color: p.color, progress: p.progress }); setShowPhaseForm(true); }}>✏️</button>
-                <button className={`btn btn-ghost ${s.phaseActionBtnDanger}`} onClick={() => handleDeletePhase(p.id)}>🗑</button>
-              </div>
-              <div className={s.timelineCell}>
-                {todayPct > 0 && todayPct < 100 && <div className={s.todayMarker} style={{ left: `${todayPct}%` }} />}
-                <div className={s.barBg} style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: p.color + "25" }}>
-                  <div className={s.barFill} style={{ width: `${p.progress}%`, background: p.color }} />
+            <div key={p.id}>
+              <div className={s.phaseRow}>
+                <div className={s.phaseNameCol}>
+                  {hasSubTasks ? (
+                    <button className={s.expandBtn} onClick={() => toggleExpand(p.id)}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.15s" }}>
+                        <polyline points="9 6 15 12 9 18" />
+                      </svg>
+                    </button>
+                  ) : <div className={s.expandSpacer} />}
+                  <div className={s.phaseDot} style={{ background: p.color }} />
+                  <span className={s.phaseName} title={p.name}>{p.name}</span>
+                  <button className={`btn btn-ghost ${s.phaseActionBtn}`} onClick={() => { setEditPhase(p); setPhaseForm({ name: p.name, startDate: p.startDate, endDate: p.endDate, color: p.color, progress: p.progress }); setShowPhaseForm(true); }}>✏️</button>
+                  <button className={`btn btn-ghost ${s.phaseActionBtnDanger}`} onClick={() => handleDeletePhase(p.id)}>🗑</button>
                 </div>
-                <div className={s.barLabel} style={{ left: `${leftPct + widthPct + 1}%` }}>{p.progress}%</div>
+                <div className={s.timelineCell}>
+                  <WeekGrid />
+                  {todayPct > 0 && todayPct < 100 && <div className={s.todayMarker} style={{ left: `${todayPct}%` }} />}
+                  <div className={s.barBg} style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: p.color + "25" }}>
+                    <div className={s.barFill} style={{ width: `${p.progress}%`, background: p.color }} />
+                  </div>
+                  <div className={s.barLabel} style={{ left: `${Math.min(leftPct + widthPct + 1, 90)}%` }}>{p.progress}%</div>
+                </div>
               </div>
+              {/* Expanded tasks */}
+              {isExpanded && phaseTasks.map(task => (
+                <div key={task.id} className={s.taskSubRow}>
+                  <div className={s.taskNameCol}>
+                    <div className={s.taskIndent} />
+                    <input
+                      type="checkbox"
+                      checked={task.done}
+                      onChange={() => setJobs(js => js.map(j => j.id === job.id ? { ...j, tasks: (j.tasks || []).map(t => t.id === task.id ? { ...t, done: !t.done } : t) } : j))}
+                      className={s.taskCheckbox}
+                      style={{ accentColor: p.color }}
+                    />
+                    <span className={task.done ? s.taskTextDone : s.taskText}>{task.text}</span>
+                    {task.dueDate && <span className={s.taskDue}>{fmtDate(task.dueDate)}</span>}
+                  </div>
+                  <div className={s.timelineCell}>
+                    <WeekGrid />
+                    {todayPct > 0 && todayPct < 100 && <div className={s.todayMarker} style={{ left: `${todayPct}%` }} />}
+                    {task.dueDate && (() => {
+                      const tMs = new Date(task.dueDate + "T12:00:00").getTime();
+                      const tPct = Math.max(0, Math.min(100, ((tMs - startMs) / rangeMs) * 100));
+                      return <div className={s.taskMarker} style={{ left: `${tPct}%`, background: task.done ? "#059669" : p.color }} />;
+                    })()}
+                  </div>
+                </div>
+              ))}
             </div>
           );
         })}

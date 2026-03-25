@@ -73,8 +73,8 @@
 }
 
 .chartPhaseCol {
-  width: 160px;
-  min-width: 160px;
+  width: 200px;
+  min-width: 200px;
   padding: 8px 12px;
   font-weight: 700;
   font-size: 11px;
@@ -104,6 +104,14 @@
   right: 4px;
 }
 
+.weekLabel {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: #bbb;
+}
+
+/* ── Phase rows ── */
 .phaseRow {
   display: flex;
   border-bottom: 1px solid #f0f0f0;
@@ -112,13 +120,35 @@
 }
 
 .phaseNameCol {
-  width: 160px;
-  min-width: 160px;
-  padding: 6px 12px;
+  width: 200px;
+  min-width: 200px;
+  padding: 6px 8px 6px 6px;
   border-right: 1px solid #e8e8e8;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  overflow: hidden;
+}
+
+.expandBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #999;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 3px;
+}
+.expandBtn:hover { background: #f0f0f0; }
+
+.expandSpacer {
+  width: 18px;
+  flex-shrink: 0;
 }
 
 .phaseDot {
@@ -132,23 +162,43 @@
   font-size: 12px;
   font-weight: 600;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .phaseActionBtn {
   padding: 2px;
   font-size: 10px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
 }
+.phaseRow:hover .phaseActionBtn,
+.phaseRow:hover .phaseActionBtnDanger { opacity: 1; }
 
 .phaseActionBtnDanger {
   composes: phaseActionBtn;
   color: #c00;
 }
 
+/* ── Timeline cell ── */
 .timelineCell {
   flex: 1;
   position: relative;
   height: 24px;
   margin: 0 8px;
+  overflow: hidden;
+}
+
+.weekLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #f0f0f0;
+  z-index: 0;
 }
 
 .todayMarker {
@@ -166,6 +216,7 @@
   height: 100%;
   border-radius: 4px;
   overflow: hidden;
+  z-index: 1;
 }
 
 .barFill {
@@ -180,6 +231,70 @@
   font-size: 10px;
   color: #888;
   white-space: nowrap;
+  z-index: 1;
+}
+
+/* ── Task sub-rows ── */
+.taskSubRow {
+  display: flex;
+  border-bottom: 1px solid #f8f8f8;
+  min-height: 32px;
+  align-items: center;
+  background: #fafbfc;
+}
+
+.taskNameCol {
+  width: 200px;
+  min-width: 200px;
+  padding: 4px 8px 4px 6px;
+  border-right: 1px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+}
+
+.taskIndent {
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.taskCheckbox {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.taskText {
+  font-size: 11px;
+  color: #555;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taskTextDone {
+  composes: taskText;
+  text-decoration: line-through;
+  color: #aaa;
+}
+
+.taskDue {
+  font-size: 9px;
+  color: #aaa;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.taskMarker {
+  position: absolute;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
 }
 
 .accentBtn {

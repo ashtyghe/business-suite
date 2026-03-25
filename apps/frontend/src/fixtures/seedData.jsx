@@ -205,12 +205,14 @@ export const TEAM = TEAM_DATA.map(t => t.name);
 
 export const NOTE_CATEGORIES = [
   { id: "general", label: "General", color: "#64748b" },
-  { id: "site_update", label: "Site Update", color: "#0891b2" },
-  { id: "issue", label: "Issue", color: "#dc2626" },
-  { id: "inspection", label: "Inspection", color: "#7c3aed" },
-  { id: "delivery", label: "Delivery", color: "#d97706" },
-  { id: "safety", label: "Safety", color: "#059669" },
-  { id: "form", label: "Form", color: "#2563eb" },
+  { id: "supplied_photos", label: "Supplied Photos", color: "#0891b2" },
+  { id: "supplied_docs", label: "Supplied Docs", color: "#6366f1" },
+  { id: "before_photos", label: "Before Photos", color: "#d97706" },
+  { id: "progress_photos", label: "Progress Photos", color: "#2563eb" },
+  { id: "completion_photos", label: "Completion Photos", color: "#059669" },
+  { id: "plans", label: "Plans", color: "#7c3aed" },
+  { id: "whs", label: "WHS", color: "#dc2626" },
+  { id: "form", label: "Form", color: "#0284c7" },
 ];
 
 export const FORM_TEMPLATES = [

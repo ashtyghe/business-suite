@@ -22,6 +22,7 @@
 
 .dropdownWrap {
   position: relative;
+  display: flex;
 }
 
 .formMenuBtn {
@@ -108,7 +109,18 @@
   margin-top: 10px;
 }
 
-/* category pill kept as inline style for dynamic color */
+.categoryPill {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 5px 4px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Open Sans', sans-serif;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+}
 
 .attachmentsSection {
   margin-top: 12px;
@@ -188,6 +200,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  width: 100%;
   padding: 10px 12px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;

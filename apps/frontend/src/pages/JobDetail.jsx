@@ -553,23 +553,10 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                           <button className={`btn btn-ghost btn-xs ${s.dangerBtn}`} onClick={() => delQuote(q.id)}><Icon name="trash" size={11} /></button>
                         </div>
                       </div>
-                      <table className={s.lineTable}>
-                        <thead><tr>{["Description","Qty","Unit","Rate","Total"].map(h => <th key={h} className={s.lineTableTh}>{h}</th>)}</tr></thead>
-                        <tbody>
-                          {q.lineItems.map((l,i) => (
-                            <tr key={i}>
-                              <td className={s.lineCell}>{l.desc}</td>
-                              <td className={s.lineCellMuted}>{l.qty}</td>
-                              <td className={s.lineCellMuted}>{l.unit}</td>
-                              <td className={s.lineCellMuted}>{fmt(l.rate)}</td>
-                              <td className={s.lineCellBold}>{fmt(l.qty * l.rate)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
                       <div className={s.totalsRow}>
-                        <span className={s.totalsMuted}>Subtotal <strong className={s.strongDark}>{fmt(sub)}</strong></span>
-                        <span className={s.totalsMuted}>GST <strong className={s.strongDark}>{fmt(sub * q.tax / 100)}</strong></span>
+                        <span className={s.totalsMuted}>{q.lineItems.length} item{q.lineItems.length !== 1 ? "s" : ""}</span>
+                        <span className={s.totalsMuted}>Costs <strong className={s.strongDark}>{fmt(sub)}</strong></span>
+                        <span className={s.totalsMuted}>Profit <strong className={s.strongDark}>{fmt(sub * q.tax / 100)}</strong></span>
                         <span className={s.totalsGrand}>Total {fmt(calcQuoteTotal(q))}</span>
                       </div>
                       {q.notes && <div className={s.itemNotes}>{q.notes}</div>}

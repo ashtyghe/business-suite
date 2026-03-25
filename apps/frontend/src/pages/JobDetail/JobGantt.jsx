@@ -13,6 +13,8 @@ const JobGantt = ({ job }) => {
   const [editPhase, setEditPhase] = useState(null);
   const [phaseForm, setPhaseForm] = useState({ ...defaultPhase });
   const [expandedPhases, setExpandedPhases] = useState({});
+  const [addingTaskPhase, setAddingTaskPhase] = useState(null);
+  const [newTaskText, setNewTaskText] = useState("");
 
   const phases = job.phases || [];
   const tasks = job.tasks || [];
@@ -87,6 +89,14 @@ const JobGantt = ({ job }) => {
     setJobs(js => js.map(j => j.id === job.id ? { ...j, phases: (j.phases || []).filter(p => p.id !== pid), activityLog: addLog(j.activityLog, "Removed a project phase") } : j));
   };
 
+  const addTaskToPhase = (phase) => {
+    if (!newTaskText.trim()) return;
+    const task = { id: Date.now(), text: newTaskText.trim(), done: false, phaseId: phase.id, dueDate: phase.endDate || "", assignedTo: "", createdAt: new Date().toISOString() };
+    setJobs(js => js.map(j => j.id === job.id ? { ...j, tasks: [...(j.tasks || []), task], activityLog: addLog(j.activityLog, `Added task "${task.text}" to phase "${phase.name}"`) } : j));
+    setNewTaskText("");
+    setAddingTaskPhase(null);
+  };
+
   const WeekGrid = () => (
     <>
       {weekMarkers.map((wk, i) => (
@@ -144,20 +154,18 @@ const JobGantt = ({ job }) => {
           const widthPct = Math.max(2, ((pEndMs - pStartMs) / rangeMs) * 100);
           const phaseTasks = getTasksForPhase(p);
           const isExpanded = expandedPhases[p.id];
-          const hasSubTasks = phaseTasks.length > 0;
           return (
             <div key={p.id}>
               <div className={s.phaseRow}>
                 <div className={s.phaseNameCol}>
-                  {hasSubTasks ? (
-                    <button className={s.expandBtn} onClick={() => toggleExpand(p.id)}>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.15s" }}>
-                        <polyline points="9 6 15 12 9 18" />
-                      </svg>
-                    </button>
-                  ) : <div className={s.expandSpacer} />}
+                  <button className={s.expandBtn} onClick={() => toggleExpand(p.id)}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.15s" }}>
+                      <polyline points="9 6 15 12 9 18" />
+                    </svg>
+                  </button>
                   <div className={s.phaseDot} style={{ background: p.color }} />
                   <span className={s.phaseName} title={p.name}>{p.name}</span>
+                  {phaseTasks.length > 0 && <span className={s.taskCount}>{phaseTasks.length}</span>}
                   <button className={`btn btn-ghost ${s.phaseActionBtn}`} onClick={() => { setEditPhase(p); setPhaseForm({ name: p.name, startDate: p.startDate, endDate: p.endDate, color: p.color, progress: p.progress }); setShowPhaseForm(true); }}>✏️</button>
                   <button className={`btn btn-ghost ${s.phaseActionBtnDanger}`} onClick={() => handleDeletePhase(p.id)}>🗑</button>
                 </div>
@@ -170,32 +178,59 @@ const JobGantt = ({ job }) => {
                   <div className={s.barLabel} style={{ left: `${Math.min(leftPct + widthPct + 1, 90)}%` }}>{p.progress}%</div>
                 </div>
               </div>
-              {/* Expanded tasks */}
-              {isExpanded && phaseTasks.map(task => (
-                <div key={task.id} className={s.taskSubRow}>
-                  <div className={s.taskNameCol}>
-                    <div className={s.taskIndent} />
-                    <input
-                      type="checkbox"
-                      checked={task.done}
-                      onChange={() => setJobs(js => js.map(j => j.id === job.id ? { ...j, tasks: (j.tasks || []).map(t => t.id === task.id ? { ...t, done: !t.done } : t) } : j))}
-                      className={s.taskCheckbox}
-                      style={{ accentColor: p.color }}
-                    />
-                    <span className={task.done ? s.taskTextDone : s.taskText}>{task.text}</span>
-                    {task.dueDate && <span className={s.taskDue}>{fmtDate(task.dueDate)}</span>}
-                  </div>
-                  <div className={s.timelineCell}>
-                    <WeekGrid />
-                    {todayPct > 0 && todayPct < 100 && <div className={s.todayMarker} style={{ left: `${todayPct}%` }} />}
-                    {task.dueDate && (() => {
-                      const tMs = new Date(task.dueDate + "T12:00:00").getTime();
-                      const tPct = Math.max(0, Math.min(100, ((tMs - startMs) / rangeMs) * 100));
-                      return <div className={s.taskMarker} style={{ left: `${tPct}%`, background: task.done ? "#059669" : p.color }} />;
-                    })()}
-                  </div>
-                </div>
-              ))}
+              {/* Expanded tasks + add task */}
+              {isExpanded && (
+                <>
+                  {phaseTasks.map(task => (
+                    <div key={task.id} className={s.taskSubRow}>
+                      <div className={s.taskNameCol}>
+                        <div className={s.taskIndent} />
+                        <input
+                          type="checkbox"
+                          checked={task.done}
+                          onChange={() => setJobs(js => js.map(j => j.id === job.id ? { ...j, tasks: (j.tasks || []).map(t => t.id === task.id ? { ...t, done: !t.done } : t) } : j))}
+                          className={s.taskCheckbox}
+                          style={{ accentColor: p.color }}
+                        />
+                        <span className={task.done ? s.taskTextDone : s.taskText}>{task.text}</span>
+                        {task.dueDate && <span className={s.taskDue}>{fmtDate(task.dueDate)}</span>}
+                      </div>
+                      <div className={s.timelineCell}>
+                        <WeekGrid />
+                        {todayPct > 0 && todayPct < 100 && <div className={s.todayMarker} style={{ left: `${todayPct}%` }} />}
+                        {task.dueDate && (() => {
+                          const tMs = new Date(task.dueDate + "T12:00:00").getTime();
+                          const tPct = Math.max(0, Math.min(100, ((tMs - startMs) / rangeMs) * 100));
+                          return <div className={s.taskMarker} style={{ left: `${tPct}%`, background: task.done ? "#059669" : p.color }} />;
+                        })()}
+                      </div>
+                    </div>
+                  ))}
+                  {/* Inline add task */}
+                  {addingTaskPhase === p.id ? (
+                    <div className={s.taskSubRow}>
+                      <div className={s.addTaskInputRow}>
+                        <div className={s.taskIndent} />
+                        <input
+                          className={s.addTaskInput}
+                          value={newTaskText}
+                          onChange={e => setNewTaskText(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") addTaskToPhase(p); if (e.key === "Escape") { setAddingTaskPhase(null); setNewTaskText(""); } }}
+                          placeholder="Task name..."
+                          autoFocus
+                        />
+                        <button className={s.addTaskSaveBtn} style={{ background: p.color }} onClick={() => addTaskToPhase(p)} disabled={!newTaskText.trim()}>Add</button>
+                        <button className={s.addTaskCancelBtn} onClick={() => { setAddingTaskPhase(null); setNewTaskText(""); }}>✕</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={s.addTaskRow} onClick={() => { setAddingTaskPhase(p.id); setNewTaskText(""); }}>
+                      <div className={s.taskIndent} />
+                      <span className={s.addTaskLabel}>+ Add Task</span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           );
         })}

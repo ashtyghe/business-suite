@@ -146,11 +146,6 @@
 }
 .expandBtn:hover { background: #f0f0f0; }
 
-.expandSpacer {
-  width: 18px;
-  flex-shrink: 0;
-}
-
 .phaseDot {
   width: 8px;
   height: 8px;
@@ -296,6 +291,76 @@
   transform: translateX(-50%);
   z-index: 1;
 }
+
+/* ── Task count badge ── */
+.taskCount {
+  font-size: 9px;
+  color: #999;
+  background: #f0f0f0;
+  padding: 1px 5px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Add task inline ── */
+.addTaskRow {
+  display: flex;
+  align-items: center;
+  padding: 5px 8px 5px 6px;
+  background: #fafbfc;
+  border-bottom: 1px solid #f8f8f8;
+  cursor: pointer;
+}
+.addTaskRow:hover { background: #f3f4f6; }
+
+.addTaskLabel {
+  font-size: 11px;
+  color: #999;
+}
+.addTaskRow:hover .addTaskLabel { color: #666; }
+
+.addTaskInputRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px 2px 6px;
+  width: 100%;
+}
+
+.addTaskInput {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: 'Open Sans', sans-serif;
+  outline: none;
+}
+.addTaskInput:focus { border-color: #aaa; }
+
+.addTaskSaveBtn {
+  border: none;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: 'Open Sans', sans-serif;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.addTaskSaveBtn:disabled { opacity: 0.4; cursor: default; }
+
+.addTaskCancelBtn {
+  border: none;
+  background: none;
+  color: #999;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+.addTaskCancelBtn:hover { color: #666; }
 
 .accentBtn {
   border: none;

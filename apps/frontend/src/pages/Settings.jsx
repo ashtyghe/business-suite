@@ -4,9 +4,9 @@ import { useAuth } from "../lib/AuthContext";
 import { Icon } from "../components/Icon";
 import { CloseBtn, BILL_CATEGORIES } from "../components/shared";
 import { SECTION_COLORS, DEFAULT_COLUMNS, SEED_TEMPLATES } from "../fixtures/seedData.jsx";
-import { supabase, inviteUser, updateStaffRecord, xeroOAuth, xeroSyncInvoice, xeroSyncBill, xeroSyncContact, xeroPollUpdates, xeroFetchAccounts, xeroGetMappings, xeroSaveMappings } from "../lib/supabase";
+import { supabase, inviteUser, updateStaffRecord, sendEmail, xeroOAuth, xeroSyncInvoice, xeroSyncBill, xeroSyncContact, xeroPollUpdates, xeroFetchAccounts, xeroGetMappings, xeroSaveMappings } from "../lib/supabase";
 import { adminResetUserPassword } from "../lib/auth";
-import { saveCompanyInfo as dbSaveCompanyInfo, saveTemplates as dbSaveTemplates, saveUserPermissions as dbSaveUserPermissions } from "../lib/db";
+import { saveCompanyInfo as dbSaveCompanyInfo, saveTemplates as dbSaveTemplates, saveUserPermissions as dbSaveUserPermissions, fetchDigestSettings, saveDigestSettings } from "../lib/db";
 import { hexToRgba, formatAddress } from "../utils/helpers";
 import { TIMEZONE_OPTIONS } from "../utils/timezone";
 import AddressFields from '../components/AddressFields';
@@ -456,7 +456,7 @@ const VoiceOptionCard = ({ option, selected, onSelect, accent }) => (
 
 
 const Settings = () => {
-  const { staff, setStaff, templates, setTemplates, companyInfo, setCompanyInfo } = useAppStore();
+  const { staff, setStaff, templates, setTemplates, companyInfo, setCompanyInfo, jobs, clients, quotes, invoices, bills, timeEntries, workOrders, purchaseOrders, contractors, schedule } = useAppStore();
   const auth = useAuth();
   const [tab, setTab] = useState("company");
   // Template management state
@@ -570,6 +570,7 @@ const Settings = () => {
 
   const tabs = [
     { id: "company", label: "Company", icon: "clients" },
+    { id: "digests", label: "Digests", icon: "notification" },
     { id: "integrations", label: "Inbound Calls", icon: "send" },
     { id: "outbound", label: "Outbound Calls", icon: "notification" },
     { id: "templates", label: "Templates", icon: "quotes" },
@@ -663,6 +664,188 @@ const Settings = () => {
       setTestCallStatus(data.ok ? `Call initiated (${data.callSid?.slice(-6)})` : `Failed: ${data.error}`);
     } catch (err) { setTestCallStatus(`Failed: ${err.message}`); }
     setTimeout(() => setTestCallStatus(null), 5000);
+  };
+
+  // ── Digest Email Settings ──────────────────────────────────────────────────
+  const DEFAULT_DIGEST_SETTINGS = {
+    enabled: true,
+    schedule: {
+      dashboard: { days: ["monday", "friday"], time: "07:00" },
+      actions: { days: ["tuesday", "thursday"], time: "07:00" },
+    },
+    recipients: [],
+  };
+  const [digestSettings, setDigestSettings] = useState(DEFAULT_DIGEST_SETTINGS);
+  const [digestDirty, setDigestDirty] = useState(false);
+  const [digestSaved, setDigestSaved] = useState(false);
+  const [digestLoading, setDigestLoading] = useState(true);
+  const [digestTestStatus, setDigestTestStatus] = useState(null);
+  const [digestTestLoading, setDigestTestLoading] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const saved = await fetchDigestSettings();
+        if (!cancelled && saved) setDigestSettings({ ...DEFAULT_DIGEST_SETTINGS, ...saved });
+      } catch { /* ignore */ }
+      if (!cancelled) setDigestLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const updateDigest = (key, value) => { setDigestSettings(prev => ({ ...prev, [key]: value })); setDigestDirty(true); setDigestSaved(false); };
+  const updateDigestSchedule = (type, key, value) => {
+    setDigestSettings(prev => ({
+      ...prev,
+      schedule: { ...prev.schedule, [type]: { ...prev.schedule[type], [key]: value } },
+    }));
+    setDigestDirty(true); setDigestSaved(false);
+  };
+  const toggleDigestDay = (type, day) => {
+    setDigestSettings(prev => {
+      const current = prev.schedule[type].days || [];
+      const next = current.includes(day) ? current.filter(d => d !== day) : [...current, day];
+      return { ...prev, schedule: { ...prev.schedule, [type]: { ...prev.schedule[type], days: next } } };
+    });
+    setDigestDirty(true); setDigestSaved(false);
+  };
+  const toggleDigestRecipient = (email) => {
+    setDigestSettings(prev => {
+      const current = prev.recipients || [];
+      const next = current.includes(email) ? current.filter(e => e !== email) : [...current, email];
+      return { ...prev, recipients: next };
+    });
+    setDigestDirty(true); setDigestSaved(false);
+  };
+  const saveDigest = async () => {
+    try {
+      await saveDigestSettings(digestSettings);
+      setDigestDirty(false); setDigestSaved(true);
+      setTimeout(() => setDigestSaved(false), 2500);
+    } catch (err) {
+      console.error("Failed to save digest settings:", err);
+      alert("Failed to save digest settings. Please try again.");
+    }
+  };
+
+  const sendTestDigest = async (type) => {
+    setDigestTestLoading(type);
+    setDigestTestStatus(null);
+    try {
+      const recipients = digestSettings.recipients?.length > 0
+        ? digestSettings.recipients
+        : staff.filter(m => m.role === "admin" && m.email).map(m => m.email);
+      if (recipients.length === 0) throw new Error("No recipients configured");
+
+      // Build example data from live app state
+      const today = new Date().toISOString().slice(0, 10);
+      const daysUntil = (d) => d ? Math.ceil((new Date(d) - new Date(today)) / 86400000) : null;
+      const fmtDate = (d) => { if (!d) return "—"; const p = d.split("-"); const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; return `${parseInt(p[2],10).toString().padStart(2,"0")} ${m[parseInt(p[1],10)-1]}`; };
+      const calcTotal = (q) => (q.lineItems || []).reduce((s, l) => s + (l.qty || 0) * (l.rate || 0), 0) * (1 + (q.tax || 10) / 100);
+      const fmt = (n) => "$" + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      const dateStr = new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+      let emailData;
+      if (type === "dashboard") {
+        const totalQuoted = quotes.filter(q => q.status !== "declined").reduce((s, q) => s + calcTotal(q), 0);
+        const revenueCollected = invoices.filter(i => i.status === "paid").reduce((s, inv) => s + calcTotal(inv), 0);
+        const outstandingInvItems = invoices.filter(i => ["sent", "overdue"].includes(i.status));
+        const outstandingInv = outstandingInvItems.reduce((s, inv) => s + calcTotal(inv), 0);
+        const unpostedBillsArr = bills.filter(b => ["inbox", "linked", "approved"].includes(b.status));
+        const totalInvoiced = invoices.reduce((s, inv) => s + calcTotal(inv), 0);
+        const totalBillsCost = bills.reduce((s, b) => s + (b.amount || 0), 0);
+        const margin = totalInvoiced > 0 ? Math.round(((totalInvoiced - totalBillsCost) / totalInvoiced) * 100) : 0;
+        const activeJobs = jobs.filter(j => j.status === "in_progress").length;
+        const completedJobs = jobs.filter(j => j.status === "completed").length;
+        const overdueJobsList = jobs.filter(j => j.dueDate && daysUntil(j.dueDate) < 0 && j.status !== "completed" && j.status !== "cancelled");
+        const activeWOs = workOrders.filter(wo => !["Cancelled","Billed","Completed"].includes(wo.status)).length;
+        const overdueWOs = workOrders.filter(wo => wo.dueDate && daysUntil(wo.dueDate) < 0 && !["Cancelled","Billed","Completed"].includes(wo.status)).length;
+        const woAwait = workOrders.filter(wo => wo.status === "Sent").length;
+        const activePOs = purchaseOrders.filter(po => !["Cancelled","Billed","Completed"].includes(po.status)).length;
+        const overduePOs = purchaseOrders.filter(po => po.dueDate && daysUntil(po.dueDate) < 0 && !["Cancelled","Billed","Completed"].includes(po.status)).length;
+        const totalHours = timeEntries.reduce((s, t) => s + t.hours, 0);
+        const billableHours = timeEntries.filter(t => t.billable).reduce((s, t) => s + t.hours, 0);
+        const billableRatio = totalHours > 0 ? Math.round((billableHours / totalHours) * 100) : 0;
+        const workerMap = {};
+        timeEntries.forEach(t => { if (!workerMap[t.worker]) workerMap[t.worker] = { total: 0, billable: 0 }; workerMap[t.worker].total += t.hours; if (t.billable) workerMap[t.worker].billable += t.hours; });
+        const workers = Object.entries(workerMap).map(([name, hrs]) => ({ name, ...hrs })).sort((a, b) => b.total - a.total);
+        const quoteDrafts = quotes.filter(q => q.status === "draft").length;
+        const pipelineTotal = quotes.filter(q => ["draft","sent"].includes(q.status)).reduce((s, q) => s + calcTotal(q), 0);
+        const quoteConversion = quotes.length > 0 ? Math.round((quotes.filter(q => q.status === "accepted").length / quotes.length) * 100) : 0;
+        const jobStatuses = ["draft","scheduled","quoted","in_progress","completed"].map(st => ({
+          status: st, label: { draft: "Draft", scheduled: "Scheduled", quoted: "Quoted", in_progress: "In Progress", completed: "Completed" }[st],
+          count: jobs.filter(j => j.status === st).length, color: { draft: "#888", scheduled: "#0891b2", quoted: "#7c3aed", in_progress: "#ea580c", completed: "#16a34a" }[st],
+        }));
+        const unpaidInvoices = invoices.filter(i => i.status !== "paid" && i.status !== "void").map(inv => ({
+          number: inv.number, amount: fmt(calcTotal(inv)),
+          status: inv.dueDate && daysUntil(inv.dueDate) < 0 ? "overdue" : inv.status,
+        }));
+        const actionItems = [];
+        if (overdueJobsList.length > 0) actionItems.push({ label: `${overdueJobsList.length} overdue job${overdueJobsList.length > 1 ? "s" : ""}`, color: "#dc2626" });
+        if (quoteDrafts > 0) actionItems.push({ label: `${quoteDrafts} draft quote${quoteDrafts > 1 ? "s" : ""}`, color: "#ca8a04" });
+        if (overdueWOs > 0) actionItems.push({ label: `${overdueWOs} overdue WO${overdueWOs > 1 ? "s" : ""}`, color: "#dc2626" });
+        if (woAwait > 0) actionItems.push({ label: `${woAwait} WO${woAwait > 1 ? "s" : ""} awaiting`, color: "#2563eb" });
+        const inboxBills = bills.filter(b => b.status === "inbox").length;
+        if (inboxBills > 0) actionItems.push({ label: `${inboxBills} bill${inboxBills > 1 ? "s" : ""} in inbox`, color: "#dc2626" });
+        if (outstandingInvItems.length > 0) actionItems.push({ label: `${outstandingInvItems.length} outstanding invoice${outstandingInvItems.length > 1 ? "s" : ""}`, color: "#dc2626" });
+
+        emailData = {
+          appUrl: window.location.origin, dayLabel: "Test", dateStr,
+          totalQuoted, revenueCollected, outstandingInv, outstandingInvCount: outstandingInvItems.length,
+          unpostedBillsTotal: unpostedBillsArr.reduce((s, b) => s + (b.amount || 0), 0), unpostedBillsCount: unpostedBillsArr.length,
+          totalInvoiced, totalBillsCost, margin, activeJobs, completedJobs,
+          overdueJobCount: overdueJobsList.length, totalJobs: jobs.length,
+          overdueJobs: overdueJobsList.slice(0, 5).map(j => ({ title: j.title, dueDate: fmtDate(j.dueDate) })),
+          activeWOs, overdueWOs, woAwaitingAcceptance: woAwait, activePOs, overduePOs,
+          totalHours, billableHours, billableRatio, workers, quoteDrafts, pipelineTotal, quoteConversion,
+          jobStatuses, unpaidInvoices, scheduleItems: [], actionItems, jobsDueThisWeek: [],
+        };
+      } else {
+        const totalHours = timeEntries.reduce((s, t) => s + t.hours, 0);
+        const billableHours = timeEntries.filter(t => t.billable).reduce((s, t) => s + t.hours, 0);
+        const billableRatio = totalHours > 0 ? Math.round((billableHours / totalHours) * 100) : 0;
+        const workerMap = {};
+        timeEntries.forEach(t => { if (!workerMap[t.worker]) workerMap[t.worker] = { total: 0, billable: 0 }; workerMap[t.worker].total += t.hours; if (t.billable) workerMap[t.worker].billable += t.hours; });
+        const workers = Object.entries(workerMap).map(([name, hrs]) => ({ name, ...hrs })).sort((a, b) => b.total - a.total);
+        const sevOrder = { high: 0, medium: 1, low: 2 };
+        const sortSev = (items) => items.sort((a, b) => (sevOrder[a.severity] ?? 2) - (sevOrder[b.severity] ?? 2));
+
+        const categories = [
+          { id: "timesheets", label: "Timesheets", color: "#be185d", items: sortSev(timeEntries.filter(t => !t.billable).slice(0, 10).map(t => { const job = t.jobId ? jobs.find(j => j.id === t.jobId) : null; return { title: `${t.worker} — ${t.hours}h`, sub: job?.title || "", detail: `${fmtDate(t.date)} · Non-billable`, severity: "low" }; })) },
+          { id: "quotes", label: "Quotes", color: "#ca8a04", items: sortSev(quotes.filter(q => q.status === "draft").map(q => { const job = q.jobId ? jobs.find(j => j.id === q.jobId) : null; return { title: q.number, sub: job?.title || "", detail: `${fmt(calcTotal(q))} · Ready to send`, severity: "low" }; })) },
+          { id: "jobs", label: "Jobs", color: "#111111", items: sortSev(jobs.filter(j => j.dueDate && daysUntil(j.dueDate) < 0 && j.status !== "completed" && j.status !== "cancelled").map(j => { const cl = clients.find(c => c.id === j.clientId); const days = Math.abs(daysUntil(j.dueDate)); return { title: j.title, sub: cl?.name || "", detail: `${days} day${days !== 1 ? "s" : ""} overdue`, severity: "high" }; })) },
+          { id: "orders", label: "Orders", color: "#2563eb", items: sortSev([
+            ...[...workOrders, ...purchaseOrders].filter(o => !["Cancelled","Billed","Completed"].includes(o.status) && o.dueDate && daysUntil(o.dueDate) < 0).map(o => { const job = o.jobId ? jobs.find(j => j.id === o.jobId) : null; const days = Math.abs(daysUntil(o.dueDate)); return { title: `${o.ref} — ${o.contractorName || o.supplierName || ""}`, sub: job?.title || "", detail: `${days}d overdue`, severity: "high" }; }),
+            ...workOrders.filter(wo => wo.status === "Sent").map(wo => { const job = wo.jobId ? jobs.find(j => j.id === wo.jobId) : null; return { title: `${wo.ref} — ${wo.contractorName || ""}`, sub: job?.title || "", detail: "Awaiting acceptance", severity: "medium" }; }),
+          ]) },
+          { id: "bills", label: "Bills", color: "#dc2626", items: sortSev(bills.filter(b => ["inbox","linked","approved"].includes(b.status)).map(b => { const job = b.jobId ? jobs.find(j => j.id === b.jobId) : null; return { title: `${b.supplier} — ${b.invoiceNo || ""}`, sub: job?.title || "", detail: `${fmt(b.amount || 0)} · ${b.status}`, severity: b.status === "inbox" ? "medium" : "low" }; })) },
+          { id: "invoices", label: "Invoices", color: "#4f46e5", items: sortSev(invoices.filter(i => i.status !== "paid" && i.status !== "void").map(inv => { const job = inv.jobId ? jobs.find(j => j.id === inv.jobId) : null; const isOD = inv.dueDate && daysUntil(inv.dueDate) < 0; return { title: inv.number, sub: job?.title || "", detail: `${fmt(calcTotal(inv))} · ${isOD ? "Overdue" : inv.status}`, severity: isOD ? "high" : "medium" }; })) },
+          { id: "compliance", label: "Compliance", color: "#0d9488", items: sortSev(contractors.flatMap(c => {
+            const types = [{ id: "workers_comp", label: "Workers Comp" }, { id: "public_liability", label: "Public Liability" }, { id: "white_card", label: "White Card" }, { id: "trade_license", label: "Trade License" }, { id: "subcontractor_statement", label: "Subcontractor Statement" }, { id: "swms", label: "SWMS" }];
+            return types.flatMap(dt => { const doc = (c.documents || []).find(d => d.docType === dt.id || d.type === dt.id); const expired = doc?.expiryDate && daysUntil(doc.expiryDate) < 0; const missing = !doc; if (expired || missing) return [{ title: c.name, sub: dt.label, detail: expired ? "Expired" : "Missing", severity: expired ? "high" : "medium" }]; return []; });
+          })) },
+        ].filter(c => c.items.length > 0 || c.id === "timesheets");
+
+        const totalCount = categories.reduce((s, c) => s + c.items.length, 0);
+        const highCount = categories.flatMap(c => c.items.filter(i => i.severity === "high")).length;
+
+        emailData = {
+          appUrl: window.location.origin, dayLabel: "Test", dateStr,
+          totalCount, highCount, totalHours, billableHours, billableRatio, workers, categories,
+        };
+      }
+
+      const emailType = type === "dashboard" ? "dashboard_digest" : "actions_digest";
+      for (const to of recipients) {
+        await sendEmail(emailType, to, emailData);
+      }
+      setDigestTestStatus({ type, ok: true, msg: `Sent to ${recipients.join(", ")}` });
+    } catch (err) {
+      setDigestTestStatus({ type, ok: false, msg: err.message });
+    }
+    setDigestTestLoading(null);
+    setTimeout(() => setDigestTestStatus(null), 6000);
   };
 
   const voiceIntegrationContent = (
@@ -1659,6 +1842,107 @@ const Settings = () => {
           </div>
         );
       })()}
+      {tab === "digests" && (
+        <div>
+          {/* Master toggle */}
+          <div className={s.card}>
+            <div className={s.flexBetween}>
+              <div>
+                <div className={s.label} style={{ margin: 0 }}>Digest Emails</div>
+                <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Automatically send business summary emails to your team</div>
+              </div>
+              <div className={s.toggle} style={{ background: digestSettings.enabled ? accent : "#ddd" }} onClick={() => updateDigest("enabled", !digestSettings.enabled)}>
+                <div className={s.toggleKnob} style={{ transform: digestSettings.enabled ? "translateX(20px)" : "translateX(0)" }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Schedule */}
+          <div className={s.card}>
+            <div className={s.label}>Dashboard Digest</div>
+            <div style={{ fontSize: 12, color: "#888", marginBottom: 12 }}>Financial KPIs, profitability, jobs, timesheets, quotes, and schedule overview</div>
+            <div className={s.digestDayRow}>
+              {["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].map(day => (
+                <button key={day} className={digestSettings.schedule.dashboard.days.includes(day) ? s.digestDayBtnOn : s.digestDayBtnOff} style={digestSettings.schedule.dashboard.days.includes(day) ? { background: accent, borderColor: accent } : {}} onClick={() => toggleDigestDay("dashboard", day)}>
+                  {day.slice(0, 3).charAt(0).toUpperCase() + day.slice(1, 3)}
+                </button>
+              ))}
+            </div>
+            <div className={s.flexGap8} style={{ marginTop: 10, alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: "#888" }}>Send at</span>
+              <input type="time" value={digestSettings.schedule.dashboard.time} onChange={e => updateDigestSchedule("dashboard", "time", e.target.value)} className={s.inputNarrow} style={{ width: 100 }} />
+            </div>
+          </div>
+
+          <div className={s.card}>
+            <div className={s.label}>Actions Digest</div>
+            <div style={{ fontSize: 12, color: "#888", marginBottom: 12 }}>Items needing attention — overdue jobs, unpaid invoices, bills, compliance issues</div>
+            <div className={s.digestDayRow}>
+              {["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].map(day => (
+                <button key={day} className={digestSettings.schedule.actions.days.includes(day) ? s.digestDayBtnOn : s.digestDayBtnOff} style={digestSettings.schedule.actions.days.includes(day) ? { background: accent, borderColor: accent } : {}} onClick={() => toggleDigestDay("actions", day)}>
+                  {day.slice(0, 3).charAt(0).toUpperCase() + day.slice(1, 3)}
+                </button>
+              ))}
+            </div>
+            <div className={s.flexGap8} style={{ marginTop: 10, alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: "#888" }}>Send at</span>
+              <input type="time" value={digestSettings.schedule.actions.time} onChange={e => updateDigestSchedule("actions", "time", e.target.value)} className={s.inputNarrow} style={{ width: 100 }} />
+            </div>
+          </div>
+
+          {/* Recipients */}
+          <div className={s.card}>
+            <div className={s.label}>Recipients</div>
+            <div style={{ fontSize: 12, color: "#888", marginBottom: 12 }}>Select who receives digest emails. If none selected, all admins will receive them.</div>
+            {staff.filter(m => m.email).length === 0 && (
+              <div style={{ fontSize: 13, color: "#999", padding: "12px 0" }}>No staff members with email addresses found.</div>
+            )}
+            {staff.filter(m => m.email).map(member => {
+              const isSelected = (digestSettings.recipients || []).includes(member.email);
+              return (
+                <div key={member.id} className={s.digestRecipientRow} onClick={() => toggleDigestRecipient(member.email)}>
+                  <div className={s.digestRecipientCheck} style={isSelected ? { background: accent, borderColor: accent } : {}}>
+                    {isSelected && <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 10 8 14 16 6" /></svg>}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#333" }}>{member.name}</div>
+                    <div style={{ fontSize: 11, color: "#888" }}>{member.email}{member.role === "admin" ? " · Admin" : " · Staff"}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Save */}
+          <div className={s.flexGap8} style={{ marginBottom: 16 }}>
+            <button className={s.btnAccent} style={{ background: accent }} disabled={!digestDirty} onClick={saveDigest}>Save Settings</button>
+            {digestSaved && <span className={s.alertSuccess} style={{ padding: "6px 12px", fontSize: 12 }}>Saved</span>}
+          </div>
+
+          {/* Send Test */}
+          <div className={s.card}>
+            <div className={s.label}>Send Test Email</div>
+            <div style={{ fontSize: 12, color: "#888", marginBottom: 12 }}>Send a test digest email using your current live data to configured recipients</div>
+            <div className={s.flexGap8}>
+              <button className={s.btnSecondary} disabled={!!digestTestLoading} onClick={() => sendTestDigest("dashboard")}>
+                {digestTestLoading === "dashboard" ? "Sending..." : "Send Test Dashboard"}
+              </button>
+              <button className={s.btnSecondary} disabled={!!digestTestLoading} onClick={() => sendTestDigest("actions")}>
+                {digestTestLoading === "actions" ? "Sending..." : "Send Test Actions"}
+              </button>
+            </div>
+            {digestTestStatus && (
+              <div className={digestTestStatus.ok ? s.alertSuccess : s.alertError} style={{ marginTop: 10, padding: "8px 12px", fontSize: 12 }}>
+                {digestTestStatus.msg}
+              </div>
+            )}
+          </div>
+
+          <div className={s.cardMuted} style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>
+            Digest emails are sent automatically by the <strong>send-digest</strong> edge function. Set up a Supabase cron job to call it on weekday mornings, or it will auto-detect the correct digest type from the day of the week.
+          </div>
+        </div>
+      )}
       {tab === "xero" && <XeroSettingsTab accent={accent} />}
       {tab === "users" && <UserManagement />}
 

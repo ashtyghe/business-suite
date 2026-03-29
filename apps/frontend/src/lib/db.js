@@ -1352,18 +1352,9 @@ export async function fetchDigestSettings() {
 
 export async function saveDigestSettings(settings) {
   if (!supabase) return;
-  // Check if a digest row already exists
-  const existing = await q(supabase.from('voice_settings_defaults').select('id').eq('type', 'digest').limit(1));
-  if (existing.length > 0) {
-    return qStrict(supabase.from('voice_settings_defaults').update({
-      settings,
-      updated_at: new Date().toISOString(),
-    }).eq('type', 'digest').select());
-  } else {
-    return qStrict(supabase.from('voice_settings_defaults').insert({
-      type: 'digest',
-      settings,
-      updated_at: new Date().toISOString(),
-    }).select());
-  }
+  return qStrict(supabase.from('voice_settings_defaults').upsert({
+    type: 'digest',
+    settings,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'type' }).select());
 }

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { subtotal as calcSubtotal, gstOnSubtotal, totalWithGst, extractGst, gstAmount } from '../utils/calcEngine';
 
 // ── Query helper ───────────────────────────────────────────────────────────
 
@@ -507,16 +508,16 @@ function denormalizeInvoice(data) {
     notes: data.notes || null,
     due_date: data.dueDate || null,
     from_quote_id: data.fromQuoteId || null,
-    subtotal: (data.lineItems || []).reduce((s, l) => s + l.qty * l.rate, 0),
-    tax: (data.lineItems || []).reduce((s, l) => s + l.qty * l.rate, 0) * ((data.tax || 10) / 100),
-    total: (data.lineItems || []).reduce((s, l) => s + l.qty * l.rate, 0) * (1 + (data.tax || 10) / 100),
+    subtotal: calcSubtotal(data.lineItems || []),
+    tax: gstOnSubtotal(calcSubtotal(data.lineItems || []), data.tax || 10),
+    total: totalWithGst(calcSubtotal(data.lineItems || []), data.tax || 10),
   };
 }
 
 function denormalizeBill(data) {
   const total = Number(data.amount || 0);
-  const subtotal = data.hasGst !== false ? total / 1.1 : total;
-  const tax = data.hasGst !== false ? total - subtotal : 0;
+  const subtotal = data.hasGst !== false ? extractGst(total) : total;
+  const tax = data.hasGst !== false ? gstAmount(total) : 0;
   return {
     job_id: data.jobId || null,
     supplier_name: data.supplier || null,

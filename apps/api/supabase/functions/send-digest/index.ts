@@ -44,14 +44,7 @@ function fmtDate(d: string): string {
   return `${parseInt(parts[2], 10).toString().padStart(2, "0")} ${months[parseInt(parts[1], 10) - 1]}`;
 }
 
-function fmt(n: number): string {
-  return "$" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
-function calcTotal(lineItems: { quantity: number; unit_price: number }[], taxRate: number): number {
-  const sub = lineItems.reduce((s, l) => s + (l.quantity || 0) * (l.unit_price || 0), 0);
-  return sub * (1 + (taxRate || 10) / 100);
-}
+import { fmt, calcDocumentTotal as calcTotal, sumAmounts, sumWith, profitMarginPct } from "../_shared/calcEngine.ts";
 
 function getMonday(dateStr: string): string {
   const dt = new Date(dateStr + "T12:00:00");
@@ -159,16 +152,18 @@ function buildDashboardData(data: ReturnType<typeof fetchAllData> extends Promis
   const today = todayStr();
 
   // Financial
-  const totalQuoted = quotes.filter((q: any) => q.status !== "declined")
-    .reduce((s: number, q: any) => s + calcTotal(q.line_items, q.tax_rate), 0);
-  const revenueCollected = invoices.filter((i: any) => i.status === "paid")
-    .reduce((s: number, inv: any) => s + calcTotal(inv.line_items, inv.tax_rate), 0);
+  const totalQuoted = sumWith(quotes.filter((q: any) => q.status !== "declined"),
+    (q: any) => calcTotal(q.line_items, q.tax_rate));
+  const revenueCollected = sumWith(invoices.filter((i: any) => i.status === "paid"),
+    (inv: any) => calcTotal(inv.line_items, inv.tax_rate));
   const outstandingInvItems = invoices.filter((i: any) => ["sent", "overdue"].includes(i.status));
-  const outstandingInv = outstandingInvItems.reduce((s: number, inv: any) => s + calcTotal(inv.line_items, inv.tax_rate), 0);
+  const outstandingInv = sumWith(outstandingInvItems,
+    (inv: any) => calcTotal(inv.line_items, inv.tax_rate));
   const unpostedBillsArr = bills.filter((b: any) => ["inbox", "linked", "approved"].includes(b.status));
-  const totalInvoiced = invoices.reduce((s: number, inv: any) => s + calcTotal(inv.line_items, inv.tax_rate), 0);
-  const totalBillsCost = bills.reduce((s: number, b: any) => s + Number(b.total || 0), 0);
-  const margin = totalInvoiced > 0 ? Math.round(((totalInvoiced - totalBillsCost) / totalInvoiced) * 100) : 0;
+  const totalInvoiced = sumWith(invoices,
+    (inv: any) => calcTotal(inv.line_items, inv.tax_rate));
+  const totalBillsCost = sumAmounts(bills, "total");
+  const margin = profitMarginPct(totalInvoiced, totalBillsCost);
 
   // Jobs
   const activeJobs = jobs.filter((j: any) => j.status === "in_progress").length;
@@ -209,7 +204,7 @@ function buildDashboardData(data: ReturnType<typeof fetchAllData> extends Promis
   // Quotes
   const quoteDrafts = quotes.filter((q: any) => q.status === "draft").length;
   const pipelineQuotes = quotes.filter((q: any) => ["draft", "sent"].includes(q.status));
-  const pipelineTotal = pipelineQuotes.reduce((s: number, q: any) => s + calcTotal(q.line_items, q.tax_rate), 0);
+  const pipelineTotal = sumWith(pipelineQuotes, (q: any) => calcTotal(q.line_items, q.tax_rate));
   const quoteConversion = quotes.length > 0
     ? Math.round((quotes.filter((q: any) => q.status === "accepted").length / quotes.length) * 100)
     : 0;

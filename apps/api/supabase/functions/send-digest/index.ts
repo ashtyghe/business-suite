@@ -7,6 +7,22 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") || "FieldOps <notifications@c8c.com.au>";
 const APP_URL = Deno.env.get("APP_URL") || "https://fieldops.netlify.app";
 
+const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://fieldops.netlify.app";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, apikey, x-client-info",
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+  });
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function todayStr(): string {
@@ -433,21 +449,37 @@ function buildActionsData(data: ReturnType<typeof fetchAllData> extends Promise<
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204 });
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+  if (req.method !== "POST") {
+    return json({ error: "Method not allowed" }, 405);
+  }
+
+  // Auth: accept service-role (cron) or authenticated user (test sends from UI)
+  const authHeader = req.headers.get("Authorization");
+  const isServiceRole = authHeader === `Bearer ${SERVICE_ROLE_KEY}`;
+
+  if (!isServiceRole) {
+    if (!authHeader) return json({ error: "Missing Authorization header" }, 401);
+    const anonClient = createClient(
+      SUPABASE_URL,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: { user } } = await anonClient.auth.getUser();
+    if (!user) return json({ error: "Invalid or expired token" }, 401);
   }
 
   // Accept both cron invocations (no body) and manual POST with { type, to }
   let digestType: string | null = null;
   let recipientEmail: string | null = null;
 
-  if (req.method === "POST") {
-    try {
-      const body = await req.json();
-      digestType = body.type || null;      // "dashboard" or "actions"
-      recipientEmail = body.to || null;    // override recipient
-    } catch {
-      // No body = auto-detect from day of week
-    }
+  try {
+    const body = await req.json();
+    digestType = body.type || null;      // "dashboard" or "actions"
+    recipientEmail = body.to || null;    // override recipient
+  } catch {
+    // No body = auto-detect from day of week
   }
 
   // Auto-detect digest type from day of week if not provided
@@ -458,21 +490,15 @@ Deno.serve(async (req: Request) => {
     } else if (dayOfWeek === 2 || dayOfWeek === 4) {
       digestType = "actions";    // Tuesday & Thursday
     } else {
-      return new Response(
-        JSON.stringify({ skipped: true, reason: "No digest scheduled for today" }),
-        { headers: { "Content-Type": "application/json" } }
-      );
+      return json({ skipped: true, reason: "No digest scheduled for today" });
     }
   }
 
   if (!RESEND_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: "RESEND_API_KEY not configured" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return json({ error: "RESEND_API_KEY not configured" }, 500);
   }
 
-  // Use service role to read all data
+  // Use service role to read all data (regardless of who called)
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
   // If no recipient provided, send to all admin staff
@@ -487,10 +513,7 @@ Deno.serve(async (req: Request) => {
   }
 
   if (recipients.length === 0) {
-    return new Response(
-      JSON.stringify({ error: "No recipients found" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+    return json({ error: "No recipients found" }, 400);
   }
 
   // Fetch all data
@@ -508,7 +531,7 @@ Deno.serve(async (req: Request) => {
     dashboard: { 1: "Monday", 5: "Friday" },
     actions: { 2: "Tuesday", 4: "Thursday" },
   };
-  const dayLabel = dayLabels[digestType]?.[dayOfWeek] || "Weekly";
+  const dayLabel = dayLabels[digestType]?.[dayOfWeek] || "Test";
 
   // Build email data
   let emailType: string;
@@ -548,8 +571,5 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return new Response(
-    JSON.stringify({ digestType, dateStr, recipients: results }),
-    { headers: { "Content-Type": "application/json" } }
-  );
+  return json({ success: true, digestType, dateStr, recipients: results });
 });

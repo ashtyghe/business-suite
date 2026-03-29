@@ -733,112 +733,24 @@ const Settings = () => {
     setDigestTestLoading(type);
     setDigestTestStatus(null);
     try {
+      if (!supabase) throw new Error("Supabase not configured");
       const recipients = digestSettings.recipients?.length > 0
         ? digestSettings.recipients
         : staff.filter(m => m.role === "admin" && m.email).map(m => m.email);
       if (recipients.length === 0) throw new Error("No recipients configured");
 
-      // Build example data from live app state
-      const today = new Date().toISOString().slice(0, 10);
-      const daysUntil = (d) => d ? Math.ceil((new Date(d) - new Date(today)) / 86400000) : null;
-      const fmtDate = (d) => { if (!d) return "—"; const p = d.split("-"); const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; return `${parseInt(p[2],10).toString().padStart(2,"0")} ${m[parseInt(p[1],10)-1]}`; };
-      const calcTotal = (q) => (q.lineItems || []).reduce((s, l) => s + (l.qty || 0) * (l.rate || 0), 0) * (1 + (q.tax || 10) / 100);
-      const fmt = (n) => "$" + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      const dateStr = new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-
-      let emailData;
-      if (type === "dashboard") {
-        const totalQuoted = quotes.filter(q => q.status !== "declined").reduce((s, q) => s + calcTotal(q), 0);
-        const revenueCollected = invoices.filter(i => i.status === "paid").reduce((s, inv) => s + calcTotal(inv), 0);
-        const outstandingInvItems = invoices.filter(i => ["sent", "overdue"].includes(i.status));
-        const outstandingInv = outstandingInvItems.reduce((s, inv) => s + calcTotal(inv), 0);
-        const unpostedBillsArr = bills.filter(b => ["inbox", "linked", "approved"].includes(b.status));
-        const totalInvoiced = invoices.reduce((s, inv) => s + calcTotal(inv), 0);
-        const totalBillsCost = bills.reduce((s, b) => s + (b.amount || 0), 0);
-        const margin = totalInvoiced > 0 ? Math.round(((totalInvoiced - totalBillsCost) / totalInvoiced) * 100) : 0;
-        const activeJobs = jobs.filter(j => j.status === "in_progress").length;
-        const completedJobs = jobs.filter(j => j.status === "completed").length;
-        const overdueJobsList = jobs.filter(j => j.dueDate && daysUntil(j.dueDate) < 0 && j.status !== "completed" && j.status !== "cancelled");
-        const activeWOs = workOrders.filter(wo => !["Cancelled","Billed","Completed"].includes(wo.status)).length;
-        const overdueWOs = workOrders.filter(wo => wo.dueDate && daysUntil(wo.dueDate) < 0 && !["Cancelled","Billed","Completed"].includes(wo.status)).length;
-        const woAwait = workOrders.filter(wo => wo.status === "Sent").length;
-        const activePOs = purchaseOrders.filter(po => !["Cancelled","Billed","Completed"].includes(po.status)).length;
-        const overduePOs = purchaseOrders.filter(po => po.dueDate && daysUntil(po.dueDate) < 0 && !["Cancelled","Billed","Completed"].includes(po.status)).length;
-        const totalHours = timeEntries.reduce((s, t) => s + t.hours, 0);
-        const billableHours = timeEntries.filter(t => t.billable).reduce((s, t) => s + t.hours, 0);
-        const billableRatio = totalHours > 0 ? Math.round((billableHours / totalHours) * 100) : 0;
-        const workerMap = {};
-        timeEntries.forEach(t => { if (!workerMap[t.worker]) workerMap[t.worker] = { total: 0, billable: 0 }; workerMap[t.worker].total += t.hours; if (t.billable) workerMap[t.worker].billable += t.hours; });
-        const workers = Object.entries(workerMap).map(([name, hrs]) => ({ name, ...hrs })).sort((a, b) => b.total - a.total);
-        const quoteDrafts = quotes.filter(q => q.status === "draft").length;
-        const pipelineTotal = quotes.filter(q => ["draft","sent"].includes(q.status)).reduce((s, q) => s + calcTotal(q), 0);
-        const quoteConversion = quotes.length > 0 ? Math.round((quotes.filter(q => q.status === "accepted").length / quotes.length) * 100) : 0;
-        const jobStatuses = ["draft","scheduled","quoted","in_progress","completed"].map(st => ({
-          status: st, label: { draft: "Draft", scheduled: "Scheduled", quoted: "Quoted", in_progress: "In Progress", completed: "Completed" }[st],
-          count: jobs.filter(j => j.status === st).length, color: { draft: "#888", scheduled: "#0891b2", quoted: "#7c3aed", in_progress: "#ea580c", completed: "#16a34a" }[st],
-        }));
-        const unpaidInvoices = invoices.filter(i => i.status !== "paid" && i.status !== "void").map(inv => ({
-          number: inv.number, amount: fmt(calcTotal(inv)),
-          status: inv.dueDate && daysUntil(inv.dueDate) < 0 ? "overdue" : inv.status,
-        }));
-        const actionItems = [];
-        if (overdueJobsList.length > 0) actionItems.push({ label: `${overdueJobsList.length} overdue job${overdueJobsList.length > 1 ? "s" : ""}`, color: "#dc2626" });
-        if (quoteDrafts > 0) actionItems.push({ label: `${quoteDrafts} draft quote${quoteDrafts > 1 ? "s" : ""}`, color: "#ca8a04" });
-        if (overdueWOs > 0) actionItems.push({ label: `${overdueWOs} overdue WO${overdueWOs > 1 ? "s" : ""}`, color: "#dc2626" });
-        if (woAwait > 0) actionItems.push({ label: `${woAwait} WO${woAwait > 1 ? "s" : ""} awaiting`, color: "#2563eb" });
-        const inboxBills = bills.filter(b => b.status === "inbox").length;
-        if (inboxBills > 0) actionItems.push({ label: `${inboxBills} bill${inboxBills > 1 ? "s" : ""} in inbox`, color: "#dc2626" });
-        if (outstandingInvItems.length > 0) actionItems.push({ label: `${outstandingInvItems.length} outstanding invoice${outstandingInvItems.length > 1 ? "s" : ""}`, color: "#dc2626" });
-
-        emailData = {
-          appUrl: window.location.origin, dayLabel: "Test", dateStr,
-          totalQuoted, revenueCollected, outstandingInv, outstandingInvCount: outstandingInvItems.length,
-          unpostedBillsTotal: unpostedBillsArr.reduce((s, b) => s + (b.amount || 0), 0), unpostedBillsCount: unpostedBillsArr.length,
-          totalInvoiced, totalBillsCost, margin, activeJobs, completedJobs,
-          overdueJobCount: overdueJobsList.length, totalJobs: jobs.length,
-          overdueJobs: overdueJobsList.slice(0, 5).map(j => ({ title: j.title, dueDate: fmtDate(j.dueDate) })),
-          activeWOs, overdueWOs, woAwaitingAcceptance: woAwait, activePOs, overduePOs,
-          totalHours, billableHours, billableRatio, workers, quoteDrafts, pipelineTotal, quoteConversion,
-          jobStatuses, unpaidInvoices, scheduleItems: [], actionItems, jobsDueThisWeek: [],
-        };
-      } else {
-        const totalHours = timeEntries.reduce((s, t) => s + t.hours, 0);
-        const billableHours = timeEntries.filter(t => t.billable).reduce((s, t) => s + t.hours, 0);
-        const billableRatio = totalHours > 0 ? Math.round((billableHours / totalHours) * 100) : 0;
-        const workerMap = {};
-        timeEntries.forEach(t => { if (!workerMap[t.worker]) workerMap[t.worker] = { total: 0, billable: 0 }; workerMap[t.worker].total += t.hours; if (t.billable) workerMap[t.worker].billable += t.hours; });
-        const workers = Object.entries(workerMap).map(([name, hrs]) => ({ name, ...hrs })).sort((a, b) => b.total - a.total);
-        const sevOrder = { high: 0, medium: 1, low: 2 };
-        const sortSev = (items) => items.sort((a, b) => (sevOrder[a.severity] ?? 2) - (sevOrder[b.severity] ?? 2));
-
-        const categories = [
-          { id: "timesheets", label: "Timesheets", color: "#be185d", items: sortSev(timeEntries.filter(t => !t.billable).slice(0, 10).map(t => { const job = t.jobId ? jobs.find(j => j.id === t.jobId) : null; return { title: `${t.worker} — ${t.hours}h`, sub: job?.title || "", detail: `${fmtDate(t.date)} · Non-billable`, severity: "low" }; })) },
-          { id: "quotes", label: "Quotes", color: "#ca8a04", items: sortSev(quotes.filter(q => q.status === "draft").map(q => { const job = q.jobId ? jobs.find(j => j.id === q.jobId) : null; return { title: q.number, sub: job?.title || "", detail: `${fmt(calcTotal(q))} · Ready to send`, severity: "low" }; })) },
-          { id: "jobs", label: "Jobs", color: "#111111", items: sortSev(jobs.filter(j => j.dueDate && daysUntil(j.dueDate) < 0 && j.status !== "completed" && j.status !== "cancelled").map(j => { const cl = clients.find(c => c.id === j.clientId); const days = Math.abs(daysUntil(j.dueDate)); return { title: j.title, sub: cl?.name || "", detail: `${days} day${days !== 1 ? "s" : ""} overdue`, severity: "high" }; })) },
-          { id: "orders", label: "Orders", color: "#2563eb", items: sortSev([
-            ...[...workOrders, ...purchaseOrders].filter(o => !["Cancelled","Billed","Completed"].includes(o.status) && o.dueDate && daysUntil(o.dueDate) < 0).map(o => { const job = o.jobId ? jobs.find(j => j.id === o.jobId) : null; const days = Math.abs(daysUntil(o.dueDate)); return { title: `${o.ref} — ${o.contractorName || o.supplierName || ""}`, sub: job?.title || "", detail: `${days}d overdue`, severity: "high" }; }),
-            ...workOrders.filter(wo => wo.status === "Sent").map(wo => { const job = wo.jobId ? jobs.find(j => j.id === wo.jobId) : null; return { title: `${wo.ref} — ${wo.contractorName || ""}`, sub: job?.title || "", detail: "Awaiting acceptance", severity: "medium" }; }),
-          ]) },
-          { id: "bills", label: "Bills", color: "#dc2626", items: sortSev(bills.filter(b => ["inbox","linked","approved"].includes(b.status)).map(b => { const job = b.jobId ? jobs.find(j => j.id === b.jobId) : null; return { title: `${b.supplier} — ${b.invoiceNo || ""}`, sub: job?.title || "", detail: `${fmt(b.amount || 0)} · ${b.status}`, severity: b.status === "inbox" ? "medium" : "low" }; })) },
-          { id: "invoices", label: "Invoices", color: "#4f46e5", items: sortSev(invoices.filter(i => i.status !== "paid" && i.status !== "void").map(inv => { const job = inv.jobId ? jobs.find(j => j.id === inv.jobId) : null; const isOD = inv.dueDate && daysUntil(inv.dueDate) < 0; return { title: inv.number, sub: job?.title || "", detail: `${fmt(calcTotal(inv))} · ${isOD ? "Overdue" : inv.status}`, severity: isOD ? "high" : "medium" }; })) },
-          { id: "compliance", label: "Compliance", color: "#0d9488", items: sortSev(contractors.flatMap(c => {
-            const types = [{ id: "workers_comp", label: "Workers Comp" }, { id: "public_liability", label: "Public Liability" }, { id: "white_card", label: "White Card" }, { id: "trade_license", label: "Trade License" }, { id: "subcontractor_statement", label: "Subcontractor Statement" }, { id: "swms", label: "SWMS" }];
-            return types.flatMap(dt => { const doc = (c.documents || []).find(d => d.docType === dt.id || d.type === dt.id); const expired = doc?.expiryDate && daysUntil(doc.expiryDate) < 0; const missing = !doc; if (expired || missing) return [{ title: c.name, sub: dt.label, detail: expired ? "Expired" : "Missing", severity: expired ? "high" : "medium" }]; return []; });
-          })) },
-        ].filter(c => c.items.length > 0 || c.id === "timesheets");
-
-        const totalCount = categories.reduce((s, c) => s + c.items.length, 0);
-        const highCount = categories.flatMap(c => c.items.filter(i => i.severity === "high")).length;
-
-        emailData = {
-          appUrl: window.location.origin, dayLabel: "Test", dateStr,
-          totalCount, highCount, totalHours, billableHours, billableRatio, workers, categories,
-        };
-      }
-
-      const emailType = type === "dashboard" ? "dashboard_digest" : "actions_digest";
+      // Call the send-digest edge function for each recipient
+      // It queries live DB data server-side and renders the email
       for (const to of recipients) {
-        await sendEmail(emailType, to, emailData);
+        const { data, error } = await supabase.functions.invoke("send-digest", {
+          body: { type, to },
+        });
+        if (error) {
+          const msg = typeof error === "object" && error.context
+            ? await error.context.text?.() || error.message
+            : error.message;
+          throw new Error(msg || "Send failed");
+        }
       }
       setDigestTestStatus({ type, ok: true, msg: `Sent to ${recipients.join(", ")}` });
     } catch (err) {

@@ -42,6 +42,7 @@ import {
   getComplianceStatus, getDaysUntilExpiry, getContractorComplianceCount,
   ORDER_STATUS_TRIGGERS,
 } from "../utils/helpers";
+import { subtotal, gstOnSubtotal, totalWithGst, lineItemTotal } from "../utils/calcEngine";
 
 import JobPnL from './JobDetail/JobPnL';
 import JobGantt from './JobDetail/JobGantt';
@@ -544,7 +545,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
               {jobQuotes.length === 0
                 ? <div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">No quotes yet</div><div className="empty-state-sub">Create a quote to send to the client</div></div>
                 : jobQuotes.map(q => {
-                  const sub = q.lineItems.reduce((s,l) => s + l.qty * l.rate, 0);
+                  const sub = subtotal(q.lineItems);
                   const alreadyInvoiced = invoices.some(i => i.fromQuoteId === q.id);
                   return (
                     <div key={q.id} className={s.itemCard}>
@@ -569,7 +570,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
                       <div className={s.totalsRow}>
                         <span className={s.totalsMuted}>{q.lineItems.length} item{q.lineItems.length !== 1 ? "s" : ""}</span>
                         <span className={s.totalsMuted}>Costs <strong className={s.strongDark}>{fmt(sub)}</strong></span>
-                        <span className={s.totalsMuted}>Profit <strong className={s.strongDark}>{fmt(sub * q.tax / 100)}</strong></span>
+                        <span className={s.totalsMuted}>Profit <strong className={s.strongDark}>{fmt(gstOnSubtotal(sub, q.tax))}</strong></span>
                         <span className={s.totalsGrand}>Total {fmt(calcQuoteTotal(q))}</span>
                       </div>
                       {q.notes && <div className={s.itemNotes}>{q.notes}</div>}
@@ -600,7 +601,7 @@ const JobDetail = ({ job, onClose, onEdit }) => {
               {jobInvoices.length === 0
                 ? <div className="empty-state"><div className="empty-state-icon">💳</div><div className="empty-state-text">No invoices yet</div><div className="empty-state-sub">Create an invoice or convert an accepted quote</div></div>
                 : jobInvoices.map(inv => {
-                  const sub = inv.lineItems.reduce((s,l) => s + l.qty * l.rate, 0);
+                  const sub = subtotal(inv.lineItems);
                   const fromQuote = inv.fromQuoteId ? quotes.find(q => q.id === inv.fromQuoteId) : null;
                   return (
                     <div key={inv.id} className={s.itemCard}>

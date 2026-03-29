@@ -1,11 +1,9 @@
 // ── Formatting & IDs ────────────────────────────────────────────────────────
-export const fmt = (n) => `$${Number(n).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export { fmt } from "./calcEngine";
+import { calcDocumentTotal } from "./calcEngine";
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 export const fmtDate = (d) => { if (!d) return "—"; const parts = d.split("-"); if (parts.length < 3) return d; return `${parseInt(parts[2],10).toString().padStart(2,"0")} ${MONTHS[parseInt(parts[1],10)-1]}`; };
-export const calcQuoteTotal = (q) => {
-  const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
-  return sub * (1 + q.tax / 100);
-};
+export const calcQuoteTotal = (q) => calcDocumentTotal(q.lineItems, q.tax);
 export const uid = () => Date.now() + Math.random();
 
 // ── Activity Log Helpers ────────────────────────────────────────────────────

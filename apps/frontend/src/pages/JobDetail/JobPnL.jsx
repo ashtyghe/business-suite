@@ -3,6 +3,7 @@ import { useAppStore } from "../../lib/store";
 import { Icon } from "../../components/Icon";
 import { SectionLabel } from "../../components/shared";
 import { fmt, calcQuoteTotal, addLog } from "../../utils/helpers";
+import { calcDocumentTotal, labourCost, applyMargin, sumAmounts, sumWith, profitMarginPct, budgetVariance, budgetPct } from "../../utils/calcEngine";
 import s from './JobPnL.module.css';
 
 const defaultEstimate = { labour: 0, materials: 0, subcontractors: 0, other: 0 };
@@ -17,13 +18,13 @@ const JobPnL = ({ job, client }) => {
   const jobTime = timeEntries.filter(t => t.jobId === job.id);
   const jobBills = bills.filter(b => b.jobId === job.id);
 
-  const totalQuoted = jobQuotes.filter(q => q.status === "accepted").reduce((s, q) => s + calcQuoteTotal(q), 0);
-  const totalInvoiced = jobInvoices.reduce((s, i) => s + calcQuoteTotal(i), 0);
-  const totalPaid = jobInvoices.filter(i => i.status === "paid").reduce((s, i) => s + calcQuoteTotal(i), 0);
+  const totalQuoted = sumWith(jobQuotes.filter(q => q.status === "accepted"), q => calcDocumentTotal(q.lineItems, q.tax));
+  const totalInvoiced = sumWith(jobInvoices, i => calcDocumentTotal(i.lineItems, i.tax));
+  const totalPaid = sumWith(jobInvoices.filter(i => i.status === "paid"), i => calcDocumentTotal(i.lineItems, i.tax));
 
   const est = job.estimate || defaultEstimate;
   const breakdownTotal = (est.labour || 0) + (est.materials || 0) + (est.subcontractors || 0) + (est.other || 0);
-  const acceptedQuotesTotal = jobQuotes.filter(q => q.status === "accepted").reduce((s, q) => s + calcQuoteTotal(q), 0);
+  const acceptedQuotesTotal = sumWith(jobQuotes.filter(q => q.status === "accepted"), q => calcDocumentTotal(q.lineItems, q.tax));
   const totalEstimate = acceptedQuotesTotal > 0 ? Math.max(breakdownTotal, acceptedQuotesTotal) : breakdownTotal;
 
   const clientRates = client?.rates || {};
@@ -40,32 +41,32 @@ const JobPnL = ({ job, client }) => {
     const rate = st?.costRate || 55;
     if (!labourByWorker[t.worker]) labourByWorker[t.worker] = { hours: 0, cost: 0, rate };
     labourByWorker[t.worker].hours += t.hours;
-    labourByWorker[t.worker].cost += t.hours * rate;
+    labourByWorker[t.worker].cost += labourCost(t.hours, rate);
   });
-  const actualLabour = Object.values(labourByWorker).reduce((s, w) => s + w.cost, 0);
+  const actualLabour = sumWith(Object.values(labourByWorker), w => w.cost);
   const matBills = jobBills.filter(b => b.category === "Materials");
-  const actualMaterials = matBills.reduce((s, b) => s + b.amount, 0);
+  const actualMaterials = sumAmounts(matBills);
   const subBills = jobBills.filter(b => b.category === "Subcontractor");
-  const actualSubs = subBills.reduce((s, b) => s + b.amount, 0);
+  const actualSubs = sumAmounts(subBills);
   const otherBills = jobBills.filter(b => b.category !== "Materials" && b.category !== "Subcontractor");
-  const actualOther = otherBills.reduce((s, b) => s + b.amount, 0);
-  const totalActual = actualLabour + actualMaterials + actualSubs + actualOther;
+  const actualOther = sumAmounts(otherBills);
+  const totalActual = sumWith([actualLabour, actualMaterials, actualSubs, actualOther], v => v);
 
   const totalLabourHours = Object.values(labourByWorker).reduce((s, w) => s + w.hours, 0);
-  const clientLabourRevenue = totalLabourHours * clientLabourRate;
-  const clientMaterialRevenue = clientMatMargin > 0 ? actualMaterials * (1 + clientMatMargin / 100) : actualMaterials;
-  const clientSubRevenue = clientSubMargin > 0 ? actualSubs * (1 + clientSubMargin / 100) : actualSubs;
-  const clientTotalRevenue = clientLabourRevenue + clientMaterialRevenue + clientSubRevenue + actualOther;
-  const clientProfit = clientTotalRevenue - totalActual;
-  const clientMarginPct = clientTotalRevenue > 0 ? Math.round((clientProfit / clientTotalRevenue) * 100) : 0;
+  const clientLabourRevenue = labourCost(totalLabourHours, clientLabourRate);
+  const clientMaterialRevenue = clientMatMargin > 0 ? applyMargin(actualMaterials, clientMatMargin) : actualMaterials;
+  const clientSubRevenue = clientSubMargin > 0 ? applyMargin(actualSubs, clientSubMargin) : actualSubs;
+  const clientTotalRevenue = sumWith([clientLabourRevenue, clientMaterialRevenue, clientSubRevenue, actualOther], v => v);
+  const clientProfit = budgetVariance(clientTotalRevenue, totalActual);
+  const clientMarginPct = profitMarginPct(clientTotalRevenue, totalActual);
 
-  const profit = revenue - totalActual;
-  const marginPct = revenue > 0 ? Math.round((profit / revenue) * 100) : 0;
-  const costPct = totalEstimate > 0 ? Math.min(100, Math.round((totalActual / totalEstimate) * 100)) : 0;
+  const profit = budgetVariance(revenue, totalActual);
+  const marginPct = profitMarginPct(revenue, totalActual);
+  const costPct = budgetPct(totalActual, totalEstimate);
 
   const varRow = (label, estimated, actual) => {
-    const variance = estimated - actual;
-    const pct = estimated > 0 ? Math.round((actual / estimated) * 100) : (actual > 0 ? 999 : 0);
+    const variance = budgetVariance(estimated, actual);
+    const pct = estimated > 0 ? budgetPct(actual, estimated) : (actual > 0 ? 999 : 0);
     const overBudget = actual > estimated && estimated > 0;
     return (
       <tr key={label}>

@@ -5,6 +5,7 @@ import { sendEmail, xeroSyncInvoice } from '../lib/supabase';
 import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import { buildInvoicePdfHtml, htmlToPdfBase64 } from '../lib/pdf';
 import { fmt, fmtDate, calcQuoteTotal } from '../utils/helpers';
+import { subtotal, gstOnSubtotal, totalWithGst, calcDocumentTotal, lineItemTotal, sumWith } from '../utils/calcEngine';
 import { SECTION_COLORS, ViewField } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import {
@@ -51,7 +52,7 @@ const Invoices = () => {
     if (!client?.email) { alert("No client email address found."); return; }
     const dueDate = inv.dueDate;
     const daysOverdue = dueDate ? Math.ceil((new Date() - new Date(dueDate + "T00:00:00")) / 86400000) : 0;
-    const total = inv.lineItems.reduce((s, l) => s + l.qty * l.rate, 0) * (1 + (inv.tax || 0) / 100);
+    const total = calcDocumentTotal(inv.lineItems, inv.tax || 0);
     if (!window.confirm(`Send payment reminder for ${inv.number} to ${client.name}? (${daysOverdue} days overdue)`)) return;
     setEmailSending(true); setEmailStatus(null);
     try {
@@ -146,7 +147,7 @@ const Invoices = () => {
         {Object.entries(invStatusLabels).map(([key, label]) => {
           const statusInvs = invoices.filter(i => i.status === key);
           const count = statusInvs.length;
-          const total = statusInvs.reduce((s, inv) => s + calcQuoteTotal(inv), 0);
+          const total = sumWith(statusInvs, inv => calcDocumentTotal(inv.lineItems, inv.tax));
           const color = invStatusColors[key];
           return (
             <div key={key} className={`stat-card ${s.summaryCard}`} style={{ borderTop: `3px solid ${color}` }}
@@ -178,7 +179,7 @@ const Invoices = () => {
           {["draft", "sent", "paid", "overdue", "void"].map(col => {
             const colInvoices = filtered.filter(i => i.status === col);
             const labels = { draft: "Draft", sent: "Sent", paid: "Paid", overdue: "Overdue", void: "Void" };
-            const colTotal = colInvoices.reduce((s, inv) => s + calcQuoteTotal(inv), 0);
+            const colTotal = sumWith(colInvoices, inv => calcDocumentTotal(inv.lineItems, inv.tax));
             return (
               <div key={col} className={`kanban-col${dragOverCol === col ? ' drag-over' : ''}`} {...colDragProps(col)}>
                 <div className="kanban-col-header">
@@ -189,7 +190,7 @@ const Invoices = () => {
                 {colInvoices.map(inv => {
                   const job = jobs.find(j => j.id === inv.jobId);
                   const client = clients.find(c => c.id === job?.clientId);
-                  const total = calcQuoteTotal(inv);
+                  const total = calcDocumentTotal(inv.lineItems, inv.tax);
                   return (
                     <div key={inv.id} className="kanban-card" onClick={() => openEdit(inv)} {...cardDragProps(inv.id)}>
                       <div className={s.kanbanCardHeader}>
@@ -222,7 +223,7 @@ const Invoices = () => {
           {filtered.map(inv => {
             const job = jobs.find(j => j.id === inv.jobId);
             const client = clients.find(c => c.id === job?.clientId);
-            const total = calcQuoteTotal(inv);
+            const total = calcDocumentTotal(inv.lineItems, inv.tax);
             const lineCount = inv.lineItems.length;
             const fromQuoteRef = inv.fromQuoteId ? quotes.find(q => q.id === inv.fromQuoteId) : null;
             return (
@@ -273,7 +274,7 @@ const Invoices = () => {
               {filtered.map(inv => {
                 const job = jobs.find(j => j.id === inv.jobId);
                 const client = clients.find(c => c.id === job?.clientId);
-                const sub = inv.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
+                const sub = subtotal(inv.lineItems);
                 const fromQuoteRef = inv.fromQuoteId ? quotes.find(q => q.id === inv.fromQuoteId) : null;
                 return (
                   <tr key={inv.id} className={s.rowPointer} onClick={() => openEdit(inv)}>
@@ -282,8 +283,8 @@ const Invoices = () => {
                     <td className={s.listClientCell}>{client?.name}</td>
                     <td><StatusBadge status={inv.status} /> <XeroSyncBadge syncStatus={inv.xeroSyncStatus} xeroId={inv.xeroInvoiceId} /></td>
                     <td>{fmt(sub)}</td>
-                    <td>{fmt(sub * inv.tax / 100)}</td>
-                    <td className={s.listTotalCell}>{fmt(sub * (1 + inv.tax / 100))}</td>
+                    <td>{fmt(gstOnSubtotal(sub, inv.tax))}</td>
+                    <td className={s.listTotalCell}>{fmt(totalWithGst(sub, inv.tax))}</td>
                     <td className={s.listDueCell} style={{ color: inv.dueDate ? "#111" : "#ccc" }}>{inv.dueDate || "\u2014"}</td>
                     <td onClick={e => e.stopPropagation()}>
                       <div className={s.listActions}>
@@ -304,9 +305,9 @@ const Invoices = () => {
         const isNewInv = !editInvoice;
         const iJob = jobs.find(j => j.id === form.jobId);
         const iClient = clients.find(c => c.id === iJob?.clientId);
-        const iSub = form.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
-        const iTax = iSub * (form.tax || 0) / 100;
-        const iTotal = iSub + iTax;
+        const iSub = subtotal(form.lineItems);
+        const iTax = gstOnSubtotal(iSub, form.tax || 0);
+        const iTotal = totalWithGst(iSub, form.tax || 0);
         const accent = SECTION_COLORS.invoices.accent;
         return (
         <SectionDrawer
@@ -365,7 +366,7 @@ const Invoices = () => {
                       <td className={s.lineItemCellRight}>{li.qty}</td>
                       <td className={s.lineItemCellPlain}>{li.unit}</td>
                       <td className={s.lineItemCellRight}>{fmt(li.rate)}</td>
-                      <td className={s.lineItemCellRightBold}>{fmt(li.qty * li.rate)}</td>
+                      <td className={s.lineItemCellRightBold}>{fmt(lineItemTotal(li.qty, li.rate))}</td>
                     </tr>
                   ))}
                 </tbody>

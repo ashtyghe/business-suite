@@ -1342,3 +1342,19 @@ export async function fetchOutboundDefaults() {
   const rows = await q(supabase.from('voice_settings_defaults').select('settings').eq('type', 'outbound').limit(1));
   return rows.length ? rows[0].settings : null;
 }
+
+// ── Digest Email Settings ────────────────────────────────────────────────────
+
+export async function fetchDigestSettings() {
+  const rows = await q(supabase.from('voice_settings_defaults').select('settings').eq('type', 'digest').limit(1));
+  return rows.length ? rows[0].settings : null;
+}
+
+export async function saveDigestSettings(settings) {
+  if (!supabase) return;
+  return q(supabase.from('voice_settings_defaults').upsert({
+    type: 'digest',
+    settings,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'type' }).select());
+}

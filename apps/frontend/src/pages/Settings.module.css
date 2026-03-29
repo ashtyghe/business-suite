@@ -1907,6 +1907,71 @@
   font-size: 11px;
 }
 
+/* ── Digest Settings ───────────────────────────────────────────────────────── */
+
+.digestDayRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.digestDayBtnOn,
+.digestDayBtnOff {
+  width: 42px;
+  height: 34px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.digestDayBtnOn {
+  background: #333;
+  color: #fff;
+  border: 1.5px solid #333;
+}
+
+.digestDayBtnOff {
+  background: #fff;
+  color: #888;
+  border: 1.5px solid #ddd;
+}
+
+.digestDayBtnOff:hover {
+  border-color: #aaa;
+  color: #555;
+}
+
+.digestRecipientRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+
+.digestRecipientRow:hover {
+  background: #f9fafb;
+}
+
+.digestRecipientCheck {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.12s;
+}
+
 .appVersion {
   text-align: center;
   color: #999;

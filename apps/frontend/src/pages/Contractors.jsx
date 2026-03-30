@@ -1,6 +1,7 @@
 import { useState, useRef, memo } from "react";
 import { useAppStore } from "../lib/store";
 import { fmt, fmtDate, daysUntil, COMPLIANCE_DOC_TYPES, COMPLIANCE_STATUS_COLORS, getComplianceStatus, getDaysUntilExpiry, getContractorComplianceCount, hexToRgba } from "../utils/helpers";
+import { sumAmounts } from "../utils/calcEngine";
 import { Icon } from "../components/Icon";
 import { StatusBadge, OrderStatusBadge, SectionDrawer, BILL_STATUS_LABELS } from "../components/shared";
 import { ORDER_TERMINAL, SECTION_COLORS, ViewField, CONTRACTOR_TRADES, STATUS_COLORS } from "../fixtures/seedData.jsx";
@@ -83,7 +84,7 @@ const Contractors = () => {
   const getWOCount = (c) => workOrders.filter(wo => wo.contractorName === c.name || wo.contractorId === c.id).length;
   const getActiveWOs = (c) => workOrders.filter(wo => (wo.contractorName === c.name || wo.contractorId === c.id) && !ORDER_TERMINAL.includes(wo.status));
   const getContractorBills = (c) => bills.filter(b => b.supplier === c.name);
-  const getBillTotal = (c) => getContractorBills(c).reduce((s, b) => s + (b.amount || 0), 0);
+  const getBillTotal = (c) => sumAmounts(getContractorBills(c));
 
   // Document management
   const openDocForm = (docType, existingDoc) => {
@@ -261,7 +262,7 @@ const Contractors = () => {
         const isNew = !editItem;
         const linkedWOs = editItem ? workOrders.filter(wo => wo.contractorName === editItem.name || wo.contractorId === editItem.id) : [];
         const linkedBills = editItem ? bills.filter(b => b.supplier === editItem.name) : [];
-        const linkedBillTotal = linkedBills.reduce((s, b) => s + (b.amount || 0), 0);
+        const linkedBillTotal = sumAmounts(linkedBills);
         const docs = editItem?.documents || [];
         return (
           <SectionDrawer

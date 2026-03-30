@@ -1,6 +1,7 @@
 import { Icon } from './Icon';
 import { STATUS_BG, STATUS_TEXT, ORDER_STATUS_COLORS, ORDER_STATUS_PROGRESS, ORDER_BAR_COLORS } from '../fixtures/seedData.jsx';
 import { daysUntil, orderFmtDate, fmt } from '../utils/helpers';
+import { subtotal, lineItemTotal } from '../utils/calcEngine';
 import s from './shared.module.css';
 
 // ── Status Badge ─────────────────────────────────────────────────────────────
@@ -201,7 +202,7 @@ export const LineItemsEditor = ({ items, onChange }) => {
   };
   const add = () => onChange([...items, { desc: "", qty: 1, unit: "hrs", rate: 0 }]);
   const remove = (i) => onChange(items.filter((_, idx) => idx !== i));
-  const sub = items.reduce((s, l) => s + (l.qty * l.rate), 0);
+  const sub = subtotal(items);
   return (
     <div>
       <table className="line-items-table">
@@ -226,7 +227,7 @@ export const LineItemsEditor = ({ items, onChange }) => {
                 </select>
               </td>
               <td><input type="number" value={it.rate} onChange={e => update(i, "rate", e.target.value)} min="0" /></td>
-              <td className={s.lineItemTotal}>{fmt(it.qty * it.rate)}</td>
+              <td className={s.lineItemTotal}>{fmt(lineItemTotal(it.qty, it.rate))}</td>
               <td><button onClick={() => remove(i)} className={`btn btn-ghost btn-xs ${s.lineItemDeleteBtn}`}><Icon name="trash" size={12} /></button></td>
             </tr>
           ))}

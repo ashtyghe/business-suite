@@ -3,7 +3,8 @@
  * Used for attaching PDFs to emails sent via Resend
  */
 
-const fmt = (n) => "$" + Number(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+import { fmt as _fmt, subtotal as _subtotal, gstOnSubtotal, totalWithGst, lineItemTotal } from "../utils/calcEngine";
+const fmt = (n) => _fmt(n);
 const fmtAddr = ({ address, suburb, state, postcode } = {}) => {
   if (suburb || state || postcode) return [address, [suburb, state, postcode].filter(Boolean).join(" ")].filter(Boolean).join(", ");
   return address || "";
@@ -66,17 +67,17 @@ function esc(val) {
 export function buildQuotePdfHtml({ quote, job, client, company, template, acceptUrl }) {
   const accent = template?.accentColor || "#111111";
   const lineItems = quote.lineItems || [];
-  const sub = lineItems.reduce((s, l) => s + (l.qty || 0) * (l.rate || 0), 0);
+  const sub = _subtotal(lineItems);
   const taxRate = quote.tax || 10;
-  const tax = sub * taxRate / 100;
-  const total = sub + tax;
+  const tax = gstOnSubtotal(sub, taxRate);
+  const total = totalWithGst(sub, taxRate);
 
   const linesHtml = lineItems.map(l => `
     <tr>
       <td>${esc(l.desc || "—")}</td>
       <td class="right">${l.qty} ${esc(l.unit || "")}</td>
       <td class="right">${fmt(l.rate)}</td>
-      <td class="right bold">${fmt((l.qty || 0) * (l.rate || 0))}</td>
+      <td class="right bold">${fmt(lineItemTotal(l.qty || 0, l.rate || 0))}</td>
     </tr>`).join("");
 
   const acceptHtml = acceptUrl ? `
@@ -139,17 +140,17 @@ export function buildQuotePdfHtml({ quote, job, client, company, template, accep
 export function buildInvoicePdfHtml({ invoice, job, client, company, template }) {
   const accent = template?.accentColor || "#4f46e5";
   const lineItems = invoice.lineItems || [];
-  const sub = lineItems.reduce((s, l) => s + (l.qty || 0) * (l.rate || 0), 0);
+  const sub = _subtotal(lineItems);
   const taxRate = invoice.tax || 10;
-  const tax = sub * taxRate / 100;
-  const total = sub + tax;
+  const tax = gstOnSubtotal(sub, taxRate);
+  const total = totalWithGst(sub, taxRate);
 
   const linesHtml = lineItems.map(l => `
     <tr>
       <td>${esc(l.desc || "—")}</td>
       <td class="right">${l.qty} ${esc(l.unit || "")}</td>
       <td class="right">${fmt(l.rate)}</td>
-      <td class="right bold">${fmt((l.qty || 0) * (l.rate || 0))}</td>
+      <td class="right bold">${fmt(lineItemTotal(l.qty || 0, l.rate || 0))}</td>
     </tr>`).join("");
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice ${esc(invoice.number)}</title>

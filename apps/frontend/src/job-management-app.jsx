@@ -122,11 +122,8 @@ const CallerMemory = lazy(() => import('./pages/CallerMemory'));
 const TEAM = TEAM_DATA.map(t => t.name);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-const fmt = (n) => `$${Number(n).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const calcQuoteTotal = (q) => {
-  const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
-  return sub * (1 + q.tax / 100);
-};
+import { fmt, calcDocumentTotal, subtotal, gstOnSubtotal, totalWithGst, extractGst as _extractGst, gstAmount as _gstAmount, applyMarkup as _applyMarkup } from './utils/calcEngine';
+const calcQuoteTotal = (q) => calcDocumentTotal(q.lineItems, q.tax);
 const uid = () => Date.now() + Math.random();
 
 // ── Activity Log Helpers ──────────────────────────────────────────────────────
@@ -426,7 +423,7 @@ const LineItemsEditor = ({ items, onChange }) => {
   };
   const add = () => onChange([...items, { desc: "", qty: 1, unit: "hrs", rate: 0 }]);
   const remove = (i) => onChange(items.filter((_, idx) => idx !== i));
-  const sub = items.reduce((s, l) => s + (l.qty * l.rate), 0);
+  const sub = subtotal(items);
   return (
     <div>
       <table className="line-items-table">
@@ -2368,7 +2365,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               {jobQuotes.length === 0
                 ? <div className="empty-state"><div className="empty-state-icon">📋</div><div className="empty-state-text">No quotes yet</div><div className="empty-state-sub">Create a quote to send to the client</div></div>
                 : jobQuotes.map(q => {
-                  const sub = q.lineItems.reduce((s,l) => s + l.qty * l.rate, 0);
+                  const sub = subtotal(q.lineItems);
                   const alreadyInvoiced = invoices.some(i => i.fromQuoteId === q.id);
                   return (
                     <div key={q.id} className={pg.p2_18}>
@@ -2437,7 +2434,7 @@ const JobDetail = ({ job, clients, quotes, setQuotes, invoices, setInvoices, tim
               {jobInvoices.length === 0
                 ? <div className="empty-state"><div className="empty-state-icon">💳</div><div className="empty-state-text">No invoices yet</div><div className="empty-state-sub">Create an invoice or convert an accepted quote</div></div>
                 : jobInvoices.map(inv => {
-                  const sub = inv.lineItems.reduce((s,l) => s + l.qty * l.rate, 0);
+                  const sub = subtotal(inv.lineItems);
                   const fromQuote = inv.fromQuoteId ? quotes.find(q => q.id === inv.fromQuoteId) : null;
                   return (
                     <div key={inv.id} className={pg.p2_18}>
@@ -4154,13 +4151,13 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
 
   const handleSave = () => {
     const amt = parseFloat(form.amount) || 0;
-    const exG = form.hasGst ? amt / 1.1 : amt;
+    const exG = form.hasGst ? _extractGst(amt) : amt;
     onSave({
       ...form,
       ...(bill?.id ? { id: bill.id } : {}),
       amount: amt,
-      amountExGst: parseFloat(exG.toFixed(2)),
-      gstAmount: parseFloat((amt - exG).toFixed(2)),
+      amountExGst: exG,
+      gstAmount: form.hasGst ? _gstAmount(amt) : 0,
       jobId: form.jobId || null,
       markup: parseFloat(form.markup) || 0,
       capturedAt: bill?.capturedAt || new Date().toISOString().slice(0,10),
@@ -4418,8 +4415,8 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
   const [category, setCategory] = useState(bill.category || "Materials");
   const [markup, setMarkup]   = useState(bill.markup || 0);
 
-  const exGst = bill.hasGst ? bill.amount / 1.1 : bill.amount;
-  const withMarkup = exGst * (1 + (parseFloat(markup) || 0) / 100);
+  const exGst = bill.hasGst ? _extractGst(bill.amount) : bill.amount;
+  const withMarkup = _applyMarkup(exGst, parseFloat(markup) || 0);
 
   return (
     <SectionDrawer

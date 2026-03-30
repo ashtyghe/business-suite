@@ -5,6 +5,7 @@ import { sendEmail } from '../lib/supabase';
 import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import { buildQuotePdfHtml, htmlToPdfBase64 } from '../lib/pdf';
 import { fmt, fmtDate, calcQuoteTotal } from '../utils/helpers';
+import { subtotal, gstOnSubtotal, totalWithGst, calcDocumentTotal, lineItemTotal, sumWith } from '../utils/calcEngine';
 import { SECTION_COLORS, ViewField } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import {
@@ -110,7 +111,7 @@ const Quotes = () => {
         {Object.entries(quoteStatusLabels).map(([key, label]) => {
           const statusQuotes = quotes.filter(q => q.status === key);
           const count = statusQuotes.length;
-          const total = statusQuotes.reduce((s, q) => s + calcQuoteTotal(q), 0);
+          const total = sumWith(statusQuotes, q => calcDocumentTotal(q.lineItems, q.tax));
           const color = quoteStatusColors[key];
           return (
             <div key={key} className={`stat-card ${s.statCard}`} style={{ borderTop: `3px solid ${color}` }}
@@ -152,7 +153,6 @@ const Quotes = () => {
                 {colQuotes.map(q => {
                   const job = jobs.find(j => j.id === q.jobId);
                   const client = clients.find(c => c.id === job?.clientId);
-                  const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
                   return (
                     <div key={q.id} className="kanban-card" onClick={() => openEdit(q)} {...cardDragProps(q.id)}>
                       <div className={s.kanbanCardHeader}>
@@ -161,7 +161,7 @@ const Quotes = () => {
                       <div className={s.kanbanCardTitle}>{job?.title || "\u2014"}</div>
                       <div className={s.kanbanCardClient}>{client?.name || "\u2014"}</div>
                       <div className={s.kanbanCardFooter}>
-                        <span className={s.kanbanCardTotal}>{fmt(sub * (1 + q.tax / 100))}</span>
+                        <span className={s.kanbanCardTotal}>{fmt(calcDocumentTotal(q.lineItems, q.tax))}</span>
                         <span className={s.kanbanCardDate}>{fmtDate(q.createdAt)}</span>
                       </div>
                     </div>
@@ -179,7 +179,7 @@ const Quotes = () => {
           {filtered.map(q => {
             const job = jobs.find(j => j.id === q.jobId);
             const client = clients.find(c => c.id === job?.clientId);
-            const total = calcQuoteTotal(q);
+            const total = calcDocumentTotal(q.lineItems, q.tax);
             const lineCount = q.lineItems.length;
             return (
               <div key={q.id} className="order-card" onClick={() => openEdit(q)}>
@@ -229,7 +229,7 @@ const Quotes = () => {
               {filtered.map(q => {
                 const job = jobs.find(j => j.id === q.jobId);
                 const client = clients.find(c => c.id === job?.clientId);
-                const sub = q.lineItems.reduce((s, l) => s + l.qty * l.rate, 0);
+                const sub = subtotal(q.lineItems);
                 const linkedInv = invoices.filter(i => i.fromQuoteId === q.id);
                 return (
                   <tr key={q.id} className={s.cursorPointer} onClick={() => openEdit(q)}>
@@ -241,8 +241,8 @@ const Quotes = () => {
                     <td className={s.tableClient}>{client?.name}</td>
                     <td><StatusBadge status={q.status} /></td>
                     <td>{fmt(sub)}</td>
-                    <td>{fmt(sub * q.tax / 100)}</td>
-                    <td className={s.tableTotal}>{fmt(sub * (1 + q.tax / 100))}</td>
+                    <td>{fmt(gstOnSubtotal(sub, q.tax))}</td>
+                    <td className={s.tableTotal}>{fmt(totalWithGst(sub, q.tax))}</td>
                     <td className={s.tableDate}>{fmtDate(q.createdAt)}</td>
                     <td onClick={e => e.stopPropagation()}>
                       <div className={s.actionBtns}>
@@ -262,9 +262,9 @@ const Quotes = () => {
         const isNewQ = !editQuote;
         const qJob = jobs.find(j => String(j.id) === String(form.jobId));
         const qClient = clients.find(c => c.id === qJob?.clientId);
-        const qSub = (form.lineItems || []).reduce((s, l) => s + l.qty * l.rate, 0);
-        const qTax = qSub * (form.tax || 10) / 100;
-        const qTotal = qSub + qTax;
+        const qSub = subtotal(form.lineItems || []);
+        const qTax = gstOnSubtotal(qSub, form.tax || 10);
+        const qTotal = totalWithGst(qSub, form.tax || 10);
         return (
         <SectionDrawer
           accent={SECTION_COLORS.quotes.accent}
@@ -307,7 +307,7 @@ const Quotes = () => {
                   <thead><tr><th className={s.lineItemsThLeft}>Description</th><th className={s.lineItemsThRight}>Qty</th><th className={s.lineItemsThRight}>Rate</th><th className={s.lineItemsThRight}>Total</th></tr></thead>
                   <tbody>
                     {(form.lineItems || []).map((l, i) => (
-                      <tr key={i}><td className={s.lineItemTd}>{l.desc || "\u2014"}</td><td className={s.lineItemTdRight}>{l.qty} {l.unit}</td><td className={s.lineItemTdRight}>{fmt(l.rate)}</td><td className={s.lineItemTdTotal}>{fmt(l.qty * l.rate)}</td></tr>
+                      <tr key={i}><td className={s.lineItemTd}>{l.desc || "\u2014"}</td><td className={s.lineItemTdRight}>{l.qty} {l.unit}</td><td className={s.lineItemTdRight}>{fmt(l.rate)}</td><td className={s.lineItemTdTotal}>{fmt(lineItemTotal(l.qty, l.rate))}</td></tr>
                     ))}
                   </tbody>
                 </table>

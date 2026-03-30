@@ -3,6 +3,7 @@ import { SectionDrawer, StatusBadge, BillStatusBadge, BILL_CATEGORIES, BILL_STAT
 import { Icon } from "./Icon";
 import { ViewField, SECTION_COLORS } from "../fixtures/seedData.jsx";
 import { fmt, fmtDate } from "../utils/helpers";
+import { extractGst, gstAmount, applyMarkup } from "../utils/calcEngine";
 import { extractBillFromImage } from "../lib/supabase";
 import s from './BillModal.module.css';
 
@@ -24,9 +25,10 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef(null);
 
-  const exGst = form.hasGst ? (parseFloat(form.amount) || 0) / 1.1 : (parseFloat(form.amount) || 0);
-  const gst   = form.hasGst ? (parseFloat(form.amount) || 0) - exGst : 0;
-  const withMarkup = exGst * (1 + (parseFloat(form.markup) || 0) / 100);
+  const amt = parseFloat(form.amount) || 0;
+  const exGst = form.hasGst ? extractGst(amt) : amt;
+  const gst   = form.hasGst ? gstAmount(amt) : 0;
+  const withMarkup = applyMarkup(exGst, parseFloat(form.markup) || 0);
 
   const handleFile = async (file) => {
     if (!file) return;
@@ -76,14 +78,14 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
   };
 
   const handleSave = () => {
-    const amt = parseFloat(form.amount) || 0;
-    const exG = form.hasGst ? amt / 1.1 : amt;
+    const saveAmt = parseFloat(form.amount) || 0;
+    const saveExGst = form.hasGst ? extractGst(saveAmt) : saveAmt;
     onSave({
       ...form,
       ...(bill?.id ? { id: bill.id } : {}),
-      amount: amt,
-      amountExGst: parseFloat(exG.toFixed(2)),
-      gstAmount: parseFloat((amt - exG).toFixed(2)),
+      amount: saveAmt,
+      amountExGst: saveExGst,
+      gstAmount: form.hasGst ? gstAmount(saveAmt) : 0,
       jobId: form.jobId || null,
       markup: parseFloat(form.markup) || 0,
       capturedAt: bill?.capturedAt || new Date().toISOString().slice(0,10),

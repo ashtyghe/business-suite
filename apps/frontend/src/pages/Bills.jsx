@@ -5,6 +5,7 @@ import { createBill, updateBill, deleteBill } from '../lib/db';
 import { xeroSyncBill } from '../lib/supabase';
 import { useKanbanDnD } from '../hooks/useKanbanDnD';
 import { fmt, fmtDate, addLog } from '../utils/helpers';
+import { extractGst, applyMarkup, markupAmount, sumAmounts, sumWith } from '../utils/calcEngine';
 import { SECTION_COLORS } from '../fixtures/seedData.jsx';
 import { Icon } from '../components/Icon';
 import {
@@ -28,8 +29,8 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
   const [category, setCategory] = useState(bill.category || "Materials");
   const [markup, setMarkup]   = useState(bill.markup || 0);
 
-  const exGst = bill.hasGst ? bill.amount / 1.1 : bill.amount;
-  const withMarkup = exGst * (1 + (parseFloat(markup) || 0) / 100);
+  const exGst = bill.hasGst ? extractGst(bill.amount) : bill.amount;
+  const withMarkup = applyMarkup(exGst, parseFloat(markup) || 0);
 
   return (
     <SectionDrawer
@@ -86,7 +87,7 @@ const PostToJobModal = ({ bill, jobs, onPost, onClose }) => {
             </div>
             {parseFloat(markup) > 0 && (
               <div className={s.costRow}>
-                <span className={s.costRowLabel}>Markup ({markup}%)</span><span>+ {fmt(exGst * (parseFloat(markup)||0) / 100)}</span>
+                <span className={s.costRowLabel}>Markup ({markup}%)</span><span>+ {fmt(markupAmount(exGst, parseFloat(markup)||0))}</span>
               </div>
             )}
             <div className={s.costTotalRow}>
@@ -117,9 +118,9 @@ const Bills = () => {
   const linked   = bills.filter(b => b.status === "linked");
   const approved = bills.filter(b => b.status === "approved");
   const posted   = bills.filter(b => b.status === "posted");
-  const totalAll = bills.reduce((sum,b) => sum + (b.amount||0), 0);
-  const totalPending = [...inbox, ...linked, ...approved].reduce((sum,b) => sum + (b.amount||0), 0);
-  const totalPosted  = posted.reduce((sum,b) => sum + (b.amount||0), 0);
+  const totalAll = sumAmounts(bills);
+  const totalPending = sumAmounts([...inbox, ...linked, ...approved]);
+  const totalPosted  = sumAmounts(posted);
 
   // ── Filtered list view
   const filtered = bills.filter(b => {
@@ -190,8 +191,8 @@ const Bills = () => {
   const handlePost = async (billId, jobId, category, markup) => {
     const bill = bills.find(b => b.id === billId);
     if (!bill) return;
-    const exGst = bill.hasGst ? bill.amount / 1.1 : bill.amount;
-    const onCharge = exGst * (1 + markup / 100);
+    const exGst = bill.hasGst ? extractGst(bill.amount) : bill.amount;
+    const onCharge = applyMarkup(exGst, markup);
     try {
       const saved = await updateBill(billId, { ...bill, status: "posted", jobId, category, markup });
       setBills(bs => bs.map(b => b.id === billId ? saved : b));
@@ -219,10 +220,10 @@ const Bills = () => {
       {/* ── Summary strip */}
       <div className={s.summaryGrid}>
         {[
-          { label: "Inbox",    count: inbox.length,    total: inbox.reduce((sum,b)=>sum+b.amount,0),    color: "#888" },
-          { label: "Linked",   count: linked.length,   total: linked.reduce((sum,b)=>sum+b.amount,0),   color: "#2c5fa8" },
-          { label: "Approved", count: approved.length, total: approved.reduce((sum,b)=>sum+b.amount,0), color: "#1e7e34" },
-          { label: "Posted",   count: posted.length,   total: posted.reduce((sum,b)=>sum+b.amount,0),   color: "#111" },
+          { label: "Inbox",    count: inbox.length,    total: sumAmounts(inbox),    color: "#888" },
+          { label: "Linked",   count: linked.length,   total: sumAmounts(linked),   color: "#2c5fa8" },
+          { label: "Approved", count: approved.length, total: sumAmounts(approved), color: "#1e7e34" },
+          { label: "Posted",   count: posted.length,   total: sumAmounts(posted),   color: "#111" },
         ].map(st => (
           <div key={st.label} className="stat-card" style={{ padding: "14px 16px", borderTop: `3px solid ${st.color}`, cursor: "pointer" }}
             onClick={() => { setFilterStatus(st.label.toLowerCase()); setTab("list"); }}>
@@ -317,7 +318,7 @@ const Bills = () => {
                   <span>{BILL_STATUS_LABELS[status]}</span>
                   <span className={s.kanbanBadge} style={{ background: sc.bg, color: sc.text }}>{stageBills.length}</span>
                 </div>
-                <div className={s.kanbanColTotal}>{fmt(stageBills.reduce((sum,b)=>sum+b.amount,0))}</div>
+                <div className={s.kanbanColTotal}>{fmt(sumAmounts(stageBills))}</div>
                 {stageBills.map(b => {
                   const job = jobs.find(j => j.id === b.jobId);
                   return (
@@ -359,9 +360,9 @@ const Bills = () => {
           {filtered.length > 0 && (
             <div className={s.totalsBar}>
               <span className={s.totalsLabel}>Showing <strong className={s.totalsValue}>{filtered.length}</strong> bills</span>
-              <span className={s.totalsLabel}>Total <strong className={s.totalsValue}>{fmt(filtered.reduce((sum,b)=>sum+b.amount,0))}</strong></span>
-              <span className={s.totalsLabel}>Ex-GST <strong className={s.totalsValue}>{fmt(filtered.reduce((sum,b)=>sum+(b.hasGst?b.amount/1.1:b.amount),0))}</strong></span>
-              {selectedIds.length > 0 && <span className={s.totalsSelection}>{selectedIds.length} selected · {fmt(bills.filter(b=>selectedIds.includes(b.id)).reduce((sum,b)=>sum+b.amount,0))}</span>}
+              <span className={s.totalsLabel}>Total <strong className={s.totalsValue}>{fmt(sumAmounts(filtered))}</strong></span>
+              <span className={s.totalsLabel}>Ex-GST <strong className={s.totalsValue}>{fmt(sumWith(filtered, b => b.hasGst ? extractGst(b.amount) : b.amount))}</strong></span>
+              {selectedIds.length > 0 && <span className={s.totalsSelection}>{selectedIds.length} selected · {fmt(sumAmounts(bills.filter(b=>selectedIds.includes(b.id))))}</span>}
             </div>
           )}
 
@@ -383,9 +384,9 @@ const Bills = () => {
                   )}
                   {filtered.map(b => {
                     const job = jobs.find(j => j.id === b.jobId);
-                    const exGst = b.hasGst ? b.amount / 1.1 : b.amount;
-                    const gst = b.amount - exGst;
-                    const onCharge = exGst * (1 + (b.markup||0) / 100);
+                    const exGst = b.hasGst ? extractGst(b.amount) : b.amount;
+                    const gst = b.hasGst ? b.amount - exGst : 0;
+                    const onCharge = applyMarkup(exGst, b.markup || 0);
                     return (
                       <tr key={b.id} onClick={() => openEdit(b)} style={{ background: selectedIds.includes(b.id) ? "#f5f8ff" : "transparent", cursor: "pointer" }}>
                         <td onClick={e => e.stopPropagation()}>

@@ -174,7 +174,7 @@ const CallerMemory = () => {
     );
   }, [callers, search]);
 
-  if (loading) return <div className={s.loadingState}><img src="/loading-logo.svg" alt="Loading" style={{ width: 80 }} /></div>;
+  if (loading) return <div className={s.loadingState}><object type="image/svg+xml" data="/loading-logo.svg" aria-label="Loading" style={{ width: 80 }} /></div>;
 
   return (
     <div>

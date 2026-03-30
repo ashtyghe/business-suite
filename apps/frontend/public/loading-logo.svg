@@ -1,21 +1,22 @@
 <svg id="ebGPsDZKEm71" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 457.89 307.09" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" project-id="2f4736255637473b80120df678149e63" export-id="14204fb167f94cab900cb72c5b33c766" cached="false"><style>
-  /* Total cycle: 3s (draw 0-2.2s, hold 2.2-2.6s, fade out 2.6-3s) */
-  @keyframes drawLeft { 0%,100% { stroke-dashoffset: 327.45; } 27% { stroke-dashoffset: 0; } 87% { stroke-dashoffset: 0; } }
-  @keyframes draw8top { 0%,100% { stroke-dashoffset: -220.17; } 7% { stroke-dashoffset: -220.17; } 27% { stroke-dashoffset: 0; } 87% { stroke-dashoffset: 0; } }
-  @keyframes draw8bot { 0%,100% { stroke-dashoffset: -209.51; } 7% { stroke-dashoffset: -209.51; } 27% { stroke-dashoffset: 0; } 87% { stroke-dashoffset: 0; } }
-  @keyframes drawRight { 0%,100% { stroke-dashoffset: 327.44; } 13% { stroke-dashoffset: 327.44; } 40% { stroke-dashoffset: 0; } 87% { stroke-dashoffset: 0; } }
-  @keyframes fade8 { 0%,100% { opacity: 0; } 7% { opacity: 0; } 14% { opacity: 1; } 87% { opacity: 1; } }
-  @keyframes fadeStroke { 0%,100% { opacity: 0; } 53% { opacity: 0; } 60% { opacity: 1; } 87% { opacity: 1; } }
+  /* 3s cycle: draw in 0-40%, hold 40-70%, undraw forward (top-to-bottom) 70-95%, blank 95-100% */
+  /* Undraw uses negative overshoot so stroke exits forward (top-down) instead of reversing */
+  @keyframes drawLeft { 0%,100% { stroke-dashoffset: 327.45; } 27% { stroke-dashoffset: 0; } 70% { stroke-dashoffset: 0; } 92% { stroke-dashoffset: -327.45; } }
+  @keyframes draw8top { 0%,7%,100% { stroke-dashoffset: -220.17; } 27% { stroke-dashoffset: 0; } 70% { stroke-dashoffset: 0; } 92% { stroke-dashoffset: 220.17; } }
+  @keyframes draw8bot { 0%,7%,100% { stroke-dashoffset: -209.51; } 27% { stroke-dashoffset: 0; } 70% { stroke-dashoffset: 0; } 92% { stroke-dashoffset: 209.51; } }
+  @keyframes drawRight { 0%,13%,100% { stroke-dashoffset: 327.44; } 40% { stroke-dashoffset: 0; } 70% { stroke-dashoffset: 0; } 92% { stroke-dashoffset: -327.44; } }
+  @keyframes fade8 { 0%,7%,100% { opacity: 0; } 14% { opacity: 1; } 70% { opacity: 1; } 92% { opacity: 0; } }
+  @keyframes fadeStroke { 0%,53%,100% { opacity: 0; } 60% { opacity: 1; } 70% { opacity: 1; } 92% { opacity: 0; } }
 
-  /* Left C — draws first (mask 718) */
+  /* Left C — draws first */
   #ebGPsDZKEm718 { animation: drawLeft 3s ease-in-out infinite; }
-  /* 8 — draws second (mask 710 top + 714 bottom + group 77 fade) */
+  /* 8 — draws second */
   #ebGPsDZKEm77 { animation: fade8 3s ease-in-out infinite; }
   #ebGPsDZKEm710 { animation: draw8top 3s ease-in-out infinite; }
   #ebGPsDZKEm714 { animation: draw8bot 3s ease-in-out infinite; }
-  /* Right C — draws last (mask 76) */
+  /* Right C — draws last */
   #ebGPsDZKEm76 { animation: drawRight 3s ease-in-out infinite; }
-  /* Solid 8 overlay fades in after strokes */
+  /* Solid 8 overlay */
   #ebGPsDZKEm719 { opacity: 0; animation: fadeStroke 3s ease-in-out infinite; }
   #ebGPsDZKEm725 { opacity: 0; }
   #ebGPsDZKEm729 { opacity: 0; }

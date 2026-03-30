@@ -192,7 +192,7 @@ const MyAssistant = () => {
   const updateInbound = (key, value) => { setInboundSettings(prev => ({ ...prev, [key]: value })); setDirty(true); setSaved(false); };
   const updateOutbound = (key, value) => { setOutboundSettings(prev => ({ ...prev, [key]: value })); setDirty(true); setSaved(false); };
 
-  if (loading) return <div className={s.loadingState}><img src="/loading-logo.svg" alt="Loading" style={{ width: 80 }} /></div>;
+  if (loading) return <div className={s.loadingState}><object type="image/svg+xml" data="/loading-logo.svg" aria-label="Loading" style={{ width: 80 }} /></div>;
 
   const isPersonalised = personalised[activeTab];
   const currentSettings = activeTab === 'inbound' ? inboundSettings : outboundSettings;

@@ -426,7 +426,7 @@ const Contractors = () => {
                   <input ref={docFileRef} type="file" accept="image/*,application/pdf" capture="environment" className={s.dropZoneHidden} onChange={e => { const f = e.target.files?.[0]; if (f) handleDocFile(f); }} />
                   {docExtracting ? (
                     <div className={s.extractingSpinner}>
-                      <div className={s.spinner} style={{ borderTopColor: accent }} />
+                      <img src="/loading-logo.svg" alt="Loading" className={s.loadingLogo} />
                       <span className={s.extractingText}>Extracting document details...</span>
                     </div>
                   ) : docImagePreview ? (

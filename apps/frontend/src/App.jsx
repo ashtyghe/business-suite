@@ -17,8 +17,7 @@ function AppShell() {
   if (loading) {
     return (
       <div className={s.loadingScreen}>
-        <div className={s.spinner} />
-        <div className={s.loadingText}>Loading…</div>
+        <img src="/loading-logo.svg" alt="Loading" className={s.loadingLogo} />
       </div>
     );
   }

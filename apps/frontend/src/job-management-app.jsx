@@ -4261,7 +4261,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
                   <div className="bill-preview-info">
                     {extracting && (
                       <div className="bill-extracting">
-                        <div className="bill-spinner" />
+                        <img src="/loading-logo.svg" alt="Loading" className="bill-loading-logo" />
                         <span>Analysing receipt with AI...</span>
                       </div>
                     )}
@@ -4768,7 +4768,7 @@ export default function App() {
     return (
       <div>
         {loading ? (
-          <div className={sh.displayLoading}>Loading…</div>
+          <div className={sh.displayLoading}><img src="/loading-logo.svg" alt="Loading" style={{ width: 120 }} /></div>
         ) : routeElements}
       </div>
     );
@@ -4778,8 +4778,7 @@ export default function App() {
     <div className="jm-root">
       {loading && (
         <div className={sh.fullScreenOverlay}>
-          <div className={sh.spinner} />
-          <div className={sh.loadingText}>Loading…</div>
+          <img src="/loading-logo.svg" alt="Loading" className={sh.loadingLogo} />
         </div>
       )}
       {dbError && (

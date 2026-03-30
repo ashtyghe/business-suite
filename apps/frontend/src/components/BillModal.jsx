@@ -187,7 +187,7 @@ const BillModal = ({ bill, jobs, onSave, onClose, defaultJobId }) => {
                   <div className="bill-preview-info">
                     {extracting && (
                       <div className="bill-extracting">
-                        <div className="bill-spinner" />
+                        <img src="/loading-logo.svg" alt="Loading" className="bill-loading-logo" />
                         <span>Analysing receipt with AI...</span>
                       </div>
                     )}

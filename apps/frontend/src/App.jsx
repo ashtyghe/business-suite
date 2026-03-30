@@ -21,7 +21,7 @@ function AppShell() {
   if (loading || !splashDone) {
     return (
       <div className={s.loadingScreen}>
-        <object type="image/svg+xml" data="/loading-logo.svg" aria-label="Loading" className={s.loadingLogo} />
+        <img src="/loading-logo.svg" alt="Loading" className={s.loadingLogo} />
       </div>
     );
   }

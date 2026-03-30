@@ -345,7 +345,7 @@ const PdfFormFiller = ({ pdfData, fileName, onSave, onClose, existingFields }) =
       {/* PDF Pages */}
       <div ref={containerRef} className={s.pagesContainer}>
         {pages.length === 0 && (
-          <object type="image/svg+xml" data="/loading-logo.svg" aria-label="Loading PDF" style={{ width: 80 }} />
+          <img src="/loading-logo.svg" alt="Loading PDF" style={{ width: 80 }} />
         )}
         {pages.map((pg, idx) => (
           <div key={idx} className={s.pageWrapper} style={{ cursor: cursorForTool }}
